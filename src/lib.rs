@@ -1,14 +1,19 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+pub mod base;
+pub mod client;
+pub mod reader;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+	use crate::base::Txid;
+	use crate::client::Client;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+	#[tokio::test]
+    async fn it_works_async() -> anyhow::Result<()> {
+        let client = Client::connect().await?;
+        let addr = client.to_endpoint_addr();
+        dbg!(&addr);
+        let reader = client.to_reader();
+        assert_eq!(Txid::FLOOR, reader.top_txid());
+        Ok(())
     }
 }

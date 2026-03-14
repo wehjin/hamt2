@@ -4,3 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow = "1.0.102"
+iroh = "0.96.1"
+iroh-blobs = "0.98.0"
+iroh-docs = "0.96.0"
+iroh-gossip = "0.96.0"
+thiserror = "2.0.18"
+tokio = { version = "1", features = ["sync", "rt", "time", "io-util"] }
