@@ -1,14 +1,11 @@
-use crate::hamt::base::{Attr, Ent, Value};
+use crate::base::{Attr, Ent, Val};
 
 pub enum Reader {
     Empty,
 }
 
 impl Reader {
-    pub fn new() -> Self {
-        Reader::Empty
-    }
-    pub fn query_value(&self, _entity: Ent, _attribute: Attr) -> Option<Value> {
+    pub fn query_value(&self, _entity: Ent, _attribute: Attr) -> Option<Val> {
         match self {
             Reader::Empty => None,
         }

@@ -1,21 +1,26 @@
+pub mod base;
 pub mod client;
 pub mod hamt;
 pub mod reader;
 
 #[cfg(test)]
 mod tests {
+    use crate::base::{Attr, Datom, Ent, Val};
     use crate::client::Client;
-    use crate::hamt::base::{Attr, Change, Ent, Value};
 
     #[tokio::test]
-    async fn it_works_async() -> anyhow::Result<()> {
-        let mut client = Client::connect().await?;
-        client.transact(&[Change::Deposit(Ent(1), Attr(2), Value::UInt(3))])?;
+    async fn it_works_async() {
+        let mut client = Client::connect().await.expect("connect");
+
+        static COUNT_ATTR: Attr = Attr("name");
+
+        client
+            .transact(&[Datom::Add(Ent(1), COUNT_ATTR, Val::UInt(42))])
+            .await
+            .expect("transact");
         {
-            let reader = client.to_reader();
-            let value = reader.query_value(Ent(1), Attr(2));
-            assert_eq!(Some(Value::UInt(3)), value);
+            let value = client.query_value(Ent(1), COUNT_ATTR).await.expect("query");
+            assert_eq!(Some(Val::UInt(42)), value);
         }
-        Ok(())
     }
 }
