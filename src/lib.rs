@@ -1,19 +1,26 @@
 pub mod base;
 pub mod client;
 pub mod reader;
+pub mod trie;
 
 #[cfg(test)]
 mod tests {
-	use crate::base::Txid;
-	use crate::client::Client;
+    use crate::base::{Attribute, Change, Entity, Txid, Value};
+    use crate::client::Client;
 
-	#[tokio::test]
+    #[tokio::test]
     async fn it_works_async() -> anyhow::Result<()> {
-        let client = Client::connect().await?;
-        let addr = client.to_endpoint_addr();
-        dbg!(&addr);
-        let reader = client.to_reader();
-        assert_eq!(Txid::FLOOR, reader.top_txid());
+        let mut client = Client::connect().await?;
+        {
+            let reader = client.to_reader();
+            assert_eq!(Txid::FLOOR, reader.top_txid());
+        }
+        client.transact(&[Change::Deposit(Entity(1), Attribute(2), Value::UInt(3))])?;
+        {
+            let reader = client.to_reader();
+            let value = reader.query_value(Entity(1), Attribute(2));
+            assert_eq!(Some(Value::UInt(3)), value);
+        }
         Ok(())
     }
 }
