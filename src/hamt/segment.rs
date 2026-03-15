@@ -1,4 +1,4 @@
-use crate::base::Change;
+use crate::hamt::base::Change;
 use crate::hamt::trie::mem::{MemMapBase, MemSlot, MemTrie};
 use crate::hamt::trie::segment::{SegmentMapBase, SegmentTrie};
 

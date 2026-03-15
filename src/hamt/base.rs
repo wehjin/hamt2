@@ -7,9 +7,9 @@ impl Txid {
     pub const FLOOR: Txid = Txid(0);
 }
 
-pub struct Entity(pub u32);
+pub struct Attr(pub u32);
 
-pub struct Attribute(pub u32);
+pub struct Ent(pub u32);
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Value {
@@ -40,7 +40,7 @@ impl Value {
 }
 
 pub enum Change {
-    Deposit(Entity, Attribute, Value),
+    Deposit(Ent, Attr, Value),
 }
 
 impl Change {
@@ -64,7 +64,7 @@ impl Change {
                 let (entity, start) = segment.read_u32(start);
                 let (attribute, start) = segment.read_u32(start);
                 let (value, start) = Value::from_be_bytes(start, &segment);
-                let change = Change::Deposit(Entity(entity), Attribute(attribute), value);
+                let change = Change::Deposit(Ent(entity), Attr(attribute), value);
                 (change, start)
             }
             _ => panic!("Invalid change type"),

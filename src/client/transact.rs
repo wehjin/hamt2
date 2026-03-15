@@ -1,4 +1,4 @@
-use crate::base::Change;
+use crate::hamt::base::Change;
 use crate::client::{Client, TransactError};
 
 impl Client {
