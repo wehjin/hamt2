@@ -1,52 +1,72 @@
-use crate::base::{Attr, Datom, Ent, Val};
-use crate::client::keys::{eavt_ea_key, val_from_eavt_full_key};
+use crate::base::Datom;
 use crate::client::transact::Transact;
-use crate::client::values::DATOM_ADDED;
+use crate::reader::Reader;
 use iroh::endpoint::BindError;
 use iroh::protocol::Router;
 use iroh::Endpoint;
+use iroh_blobs::api::Store;
 use iroh_blobs::store::mem::MemStore;
+use iroh_blobs::BlobsProtocol;
 use iroh_docs::api::Doc;
 use iroh_docs::protocol::Docs;
-use iroh_docs::store::Query;
 use iroh_docs::AuthorId;
-use std::rc::Rc;
-use tokio::io::AsyncReadExt;
+use iroh_gossip::Gossip;
 
-pub mod connect;
+pub mod db;
 pub mod keys;
-pub mod values;
-
 pub mod transact;
+pub mod values;
 
 pub struct Client {
     _endpoint: Endpoint,
     _router: Router,
     _docs: Docs,
     author: AuthorId,
-    store: Rc<MemStore>,
-    doc: Rc<Doc>,
+    store: Store,
+    doc: Doc,
 }
 
-#[derive(thiserror::Error, Debug)]
-pub enum ConnectError {
-    #[error("Anyhow: {0}")]
-    Anyhow(#[from] anyhow::Error),
+impl Client {
+    pub async fn connect() -> Result<Self, ConnectError> {
+        let endpoint = Endpoint::builder().bind().await?;
+        let store = MemStore::default();
+        let gossip = Gossip::builder().spawn(endpoint.clone());
+        let docs = Docs::memory()
+            .spawn(endpoint.clone(), (*store).clone(), gossip.clone())
+            .await?;
+        let builder = Router::builder(endpoint.clone());
+        let router = builder
+            .accept(iroh_blobs::ALPN, BlobsProtocol::new(&store, None))
+            .accept(iroh_gossip::ALPN, gossip)
+            .accept(iroh_docs::ALPN, docs.clone())
+            .spawn();
+        let author = docs.author_default().await?;
+        let doc = docs.create().await?;
+        Ok(Self {
+            _endpoint: endpoint,
+            _docs: docs,
+            _router: router,
+            author,
+            store: (*store).clone(),
+            doc,
+        })
+    }
 
-    #[error("Endpoint bind error: {0}")]
-    EndpointBindError(#[from] BindError),
-}
+    pub async fn transact(&mut self, datoms: &[Datom]) -> Result<(), TransactError> {
+        let mut transact = Transact::new(&self.doc, self.author, &self.store).await?;
+        for datom in datoms {
+            transact.process_datum(datom).await?;
+        }
+        transact.close().await?;
+        Ok(())
+    }
 
-#[derive(thiserror::Error, Debug)]
-pub enum TransactError {
-    #[error("Anyhow: {0}")]
-    Anyhow(#[from] anyhow::Error),
-
-    #[error("SerdeJson: {0}")]
-    SerdeJson(#[from] serde_json::Error),
-
-    #[error("Query: {0}")]
-    Query(#[from] QueryError),
+    pub fn to_reader(&self) -> Reader {
+        Reader {
+            doc: self.doc.clone(),
+            store: self.store.clone(),
+        }
+    }
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -67,34 +87,23 @@ pub enum QueryError {
     Key(#[from] keys::Error),
 }
 
-impl Client {
-    pub async fn transact(&mut self, datoms: &[Datom]) -> Result<(), TransactError> {
-        let mut transact = Transact::new(&self.doc, self.author, &self.store).await?;
-        for datom in datoms {
-            transact.process_datum(datom).await?;
-        }
-        transact.close().await?;
-        Ok(())
-    }
+#[derive(thiserror::Error, Debug)]
+pub enum TransactError {
+    #[error("Anyhow: {0}")]
+    Anyhow(#[from] anyhow::Error),
 
-    pub async fn query_value(&self, e: Ent, a: Attr) -> Result<Option<Val>, QueryError> {
-        let ea_key = eavt_ea_key(&e, &a);
-        let query = Query::key_prefix(ea_key);
-        let entry = self.doc.get_one(query).await?;
-        if let Some(entry) = entry {
-            let hash = entry.content_hash();
-            let mut value = String::new();
-            self.store.reader(hash).read_to_string(&mut value).await?;
-            if value == DATOM_ADDED {
-                let key = entry.key();
-                let eavt_key = str::from_utf8(key)?;
-                let val = val_from_eavt_full_key(eavt_key)?;
-                Ok(Some(val))
-            } else {
-                Ok(None)
-            }
-        } else {
-            Ok(None)
-        }
-    }
+    #[error("SerdeJson: {0}")]
+    SerdeJson(#[from] serde_json::Error),
+
+    #[error("Query: {0}")]
+    Query(#[from] QueryError),
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum ConnectError {
+    #[error("Anyhow: {0}")]
+    Anyhow(#[from] anyhow::Error),
+
+    #[error("Endpoint bind error: {0}")]
+    EndpointBindError(#[from] BindError),
 }
