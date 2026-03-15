@@ -1,4 +1,3 @@
-use crate::hamt::segment::Segment;
 use iroh::protocol::Router;
 use iroh::Endpoint;
 use iroh_docs::api::Doc;
@@ -13,10 +12,4 @@ pub struct Client {
     _docs: Docs,
     _router: Router,
     _doc: Rc<Doc>,
-    loader: Rc<Loader>,
-}
-
-pub struct Loader {
-    pub segment: Option<Rc<Segment>>,
-    pub root_start: Option<usize>,
 }

@@ -1,13 +1,13 @@
-use std::rc::Rc;
+use crate::client::Client;
+use crate::reader::Reader;
 use iroh::endpoint::BindError;
+use iroh::protocol::Router;
 use iroh::Endpoint;
 use iroh_blobs::store::mem::MemStore;
-use iroh_gossip::Gossip;
-use iroh_docs::protocol::Docs;
-use iroh::protocol::Router;
 use iroh_blobs::BlobsProtocol;
-use crate::client::{Client, Loader};
-use crate::reader::Reader;
+use iroh_docs::protocol::Docs;
+use iroh_gossip::Gossip;
+use std::rc::Rc;
 
 impl Client {
     pub async fn connect() -> Result<Self, ClientError> {
@@ -24,22 +24,16 @@ impl Client {
             .accept(iroh_docs::ALPN, docs.clone())
             .spawn();
         let doc = docs.create().await?;
-        let loader = Rc::new(Loader {
-            segment: None,
-            root_start: None,
-        });
         Ok(Self {
             _endpoint: endpoint,
             _docs: docs,
             _router: router,
             _doc: Rc::new(doc),
-            loader,
         })
     }
 
     pub fn to_reader(&self) -> Reader {
-        let loader = self.loader.clone();
-        Reader::new(loader)
+        Reader::new()
     }
 }
 
