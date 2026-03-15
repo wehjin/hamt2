@@ -1,7 +1,7 @@
 pub mod base;
 pub mod client;
+pub mod hamt;
 pub mod reader;
-pub mod trie;
 
 #[cfg(test)]
 mod tests {

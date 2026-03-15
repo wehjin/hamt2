@@ -1,4 +1,4 @@
-use crate::client::{Segment, SegmentIndex};
+use crate::hamt::segment::{Segment, SegmentIndex};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Txid(usize);

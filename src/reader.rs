@@ -1,7 +1,9 @@
 use crate::base::{Attribute, Change, Entity, Txid, Value};
-use crate::client::{Loader, Segment, SegmentIndex, SegmentTrie};
-use crate::trie::key::TrieKey;
+use crate::client::Loader;
+use crate::hamt::trie::key::TrieKey;
 use std::rc::Rc;
+use crate::hamt::segment::{Segment, SegmentIndex};
+use crate::hamt::trie::segment::SegmentTrie;
 
 pub enum Reader {
     Trie(SegmentTrie, Rc<Segment>),
