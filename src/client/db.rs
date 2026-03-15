@@ -7,7 +7,7 @@ use iroh_docs::AuthorId;
 use serde::{Deserialize, Serialize};
 use tokio::io::AsyncReadExt;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Db {
     pub max_ent: Ent,
     pub max_tx: Tx,

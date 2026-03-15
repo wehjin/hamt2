@@ -1,4 +1,5 @@
 use crate::base::{Attr, Ent, Val};
+use crate::client::db::Db;
 use crate::client::keys::{eavt_ea_key, val_from_eavt_full_key};
 use crate::client::values::DATOM_ADDED;
 use crate::client::QueryError;
@@ -13,6 +14,10 @@ pub struct Reader {
 }
 
 impl Reader {
+    pub async fn query_db(&self) -> Result<Db, QueryError> {
+        Db::query(&self.doc, &self.store).await
+    }
+
     pub async fn query_value(&self, e: Ent, a: &Attr) -> Result<Option<Val>, QueryError> {
         let ea_key = eavt_ea_key(&e, &a);
         let query = Query::key_prefix(ea_key);

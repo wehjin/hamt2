@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 pub enum Datom {
     Add(Ent, Attr, Val),
+    Id(Ent, Vec<(Attr, Val)>),
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
@@ -19,7 +20,7 @@ impl Attr {
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum Val {
-    UInt(u64),
+    Uint(u64),
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]

@@ -50,7 +50,7 @@ pub fn t_key(t: &Tx) -> String {
 
 pub fn v_key(v: &Val) -> String {
     match v {
-        Val::UInt(v) => format!("val/ui{}:", *v),
+        Val::Uint(v) => format!("val/ui{}:", *v),
     }
 }
 
@@ -60,7 +60,7 @@ pub fn val_from_v_key(v_key: &str) -> Result<Val, Error> {
         if typed_str.starts_with("ui") {
             let uint_str = &typed_str[2..];
             let uint = uint_str.parse::<u64>()?;
-            Ok(Val::UInt(uint))
+            Ok(Val::Uint(uint))
         } else {
             Err(Error::InvalidValType(typed_str.to_string()))
         }

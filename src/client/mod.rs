@@ -52,7 +52,7 @@ impl Client {
         })
     }
 
-    pub async fn transact(&mut self, datoms: &[Datom]) -> Result<(), TransactError> {
+    pub async fn transact(&mut self, datoms: Vec<Datom>) -> Result<(), TransactError> {
         let mut transact = Transact::new(&self.doc, self.author, &self.store).await?;
         for datom in datoms {
             transact.process_datum(datom).await?;
