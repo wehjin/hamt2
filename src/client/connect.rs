@@ -1,6 +1,5 @@
-use crate::client::Client;
+use crate::client::{Client, ClientError};
 use crate::reader::Reader;
-use iroh::endpoint::BindError;
 use iroh::protocol::Router;
 use iroh::Endpoint;
 use iroh_blobs::store::mem::MemStore;
@@ -37,11 +36,3 @@ impl Client {
     }
 }
 
-#[derive(thiserror::Error, Debug)]
-pub enum ClientError {
-    #[error("Endpoint bind error: {0}")]
-    EndpointBindError(#[from] BindError),
-
-    #[error("Anyhow: {0}")]
-    Anyhow(#[from] anyhow::Error),
-}

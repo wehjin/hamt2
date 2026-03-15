@@ -1,3 +1,4 @@
+use iroh::endpoint::BindError;
 use iroh::protocol::Router;
 use iroh::Endpoint;
 use iroh_docs::api::Doc;
@@ -13,3 +14,15 @@ pub struct Client {
     _router: Router,
     _doc: Rc<Doc>,
 }
+
+#[derive(thiserror::Error, Debug)]
+pub enum ClientError {
+    #[error("Endpoint bind error: {0}")]
+    EndpointBindError(#[from] BindError),
+
+    #[error("Anyhow: {0}")]
+    Anyhow(#[from] anyhow::Error),
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum TransactError {}
