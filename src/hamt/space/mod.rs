@@ -1,19 +1,20 @@
 use crate::hamt::value::Value;
-use addr::Addr;
 use thiserror::Error;
 
 mod extend;
 pub use extend::Extend;
+mod addr;
+pub use addr::Addr;
 
 pub mod mem;
-mod reader;
-use crate::hamt::space::seg::Seg;
-use crate::hamt::space::val::Val;
+pub mod reader;
 pub use reader::Reader;
 
-pub mod addr;
+pub mod core;
 pub mod seg;
-pub mod val;
+
+use crate::hamt::space::core::{TableItem, Val};
+use crate::hamt::space::seg::Seg;
 
 #[derive(Error, Debug)]
 pub enum ExtendError {
@@ -32,6 +33,7 @@ pub enum ReadError {
 
 pub trait Read {
     fn read_value(&self, addr: Addr) -> Result<Value, ReadError>;
+    fn read_item(&self, addr: Addr) -> Result<&TableItem, ReadError>;
 }
 
 #[cfg(test)]
@@ -41,16 +43,18 @@ mod tests {
     use crate::hamt::value::Value;
 
     #[tokio::test]
-    async fn it_works() {
+    async fn space_works() {
         let mut space = MemSpace::new();
         let addr = {
-            let mut extension = space.extend().unwrap();
-            let addr = extension.add_value(Value::Uint(42));
-            assert_eq!(Value::Uint(42), extension.read_value(addr).unwrap());
-            extension.commit(&mut space).unwrap();
-            addr
+            let mut extend = space.extend().unwrap();
+
+            let value_addr = extend.add_value(Value::U32(42));
+            assert_eq!(Value::U32(42), extend.read_value(value_addr).unwrap());
+
+            extend.commit(&mut space).unwrap();
+            value_addr
         };
         let reader = space.read().unwrap();
-        assert_eq!(Value::Uint(42), reader.read_value(addr).unwrap());
+        assert_eq!(Value::U32(42), reader.read_value(addr).unwrap());
     }
 }

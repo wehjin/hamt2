@@ -1,13 +1,15 @@
+use crate::hamt::trie::core::TrieMap;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TrieKey {
-    value: u32,
+    value: i32,
     hash: u32,
     map_index: u8,
 }
 
 impl TrieKey {
-    pub fn new(value: u32) -> Self {
-        let hash = hash_key(value, 1);
+    pub fn new(value: i32) -> Self {
+        let hash = hash_key(value as u32, 1);
         let map_index = (hash & 0x1f) as u8;
         Self {
             value,
@@ -15,7 +17,7 @@ impl TrieKey {
             map_index,
         }
     }
-    pub fn u32(&self) -> u32 {
+    pub fn i32(&self) -> i32 {
         self.value
     }
     pub fn map_index(&self) -> u8 {
@@ -24,8 +26,8 @@ impl TrieKey {
     pub fn to_map_bit(&self) -> u32 {
         0x80000000u32 >> self.map_index
     }
-    pub fn to_base_index(&self, map: u32) -> usize {
-        u32::count_ones(!(0xFFFFFFFFu32 >> self.map_index) & map) as usize
+    pub fn to_base_index(&self, map: TrieMap) -> usize {
+        u32::count_ones(!(0xFFFFFFFFu32 >> self.map_index) & map.0) as usize
     }
 }
 

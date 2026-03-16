@@ -1,10 +1,19 @@
+use crate::hamt::space::core::{TablePos, Val};
 use crate::hamt::space::seg::Seg;
-use crate::hamt::space::val::Val;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Addr {
     Value(Seg, Val),
-    Slots(Seg),
+    Table(Seg, TablePos),
+}
+
+impl Addr {
+    pub fn offset_table(self, offset: usize) -> Self {
+        let Addr::Table(seg, pos) = self else {
+            panic!("Cannot offset a non-table address")
+        };
+        Self::Table(seg, pos + offset)
+    }
 }
 
 impl std::fmt::Display for Addr {

@@ -1,7 +1,7 @@
+use crate::hamt::space::core::{TableItem, TablePos, Val};
 use crate::hamt::space::extend::Extend;
 use crate::hamt::space::reader::Reader;
 use crate::hamt::space::seg::Seg;
-use crate::hamt::space::val::Val;
 use crate::hamt::space::{ExtendError, ReadError};
 use crate::hamt::value::Value;
 use std::rc::Rc;
@@ -15,15 +15,22 @@ impl MemSpace {
             segments: Vec::new(),
         }
     }
+
     pub fn extend(&self) -> Result<Extend, ExtendError> {
         let max_seg = Seg(self.segments.len() as u32);
         Ok(Extend::new(max_seg))
     }
-    pub fn add_segment(&mut self, seg: Seg, values: Vec<Value>) -> Result<(), ExtendError> {
+
+    pub fn add_segment(
+        &mut self,
+        seg: Seg,
+        values: Vec<Value>,
+        table: Vec<TableItem>,
+    ) -> Result<(), ExtendError> {
         if seg != Seg(self.segments.len() as u32) {
             return Err(ExtendError::SegConflict(seg));
         }
-        let segment = MemSegment { values };
+        let segment = MemSegment { values, table };
         self.segments.push(Rc::new(segment));
         Ok(())
     }
@@ -35,7 +42,8 @@ impl MemSpace {
 }
 
 pub struct MemSegment {
-    pub values: Vec<Value>,
+    values: Vec<Value>,
+    table: Vec<TableItem>,
 }
 
 impl MemSegment {
@@ -45,5 +53,9 @@ impl MemSegment {
             .get(val.0 as usize)
             .ok_or(ReadError::InvalidVal(val))?;
         Ok(value.clone())
+    }
+
+    pub fn read_item(&self, pos: TablePos) -> Result<&TableItem, ReadError> {
+        Ok(&self.table[pos.0 as usize])
     }
 }

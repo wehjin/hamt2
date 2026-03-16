@@ -9,7 +9,7 @@ mod tests {
     use crate::client::Client;
 
     #[tokio::test]
-    async fn it_works_async() {
+    async fn client_works_async() {
         let mut client = Client::connect().await.expect("connect");
 
         static AT_COUNT: Attr = Attr("count");
