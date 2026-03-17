@@ -13,7 +13,7 @@ impl SpaceMapBase {
         extend: &mut space::Extend,
     ) -> Result<Self, TransactError> {
         let base = SpaceBase::one_kv(key.i32(), value, extend)?;
-        let map = TrieMap::new(key);
+        let map = TrieMap::set_key_bit(key);
         Ok(Self(map, base))
     }
 

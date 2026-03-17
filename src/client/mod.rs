@@ -115,6 +115,15 @@ pub enum TransactError {
 
     #[error("HighBitInValue: {0}")]
     HighBitInValue(u32),
+
+    #[error("InvalidSlotType")]
+    InvalidSlotType,
+
+    #[error("SlotOccupied")]
+    SlotOccupied,
+
+    #[error("SlotUnoccupied")]
+    SlotEmpty,
 }
 
 #[derive(thiserror::Error, Debug)]
