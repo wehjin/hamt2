@@ -3,6 +3,7 @@ use crate::hamt::trie::mem::MemTrie;
 
 pub mod core;
 
+#[derive(Debug)]
 pub struct SpaceTrie {
     mem_trie: Option<MemTrie>,
 }

@@ -1,8 +1,18 @@
 use crate::client::TransactError;
 use crate::hamt::trie::key::TrieKey;
+use std::fmt;
+use std::fmt::Formatter;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct TrieMap(pub u32);
+
+impl fmt::Debug for TrieMap {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("TrieMap")
+            .field(&format_args!("{:032b}", &self.0))
+            .finish()
+    }
+}
 
 impl TrieMap {
     pub fn set_key_bit(key: TrieKey) -> Self {
@@ -34,8 +44,16 @@ impl TrieMap {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct TrieValue(u32);
+
+impl fmt::Debug for TrieValue {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("TrieValue")
+            .field(&format_args!("{}", self.0 >> 1))
+            .finish()
+    }
+}
 
 impl TrieValue {
     pub fn new(value: u32) -> Result<Self, TransactError> {

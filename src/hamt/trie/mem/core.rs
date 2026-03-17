@@ -174,7 +174,7 @@ impl MemSlot {
     pub fn merge_kv(self, key: TrieKey, value: TrieValue) -> Result<Self, TransactError> {
         match self {
             MemSlot::KeyValue(b_key, b_value) => {
-                let slot = MemSlot::two_kv(b_key, b_value, key, value)?;
+                let slot = MemSlot::two_kv(b_key.next(), b_value, key.next(), value)?;
                 Ok(slot)
             }
             MemSlot::MapBase(map_base) => {
@@ -185,14 +185,19 @@ impl MemSlot {
         }
     }
     pub fn query_value(&self, key: TrieKey) -> Result<Option<u32>, QueryError> {
-        let MemSlot::KeyValue(k, v) = self else {
-            return Err(QueryError::InvalidSlotType);
-        };
-        if k.i32() != key.i32() {
-            Ok(None)
-        } else {
-            let value = v.to_value();
-            Ok(Some(value))
+        match self {
+            MemSlot::KeyValue(k, v) => {
+                if k.i32() != key.i32() {
+                    Ok(None)
+                } else {
+                    let value = v.to_value();
+                    Ok(Some(value))
+                }
+            }
+            MemSlot::MapBase(map_base) => {
+                let value = map_base.query_value(key.next())?;
+                Ok(value)
+            }
         }
     }
     pub fn test_kv(&self, key: TrieKey, value: TrieValue) -> KvTest {

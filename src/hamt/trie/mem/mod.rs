@@ -6,6 +6,7 @@ use core::MemMapBase;
 
 pub mod core;
 
+#[derive(Debug)]
 pub struct MemTrie {
     pub root_map_base: Option<MemMapBase>,
 }
