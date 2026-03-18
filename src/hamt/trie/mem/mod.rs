@@ -19,12 +19,10 @@ impl MemTrie {
             root_map_base: None,
         }
     }
-    pub fn one_kv(key: i32, value: u32) -> Result<Self, TransactError> {
+    pub fn one_kv(key: TrieKey, value: TrieValue) -> Result<Self, TransactError> {
         Self::empty().insert(key, value)
     }
-    pub fn insert(self, key: i32, value: u32) -> Result<Self, TransactError> {
-        let key = TrieKey::new(key);
-        let value = TrieValue::new(value)?;
+    pub fn insert(self, key: TrieKey, value: TrieValue) -> Result<Self, TransactError> {
         let root_map_base = if let Some(map_base) = self.root_map_base {
             map_base.insert_kv(key, value)?
         } else {
@@ -34,10 +32,9 @@ impl MemTrie {
             root_map_base: Some(root_map_base),
         })
     }
-    pub fn query_value(&self, key: i32) -> Result<Option<u32>, QueryError> {
-        let key = TrieKey::new(key);
-        if let Some(root_map_base) = &self.root_map_base {
-            root_map_base.query_value(key)
+    pub fn query_value(&self, key: TrieKey) -> Result<Option<TrieValue>, QueryError> {
+        if let Some(map_base) = &self.root_map_base {
+            map_base.query_value(key)
         } else {
             Ok(None)
         }

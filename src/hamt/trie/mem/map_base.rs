@@ -79,7 +79,7 @@ impl MemMapBase {
             Ok(None)
         }
     }
-    pub fn query_value(&self, key: TrieKey) -> Result<Option<u32>, QueryError> {
+    pub fn query_value(&self, key: TrieKey) -> Result<Option<TrieValue>, QueryError> {
         if let Some(slot) = self.as_slot(key)? {
             Ok(slot.query_value(key)?)
         } else {

@@ -50,14 +50,13 @@ impl MemSlot {
             }
         }
     }
-    pub fn query_value(&self, key: TrieKey) -> Result<Option<u32>, QueryError> {
+    pub fn query_value(&self, key: TrieKey) -> Result<Option<TrieValue>, QueryError> {
         match self {
             MemSlot::KeyValue(k, v) => {
                 if k.i32() != key.i32() {
                     Ok(None)
                 } else {
-                    let value = v.to_u32();
-                    Ok(Some(value))
+                    Ok(Some(v.clone()))
                 }
             }
             MemSlot::MapBase(map_base) => {
