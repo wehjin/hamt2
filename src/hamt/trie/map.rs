@@ -1,4 +1,3 @@
-use crate::client::TransactError;
 use crate::hamt::trie::key::TrieKey;
 use std::fmt;
 use std::fmt::Formatter;
@@ -41,29 +40,5 @@ impl TrieMap {
         } else {
             None
         }
-    }
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub struct TrieValue(u32);
-
-impl fmt::Debug for TrieValue {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.debug_tuple("TrieValue")
-            .field(&format_args!("{}", self.0 >> 1))
-            .finish()
-    }
-}
-
-impl TrieValue {
-    pub fn new(value: u32) -> Result<Self, TransactError> {
-        if value & 0x80000000 != 0 {
-            return Err(TransactError::HighBitInValue(value));
-        }
-        let value = value << 1;
-        Ok(Self(value))
-    }
-    pub fn to_value(&self) -> u32 {
-        self.0 >> 1
     }
 }

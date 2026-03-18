@@ -1,4 +1,4 @@
-use crate::hamt::trie::core::TrieMap;
+use crate::hamt::trie::map::TrieMap;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TrieKey {

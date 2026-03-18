@@ -1,7 +1,7 @@
 use crate::client::{QueryError, TransactError};
-use crate::hamt::trie::core::TrieMap;
-use crate::hamt::trie::core::TrieValue;
 use crate::hamt::trie::key::TrieKey;
+use crate::hamt::trie::map::TrieMap;
+use crate::hamt::trie::value::TrieValue;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct MemMapBase {
@@ -32,10 +32,10 @@ impl MemMapBase {
     }
     pub fn insert_kv(self, key: TrieKey, value: TrieValue) -> Result<Self, TransactError> {
         let map_base = match self.as_slot(key)? {
-            Some(slot) => match slot.test_kv(key, value) {
+            Some(slot) => match slot.test_kv(&key, &value) {
                 KvTest::SameValue => self,
-                KvTest::ConflictOldValue(_) => self.replace_existing_value(key, value)?,
-                KvTest::ConflictKeyValue(_, _) => self.merge_kv(key, value)?,
+                KvTest::ConflictOldValue => self.replace_existing_value(key, value)?,
+                KvTest::ConflictKeyValue => self.merge_kv(key, value)?,
                 KvTest::ConflictMapBase => self.merge_kv(key, value)?,
             },
             None => {
@@ -190,7 +190,7 @@ impl MemSlot {
                 if k.i32() != key.i32() {
                     Ok(None)
                 } else {
-                    let value = v.to_value();
+                    let value = v.to_u32();
                     Ok(Some(value))
                 }
             }
@@ -200,17 +200,17 @@ impl MemSlot {
             }
         }
     }
-    pub fn test_kv(&self, key: TrieKey, value: TrieValue) -> KvTest {
+    pub fn test_kv(&self, key: &TrieKey, value: &TrieValue) -> KvTest {
         match self {
             MemSlot::KeyValue(slot_key, slot_value) => {
                 if key.same_i32(slot_key) {
-                    if value == *slot_value {
+                    if value == slot_value {
                         KvTest::SameValue
                     } else {
-                        KvTest::ConflictOldValue(*slot_value)
+                        KvTest::ConflictOldValue
                     }
                 } else {
-                    KvTest::ConflictKeyValue(*slot_key, *slot_value)
+                    KvTest::ConflictKeyValue
                 }
             }
             MemSlot::MapBase(_) => KvTest::ConflictMapBase,
@@ -220,7 +220,7 @@ impl MemSlot {
 
 pub enum KvTest {
     SameValue,
-    ConflictOldValue(TrieValue),
-    ConflictKeyValue(TrieKey, TrieValue),
+    ConflictOldValue,
+    ConflictKeyValue,
     ConflictMapBase,
 }

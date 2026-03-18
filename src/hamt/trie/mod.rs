@@ -1,7 +1,8 @@
-pub mod core;
 pub mod key;
+pub mod map;
 pub mod mem;
 pub mod space;
+pub mod value;
 
 #[cfg(test)]
 mod tests {
