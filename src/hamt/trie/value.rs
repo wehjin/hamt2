@@ -1,5 +1,5 @@
 use crate::client::TransactError;
-use crate::hamt::trie::mem::core::MemMapBase;
+use crate::hamt::trie::mem::map_base::MemMapBase;
 use std::fmt;
 use std::fmt::Formatter;
 

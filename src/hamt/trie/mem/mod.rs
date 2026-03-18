@@ -1,9 +1,12 @@
 use crate::client::{QueryError, TransactError};
 use crate::hamt::trie::key::TrieKey;
 use crate::hamt::trie::value::TrieValue;
-use core::MemMapBase;
+use map_base::MemMapBase;
 
-pub mod core;
+pub mod base;
+pub mod map_base;
+pub mod slot;
+pub mod value;
 
 #[derive(Debug)]
 pub struct MemTrie {

@@ -1,4 +1,4 @@
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum Value {
+pub enum MemValue {
     U32(u32),
 }
