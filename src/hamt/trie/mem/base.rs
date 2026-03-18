@@ -1,6 +1,6 @@
 use crate::client::{QueryError, TransactError};
 use crate::hamt::trie::key::TrieKey;
-use crate::hamt::trie::mem::map_base::MemMapBase;
+use crate::hamt::trie::map_base::TrieMapBase;
 use crate::hamt::trie::mem::slot::MemSlot;
 use crate::hamt::trie::value::TrieValue;
 
@@ -10,7 +10,7 @@ pub struct MemBase {
 }
 
 impl MemBase {
-    pub fn one_mb(map_base: MemMapBase) -> Result<Self, TransactError> {
+    pub fn one_mb(map_base: TrieMapBase) -> Result<Self, TransactError> {
         let slot = MemSlot::MapBase(map_base);
         let slots = vec![slot];
         Ok(Self { slots })

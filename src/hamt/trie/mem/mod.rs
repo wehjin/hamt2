@@ -1,16 +1,15 @@
 use crate::client::{QueryError, TransactError};
 use crate::hamt::trie::key::TrieKey;
+use crate::hamt::trie::map_base::TrieMapBase;
 use crate::hamt::trie::value::TrieValue;
-use map_base::MemMapBase;
 
 pub mod base;
-pub mod map_base;
 pub mod slot;
 pub mod value;
 
 #[derive(Debug)]
 pub struct MemTrie {
-    pub root_map_base: Option<MemMapBase>,
+    pub root_map_base: Option<TrieMapBase>,
 }
 
 impl MemTrie {
@@ -26,7 +25,7 @@ impl MemTrie {
         let root_map_base = if let Some(map_base) = self.root_map_base {
             map_base.insert_kv(key, value)?
         } else {
-            MemMapBase::one_kv(key, value)?
+            TrieMapBase::one_kv(key, value)?
         };
         Ok(Self {
             root_map_base: Some(root_map_base),

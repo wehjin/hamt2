@@ -1,12 +1,12 @@
 use crate::client::{QueryError, TransactError};
 use crate::hamt::trie::key::TrieKey;
-use crate::hamt::trie::mem::map_base::MemMapBase;
+use crate::hamt::trie::map_base::TrieMapBase;
 use crate::hamt::trie::value::TrieValue;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum MemSlot {
     KeyValue(TrieKey, TrieValue),
-    MapBase(MemMapBase),
+    MapBase(TrieMapBase),
 }
 
 impl MemSlot {
@@ -21,12 +21,12 @@ impl MemSlot {
     ) -> Result<Self, TransactError> {
         let (a_map_index, b_map_index) = (a_key.map_index(), b_key.map_index());
         if a_map_index != b_map_index {
-            let map_base = MemMapBase::two_kv(a_key, a_value, b_key, b_value)?;
+            let map_base = TrieMapBase::two_kv(a_key, a_value, b_key, b_value)?;
             Ok(MemSlot::MapBase(map_base))
         } else {
             let map_index = a_map_index;
             let inner_slot = MemSlot::two_kv(a_key.next(), a_value, b_key.next(), b_value)?;
-            let map_base = MemMapBase::one_slot(map_index, inner_slot)?;
+            let map_base = TrieMapBase::one_slot(map_index, inner_slot)?;
             Ok(MemSlot::MapBase(map_base))
         }
     }

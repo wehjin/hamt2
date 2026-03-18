@@ -6,12 +6,12 @@ use crate::hamt::trie::mem::slot::{KvTest, MemSlot};
 use crate::hamt::trie::value::TrieValue;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct MemMapBase {
+pub struct TrieMapBase {
     pub map: TrieMap,
     pub base: MemBase,
 }
 
-impl MemMapBase {
+impl TrieMapBase {
     pub fn one_kv(key: TrieKey, value: TrieValue) -> Result<Self, TransactError> {
         let map = TrieMap::set_key_bit(key);
         let base = MemBase::one_kv(key, value)?;
@@ -41,7 +41,7 @@ impl MemMapBase {
                 KvTest::ConflictMapBase => self.merge_kv(key, value)?,
             },
             None => {
-                let MemMapBase { map, base } = self;
+                let TrieMapBase { map, base } = self;
                 let map = map.with_key(key);
                 let Some(base_index) = map.to_base_index(key) else {
                     return Err(TransactError::SlotEmpty);
@@ -57,14 +57,14 @@ impl MemMapBase {
         key: TrieKey,
         value: TrieValue,
     ) -> Result<Self, TransactError> {
-        let MemMapBase { map, base } = self;
+        let TrieMapBase { map, base } = self;
         let base_index = key.to_base_index(map);
         let base = base.replace_value(base_index, value)?;
         Ok(Self { map, base })
     }
 
     pub fn merge_kv(self, key: TrieKey, value: TrieValue) -> Result<Self, TransactError> {
-        let MemMapBase { map, base } = self;
+        let TrieMapBase { map, base } = self;
         let base_index = key.to_base_index(map);
         let base = base.merge_kv(base_index, key, value)?;
         Ok(Self { map, base })

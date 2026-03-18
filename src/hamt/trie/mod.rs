@@ -3,6 +3,7 @@ pub mod map;
 pub mod mem;
 pub mod space;
 pub mod value;
+pub mod map_base;
 
 #[cfg(test)]
 mod tests {
