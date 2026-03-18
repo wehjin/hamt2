@@ -1,5 +1,6 @@
 pub mod base;
 pub mod client;
+pub mod db;
 pub mod hamt;
 pub mod reader;
 
