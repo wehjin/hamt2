@@ -1,27 +1,27 @@
 use crate::client::{QueryError, TransactError};
+use crate::hamt::trie::core::base::TrieBase;
 use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::map::TrieMap;
-use crate::hamt::trie::mem::base::MemBase;
-use crate::hamt::trie::mem::slot::{KvTest, MemSlot};
 use crate::hamt::trie::core::value::TrieValue;
+use crate::hamt::trie::mem::slot::{KvTest, MemSlot};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct TrieMapBase {
     pub map: TrieMap,
-    pub base: MemBase,
+    pub base: TrieBase,
 }
 
 impl TrieMapBase {
     pub fn empty() -> Self {
         Self {
             map: TrieMap::empty(),
-            base: MemBase::empty(),
+            base: TrieBase::mem(),
         }
     }
 
     pub fn one_kv(key: TrieKey, value: TrieValue) -> Result<Self, TransactError> {
         let map = TrieMap::set_key_bit(key);
-        let base = MemBase::one_kv(key, value)?;
+        let base = TrieBase::mem_with_one_kv(key, value)?;
         Ok(Self { map, base })
     }
     pub fn two_kv(
@@ -36,7 +36,7 @@ impl TrieMapBase {
     }
     pub fn one_slot(map_index: u8, slot: MemSlot) -> Result<Self, TransactError> {
         let map = TrieMap::set_map_index_bit(map_index);
-        let base = MemBase { slots: vec![slot] };
+        let base = TrieBase::mem_with_one_slot(slot)?;
         Ok(Self { map, base })
     }
     pub fn insert_kv(self, key: TrieKey, value: TrieValue) -> Result<Self, TransactError> {
