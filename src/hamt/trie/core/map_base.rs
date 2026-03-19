@@ -15,13 +15,13 @@ impl TrieMapBase {
     pub fn empty() -> Self {
         Self {
             map: TrieMap::empty(),
-            base: TrieBase::mem(),
+            base: TrieBase::new(),
         }
     }
 
     pub fn one_kv(key: TrieKey, value: TrieValue) -> Result<Self, TransactError> {
         let map = TrieMap::set_key_bit(key);
-        let base = TrieBase::mem_with_one_kv(key, value)?;
+        let base = TrieBase::new_kv(key, value)?;
         Ok(Self { map, base })
     }
     pub fn two_kv(
@@ -36,7 +36,7 @@ impl TrieMapBase {
     }
     pub fn one_slot(map_index: u8, slot: MemSlot) -> Result<Self, TransactError> {
         let map = TrieMap::set_map_index_bit(map_index);
-        let base = TrieBase::mem_with_one_slot(slot)?;
+        let base = TrieBase::new_slot(slot)?;
         Ok(Self { map, base })
     }
     pub fn insert_kv(self, key: TrieKey, value: TrieValue) -> Result<Self, TransactError> {
