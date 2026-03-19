@@ -1,12 +1,15 @@
+pub mod core;
+pub mod deep_key;
 pub mod key;
 pub mod map;
+pub mod map_base;
 pub mod mem;
 pub mod space;
 pub mod value;
-pub mod map_base;
 
 #[cfg(test)]
 mod tests {
+    use crate::client::QueryError;
     use crate::hamt::trie::mem::value::MemValue;
     use crate::hamt::trie::space::SpaceTrie;
 
@@ -41,5 +44,37 @@ mod tests {
             .map(|i| Some(MemValue::U32(*i as u32)))
             .collect::<Vec<_>>();
         assert_eq!(expected, values);
+    }
+
+    #[tokio::test]
+    async fn deep_insert_and_query_works() {
+        let mut trie = SpaceTrie::new();
+        trie.deep_insert([4, 2], MemValue::U32(42)).unwrap();
+        {
+            let value = trie.deep_query_value([4]).unwrap();
+            let Some(MemValue::MapBase(map_base)) = value else {
+                panic!("expected map_base");
+            };
+            assert_eq!(1, map_base.map.len());
+            assert_eq!(1, map_base.base.len());
+        }
+        {
+            let value = trie.deep_query_value([4, 2]).unwrap();
+            assert_eq!(Some(MemValue::U32(42)), value);
+        }
+        {
+            let value = trie.deep_query_value([4, 1]).unwrap();
+            assert_eq!(None, value);
+        }
+        {
+            let value = trie.deep_query_value([5, 2]).unwrap();
+            assert_eq!(None, value);
+        }
+        {
+            let result = trie.deep_query_value([4, 2, -1]);
+            let Err(QueryError::NoSubtrieAtKeyIndex(1)) = result else {
+                panic!("expected NoSubtrieAtKeyIndex(1)")
+            };
+        }
     }
 }

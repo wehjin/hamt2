@@ -10,6 +10,14 @@ pub struct TrieKey {
 }
 
 impl TrieKey {
+    pub const INVALID: Self = Self {
+        value: -1,
+        level: 0,
+        hash: 0,
+        hash_index: 0,
+        map_index: 0,
+    };
+
     pub fn new(value: i32) -> Self {
         let level = 1;
         let hash = hash_key(value as u32, level);

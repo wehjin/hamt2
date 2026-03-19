@@ -38,11 +38,11 @@ pub trait Read {
 
 #[cfg(test)]
 mod tests {
-    use crate::hamt::space::mem::MemSpace;
-    use crate::hamt::space::Read;
-    use crate::hamt::trie::mem::value::MemValue;
+	use crate::hamt::space::mem::MemSpace;
+	use crate::hamt::space::Read;
+	use crate::hamt::trie::mem::value::MemValue;
 
-    #[tokio::test]
+	#[tokio::test]
     async fn space_works() {
         let mut space = MemSpace::new();
         let addr = {
