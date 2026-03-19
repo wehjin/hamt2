@@ -6,23 +6,23 @@ use crate::hamt::trie::core::value::TrieValue;
 use crate::hamt::trie::mem::slot::{KvTest, MemSlot};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct TrieMapBase {
-    pub map: TrieMap,
-    pub base: TrieBase,
-}
+pub struct TrieMapBase(pub TrieMap, pub TrieBase);
 
 impl TrieMapBase {
+    pub fn map(&self) -> &TrieMap {
+        &self.0
+    }
+    pub fn base(&self) -> &TrieBase {
+        &self.1
+    }
     pub fn empty() -> Self {
-        Self {
-            map: TrieMap::empty(),
-            base: TrieBase::new(),
-        }
+        Self(TrieMap::empty(), TrieBase::new())
     }
 
     pub fn one_kv(key: TrieKey, value: TrieValue) -> Result<Self, TransactError> {
         let map = TrieMap::set_key_bit(key);
         let base = TrieBase::new_kv(key, value)?;
-        Ok(Self { map, base })
+        Ok(Self(map, base))
     }
     pub fn two_kv(
         key: TrieKey,
@@ -37,7 +37,7 @@ impl TrieMapBase {
     pub fn one_slot(map_index: u8, slot: MemSlot) -> Result<Self, TransactError> {
         let map = TrieMap::set_map_index_bit(map_index);
         let base = TrieBase::new_slot(slot)?;
-        Ok(Self { map, base })
+        Ok(Self(map, base))
     }
     pub fn insert_kv(self, key: TrieKey, value: TrieValue) -> Result<Self, TransactError> {
         let map_base = match self.as_slot(key)? {
@@ -48,13 +48,13 @@ impl TrieMapBase {
                 KvTest::ConflictMapBase => self.merge_kv(key, value)?,
             },
             None => {
-                let TrieMapBase { map, base } = self;
+                let TrieMapBase(map, base) = self;
                 let map = map.with_key(key);
                 let Some(base_index) = map.to_base_index(key) else {
                     return Err(TransactError::SlotEmpty);
                 };
                 let base = base.insert_kv(base_index, key, value)?;
-                Self { map, base }
+                Self(map, base)
             }
         };
         Ok(map_base)
@@ -64,23 +64,23 @@ impl TrieMapBase {
         key: TrieKey,
         value: TrieValue,
     ) -> Result<Self, TransactError> {
-        let TrieMapBase { map, base } = self;
+        let TrieMapBase(map, base) = self;
         let base_index = key.to_base_index(map);
         let base = base.replace_value(base_index, value)?;
-        Ok(Self { map, base })
+        Ok(Self(map, base))
     }
 
     pub fn merge_kv(self, key: TrieKey, value: TrieValue) -> Result<Self, TransactError> {
-        let TrieMapBase { map, base } = self;
+        let TrieMapBase(map, base) = self;
         let base_index = key.to_base_index(map);
         let base = base.merge_kv(base_index, key, value)?;
-        Ok(Self { map, base })
+        Ok(Self(map, base))
     }
 
     pub fn as_slot(&self, key: TrieKey) -> Result<Option<&MemSlot>, QueryError> {
-        let base_index = self.map.to_base_index(key);
+        let base_index = self.0.to_base_index(key);
         if let Some(base_index) = base_index {
-            let slot = self.base.as_slot(base_index)?;
+            let slot = self.1.as_slot(base_index)?;
             Ok(Some(slot))
         } else {
             Ok(None)
