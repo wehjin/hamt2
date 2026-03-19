@@ -6,8 +6,6 @@ use crate::hamt::trie::core::value::TrieValue;
 use crate::hamt::trie::mem::value::MemValue;
 use std::collections::HashMap;
 
-pub mod core;
-
 #[derive(Debug)]
 pub struct SpaceTrie {
     map_base: TrieMapBase,

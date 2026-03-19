@@ -24,8 +24,8 @@ pub enum ExtendError {
 
 #[derive(Error, Debug)]
 pub enum ReadError {
-    #[error("Invalid addr {0}")]
-    InvalidAddr(Addr),
+    #[error("Invalid table addr {0}")]
+    InvalidTableAddr(TableAddr),
 
     #[error("Invalid value addr {0}")]
     InvalidValueAddr(ValueAddr),
@@ -36,7 +36,7 @@ pub enum ReadError {
 
 pub trait Read {
     fn read_value(&self, addr: ValueAddr) -> Result<Value, ReadError>;
-    fn read_item(&self, addr: Addr) -> Result<&TableItem, ReadError>;
+    fn read_item(&self, addr: TableAddr) -> Result<&TableItem, ReadError>;
 }
 
 #[cfg(test)]

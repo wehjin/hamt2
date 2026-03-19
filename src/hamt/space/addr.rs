@@ -4,16 +4,18 @@ use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Addr {
-    Value(Seg, Val),
-    Table(Seg, TablePos),
+    Value(ValueAddr),
+    Table(TableAddr),
 }
 
 impl Addr {
     pub fn offset_table(self, offset: usize) -> Self {
-        let Addr::Table(seg, pos) = self else {
-            panic!("Cannot offset a non-table address")
-        };
-        Self::Table(seg, pos + offset)
+        match self {
+            Addr::Value(_) => {
+                panic!("Cannot offset a non-table address")
+            }
+            Addr::Table(table_addr) => Addr::Table(table_addr.offset(offset)),
+        }
     }
 }
 
@@ -37,3 +39,19 @@ impl fmt::Display for ValueAddr {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct TableAddr(pub Seg, pub TablePos);
+
+impl fmt::Display for TableAddr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("TableAddr")
+            .field("seg", &self.0)
+            .field("pos", &self.1)
+            .finish()
+    }
+}
+
+impl TableAddr {
+    pub fn offset(self, offset: usize) -> Self {
+        let TableAddr(seg, pos) = self;
+        TableAddr(seg, pos + offset)
+    }
+}

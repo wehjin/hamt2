@@ -1,6 +1,8 @@
 use crate::client::{QueryError, TransactError};
 use crate::core::value::Value;
 use crate::hamt::space;
+use crate::hamt::space::core::TableItem;
+use crate::hamt::space::{Addr, TableAddr};
 use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::map_base::TrieMapBase;
 use crate::hamt::trie::core::value::TrieValue;
@@ -15,35 +17,40 @@ pub enum TrieBase {
 }
 
 impl TrieBase {
-    pub fn write(self, extend: &mut space::Extend) -> Result<Self, TransactError> {
+    pub fn into_base_addr(self, extend: &mut space::Extend) -> Result<TableAddr, TransactError> {
         match self {
-            TrieBase::Space(_) => Ok(self),
+            TrieBase::Space(addr) => Ok(addr),
             TrieBase::Mem(base) => {
-                let mut space_slots = vec![];
+                let mut items = vec![];
                 for slot in base.slots {
                     match slot {
-                        MemSlot::KeyValue(_, TrieValue::Space(_))
-                        | MemSlot::MapBase(TrieMapBase(_, TrieBase::Space(_))) => {
-                            space_slots.push(slot);
-                        }
-                        MemSlot::KeyValue(key, TrieValue::Mem(value)) => {
-                            let space_value = match value {
-                                MemValue::U32(value) => {
-                                    let space_addr = extend.add_value(Value::U32(value));
-                                    TrieValue::Space(space_addr)
-                                }
-                                MemValue::MapBase(_) => {
-                                    unimplemented!()
+                        MemSlot::KeyValue(key, value) => {
+                            let value_addr = match value {
+                                TrieValue::Space(value_addr) => value_addr,
+                                TrieValue::Mem(value) => {
+                                    let value = match value {
+                                        MemValue::U32(value) => Value::U32(value),
+                                        MemValue::MapBase(TrieMapBase(map, base)) => {
+                                            let base_addr = base.into_base_addr(extend)?;
+                                            Value::MapBase(map.0, base_addr)
+                                        }
+                                    };
+                                    let value_addr = extend.add_value(value);
+                                    value_addr
                                 }
                             };
-                            space_slots.push(MemSlot::KeyValue(key, space_value));
+                            let item = TableItem(key.i32() as u32, Addr::Value(value_addr));
+                            items.push(item);
                         }
-                        MemSlot::MapBase(TrieMapBase(_, TrieBase::Mem(_))) => {
-                            unimplemented!()
+                        MemSlot::MapBase(TrieMapBase(map, base)) => {
+                            let base_addr = base.into_base_addr(extend)?;
+                            let item = TableItem(map.0, Addr::Table(base_addr));
+                            items.push(item);
                         }
                     }
                 }
-                unimplemented!()
+                let base_addr = extend.add_items(items);
+                Ok(base_addr)
             }
         }
     }

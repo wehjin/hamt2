@@ -1,8 +1,7 @@
 use crate::core::value::Value;
-use crate::hamt::space::addr::Addr;
 use crate::hamt::space::core::TableItem;
 use crate::hamt::space::mem::MemSegment;
-use crate::hamt::space::{Read, ReadError, ValueAddr};
+use crate::hamt::space::{Read, ReadError, TableAddr, ValueAddr};
 use std::rc::Rc;
 
 pub struct Reader {
@@ -17,10 +16,8 @@ impl Read for Reader {
         Ok(value)
     }
 
-    fn read_item(&self, addr: Addr) -> Result<&TableItem, ReadError> {
-        let Addr::Table(seg, pos) = addr else {
-            return Err(ReadError::InvalidAddr(addr));
-        };
+    fn read_item(&self, addr: TableAddr) -> Result<&TableItem, ReadError> {
+        let TableAddr(seg, pos) = addr;
         let segment = &self.segments[seg.0 as usize];
         let item = segment.read_item(pos)?;
         Ok(item)
