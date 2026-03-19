@@ -1,4 +1,5 @@
 use crate::client::{QueryError, TransactError};
+use crate::core::value::Value;
 use crate::hamt::space;
 use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::map_base::TrieMapBase;
@@ -25,14 +26,18 @@ impl TrieBase {
                         | MemSlot::MapBase(TrieMapBase(_, TrieBase::Space(_))) => {
                             space_slots.push(slot);
                         }
-                        MemSlot::KeyValue(key, TrieValue::Mem(value)) => match value {
-                            MemValue::U32(value) => {
-                                unimplemented!()
-                            }
-                            MemValue::MapBase(_) => {
-                                unimplemented!()
-                            }
-                        },
+                        MemSlot::KeyValue(key, TrieValue::Mem(value)) => {
+                            let space_value = match value {
+                                MemValue::U32(value) => {
+                                    let space_addr = extend.add_value(Value::U32(value));
+                                    TrieValue::Space(space_addr)
+                                }
+                                MemValue::MapBase(_) => {
+                                    unimplemented!()
+                                }
+                            };
+                            space_slots.push(MemSlot::KeyValue(key, space_value));
+                        }
                         MemSlot::MapBase(TrieMapBase(_, TrieBase::Mem(_))) => {
                             unimplemented!()
                         }

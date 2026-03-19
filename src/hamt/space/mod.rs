@@ -27,12 +27,15 @@ pub enum ReadError {
     #[error("Invalid addr {0}")]
     InvalidAddr(Addr),
 
+    #[error("Invalid value addr {0}")]
+    InvalidValueAddr(ValueAddr),
+
     #[error("Invalid val {0}")]
     InvalidVal(Val),
 }
 
 pub trait Read {
-    fn read_value(&self, addr: Addr) -> Result<Value, ReadError>;
+    fn read_value(&self, addr: ValueAddr) -> Result<Value, ReadError>;
     fn read_item(&self, addr: Addr) -> Result<&TableItem, ReadError>;
 }
 

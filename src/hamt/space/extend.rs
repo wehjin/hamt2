@@ -3,7 +3,7 @@ use crate::hamt::space::addr::Addr;
 use crate::hamt::space::core::{TableItem, TablePos, Val};
 use crate::hamt::space::mem::MemSpace;
 use crate::hamt::space::seg::Seg;
-use crate::hamt::space::{ExtendError, Read, ReadError};
+use crate::hamt::space::{ExtendError, Read, ReadError, ValueAddr};
 
 pub struct Extend {
     seg: Seg,
@@ -19,10 +19,10 @@ impl Extend {
             table: Vec::new(),
         }
     }
-    pub fn add_value(&mut self, value: Value) -> Addr {
+    pub fn add_value(&mut self, value: Value) -> ValueAddr {
         let val = Val(self.values.len() as u16);
         self.values.push(value);
-        Addr::Value(self.seg, val)
+        ValueAddr(self.seg, val)
     }
     pub fn add_items(&mut self, items: Vec<TableItem>) -> Addr {
         let pos = TablePos(self.table.len() as u32);
@@ -37,10 +37,8 @@ impl Extend {
 }
 
 impl Read for Extend {
-    fn read_value(&self, addr: Addr) -> Result<Value, ReadError> {
-        let Addr::Value(seg, val) = addr else {
-            return Err(ReadError::InvalidAddr(addr));
-        };
+    fn read_value(&self, addr: ValueAddr) -> Result<Value, ReadError> {
+        let ValueAddr(seg, val) = addr;
         if seg == self.seg {
             Ok(self.values[val.0 as usize].clone())
         } else {
