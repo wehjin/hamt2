@@ -31,11 +31,11 @@ impl TrieBase {
     }
 
     pub fn new() -> Self {
-        TrieBase::Mem(MemBase::empty())
+        TrieBase::Mem(MemBase::new())
     }
 
     pub fn new_kv(key: TrieKey, value: TrieValue) -> Result<Self, TransactError> {
-        Ok(TrieBase::Mem(MemBase::one_kv(key, value)?))
+        Ok(TrieBase::Mem(MemBase::new_kv(key, value)?))
     }
 
     pub fn new_slot(slot: MemSlot) -> Result<Self, TransactError> {

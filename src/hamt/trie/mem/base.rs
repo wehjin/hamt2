@@ -1,8 +1,8 @@
 use crate::client::{QueryError, TransactError};
 use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::map_base::TrieMapBase;
-use crate::hamt::trie::mem::slot::MemSlot;
 use crate::hamt::trie::core::value::TrieValue;
+use crate::hamt::trie::mem::slot::MemSlot;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct MemBase {
@@ -13,15 +13,15 @@ impl MemBase {
     pub fn len(&self) -> usize {
         self.slots.len()
     }
-    pub fn empty() -> Self {
+    pub fn new() -> Self {
         Self { slots: vec![] }
     }
-    pub fn one_mb(map_base: TrieMapBase) -> Result<Self, TransactError> {
+    pub fn new_mb(map_base: TrieMapBase) -> Result<Self, TransactError> {
         let slot = MemSlot::MapBase(map_base);
         let slots = vec![slot];
         Ok(Self { slots })
     }
-    pub fn one_kv(key: TrieKey, value: TrieValue) -> Result<Self, TransactError> {
+    pub fn new_kv(key: TrieKey, value: TrieValue) -> Result<Self, TransactError> {
         let slot = MemSlot::one_kv(key, value)?;
         let slots = vec![slot];
         Ok(Self { slots })
