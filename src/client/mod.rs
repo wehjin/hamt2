@@ -100,6 +100,9 @@ pub enum QueryError {
 
     #[error("BaseIndexOutOfBounds: {0}")]
     BaseIndexOutOfBounds(usize),
+
+    #[error("ExpectedMapBaseAtKey: {0}")]
+    NoSubtrieAtKeyIndex(usize),
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -124,6 +127,9 @@ pub enum TransactError {
 
     #[error("SlotUnoccupied")]
     SlotEmpty,
+
+    #[error("ExpectedMapBaseAtKey")]
+    ExpectedMapBaseAtKey,
 }
 
 #[derive(thiserror::Error, Debug)]

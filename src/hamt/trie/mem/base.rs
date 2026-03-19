@@ -10,6 +10,12 @@ pub struct MemBase {
 }
 
 impl MemBase {
+    pub fn len(&self) -> usize {
+        self.slots.len()
+    }
+    pub fn empty() -> Self {
+        Self { slots: vec![] }
+    }
     pub fn one_mb(map_base: TrieMapBase) -> Result<Self, TransactError> {
         let slot = MemSlot::MapBase(map_base);
         let slots = vec![slot];

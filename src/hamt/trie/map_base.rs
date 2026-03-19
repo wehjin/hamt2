@@ -12,6 +12,13 @@ pub struct TrieMapBase {
 }
 
 impl TrieMapBase {
+    pub fn empty() -> Self {
+        Self {
+            map: TrieMap::empty(),
+            base: MemBase::empty(),
+        }
+    }
+
     pub fn one_kv(key: TrieKey, value: TrieValue) -> Result<Self, TransactError> {
         let map = TrieMap::set_key_bit(key);
         let base = MemBase::one_kv(key, value)?;

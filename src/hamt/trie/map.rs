@@ -14,6 +14,12 @@ impl fmt::Debug for TrieMap {
 }
 
 impl TrieMap {
+    pub fn len(&self) -> usize {
+        self.0.count_ones() as usize
+    }
+    pub fn empty() -> Self {
+        Self(0)
+    }
     pub fn set_key_bit(key: TrieKey) -> Self {
         let map = key.to_map_bit();
         Self(map)
