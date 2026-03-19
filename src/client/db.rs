@@ -1,4 +1,4 @@
-use crate::base::{Ent, Tx};
+use crate::core::{Ent, Tx};
 use crate::client::{QueryError, TransactError};
 use iroh_blobs::api::Store;
 use iroh_docs::api::Doc;

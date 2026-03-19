@@ -1,4 +1,4 @@
-pub mod base;
+pub mod core;
 pub mod client;
 pub mod db;
 pub mod hamt;
@@ -6,7 +6,7 @@ pub mod reader;
 
 #[cfg(test)]
 mod tests {
-    use crate::base::{Attr, Datom, Ent, Tx, Val};
+    use crate::core::{Attr, Datom, Ent, Tx, Val};
     use crate::client::Client;
 
     #[tokio::test]

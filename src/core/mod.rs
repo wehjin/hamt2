@@ -2,6 +2,8 @@ use crate::client::QueryError;
 use crate::reader::Reader;
 use serde::{Deserialize, Serialize};
 
+pub mod value;
+
 pub enum Datom {
     Add(Ent, Attr, Val),
     Id(Ent, Vec<(Attr, Val)>),

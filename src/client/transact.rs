@@ -1,4 +1,4 @@
-use crate::base::{Attr, Datom, Ent, Tx, Val};
+use crate::core::{Attr, Datom, Ent, Tx, Val};
 use crate::client::db::Db;
 use crate::client::values::DATOM_ADDED;
 use crate::client::{keys, TransactError};

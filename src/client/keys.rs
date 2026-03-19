@@ -1,4 +1,4 @@
-use crate::base::{Attr, Ent, Tx, Val};
+use crate::core::{Attr, Ent, Tx, Val};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {

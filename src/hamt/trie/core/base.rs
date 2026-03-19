@@ -1,14 +1,47 @@
 use crate::client::{QueryError, TransactError};
 use crate::hamt::space;
 use crate::hamt::trie::core::key::TrieKey;
+use crate::hamt::trie::core::map_base::TrieMapBase;
 use crate::hamt::trie::core::value::TrieValue;
 use crate::hamt::trie::mem::base::MemBase;
 use crate::hamt::trie::mem::slot::MemSlot;
+use crate::hamt::trie::mem::value::MemValue;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum TrieBase {
     Mem(MemBase),
     Space(space::TableAddr),
+}
+
+impl TrieBase {
+    pub fn write(self, extend: &mut space::Extend) -> Result<Self, TransactError> {
+        match self {
+            TrieBase::Space(_) => Ok(self),
+            TrieBase::Mem(base) => {
+                let mut space_slots = vec![];
+                for slot in base.slots {
+                    match slot {
+                        MemSlot::KeyValue(_, TrieValue::Space(_))
+                        | MemSlot::MapBase(TrieMapBase(_, TrieBase::Space(_))) => {
+                            space_slots.push(slot);
+                        }
+                        MemSlot::KeyValue(key, TrieValue::Mem(value)) => match value {
+                            MemValue::U32(value) => {
+                                unimplemented!()
+                            }
+                            MemValue::MapBase(_) => {
+                                unimplemented!()
+                            }
+                        },
+                        MemSlot::MapBase(TrieMapBase(_, TrieBase::Mem(_))) => {
+                            unimplemented!()
+                        }
+                    }
+                }
+                unimplemented!()
+            }
+        }
+    }
 }
 
 impl TrieBase {

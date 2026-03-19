@@ -1,9 +1,10 @@
+use crate::core::value::Value;
 use crate::hamt::space::core::{TableItem, TablePos, Val};
 use crate::hamt::space::extend::Extend;
 use crate::hamt::space::reader::Reader;
 use crate::hamt::space::seg::Seg;
 use crate::hamt::space::{ExtendError, ReadError};
-use crate::hamt::trie::mem::value::MemValue;
+
 use std::rc::Rc;
 
 pub struct MemSpace {
@@ -24,7 +25,7 @@ impl MemSpace {
     pub fn add_segment(
         &mut self,
         seg: Seg,
-        values: Vec<MemValue>,
+        values: Vec<Value>,
         table: Vec<TableItem>,
     ) -> Result<(), ExtendError> {
         if seg != Seg(self.segments.len() as u32) {
@@ -42,12 +43,12 @@ impl MemSpace {
 }
 
 pub struct MemSegment {
-    values: Vec<MemValue>,
+    values: Vec<Value>,
     table: Vec<TableItem>,
 }
 
 impl MemSegment {
-    pub fn read_value(&self, val: Val) -> Result<MemValue, ReadError> {
+    pub fn read_value(&self, val: Val) -> Result<Value, ReadError> {
         let value = self
             .values
             .get(val.0 as usize)

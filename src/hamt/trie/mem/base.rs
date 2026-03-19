@@ -1,6 +1,4 @@
 use crate::client::{QueryError, TransactError};
-use crate::hamt::space;
-use crate::hamt::trie::core::base::TrieBase;
 use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::map_base::TrieMapBase;
 use crate::hamt::trie::core::value::TrieValue;
@@ -9,27 +7,6 @@ use crate::hamt::trie::mem::slot::MemSlot;
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct MemBase {
     pub slots: Vec<MemSlot>,
-}
-
-impl MemBase {
-    pub fn write(self, extend: &mut space::Extend) -> Result<space::TableAddr, TransactError> {
-        let mut space_slots = vec![];
-        for slot in self.slots {
-            match slot {
-                MemSlot::KeyValue(_, TrieValue::Space(_))
-                | MemSlot::MapBase(TrieMapBase(_, TrieBase::Space(_))) => {
-                    space_slots.push(slot);
-                }
-                MemSlot::KeyValue(key, TrieValue::Mem(value)) => {
-                    unimplemented!()
-                }
-                MemSlot::MapBase(TrieMapBase(_, TrieBase::Mem(_))) => {
-                    unimplemented!()
-                }
-            }
-        }
-        unimplemented!()
-    }
 }
 
 impl MemBase {

@@ -1,4 +1,4 @@
-use crate::base::{Attr, Ent, Val};
+use crate::core::{Attr, Ent, Val};
 use crate::client::db::Db;
 use crate::client::keys::{eavt_ea_key, val_from_eavt_full_key};
 use crate::client::values::DATOM_ADDED;
