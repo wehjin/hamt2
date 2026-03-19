@@ -1,9 +1,9 @@
 use crate::client::{QueryError, TransactError};
-use crate::hamt::trie::key::TrieKey;
-use crate::hamt::trie::map::TrieMap;
+use crate::hamt::trie::core::key::TrieKey;
+use crate::hamt::trie::core::map::TrieMap;
 use crate::hamt::trie::mem::base::MemBase;
 use crate::hamt::trie::mem::slot::{KvTest, MemSlot};
-use crate::hamt::trie::value::TrieValue;
+use crate::hamt::trie::core::value::TrieValue;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct TrieMapBase {

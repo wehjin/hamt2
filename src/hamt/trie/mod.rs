@@ -1,11 +1,6 @@
 pub mod core;
-pub mod deep_key;
-pub mod key;
-pub mod map;
-pub mod map_base;
 pub mod mem;
 pub mod space;
-pub mod value;
 
 #[cfg(test)]
 mod tests {

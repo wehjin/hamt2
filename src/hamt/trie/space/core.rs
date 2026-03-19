@@ -1,8 +1,8 @@
 use crate::client::{QueryError, TransactError};
 use crate::hamt::space;
 use crate::hamt::space::core::TableItem;
-use crate::hamt::trie::key::TrieKey;
-use crate::hamt::trie::map::TrieMap;
+use crate::hamt::trie::core::key::TrieKey;
+use crate::hamt::trie::core::map::TrieMap;
 
 pub struct SpaceMapBase(TrieMap, SpaceBase);
 

@@ -1,9 +1,9 @@
 use crate::client::{QueryError, TransactError};
-use crate::hamt::trie::deep_key::DeepKey;
-use crate::hamt::trie::key::TrieKey;
-use crate::hamt::trie::map_base::TrieMapBase;
+use crate::hamt::trie::core::deep_key::DeepKey;
+use crate::hamt::trie::core::key::TrieKey;
+use crate::hamt::trie::core::map_base::TrieMapBase;
 use crate::hamt::trie::mem::value::MemValue;
-use crate::hamt::trie::value::TrieValue;
+use crate::hamt::trie::core::value::TrieValue;
 use std::collections::HashMap;
 
 pub mod core;

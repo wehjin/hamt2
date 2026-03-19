@@ -1,4 +1,4 @@
-use crate::hamt::trie::key::TrieKey;
+use crate::hamt::trie::core::key::TrieKey;
 use std::ops::Index;
 
 pub struct DeepKey<const N: usize> {

@@ -1,4 +1,4 @@
-use crate::hamt::trie::map_base::TrieMapBase;
+use crate::hamt::trie::core::map_base::TrieMapBase;
 use std::fmt::{Debug, Formatter};
 
 #[derive(Clone, Eq, PartialEq)]
