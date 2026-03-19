@@ -1,5 +1,5 @@
 use crate::client::{QueryError, TransactError};
-use crate::hamt::space::Addr;
+use crate::hamt::space;
 use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::value::TrieValue;
 use crate::hamt::trie::mem::base::MemBase;
@@ -8,7 +8,7 @@ use crate::hamt::trie::mem::slot::MemSlot;
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum TrieBase {
     Mem(MemBase),
-    Space(Addr),
+    Space(space::TableAddr),
 }
 
 impl TrieBase {

@@ -1,8 +1,10 @@
+use crate::hamt::space;
 use crate::hamt::trie::mem::value::MemValue;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TrieValue {
     Mem(MemValue),
+    Space(space::ValueAddr),
 }
 
 impl TrieValue {

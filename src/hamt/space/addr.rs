@@ -21,3 +21,9 @@ impl std::fmt::Display for Addr {
         f.debug_struct("Addr").finish()
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct ValueAddr(pub Seg, pub Val);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct TableAddr(pub Seg, pub TablePos);

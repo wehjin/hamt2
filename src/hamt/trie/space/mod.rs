@@ -2,8 +2,8 @@ use crate::client::{QueryError, TransactError};
 use crate::hamt::trie::core::deep_key::DeepKey;
 use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::map_base::TrieMapBase;
-use crate::hamt::trie::mem::value::MemValue;
 use crate::hamt::trie::core::value::TrieValue;
+use crate::hamt::trie::mem::value::MemValue;
 use std::collections::HashMap;
 
 pub mod core;
@@ -29,11 +29,15 @@ impl SpaceTrie {
 
     pub fn query_value(&self, key: i32) -> Result<Option<MemValue>, QueryError> {
         let key = TrieKey::new(key);
-        let value = self
-            .map_base
-            .query_value(key)?
-            .map(|TrieValue::Mem(value)| value);
-        Ok(value)
+        match self.map_base.query_value(key)? {
+            None => Ok(None),
+            Some(value) => match value {
+                TrieValue::Mem(value) => Ok(Some(value)),
+                TrieValue::Space(_) => {
+                    unimplemented!()
+                }
+            },
+        }
     }
 
     pub fn deep_insert<const N: usize>(
@@ -60,6 +64,9 @@ impl SpaceTrie {
                         map_bases.insert(i + 1, map_base);
                     }
                 },
+                Some(TrieValue::Space(_)) => {
+                    unimplemented!()
+                }
             }
         }
         let mut value = TrieValue::Mem(value);
@@ -88,6 +95,9 @@ impl SpaceTrie {
         let last_index = N - 1;
         for i in 0..=last_index {
             match current_map_base.query_value(deep_key[i].clone())? {
+                None => {
+                    return Ok(None);
+                }
                 Some(TrieValue::Mem(value)) => {
                     if i == last_index {
                         return Ok(Some(value));
@@ -98,8 +108,8 @@ impl SpaceTrie {
                         current_map_base = map_base;
                     }
                 }
-                None => {
-                    return Ok(None);
+                Some(TrieValue::Space(_)) => {
+                    unimplemented!()
                 }
             }
         }
