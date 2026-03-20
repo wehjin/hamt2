@@ -27,10 +27,12 @@ mod tests {
         {
             let trie = SpaceTrie::connect(&space).unwrap();
             assert_eq!(Some(MemValue::U32(42)), trie.query_value(-1).unwrap());
-            assert_eq!(
-                Some(MemValue::U32(2)),
-                trie.deep_query_value([3, 2]).unwrap()
-            );
+            for a in 0..=32 {
+                assert_eq!(
+                    Some(MemValue::U32(a as u32)),
+                    trie.deep_query_value([3, a]).unwrap()
+                );
+            }
         }
         // Deep insert values to saturate root blocks in deep tries.
         {
@@ -49,7 +51,13 @@ mod tests {
             for a in 32..=64 {
                 trie = trie.deep_insert([3, a], MemValue::U32(a as u32)).unwrap();
             }
-            //TODO: Test the post-commit deep_inserts
+            // Test post-commit insertions.
+            for a in 0..=64 {
+                assert_eq!(
+                    Some(MemValue::U32(a as u32)),
+                    trie.deep_query_value([3, a]).unwrap()
+                );
+            }
         }
     }
 
