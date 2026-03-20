@@ -1,5 +1,5 @@
-use crate::core::Datom;
 use crate::client::transact::Transact;
+use crate::core::Datom;
 use crate::reader::Reader;
 use iroh::endpoint::BindError;
 use iroh::protocol::Router;
@@ -103,6 +103,9 @@ pub enum QueryError {
 
     #[error("ExpectedMapBaseAtKey: {0}")]
     NoSubtrieAtKeyIndex(usize),
+
+    #[error("NoRootInReader")]
+    NoRootInReader,
 }
 
 #[derive(thiserror::Error, Debug)]

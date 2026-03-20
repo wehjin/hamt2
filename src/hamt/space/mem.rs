@@ -1,12 +1,14 @@
 use crate::core::value::Value;
-use crate::hamt::space::core::{TableItem, TablePos, Val};
+use crate::hamt::space::core::{TablePos, TableRoot, Val};
 use crate::hamt::space::extend::Extend;
 use crate::hamt::space::reader::Reader;
 use crate::hamt::space::seg::Seg;
 use crate::hamt::space::{ExtendError, ReadError};
 
+use crate::hamt::trie::mem::slot::MemSlot;
 use std::rc::Rc;
 
+#[derive(Debug)]
 pub struct MemSpace {
     segments: Vec<Rc<MemSegment>>,
 }
@@ -26,12 +28,17 @@ impl MemSpace {
         &mut self,
         seg: Seg,
         values: Vec<Value>,
-        table: Vec<TableItem>,
+        table: Vec<MemSlot>,
+        root: Option<TableRoot>,
     ) -> Result<(), ExtendError> {
         if seg != Seg(self.segments.len() as u32) {
             return Err(ExtendError::SegConflict(seg));
         }
-        let segment = MemSegment { values, table };
+        let segment = MemSegment {
+            values,
+            table,
+            root,
+        };
         self.segments.push(Rc::new(segment));
         Ok(())
     }
@@ -42,9 +49,11 @@ impl MemSpace {
     }
 }
 
+#[derive(Debug)]
 pub struct MemSegment {
     values: Vec<Value>,
-    table: Vec<TableItem>,
+    table: Vec<MemSlot>,
+    root: Option<TableRoot>,
 }
 
 impl MemSegment {
@@ -56,7 +65,11 @@ impl MemSegment {
         Ok(value.clone())
     }
 
-    pub fn read_item(&self, pos: TablePos) -> Result<&TableItem, ReadError> {
-        Ok(&self.table[pos.0 as usize])
+    pub fn read_slot(&self, pos: &TablePos, offset: usize) -> Result<&MemSlot, ReadError> {
+        Ok(&self.table[pos.0 as usize + offset])
+    }
+
+    pub fn read_root(&self) -> Result<&Option<TableRoot>, ReadError> {
+        Ok(&self.root)
     }
 }

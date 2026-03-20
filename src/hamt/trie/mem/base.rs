@@ -1,4 +1,5 @@
 use crate::client::{QueryError, TransactError};
+use crate::hamt::space;
 use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::map_base::TrieMapBase;
 use crate::hamt::trie::core::value::TrieValue;
@@ -48,10 +49,11 @@ impl MemBase {
         base_index: usize,
         key: TrieKey,
         value: TrieValue,
+        reader: &impl space::Read,
     ) -> Result<Self, TransactError> {
         let MemBase { mut slots } = self;
         let slot = slots.remove(base_index);
-        let slot = slot.merge_kv(key, value)?;
+        let slot = slot.merge_kv(key, value, reader)?;
         slots.insert(base_index, slot);
         Ok(Self { slots })
     }

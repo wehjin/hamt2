@@ -1,5 +1,5 @@
+use crate::hamt::space::{TableAddr, ValueAddr};
 use std::ops::Add;
-use crate::hamt::space::Addr;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Val(pub u16);
@@ -25,4 +25,11 @@ impl Add<usize> for TablePos {
     }
 }
 
-pub struct TableItem(pub u32, pub Addr);
+#[derive(Debug)]
+pub enum TableItem {
+    KeyValue(i32, ValueAddr),
+    MapBase(u32, TableAddr),
+}
+
+#[derive(Debug)]
+pub struct TableRoot(pub u32, pub TableAddr);

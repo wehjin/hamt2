@@ -13,8 +13,9 @@ pub use reader::Reader;
 pub mod core;
 pub mod seg;
 
-use crate::hamt::space::core::{TableItem, Val};
+use crate::hamt::space::core::{TableRoot, Val};
 use crate::hamt::space::seg::Seg;
+use crate::hamt::trie::mem::slot::MemSlot;
 
 #[derive(Error, Debug)]
 pub enum ExtendError {
@@ -36,7 +37,8 @@ pub enum ReadError {
 
 pub trait Read {
     fn read_value(&self, addr: ValueAddr) -> Result<Value, ReadError>;
-    fn read_item(&self, addr: TableAddr) -> Result<&TableItem, ReadError>;
+    fn read_slot(&self, addr: &TableAddr, offset: usize) -> Result<&MemSlot, ReadError>;
+    fn read_root(&self) -> Result<&Option<TableRoot>, ReadError>;
 }
 
 #[cfg(test)]

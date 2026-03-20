@@ -8,20 +8,15 @@ pub enum Addr {
     Table(TableAddr),
 }
 
-impl Addr {
-    pub fn offset_table(self, offset: usize) -> Self {
-        match self {
-            Addr::Value(_) => {
-                panic!("Cannot offset a non-table address")
-            }
-            Addr::Table(table_addr) => Addr::Table(table_addr.offset(offset)),
-        }
+impl fmt::Display for Addr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Addr").finish()
     }
 }
 
-impl std::fmt::Display for Addr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Addr").finish()
+impl From<TableAddr> for Addr {
+    fn from(addr: TableAddr) -> Self {
+        Addr::Table(addr)
     }
 }
 
@@ -46,12 +41,5 @@ impl fmt::Display for TableAddr {
             .field("seg", &self.0)
             .field("pos", &self.1)
             .finish()
-    }
-}
-
-impl TableAddr {
-    pub fn offset(self, offset: usize) -> Self {
-        let TableAddr(seg, pos) = self;
-        TableAddr(seg, pos + offset)
     }
 }
