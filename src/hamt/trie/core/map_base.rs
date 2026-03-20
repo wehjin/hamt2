@@ -93,7 +93,7 @@ impl TrieMapBase {
     ) -> Result<Self, TransactError> {
         let TrieMapBase(map, base) = self;
         let base_index = key.to_base_index(map);
-        let base = base.merge_kv(base_index, key, value, reader)?;
+        let base = base.merge_kv(&map, base_index, key, value, reader)?;
         Ok(Self(map, base))
     }
 

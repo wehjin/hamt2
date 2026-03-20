@@ -134,17 +134,14 @@ impl TrieBase {
 
     pub fn merge_kv(
         self,
+        map: &TrieMap,
         base_index: usize,
         key: TrieKey,
         value: TrieValue,
         reader: &impl space::Read,
     ) -> Result<Self, TransactError> {
-        match self {
-            TrieBase::Space(_) => unimplemented!(),
-            TrieBase::Mem(base) => {
-                let base = MemBase::merge_kv(base, base_index, key, value, reader)?;
-                Ok(TrieBase::Mem(base))
-            }
-        }
+        let pre_base = self.into_mem_base(map, reader)?;
+        let post_base = MemBase::merge_kv(pre_base, base_index, key, value, reader)?;
+        Ok(TrieBase::Mem(post_base))
     }
 }

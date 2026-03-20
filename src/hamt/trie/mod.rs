@@ -16,7 +16,9 @@ mod tests {
         {
             let mut trie = SpaceTrie::connect(&space).unwrap();
             trie = trie.insert(-1, MemValue::U32(42)).unwrap();
-            trie = trie.deep_insert([4, 2], MemValue::U32(42)).unwrap();
+            for a in 0..=32 {
+                trie = trie.deep_insert([3, a], MemValue::U32(a as u32)).unwrap();
+            }
             let mut extend = space.extend().unwrap();
             trie.save(&mut extend).unwrap();
             extend.commit(&mut space).unwrap();
@@ -24,23 +26,28 @@ mod tests {
         // Test commited values.
         {
             let trie = SpaceTrie::connect(&space).unwrap();
-            let value = trie.query_value(-1).unwrap();
-            let deep_value = trie.deep_query_value([4, 2]).unwrap();
-            assert_eq!(Some(MemValue::U32(42)), value);
-            assert_eq!(Some(MemValue::U32(42)), deep_value);
+            assert_eq!(Some(MemValue::U32(42)), trie.query_value(-1).unwrap());
+            assert_eq!(
+                Some(MemValue::U32(2)),
+                trie.deep_query_value([3, 2]).unwrap()
+            );
         }
         // Deep insert values to saturate root blocks in deep tries.
         {
             let mut trie = SpaceTrie::connect(&space).unwrap();
             // Use at least 33 keys so that the root blook in the first trie is saturated.
-            for i in 0..=35 {
+            for i in 0..35 {
                 let e = 5 + i;
                 trie = trie.deep_insert([e, 0], MemValue::U32(e as u32)).unwrap();
             }
             // Use at least 33 keys so that the root block in the second trie is saturated.
-            for i in 0..=35 {
+            for i in 0..35 {
                 let a = 3 + i;
                 trie = trie.deep_insert([4, a], MemValue::U32(a as u32)).unwrap();
+            }
+            // 3.x should be saturated.  So adding more should trigger at least on hybrid merge.
+            for a in 32..=64 {
+                trie = trie.deep_insert([3, a], MemValue::U32(a as u32)).unwrap();
             }
             //TODO: Test the post-commit deep_inserts
         }
