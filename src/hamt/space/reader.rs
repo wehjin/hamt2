@@ -21,7 +21,7 @@ impl Read for Reader {
     fn read_slot(&self, addr: &TableAddr, offset: usize) -> Result<&MemSlot, ReadError> {
         let TableAddr(seg, pos) = addr;
         let segment = &self.segments[seg.0 as usize];
-        let item = segment.read_slot(pos, offset)?;
+        let item = segment.read_slot(pos, offset);
         Ok(item)
     }
 

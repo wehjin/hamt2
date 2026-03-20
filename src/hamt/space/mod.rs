@@ -13,7 +13,7 @@ pub use reader::Reader;
 pub mod core;
 pub mod seg;
 
-use crate::hamt::space::core::{TableRoot, Val};
+use crate::hamt::space::core::{TablePos, TableRoot, Val};
 use crate::hamt::space::seg::Seg;
 use crate::hamt::trie::mem::slot::MemSlot;
 
@@ -27,6 +27,9 @@ pub enum ExtendError {
 pub enum ReadError {
     #[error("Invalid table addr {0}")]
     InvalidTableAddr(TableAddr),
+
+    #[error("TablePos {0} with offset {1} exceeded the segment's length {2}")]
+    TablePosWithOffsetExceedsSegmentLen(TablePos, usize, usize),
 
     #[error("Invalid value addr {0}")]
     InvalidValueAddr(ValueAddr),

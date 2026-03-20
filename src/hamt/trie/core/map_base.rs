@@ -60,17 +60,14 @@ impl TrieMapBase {
         let map_base = match self.as_slot(key, reader)? {
             Some(slot) => match slot.test_kv(&key, &value) {
                 KvTest::SameValue => self,
-                KvTest::ConflictOldValue => self.replace_existing_value(key, value)?,
+                KvTest::ConflictOldValue => self.replace_existing_value(key, value, reader)?,
                 KvTest::ConflictKeyValue => self.merge_kv(key, value, reader)?,
                 KvTest::ConflictMapBase => self.merge_kv(key, value, reader)?,
             },
             None => {
                 let TrieMapBase(map, base) = self;
+                let base = base.insert_kv(&map, key, value, reader)?;
                 let map = map.with_key(key);
-                let Some(base_index) = map.to_base_index(key) else {
-                    return Err(TransactError::SlotEmpty);
-                };
-                let base = base.insert_kv(base_index, key, value)?;
                 Self(map, base)
             }
         };
@@ -80,10 +77,11 @@ impl TrieMapBase {
         self,
         key: TrieKey,
         value: TrieValue,
+        reader: &impl space::Read,
     ) -> Result<Self, TransactError> {
         let TrieMapBase(map, base) = self;
         let base_index = key.to_base_index(map);
-        let base = base.replace_value(base_index, value)?;
+        let base = base.replace_value(&map, base_index, value, reader)?;
         Ok(Self(map, base))
     }
 

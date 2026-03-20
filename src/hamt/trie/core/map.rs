@@ -14,7 +14,7 @@ impl fmt::Debug for TrieMap {
 }
 
 impl TrieMap {
-    pub fn len(&self) -> usize {
+    pub fn slot_count(&self) -> usize {
         self.0.count_ones() as usize
     }
     pub fn empty() -> Self {
@@ -37,11 +37,16 @@ impl TrieMap {
     pub fn is_present(&self, key: TrieKey) -> bool {
         (key.to_map_bit() & self.0) != 0
     }
+
+    pub fn count_left(&self, key: TrieKey) -> usize {
+        let map_index = key.map_index();
+        let mask = !(0xFFFFFFFFu32 >> map_index);
+        let left_count = u32::count_ones(mask & self.0) as usize;
+        left_count
+    }
     pub fn to_base_index(&self, key: TrieKey) -> Option<usize> {
         if self.is_present(key) {
-            let map_index = key.map_index();
-            let mask = !(0xFFFFFFFFu32 >> map_index);
-            let base_index = u32::count_ones(mask & self.0) as usize;
+            let base_index = self.count_left(key);
             Some(base_index)
         } else {
             None

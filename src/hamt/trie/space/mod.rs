@@ -19,7 +19,7 @@ pub struct SpaceTrie {
 impl SpaceTrie {
     pub fn save(self, extend: &mut space::Extend) -> Result<(), TransactError> {
         let TrieMapBase(map, base) = self.map_base;
-        let table_addr = base.save(extend)?;
+        let table_addr = base.write(extend)?;
         let table_item = TableRoot(map.0, table_addr);
         extend.set_root(table_item);
         Ok(())
@@ -78,16 +78,14 @@ impl SpaceTrie {
                 None => {
                     map_bases.insert(i + 1, TrieMapBase::empty());
                 }
-                Some(TrieValue::Mem(value)) => match value {
-                    MemValue::U32(_) => {
+                Some(value) => {
+                    let mem_value = value
+                        .to_mem_value(&self.reader)
+                        .map_err(|e| TransactError::SpaceReadError(e))?;
+                    let MemValue::MapBase(map_base) = mem_value else {
                         return Err(TransactError::ExpectedMapBaseAtKey);
-                    }
-                    MemValue::MapBase(map_base) => {
-                        map_bases.insert(i + 1, map_base);
-                    }
-                },
-                Some(TrieValue::Space(_)) => {
-                    unimplemented!()
+                    };
+                    map_bases.insert(i + 1, map_base);
                 }
             }
         }

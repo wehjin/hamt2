@@ -1,5 +1,6 @@
 use crate::client::transact::Transact;
 use crate::core::Datom;
+use crate::hamt::space;
 use crate::reader::Reader;
 use iroh::endpoint::BindError;
 use iroh::protocol::Router;
@@ -133,6 +134,9 @@ pub enum TransactError {
 
     #[error("ExpectedMapBaseAtKey")]
     ExpectedMapBaseAtKey,
+
+    #[error("SpaceReadError: {0}")]
+    SpaceReadError(#[from] space::ReadError),
 }
 
 #[derive(thiserror::Error, Debug)]

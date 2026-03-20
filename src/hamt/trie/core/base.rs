@@ -3,6 +3,7 @@ use crate::core::value::Value;
 use crate::hamt::space;
 use crate::hamt::space::TableAddr;
 use crate::hamt::trie::core::key::TrieKey;
+use crate::hamt::trie::core::map::TrieMap;
 use crate::hamt::trie::core::map_base::TrieMapBase;
 use crate::hamt::trie::core::value::TrieValue;
 use crate::hamt::trie::mem::base::MemBase;
@@ -16,7 +17,7 @@ pub enum TrieBase {
 }
 
 impl TrieBase {
-    pub fn save(self, extend: &mut space::Extend) -> Result<TableAddr, TransactError> {
+    pub fn write(self, extend: &mut space::Extend) -> Result<TableAddr, TransactError> {
         match self {
             TrieBase::Space(addr) => Ok(addr),
             TrieBase::Mem(base) => {
@@ -30,7 +31,7 @@ impl TrieBase {
                                     let value = match value {
                                         MemValue::U32(value) => Value::U32(value),
                                         MemValue::MapBase(TrieMapBase(map, base)) => {
-                                            let base_addr = base.save(extend)?;
+                                            let base_addr = base.write(extend)?;
                                             Value::MapBase(map.0, base_addr)
                                         }
                                     };
@@ -42,7 +43,7 @@ impl TrieBase {
                             items.push(item);
                         }
                         MemSlot::MapBase(TrieMapBase(map, base)) => {
-                            let base_addr = base.save(extend)?;
+                            let base_addr = base.write(extend)?;
                             let item =
                                 MemSlot::MapBase(TrieMapBase(map, TrieBase::Space(base_addr)));
                             items.push(item);
@@ -53,6 +54,18 @@ impl TrieBase {
                 Ok(base_addr)
             }
         }
+    }
+
+    pub fn into_mem_base(
+        self,
+        map: &TrieMap,
+        reader: &impl space::Read,
+    ) -> Result<MemBase, TransactError> {
+        let base = match self {
+            TrieBase::Mem(base) => base,
+            TrieBase::Space(base_addr) => MemBase::load(&base_addr, map.slot_count(), reader)?,
+        };
+        Ok(base)
     }
 }
 
@@ -95,27 +108,28 @@ impl TrieBase {
 
     pub fn insert_kv(
         self,
-        base_index: usize,
+        map: &TrieMap,
         key: TrieKey,
         value: TrieValue,
+        reader: &impl space::Read,
     ) -> Result<Self, TransactError> {
-        match self {
-            TrieBase::Space(_) => unimplemented!(),
-            TrieBase::Mem(mem) => {
-                let base = MemBase::insert_kv(mem, base_index, key, value)?;
-                Ok(TrieBase::Mem(base))
-            }
-        }
+        assert_eq!(false, map.is_present(key));
+        let base_index = map.count_left(key);
+        let pre_base = self.into_mem_base(map, reader)?;
+        let post_base = pre_base.insert_kv(base_index, key, value)?;
+        Ok(TrieBase::Mem(post_base))
     }
 
-    pub fn replace_value(self, base_index: usize, value: TrieValue) -> Result<Self, TransactError> {
-        match self {
-            TrieBase::Space(_) => unimplemented!(),
-            TrieBase::Mem(base) => {
-                let base = MemBase::replace_value(base, base_index, value)?;
-                Ok(TrieBase::Mem(base))
-            }
-        }
+    pub fn replace_value(
+        self,
+        map: &TrieMap,
+        base_index: usize,
+        value: TrieValue,
+        reader: &impl space::Read,
+    ) -> Result<Self, TransactError> {
+        let pre_base = self.into_mem_base(map, reader)?;
+        let post_base = MemBase::replace_value(pre_base, base_index, value)?;
+        Ok(TrieBase::Mem(post_base))
     }
 
     pub fn merge_kv(

@@ -1,5 +1,6 @@
 use crate::client::{QueryError, TransactError};
 use crate::hamt::space;
+use crate::hamt::space::TableAddr;
 use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::map_base::TrieMapBase;
 use crate::hamt::trie::core::value::TrieValue;
@@ -11,8 +12,17 @@ pub struct MemBase {
 }
 
 impl MemBase {
-    pub fn len(&self) -> usize {
-        self.slots.len()
+    pub fn load(
+        addr: &TableAddr,
+        count: usize,
+        reader: &impl space::Read,
+    ) -> Result<Self, space::ReadError> {
+        let mut slots = Vec::with_capacity(count);
+        for i in 0..count {
+            let slot = reader.read_slot(addr, i)?;
+            slots.push(slot.clone());
+        }
+        Ok(Self { slots })
     }
     pub fn new() -> Self {
         Self { slots: vec![] }
@@ -26,6 +36,12 @@ impl MemBase {
         let slot = MemSlot::one_kv(key, value)?;
         let slots = vec![slot];
         Ok(Self { slots })
+    }
+}
+
+impl MemBase {
+    pub fn len(&self) -> usize {
+        self.slots.len()
     }
     pub fn insert_kv(
         self,

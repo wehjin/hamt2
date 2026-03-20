@@ -12,24 +12,37 @@ mod tests {
     #[tokio::test]
     async fn persistence_works() {
         let mut space = MemSpace::new();
+        // Commit some values.
         {
+            let mut trie = SpaceTrie::connect(&space).unwrap();
+            trie = trie.insert(-1, MemValue::U32(42)).unwrap();
+            trie = trie.deep_insert([4, 2], MemValue::U32(42)).unwrap();
             let mut extend = space.extend().unwrap();
-            SpaceTrie::connect(&space)
-                .unwrap()
-                .insert(-1, MemValue::U32(42))
-                .unwrap()
-                .deep_insert([4, 2], MemValue::U32(42))
-                .unwrap()
-                .save(&mut extend)
-                .unwrap();
+            trie.save(&mut extend).unwrap();
             extend.commit(&mut space).unwrap();
         }
+        // Test commited values.
         {
             let trie = SpaceTrie::connect(&space).unwrap();
             let value = trie.query_value(-1).unwrap();
             let deep_value = trie.deep_query_value([4, 2]).unwrap();
             assert_eq!(Some(MemValue::U32(42)), value);
             assert_eq!(Some(MemValue::U32(42)), deep_value);
+        }
+        // Deep insert values to saturate root blocks in deep tries.
+        {
+            let mut trie = SpaceTrie::connect(&space).unwrap();
+            // Use at least 33 keys so that the root blook in the first trie is saturated.
+            for i in 0..=35 {
+                let e = 5 + i;
+                trie = trie.deep_insert([e, 0], MemValue::U32(e as u32)).unwrap();
+            }
+            // Use at least 33 keys so that the root block in the second trie is saturated.
+            for i in 0..=35 {
+                let a = 3 + i;
+                trie = trie.deep_insert([4, a], MemValue::U32(a as u32)).unwrap();
+            }
+            //TODO: Test the post-commit deep_inserts
         }
     }
 
@@ -72,21 +85,21 @@ mod tests {
     #[tokio::test]
     async fn deep_insert_and_query_works() {
         let space = MemSpace::new();
-        let trie = SpaceTrie::connect(&space)
-            .unwrap()
-            .deep_insert([4, 2], MemValue::U32(42))
-            .unwrap();
+        let mut trie = SpaceTrie::connect(&space).unwrap();
+        for e in 0..=33 {
+            trie = trie.deep_insert([e, e], MemValue::U32(e as u32)).unwrap();
+        }
         {
             let value = trie.deep_query_value([4]).unwrap();
             let Some(MemValue::MapBase(map_base)) = value else {
                 panic!("expected map_base");
             };
-            assert_eq!(1, map_base.map().len());
+            assert_eq!(1, map_base.map().slot_count());
             assert_eq!(1, map_base.base().len());
         }
         {
-            let value = trie.deep_query_value([4, 2]).unwrap();
-            assert_eq!(Some(MemValue::U32(42)), value);
+            let value = trie.deep_query_value([4, 4]).unwrap();
+            assert_eq!(Some(MemValue::U32(4)), value);
         }
         {
             let value = trie.deep_query_value([4, 1]).unwrap();
@@ -97,7 +110,7 @@ mod tests {
             assert_eq!(None, value);
         }
         {
-            let result = trie.deep_query_value([4, 2, -1]);
+            let result = trie.deep_query_value([4, 4, -1]);
             let Err(QueryError::NoSubtrieAtKeyIndex(1)) = result else {
                 panic!("expected NoSubtrieAtKeyIndex(1)")
             };

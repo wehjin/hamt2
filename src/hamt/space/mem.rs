@@ -65,8 +65,10 @@ impl MemSegment {
         Ok(value.clone())
     }
 
-    pub fn read_slot(&self, pos: &TablePos, offset: usize) -> Result<&MemSlot, ReadError> {
-        Ok(&self.table[pos.0 as usize + offset])
+    pub fn read_slot(&self, pos: &TablePos, offset: usize) -> &MemSlot {
+        let index = pos.0 as usize + offset;
+        assert!(index < self.table.len());
+        &self.table[index]
     }
 
     pub fn read_root(&self) -> Result<&Option<TableRoot>, ReadError> {
