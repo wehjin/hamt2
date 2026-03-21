@@ -53,19 +53,13 @@ impl Extend {
 impl Read for Extend {
     fn read_value(&self, addr: ValueAddr) -> Result<Value, ReadError> {
         let ValueAddr(seg, val) = addr;
-        if seg == self.seg {
-            Ok(self.values[val.0 as usize].clone())
-        } else {
-            unimplemented!()
-        }
+        debug_assert_eq!(seg, self.seg);
+        Ok(self.values[val.0 as usize].clone())
     }
     fn read_slot(&self, addr: &TableAddr, offset: usize) -> Result<&MemSlot, ReadError> {
         let TableAddr(seg, pos) = addr;
-        if *seg == self.seg {
-            Ok(&self.table[pos.0 as usize + offset])
-        } else {
-            unimplemented!()
-        }
+        debug_assert_eq!(seg, &self.seg);
+        Ok(&self.table[pos.0 as usize + offset])
     }
     fn read_root(&self) -> Result<&Option<TableRoot>, ReadError> {
         Ok(&self.root)
