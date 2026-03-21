@@ -4,12 +4,12 @@ pub mod space;
 
 #[cfg(test)]
 mod tests {
-	use crate::client::QueryError;
-	use crate::hamt::space::mem::MemSpace;
-	use crate::hamt::trie::mem::value::MemValue;
-	use crate::hamt::trie::space::SpaceTrie;
+    use crate::client::QueryError;
+    use crate::hamt::space::mem::MemSpace;
+    use crate::hamt::trie::mem::value::MemValue;
+    use crate::hamt::trie::space::SpaceTrie;
 
-	#[tokio::test]
+    #[tokio::test]
     async fn multiple_commits_work() {
         let mut space = MemSpace::new();
         // Commit once.
@@ -135,7 +135,6 @@ mod tests {
                 panic!("expected map_base");
             };
             assert_eq!(1, map_base.map().slot_count());
-            assert_eq!(1, map_base.base().len());
         }
         {
             let value = trie.deep_query_value([4, 4]).unwrap();

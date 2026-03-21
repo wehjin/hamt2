@@ -70,15 +70,6 @@ impl TrieBase {
 }
 
 impl TrieBase {
-    pub fn len(&self) -> usize {
-        match self {
-            Self::Mem(mem) => mem.len(),
-            TrieBase::Space(_) => {
-                unimplemented!();
-            }
-        }
-    }
-
     pub fn as_slot<'a>(
         &'a self,
         base_index: usize,
