@@ -1,7 +1,6 @@
+use crate::error::TransactError;
 use crate::iroh_db::client::transact::Transact;
 use crate::iroh_db::core::Datom;
-use crate::hamt::space;
-use crate::hamt::space::seg::Seg;
 use crate::iroh_db::reader::Reader;
 use iroh::endpoint::BindError;
 use iroh::protocol::Router;
@@ -108,39 +107,6 @@ pub enum QueryError {
 
     #[error("NoRootInReader")]
     NoRootInReader,
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum TransactError {
-    #[error("Anyhow: {0}")]
-    Anyhow(#[from] anyhow::Error),
-
-    #[error("SerdeJson: {0}")]
-    SerdeJson(#[from] serde_json::Error),
-
-    #[error("Query: {0}")]
-    Query(#[from] QueryError),
-
-    #[error("HighBitInValue: {0}")]
-    HighBitInValue(u32),
-
-    #[error("InvalidSlotType")]
-    InvalidSlotType,
-
-    #[error("SlotOccupied")]
-    SlotOccupied,
-
-    #[error("SlotUnoccupied")]
-    SlotEmpty,
-
-    #[error("ExpectedMapBaseAtKey")]
-    ExpectedMapBaseAtKey,
-
-    #[error("SpaceReadError: {0}")]
-    SpaceReadError(#[from] space::ReadError),
-
-    #[error("Segment {0} already exists")]
-    SegConflict(Seg),
 }
 
 #[derive(thiserror::Error, Debug)]

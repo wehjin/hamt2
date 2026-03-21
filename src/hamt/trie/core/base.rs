@@ -1,4 +1,5 @@
-use crate::iroh_db::client::{QueryError, TransactError};
+use crate::error::TransactError;
+use crate::iroh_db::client::QueryError;
 use crate::hamt::space::value::Value;
 use crate::hamt::space;
 use crate::hamt::space::TableAddr;
