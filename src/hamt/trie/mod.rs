@@ -10,6 +10,20 @@ mod tests {
     use crate::QueryError;
 
     #[tokio::test]
+    async fn query_key_values_works() {
+        let space = MemSpace::new();
+        let mut trie = SpaceTrie::connect(&space).expect("connect");
+        trie = trie.insert(1, MemValue::U32(1)).expect("insert");
+        trie = trie.insert(2, MemValue::U32(2)).expect("insert");
+        let mut key_values = trie.query_key_values().expect("all_keys_values");
+        key_values.sort();
+        assert_eq!(
+            vec![(1, MemValue::U32(1)), (2, MemValue::U32(2))],
+            key_values
+        );
+    }
+
+    #[tokio::test]
     async fn multiple_commits_work() {
         let mut space = MemSpace::new();
         // Commit once.

@@ -5,10 +5,11 @@ use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::map::TrieMap;
 use crate::hamt::trie::core::value::TrieValue;
 use crate::hamt::trie::mem::slot::{KvTest, MemSlot};
+use crate::hamt::trie::mem::value::MemValue;
 use crate::QueryError;
 use crate::TransactError;
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct TrieMapBase(pub TrieMap, pub TrieBase);
 
 impl From<&TableRoot> for TrieMapBase {
@@ -97,7 +98,22 @@ impl TrieMapBase {
         let base = base.merge_kv(&map, base_index, key, value, reader)?;
         Ok(Self(map, base))
     }
+}
 
+impl TrieMapBase {
+    pub fn query_key_values(
+        &self,
+        reader: &impl space::Read,
+    ) -> Result<Vec<(i32, MemValue)>, QueryError> {
+        let mut result = Vec::new();
+        let slot_count = self.map().slot_count();
+        for base_index in 0..slot_count {
+            let slot = self.base().as_slot(base_index, reader)?;
+            let keys_values = slot.query_key_values(reader)?;
+            result.extend(keys_values);
+        }
+        Ok(result)
+    }
     pub fn as_slot<'a>(
         &'a self,
         key: TrieKey,

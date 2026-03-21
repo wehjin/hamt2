@@ -1,7 +1,7 @@
 use crate::hamt::trie::core::map_base::TrieMapBase;
 use std::fmt::{Debug, Formatter};
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub enum MemValue {
     U32(u32),
     MapBase(TrieMapBase),

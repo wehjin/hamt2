@@ -17,14 +17,18 @@ mod tests {
             let max_tx = db.max_tx().expect("max_tx");
             assert_eq!(max_tx, Txid::FLOOR);
         }
-
         let db = db
-            .transact(vec![Datom::Add(Ent(15), attr, Val::U32(15))])
+            .transact(vec![
+                Datom::Add(Ent(15), attr, Val::U32(15)),
+                Datom::Add(Ent(5), attr, Val::U32(5)),
+            ])
             .expect("transact");
         {
             let max_tx = db.max_tx().expect("max_tx");
-            let value = db.pull(Ent(15), attr).expect("pull");
-            assert_eq!(value, Some(Val::U32(15)));
+            let value15 = db.find_val(Ent(15), attr).expect("pull");
+            let value5 = db.find_val(Ent(5), attr).expect("pull");
+            assert_eq!(value15, Some(Val::U32(15)));
+            assert_eq!(value5, Some(Val::U32(5)));
             assert_eq!(max_tx, Txid::FLOOR + 1);
         }
     }

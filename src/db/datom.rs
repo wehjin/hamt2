@@ -1,3 +1,4 @@
+use crate::hamt::trie::mem::value::MemValue;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
 pub enum Datom {
@@ -15,6 +16,9 @@ impl From<i32> for Ent {
 
 impl Ent {
     pub fn i32(&self) -> i32 {
+        self.0
+    }
+    pub fn to_id(&self) -> i32 {
         self.0
     }
 }
@@ -38,11 +42,24 @@ impl Attr {
     pub fn to_ent(&self) -> Ent {
         self.1
     }
+
+    pub fn to_id(&self) -> i32 {
+        self.1.i32()
+    }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Val {
     U32(u32),
+}
+
+impl From<MemValue> for Val {
+    fn from(value: MemValue) -> Self {
+        match value {
+            MemValue::U32(v) => Val::U32(v),
+            MemValue::MapBase(_) => unreachable!(),
+        }
+    }
 }
 
 impl From<u32> for Val {

@@ -7,7 +7,7 @@ use crate::hamt::trie::mem::slot::MemSlot;
 use crate::QueryError;
 use crate::TransactError;
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct MemBase {
     pub slots: Vec<MemSlot>,
 }

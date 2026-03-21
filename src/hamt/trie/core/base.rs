@@ -11,7 +11,7 @@ use crate::hamt::trie::mem::value::MemValue;
 use crate::QueryError;
 use crate::TransactError;
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub enum TrieBase {
     Mem(MemBase),
     Space(TableAddr),

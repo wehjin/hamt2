@@ -5,7 +5,7 @@ use crate::hamt::space::{Read, ReadError, TableAddr, ValueAddr};
 use crate::hamt::trie::mem::slot::MemSlot;
 use std::rc::Rc;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Reader {
     segments: Vec<Rc<MemSegment>>,
 }

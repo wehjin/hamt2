@@ -1,6 +1,6 @@
 use crate::hamt::trie::core::map::TrieMap;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd)]
 pub struct TrieKey {
     value: i32,
     level: u32,

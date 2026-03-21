@@ -2,10 +2,11 @@ use crate::hamt::space;
 use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::map_base::TrieMapBase;
 use crate::hamt::trie::core::value::TrieValue;
+use crate::hamt::trie::mem::value::MemValue;
 use crate::QueryError;
 use crate::TransactError;
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub enum MemSlot {
     KeyValue(TrieKey, TrieValue),
     MapBase(TrieMapBase),
@@ -56,6 +57,15 @@ impl MemSlot {
                 let slot = MemSlot::MapBase(map_base);
                 Ok(slot)
             }
+        }
+    }
+    pub fn query_key_values(
+        &self,
+        reader: &impl space::Read,
+    ) -> Result<Vec<(i32, MemValue)>, QueryError> {
+        match self {
+            MemSlot::KeyValue(key, value) => Ok(vec![(key.i32(), value.to_mem_value(reader)?)]),
+            MemSlot::MapBase(map_base) => map_base.query_key_values(reader),
         }
     }
     pub fn query_value<'a>(

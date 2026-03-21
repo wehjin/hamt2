@@ -18,17 +18,6 @@ pub struct SpaceTrie {
 }
 
 impl SpaceTrie {
-    pub fn commit(self, space: &mut MemSpace) -> Result<(), TransactError> {
-        let TrieMapBase(map, base) = self.map_base;
-        let mut extend = space.extend();
-        {
-            let table_addr = base.write(&mut extend)?;
-            let table_item = TableRoot(map.0, table_addr);
-            extend.set_root(table_item);
-        }
-        extend.commit(space)
-    }
-
     pub fn connect(space: &MemSpace) -> Result<Self, QueryError> {
         let reader = space.read()?;
         let map_base = match reader.read_root()? {
@@ -40,6 +29,28 @@ impl SpaceTrie {
         };
         let trie = Self { map_base, reader };
         Ok(trie)
+    }
+
+    pub fn commit(self, space: &mut MemSpace) -> Result<(), TransactError> {
+        let TrieMapBase(map, base) = self.map_base;
+        let mut extend = space.extend();
+        {
+            let table_addr = base.write(&mut extend)?;
+            let table_item = TableRoot(map.0, table_addr);
+            extend.set_root(table_item);
+        }
+        extend.commit(space)
+    }
+
+    pub fn to_subtrie(&self, map_base: TrieMapBase) -> Self {
+        Self {
+            map_base,
+            reader: self.reader.clone(),
+        }
+    }
+
+    pub fn query_key_values(&self) -> Result<Vec<(i32, MemValue)>, QueryError> {
+        self.map_base.query_key_values(&self.reader)
     }
 }
 
@@ -64,7 +75,9 @@ impl SpaceTrie {
             }
         }
     }
+}
 
+impl SpaceTrie {
     pub fn deep_insert<const N: usize>(
         self,
         key: [i32; N],

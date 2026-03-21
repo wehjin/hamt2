@@ -5,7 +5,7 @@ use crate::hamt::trie::core::map::TrieMap;
 use crate::hamt::trie::core::map_base::TrieMapBase;
 use crate::hamt::trie::mem::value::MemValue;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub enum TrieValue {
     Mem(MemValue),
     Space(space::ValueAddr),
