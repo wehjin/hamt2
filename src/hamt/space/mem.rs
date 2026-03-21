@@ -6,7 +6,7 @@ use crate::hamt::space::seg::Seg;
 use crate::hamt::space::ReadError;
 use std::cell::RefCell;
 
-use crate::client::TransactError;
+use crate::iroh_db::client::TransactError;
 use crate::hamt::trie::mem::slot::MemSlot;
 use std::rc::Rc;
 use crate::hamt::space::table::{TablePos, TableRoot};

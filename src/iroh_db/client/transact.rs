@@ -1,7 +1,7 @@
-use crate::core::{Attr, Datom, Ent, Tx, Val};
-use crate::client::db::Db;
-use crate::client::values::DATOM_ADDED;
-use crate::client::{keys, TransactError};
+use crate::iroh_db::core::{Attr, Datom, Ent, Tx, Val};
+use crate::iroh_db::client::db::Db;
+use crate::iroh_db::client::values::DATOM_ADDED;
+use crate::iroh_db::client::{keys, TransactError};
 use iroh_blobs::api::Store;
 use iroh_docs::api::Doc;
 use iroh_docs::AuthorId;

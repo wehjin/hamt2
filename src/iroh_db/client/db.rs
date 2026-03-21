@@ -1,5 +1,5 @@
-use crate::core::{Ent, Tx};
-use crate::client::{QueryError, TransactError};
+use crate::iroh_db::core::{Ent, Tx};
+use crate::iroh_db::client::{QueryError, TransactError};
 use iroh_blobs::api::Store;
 use iroh_docs::api::Doc;
 use iroh_docs::store::Query;

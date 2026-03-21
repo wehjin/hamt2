@@ -1,8 +1,8 @@
-use crate::client::transact::Transact;
-use crate::core::Datom;
+use crate::iroh_db::client::transact::Transact;
+use crate::iroh_db::core::Datom;
 use crate::hamt::space;
 use crate::hamt::space::seg::Seg;
-use crate::reader::Reader;
+use crate::iroh_db::reader::Reader;
 use iroh::endpoint::BindError;
 use iroh::protocol::Router;
 use iroh::Endpoint;

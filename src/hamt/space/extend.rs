@@ -1,4 +1,4 @@
-use crate::client::TransactError;
+use crate::iroh_db::client::TransactError;
 use crate::hamt::space::value::Value;
 use crate::hamt::space::value::Val;
 use crate::hamt::space::mem::MemSpace;

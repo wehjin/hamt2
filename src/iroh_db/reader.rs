@@ -1,8 +1,8 @@
-use crate::core::{Attr, Ent, Val};
-use crate::client::db::Db;
-use crate::client::keys::{eavt_ea_key, val_from_eavt_full_key};
-use crate::client::values::DATOM_ADDED;
-use crate::client::QueryError;
+use crate::iroh_db::core::{Attr, Ent, Val};
+use crate::iroh_db::client::db::Db;
+use crate::iroh_db::client::keys::{eavt_ea_key, val_from_eavt_full_key};
+use crate::iroh_db::client::values::DATOM_ADDED;
+use crate::iroh_db::client::QueryError;
 use iroh_blobs::api::Store;
 use iroh_docs::api::Doc;
 use iroh_docs::store::Query;

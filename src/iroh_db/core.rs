@@ -1,5 +1,5 @@
-use crate::client::QueryError;
-use crate::reader::Reader;
+use crate::iroh_db::client::QueryError;
+use crate::iroh_db::reader::Reader;
 use serde::{Deserialize, Serialize};
 
 pub enum Datom {

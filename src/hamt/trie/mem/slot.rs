@@ -1,4 +1,4 @@
-use crate::client::{QueryError, TransactError};
+use crate::iroh_db::client::{QueryError, TransactError};
 use crate::hamt::space;
 use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::map_base::TrieMapBase;
