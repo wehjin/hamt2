@@ -1,9 +1,9 @@
-use crate::error::TransactError;
-use crate::iroh_db::client::QueryError;
 use crate::hamt::space;
 use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::map_base::TrieMapBase;
 use crate::hamt::trie::core::value::TrieValue;
+use crate::QueryError;
+use crate::TransactError;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum MemSlot {
@@ -58,7 +58,11 @@ impl MemSlot {
             }
         }
     }
-    pub fn query_value<'a>(&self, key: TrieKey, reader: &impl space::Read) -> Result<Option<TrieValue>, QueryError> {
+    pub fn query_value<'a>(
+        &self,
+        key: TrieKey,
+        reader: &impl space::Read,
+    ) -> Result<Option<TrieValue>, QueryError> {
         match self {
             MemSlot::KeyValue(k, v) => {
                 if k.i32() != key.i32() {

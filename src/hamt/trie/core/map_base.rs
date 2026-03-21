@@ -1,5 +1,3 @@
-use crate::error::TransactError;
-use crate::iroh_db::client::QueryError;
 use crate::hamt::space;
 use crate::hamt::space::table::TableRoot;
 use crate::hamt::trie::core::base::TrieBase;
@@ -7,6 +5,8 @@ use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::map::TrieMap;
 use crate::hamt::trie::core::value::TrieValue;
 use crate::hamt::trie::mem::slot::{KvTest, MemSlot};
+use crate::QueryError;
+use crate::TransactError;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct TrieMapBase(pub TrieMap, pub TrieBase);

@@ -1,11 +1,11 @@
-use crate::iroh_db::core::{Attr, Datom, Ent, Tx, Val};
 use crate::iroh_db::client::db::Db;
-use crate::iroh_db::client::values::DATOM_ADDED;
 use crate::iroh_db::client::keys;
+use crate::iroh_db::client::values::DATOM_ADDED;
+use crate::iroh_db::core::{Attr, Datom, Ent, Tx, Val};
+use crate::TransactError;
 use iroh_blobs::api::Store;
 use iroh_docs::api::Doc;
 use iroh_docs::AuthorId;
-use crate::error::TransactError;
 
 pub struct Transact<'a> {
     doc: &'a Doc,

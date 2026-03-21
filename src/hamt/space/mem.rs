@@ -1,15 +1,15 @@
-use crate::hamt::space::value::Value;
-use crate::hamt::space::value::Val;
 use crate::hamt::space::extend::Extend;
 use crate::hamt::space::reader::Reader;
 use crate::hamt::space::seg::Seg;
+use crate::hamt::space::value::Val;
+use crate::hamt::space::value::Value;
 use crate::hamt::space::ReadError;
 use std::cell::RefCell;
 
-use crate::error::TransactError;
-use crate::hamt::trie::mem::slot::MemSlot;
-use std::rc::Rc;
 use crate::hamt::space::table::{TablePos, TableRoot};
+use crate::hamt::trie::mem::slot::MemSlot;
+use crate::TransactError;
+use std::rc::Rc;
 
 #[derive(Debug)]
 pub struct MemSpace {

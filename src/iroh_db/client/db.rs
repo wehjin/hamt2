@@ -1,12 +1,12 @@
 use crate::iroh_db::core::{Ent, Tx};
-use crate::iroh_db::client::QueryError;
+use crate::QueryError;
+use crate::TransactError;
 use iroh_blobs::api::Store;
 use iroh_docs::api::Doc;
 use iroh_docs::store::Query;
 use iroh_docs::AuthorId;
 use serde::{Deserialize, Serialize};
 use tokio::io::AsyncReadExt;
-use crate::error::TransactError;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Db {

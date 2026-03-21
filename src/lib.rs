@@ -1,4 +1,6 @@
 pub mod db;
+mod error;
 pub mod hamt;
 pub mod iroh_db;
-pub mod error;
+
+pub use error::*;

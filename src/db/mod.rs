@@ -1,4 +1,7 @@
 use crate::hamt::space::mem::MemSpace;
+use crate::hamt::trie::space::SpaceTrie;
+use crate::QueryError;
+use crate::TransactError;
 
 pub mod txid;
 
@@ -11,18 +14,23 @@ impl Db {
         Self { space }
     }
 
-    pub fn transact(self, datoms: impl AsRef<[Datom]>) -> Self {
-        let Db { space } = self;
-        let datoms = datoms.as_ref();
+    pub fn transact(self, datoms: Vec<Datom>) -> Result<Self, TransactError> {
+        let Self { space } = self;
+        let mut trie = SpaceTrie::connect(&space)?;
         for datom in datoms {
-            match datom {
-                Datom::Add(e, a, v) => {
-                    println!("{:?} {:?} {:?}", e, a, v);
-                }
+            trie = match datom {
+                Datom::Add(e, a, v) => transact_add(trie, e, a, v)?,
             }
         }
-        Self { space }
+        Ok(Self { space })
     }
+    pub fn query(&self, e: Ent, a: Attr) -> Result<Option<Val>, QueryError> {
+        Ok(None)
+    }
+}
+
+fn transact_add(trie: SpaceTrie, e: Ent, a: Attr, v: Val) -> Result<SpaceTrie, TransactError> {
+    Ok(trie)
 }
 
 pub enum Datom {

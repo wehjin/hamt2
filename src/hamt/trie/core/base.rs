@@ -1,7 +1,5 @@
-use crate::error::TransactError;
-use crate::iroh_db::client::QueryError;
-use crate::hamt::space::value::Value;
 use crate::hamt::space;
+use crate::hamt::space::value::Value;
 use crate::hamt::space::TableAddr;
 use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::map::TrieMap;
@@ -10,6 +8,8 @@ use crate::hamt::trie::core::value::TrieValue;
 use crate::hamt::trie::mem::base::MemBase;
 use crate::hamt::trie::mem::slot::MemSlot;
 use crate::hamt::trie::mem::value::MemValue;
+use crate::QueryError;
+use crate::TransactError;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum TrieBase {

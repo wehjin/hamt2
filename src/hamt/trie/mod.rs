@@ -4,10 +4,10 @@ pub mod space;
 
 #[cfg(test)]
 mod tests {
-    use crate::iroh_db::client::QueryError;
     use crate::hamt::space::mem::MemSpace;
     use crate::hamt::trie::mem::value::MemValue;
     use crate::hamt::trie::space::SpaceTrie;
+    use crate::QueryError;
 
     #[tokio::test]
     async fn multiple_commits_work() {

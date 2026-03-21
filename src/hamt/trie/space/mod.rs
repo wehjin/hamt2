@@ -1,15 +1,15 @@
-use crate::iroh_db::client::QueryError;
 use crate::hamt::space;
-use crate::hamt::space::table::TableRoot;
 use crate::hamt::space::mem::MemSpace;
+use crate::hamt::space::table::TableRoot;
 use crate::hamt::space::Read;
 use crate::hamt::trie::core::deep_key::DeepKey;
 use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::map_base::TrieMapBase;
 use crate::hamt::trie::core::value::TrieValue;
 use crate::hamt::trie::mem::value::MemValue;
+use crate::QueryError;
+use crate::TransactError;
 use std::collections::HashMap;
-use crate::error::TransactError;
 
 #[derive(Debug)]
 pub struct SpaceTrie {

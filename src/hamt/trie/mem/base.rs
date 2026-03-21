@@ -1,11 +1,11 @@
-use crate::error::TransactError;
-use crate::iroh_db::client::QueryError;
 use crate::hamt::space;
 use crate::hamt::space::TableAddr;
 use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::map_base::TrieMapBase;
 use crate::hamt::trie::core::value::TrieValue;
 use crate::hamt::trie::mem::slot::MemSlot;
+use crate::QueryError;
+use crate::TransactError;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct MemBase {
