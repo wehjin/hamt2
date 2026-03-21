@@ -1,5 +1,5 @@
-use crate::core::value::Value;
-use crate::hamt::space::core::{TablePos, TableRoot, Val};
+use crate::hamt::space::value::Value;
+use crate::hamt::space::value::Val;
 use crate::hamt::space::extend::Extend;
 use crate::hamt::space::reader::Reader;
 use crate::hamt::space::seg::Seg;
@@ -9,6 +9,7 @@ use std::cell::RefCell;
 use crate::client::TransactError;
 use crate::hamt::trie::mem::slot::MemSlot;
 use std::rc::Rc;
+use crate::hamt::space::table::{TablePos, TableRoot};
 
 #[derive(Debug)]
 pub struct MemSpace {

@@ -1,5 +1,5 @@
 use crate::client::{QueryError, TransactError};
-use crate::core::value::Value;
+use crate::hamt::space::value::Value;
 use crate::hamt::space;
 use crate::hamt::space::TableAddr;
 use crate::hamt::trie::core::key::TrieKey;

@@ -5,17 +5,17 @@ impl Db {
     pub fn new() -> Self {
         Self {}
     }
-    pub fn size(&self) -> usize {
-        0
+    pub fn transact(self) -> Self {
+        self
     }
 }
 
 #[cfg(test)]
 mod tests {
-	use super::*;
-	#[tokio::test]
+    use super::*;
+    #[tokio::test]
     async fn db_works() {
         let db = Db::new();
-        assert_eq!(0, db.size());
+        db.transact();
     }
 }

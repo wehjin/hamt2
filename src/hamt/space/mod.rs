@@ -5,16 +5,17 @@ pub use extend::Extend;
 
 mod addr;
 pub use addr::*;
+pub mod value;
 pub mod mem;
 pub mod reader;
-use crate::core::value::Value;
-pub use reader::Reader;
-
-pub mod core;
 pub mod seg;
+pub mod table;
 
-use crate::hamt::space::core::{TablePos, TableRoot, Val};
+use crate::hamt::space::value::Val;
 use crate::hamt::trie::mem::slot::MemSlot;
+pub use value::Value;
+pub use reader::Reader;
+use table::{TablePos, TableRoot};
 
 #[derive(Error, Debug)]
 pub enum ReadError {
@@ -39,7 +40,7 @@ pub trait Read {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::value::Value;
+    use crate::hamt::space::value::Value;
     use crate::hamt::space::mem::MemSpace;
     use crate::hamt::space::Read;
 

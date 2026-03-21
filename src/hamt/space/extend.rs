@@ -1,9 +1,10 @@
 use crate::client::TransactError;
-use crate::core::value::Value;
-use crate::hamt::space::core::{TablePos, TableRoot, Val};
+use crate::hamt::space::value::Value;
+use crate::hamt::space::value::Val;
 use crate::hamt::space::mem::MemSpace;
 use crate::hamt::space::seg::Seg;
 use crate::hamt::space::{Read, ReadError, TableAddr, ValueAddr};
+use crate::hamt::space::table::{TablePos, TableRoot};
 use crate::hamt::trie::mem::slot::MemSlot;
 
 pub struct Extend {

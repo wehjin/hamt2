@@ -1,6 +1,7 @@
-use crate::hamt::space::core::{TablePos, Val};
+use crate::hamt::space::value::Val;
 use crate::hamt::space::seg::Seg;
 use std::fmt;
+use crate::hamt::space::table::TablePos;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Addr {

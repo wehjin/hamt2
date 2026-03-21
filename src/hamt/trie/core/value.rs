@@ -1,4 +1,4 @@
-use crate::core::value::Value;
+use crate::hamt::space::value::Value;
 use crate::hamt::space;
 use crate::hamt::trie::core::base::TrieBase;
 use crate::hamt::trie::core::map::TrieMap;

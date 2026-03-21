@@ -1,6 +1,6 @@
 use crate::client::{QueryError, TransactError};
 use crate::hamt::space;
-use crate::hamt::space::core::TableRoot;
+use crate::hamt::space::table::TableRoot;
 use crate::hamt::trie::core::base::TrieBase;
 use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::map::TrieMap;
