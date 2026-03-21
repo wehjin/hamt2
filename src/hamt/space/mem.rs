@@ -3,25 +3,37 @@ use crate::hamt::space::core::{TablePos, TableRoot, Val};
 use crate::hamt::space::extend::Extend;
 use crate::hamt::space::reader::Reader;
 use crate::hamt::space::seg::Seg;
-use crate::hamt::space::{ExtendError, ReadError};
+use crate::hamt::space::ReadError;
+use std::cell::RefCell;
 
+use crate::client::TransactError;
 use crate::hamt::trie::mem::slot::MemSlot;
 use std::rc::Rc;
 
 #[derive(Debug)]
 pub struct MemSpace {
-    segments: Vec<Rc<MemSegment>>,
+    segments: RefCell<Vec<Rc<MemSegment>>>,
 }
 impl MemSpace {
     pub fn new() -> Self {
         Self {
-            segments: Vec::new(),
+            segments: RefCell::new(Vec::new()),
         }
     }
+    pub fn max_seg(&self) -> Seg {
+        let count = self.segments.borrow().len();
+        let seq = Seg(count as u32);
+        seq
+    }
 
-    pub fn extend(&self) -> Result<Extend, ExtendError> {
-        let max_seg = Seg(self.segments.len() as u32);
-        Ok(Extend::new(max_seg))
+    pub fn read(&self) -> Result<Reader, ReadError> {
+        let segments = self.segments.borrow().clone();
+        let reader = Reader::new(segments);
+        Ok(reader)
+    }
+
+    pub fn extend(&self) -> Extend {
+        Extend::new(self.max_seg())
     }
 
     pub fn add_segment(
@@ -30,26 +42,22 @@ impl MemSpace {
         values: Vec<Value>,
         table: Vec<MemSlot>,
         root: Option<TableRoot>,
-    ) -> Result<(), ExtendError> {
-        if seg != Seg(self.segments.len() as u32) {
-            return Err(ExtendError::SegConflict(seg));
+    ) -> Result<(), TransactError> {
+        let max_seg = self.max_seg();
+        if seg != max_seg {
+            return Err(TransactError::SegConflict(seg));
         }
         let segment = MemSegment {
             values,
             table,
             root,
         };
-        self.segments.push(Rc::new(segment));
+        self.segments.borrow_mut().push(Rc::new(segment));
         Ok(())
-    }
-
-    pub fn read(&self) -> Result<Reader, ReadError> {
-        let reader = Reader::new(self.segments.clone());
-        Ok(reader)
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct MemSegment {
     values: Vec<Value>,
     table: Vec<MemSlot>,

@@ -17,26 +17,28 @@ pub struct SpaceTrie {
 }
 
 impl SpaceTrie {
-    pub fn save(self, extend: &mut space::Extend) -> Result<(), TransactError> {
+    pub fn commit(self, space: &mut MemSpace) -> Result<(), TransactError> {
         let TrieMapBase(map, base) = self.map_base;
-        let table_addr = base.write(extend)?;
-        let table_item = TableRoot(map.0, table_addr);
-        extend.set_root(table_item);
-        Ok(())
+        let mut extend = space.extend();
+        {
+            let table_addr = base.write(&mut extend)?;
+            let table_item = TableRoot(map.0, table_addr);
+            extend.set_root(table_item);
+        }
+        extend.commit(space)
     }
 
     pub fn connect(space: &MemSpace) -> Result<Self, QueryError> {
         let reader = space.read()?;
-        match reader.read_root()? {
-            None => Ok(Self {
-                map_base: TrieMapBase::empty(),
-                reader,
-            }),
+        let map_base = match reader.read_root()? {
+            None => TrieMapBase::empty(),
             Some(root) => {
                 let map_base = TrieMapBase::from(root);
-                Ok(Self { map_base, reader })
+                map_base
             }
-        }
+        };
+        let trie = Self { map_base, reader };
+        Ok(trie)
     }
 }
 

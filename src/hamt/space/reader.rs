@@ -26,7 +26,7 @@ impl Read for Reader {
     }
 
     fn read_root(&self) -> Result<&Option<TableRoot>, ReadError> {
-        let result = if let Some(segment) = self.segments.get(0) {
+        let result = if let Some(segment) = self.segments.last() {
             segment.read_root()?
         } else {
             &None

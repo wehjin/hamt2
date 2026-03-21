@@ -1,8 +1,9 @@
+use crate::client::TransactError;
 use crate::core::value::Value;
 use crate::hamt::space::core::{TablePos, TableRoot, Val};
 use crate::hamt::space::mem::MemSpace;
 use crate::hamt::space::seg::Seg;
-use crate::hamt::space::{ExtendError, Read, ReadError, TableAddr, ValueAddr};
+use crate::hamt::space::{Read, ReadError, TableAddr, ValueAddr};
 use crate::hamt::trie::mem::slot::MemSlot;
 
 pub struct Extend {
@@ -21,6 +22,18 @@ impl Extend {
             root: None,
         }
     }
+    pub fn commit(self, space: &mut MemSpace) -> Result<(), TransactError> {
+        let Extend {
+            seg,
+            values,
+            table,
+            root,
+        } = self;
+        assert_eq!(space.max_seg(), seg);
+        space.add_segment(seg, values, table, root)?;
+        Ok(())
+    }
+
     pub fn add_value(&mut self, value: Value) -> ValueAddr {
         let val = Val(self.values.len() as u16);
         self.values.push(value);
@@ -34,16 +47,6 @@ impl Extend {
     }
     pub fn set_root(&mut self, root: TableRoot) {
         self.root = Some(root);
-    }
-    pub fn commit(self, space: &mut MemSpace) -> Result<Seg, ExtendError> {
-        let Self {
-            seg,
-            values,
-            table,
-            root,
-        } = self;
-        space.add_segment(seg, values, table, root)?;
-        Ok(seg)
     }
 }
 

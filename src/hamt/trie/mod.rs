@@ -4,10 +4,37 @@ pub mod space;
 
 #[cfg(test)]
 mod tests {
-    use crate::client::QueryError;
-    use crate::hamt::space::mem::MemSpace;
-    use crate::hamt::trie::mem::value::MemValue;
-    use crate::hamt::trie::space::SpaceTrie;
+	use crate::client::QueryError;
+	use crate::hamt::space::mem::MemSpace;
+	use crate::hamt::trie::mem::value::MemValue;
+	use crate::hamt::trie::space::SpaceTrie;
+
+	#[tokio::test]
+    async fn multiple_commits_work() {
+        let mut space = MemSpace::new();
+        // Commit once.
+        {
+            let mut trie = SpaceTrie::connect(&space).unwrap();
+            trie = trie.insert(-1, MemValue::U32(42)).unwrap();
+            trie = trie.deep_insert([-2, 42], MemValue::U32(242)).unwrap();
+            trie.commit(&mut space).unwrap();
+        }
+        // Commit again.
+        {
+            let mut trie = SpaceTrie::connect(&space).unwrap();
+            trie = trie.insert(-1, MemValue::U32(84)).unwrap();
+            trie.commit(&mut space).unwrap();
+        }
+        // Query from both commits.
+        {
+            let trie = SpaceTrie::connect(&space).unwrap();
+            assert_eq!(Some(MemValue::U32(84)), trie.query_value(-1).unwrap());
+            assert_eq!(
+                Some(MemValue::U32(242)),
+                trie.deep_query_value([-2, 42]).unwrap()
+            );
+        }
+    }
 
     #[tokio::test]
     async fn persistence_works() {
@@ -19,9 +46,7 @@ mod tests {
             for a in 0..=32 {
                 trie = trie.deep_insert([3, a], MemValue::U32(a as u32)).unwrap();
             }
-            let mut extend = space.extend().unwrap();
-            trie.save(&mut extend).unwrap();
-            extend.commit(&mut space).unwrap();
+            trie.commit(&mut space).unwrap();
         }
         // Test commited values.
         {

@@ -1,6 +1,7 @@
 use crate::client::transact::Transact;
 use crate::core::Datom;
 use crate::hamt::space;
+use crate::hamt::space::seg::Seg;
 use crate::reader::Reader;
 use iroh::endpoint::BindError;
 use iroh::protocol::Router;
@@ -137,6 +138,9 @@ pub enum TransactError {
 
     #[error("SpaceReadError: {0}")]
     SpaceReadError(#[from] space::ReadError),
+
+    #[error("Segment {0} already exists")]
+    SegConflict(Seg),
 }
 
 #[derive(thiserror::Error, Debug)]
