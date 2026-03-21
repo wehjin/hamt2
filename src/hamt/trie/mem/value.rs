@@ -6,6 +6,11 @@ pub enum MemValue {
     U32(u32),
     MapBase(TrieMapBase),
 }
+impl From<u32> for MemValue {
+    fn from(v: u32) -> Self {
+        Self::U32(v)
+    }
+}
 
 impl Debug for MemValue {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
