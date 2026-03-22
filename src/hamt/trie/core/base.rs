@@ -31,6 +31,7 @@ impl TrieBase {
                                 TrieValue::Mem(value) => {
                                     let value = match value {
                                         MemValue::U32(value) => Value::U32(value),
+                                        MemValue::String(value) => Value::String(value),
                                         MemValue::MapBase(TrieMapBase(map, base)) => {
                                             let base_addr = base.write(extend)?;
                                             Value::MapBase(map.0, base_addr)

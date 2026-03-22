@@ -16,7 +16,8 @@ impl Add<u32> for Txid {
 }
 
 impl Txid {
-    pub const FLOOR: Txid = Txid(0);
+    pub(crate) const SETUP: Txid = Txid(0);
+    pub const FLOOR: Txid = Txid(1);
     pub fn u32(&self) -> u32 {
         self.0
     }

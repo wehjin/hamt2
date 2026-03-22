@@ -11,5 +11,6 @@ impl std::fmt::Display for Val {
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub enum Value {
     U32(u32),
+    String(String),
     MapBase(u32, TableAddr),
 }
