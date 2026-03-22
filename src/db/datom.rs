@@ -8,13 +8,9 @@ pub enum Datom {
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Ent(pub i32);
 
-impl From<i32> for Ent {
-    fn from(i: i32) -> Self {
-        Self(i)
-    }
-}
-
 impl Ent {
+    pub const DB_IDENT: Ent = Ent(-1);
+
     pub fn i32(&self) -> i32 {
         self.0
     }
@@ -23,13 +19,41 @@ impl Ent {
     }
 }
 
+impl From<i32> for Ent {
+    fn from(i: i32) -> Self {
+        Self(i)
+    }
+}
+
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Attr(pub &'static str);
+
+impl Attr {
+    pub const DB_IDENT: Attr = Attr("db/ident");
+    pub fn as_str(&self) -> &str {
+        self.0
+    }
+}
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Val {
     U32(u32),
     String(String),
+}
+
+impl Val {
+    pub fn u32(&self) -> u32 {
+        match self {
+            Val::U32(v) => *v,
+            Val::String(_) => panic!("Not a u32"),
+        }
+    }
+    pub fn as_str(&self) -> &str {
+        match self {
+            Val::U32(_) => panic!("Not a string"),
+            Val::String(s) => s,
+        }
+    }
 }
 
 impl From<MemValue> for Val {
@@ -51,14 +75,5 @@ impl From<u32> for Val {
 impl From<&Attr> for Val {
     fn from(a: &Attr) -> Self {
         Self::String(a.0.to_string())
-    }
-}
-
-impl Val {
-    pub fn u32(&self) -> u32 {
-        match self {
-            Val::U32(v) => *v,
-            Val::String(_) => panic!("Not a u32"),
-        }
     }
 }

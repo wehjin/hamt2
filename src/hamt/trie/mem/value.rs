@@ -12,9 +12,9 @@ impl From<u32> for MemValue {
         Self::U32(v)
     }
 }
-impl From<&str> for MemValue {
-    fn from(v: &str) -> Self {
-        Self::String(v.to_string())
+impl From<String> for MemValue {
+    fn from(v: String) -> Self {
+        Self::String(v)
     }
 }
 

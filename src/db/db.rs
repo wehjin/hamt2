@@ -1,18 +1,20 @@
 use crate::db::datom::{Attr, Datom, Ent, Val};
+use crate::db::find::EntsWithAttr;
+use crate::db::find::Rule;
+use crate::db::find::ValsWithEntAttr;
 use crate::db::txid::Txid;
 use crate::hamt::space::mem::MemSpace;
 use crate::hamt::trie::mem::value::MemValue;
 use crate::hamt::trie::space::SpaceTrie;
-use crate::{QueryError, TransactError};
+use crate::{LoadError, QueryError, TransactError};
 use std::collections::HashMap;
 
-const KEY_MAX_TXID: i32 = -1;
-const KEY_MAX_VID: i32 = -2;
-const KEY_VALS: i32 = -3;
-const KEY_EAVT: i32 = -4;
-const KEY_AEVT: i32 = -5;
-const KEY_MAX_EID: i32 = -6;
-const ATTR_DB_IDENT: i32 = -1;
+pub(crate) const KEY_MAX_TXID: i32 = -1;
+pub(crate) const KEY_MAX_VID: i32 = -2;
+pub(crate) const KEY_VALS: i32 = -3;
+pub(crate) const KEY_EAVT: i32 = -4;
+pub(crate) const KEY_AEVT: i32 = -5;
+pub(crate) const KEY_MAX_EID: i32 = -6;
 
 struct MaxEid(i32);
 impl MaxEid {
@@ -52,24 +54,21 @@ pub struct Db {
 impl Db {
     pub fn new(attrs: Vec<Attr>) -> Result<Self, TransactError> {
         let mut space = MemSpace::new();
-        let mut setup = SpaceTrie::connect(&space)?;
-
-        let (max_eid, attr_ents) = MaxEid::read(&setup)?.take(attrs.len());
-        setup = max_eid.write(setup)?;
+        let mut trie = SpaceTrie::connect(&space)?;
+        let (max_eid, attr_ents) = MaxEid::read(&trie)?.take(attrs.len());
+        trie = max_eid.write(trie)?;
         let mut attr_map = attrs
             .iter()
             .cloned()
             .zip(attr_ents)
             .collect::<HashMap<_, _>>();
-        attr_map.insert(Attr("db/ident"), Ent(ATTR_DB_IDENT));
-        for (a, e) in &attr_map {
-            let e = *e;
-            let a = *a;
-            let v = Val::from(&a);
-            setup = add(setup, &attr_map, e, a, v, &Txid::SETUP)?;
+        attr_map.insert(Attr::DB_IDENT, Ent::DB_IDENT);
+        for (at, a_ent) in &attr_map {
+            let ident = Val::from(at);
+            trie = add(trie, &attr_map, *a_ent, Attr::DB_IDENT, ident, &Txid::SETUP)?;
         }
-        setup = set_max_tx(setup, Txid::FLOOR)?;
-        setup.commit(&mut space)?;
+        trie = set_max_tx(trie, Txid::FLOOR)?;
+        trie.commit(&mut space)?;
         let db = Self {
             attr_map,
             trie: SpaceTrie::connect(&space)?,
@@ -77,19 +76,51 @@ impl Db {
         };
         Ok(db)
     }
-
-    pub fn max_tx(&self) -> Result<Txid, QueryError> {
-        let Some(MemValue::U32(value)) = self.trie.query_value(KEY_MAX_TXID)? else {
-            panic!("max_tx not found");
+    pub fn close(self) -> MemSpace {
+        self.space
+    }
+    pub fn load(space: MemSpace, attrs: Vec<Attr>) -> Result<Self, LoadError> {
+        let user_attrs: HashMap<String, Attr> = attrs
+            .into_iter()
+            .map(|attr| (attr.as_str().to_string(), attr))
+            .collect();
+        let trie = SpaceTrie::connect(&space)?;
+        let attr_map = {
+            let mut attr_map = HashMap::from([(Attr::DB_IDENT, Ent::DB_IDENT)]);
+            let ents = {
+                let mut rule = EntsWithAttr::new("e", Attr::DB_IDENT);
+                rule.update(&trie, &attr_map)?;
+                rule.results("e").to_vec()
+            };
+            for ent in ents {
+                let mut rule = ValsWithEntAttr::new("v", ent, Attr::DB_IDENT);
+                rule.update(&trie, &attr_map)?;
+                let val = rule
+                    .results("v")
+                    .first()
+                    .expect("val should exist")
+                    .as_str();
+                if let Some(user_attr) = user_attrs.get(val) {
+                    attr_map.insert(*user_attr, ent);
+                }
+            }
+            attr_map
         };
-        Ok(Txid::from(value))
+        // Confirm all requests attrs are present in the attr map.
+        for attr in user_attrs.values() {
+            if !attr_map.contains_key(attr) {
+                return Err(LoadError::UnknownAttr(*attr));
+            }
+        }
+        Ok(Self {
+            attr_map,
+            trie,
+            space,
+        })
     }
+}
 
-    pub fn max_eid(&self) -> Result<i32, QueryError> {
-        let max_eid = MaxEid::read(&self.trie)?;
-        Ok(max_eid.0)
-    }
-
+impl Db {
     pub fn transact(self, datoms: Vec<Datom>) -> Result<Self, TransactError> {
         match datoms.is_empty() {
             true => Ok(self),
@@ -115,24 +146,32 @@ impl Db {
             }
         }
     }
-    pub fn find_val(&self, e: Ent, a: Attr) -> Result<Option<Val>, QueryError> {
-        let trie = &self.trie;
-        let aid = self.attr_map.get(&a).expect("attr should exist").to_id();
-        let eavt_key = [KEY_EAVT, e.to_id(), aid];
-        let eavt_value = trie.deep_query_value(eavt_key)?;
-        let value = if let Some(MemValue::MapBase(map_base)) = eavt_value {
-            let vid = trie
-                .to_subtrie(map_base)
-                .query_key_values()?
-                .first()
-                .map(|(vid, _)| *vid)
-                .expect("vid should exist");
-            let val = val(&trie, vid)?.expect("val should exist");
-            Some(val)
-        } else {
-            None
+}
+
+impl Db {
+    pub fn max_tx(&self) -> Result<Txid, QueryError> {
+        let Some(MemValue::U32(value)) = self.trie.query_value(KEY_MAX_TXID)? else {
+            panic!("max_tx not found");
         };
-        Ok(value)
+        Ok(Txid::from(value))
+    }
+
+    pub fn max_eid(&self) -> Result<i32, QueryError> {
+        let max_eid = MaxEid::read(&self.trie)?;
+        Ok(max_eid.0)
+    }
+    pub fn find(&self, rule: &mut impl Rule) -> Result<bool, QueryError> {
+        rule.update(&self.trie, &self.attr_map)
+    }
+
+    pub fn find_val(&self, e: Ent, a: Attr) -> Result<Option<Val>, QueryError> {
+        let mut rule = ValsWithEntAttr::new("v", e, a);
+        self.find(&mut rule)?;
+        let vals = rule.results("v");
+        match vals.first() {
+            None => Ok(None),
+            Some(v) => Ok(Some(v.clone())),
+        }
     }
 }
 
@@ -159,17 +198,10 @@ fn add(
 fn add_val(mut trie: SpaceTrie, v: Val) -> Result<(i32, SpaceTrie), TransactError> {
     let vid = max_vid(&trie)?;
     let max_vid = vid + 1;
-    let value = mem_value(&v);
+    let value = mem_value(v);
     trie = trie.deep_insert([KEY_VALS, vid], value)?;
     trie = set_max_vid(trie, max_vid)?;
     Ok((vid, trie))
-}
-
-fn val(trie: &SpaceTrie, vid: i32) -> Result<Option<Val>, QueryError> {
-    match trie.deep_query_value([KEY_VALS, vid])? {
-        Some(value) => Ok(Some(Val::from(value))),
-        None => Ok(None),
-    }
 }
 
 fn set_max_vid(trie: SpaceTrie, max_vid: i32) -> Result<SpaceTrie, TransactError> {
@@ -187,9 +219,9 @@ fn set_max_tx(trie: SpaceTrie, max_tx: Txid) -> Result<SpaceTrie, TransactError>
     trie.insert(KEY_MAX_TXID, MemValue::from(max_tx.u32()))
 }
 
-fn mem_value(v: &Val) -> MemValue {
+fn mem_value(v: Val) -> MemValue {
     match v {
-        Val::U32(value) => MemValue::from(*value),
-        Val::String(value) => MemValue::from(value.as_str()),
+        Val::U32(value) => MemValue::from(value),
+        Val::String(value) => MemValue::from(value),
     }
 }
