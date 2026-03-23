@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::map_base::TrieMapBase;
 use crate::hamt::trie::core::value::TrieValue;
@@ -7,7 +8,7 @@ use crate::QueryError;
 use crate::TransactError;
 use crate::{space, ReadError};
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 pub struct MemBase {
     pub slots: Vec<MemSlot>,
 }

@@ -1,6 +1,7 @@
 use crate::space::value::Val;
 use crate::space::seg::Seg;
 use std::fmt;
+use serde::{Deserialize, Serialize};
 use crate::space::table::TablePos;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -21,7 +22,7 @@ impl From<TableAddr> for Addr {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct ValueAddr(pub Seg, pub Val);
 
 impl fmt::Display for ValueAddr {
@@ -33,7 +34,7 @@ impl fmt::Display for ValueAddr {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct TableAddr(pub Seg, pub TablePos);
 
 impl fmt::Display for TableAddr {

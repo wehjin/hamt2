@@ -1,7 +1,8 @@
 use crate::hamt::trie::core::map_base::TrieMapBase;
 use std::fmt::{Debug, Formatter};
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 pub enum MemValue {
     U32(u32),
     String(String),

@@ -1,5 +1,6 @@
-use std::ops::Add;
 use crate::space::{TableAddr, ValueAddr};
+use serde::{Deserialize, Serialize};
+use std::ops::Add;
 
 #[derive(Debug)]
 pub enum TableItem {
@@ -7,10 +8,10 @@ pub enum TableItem {
     MapBase(u32, TableAddr),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TableRoot(pub u32, pub TableAddr);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct TablePos(pub u32);
 
 impl std::fmt::Display for TablePos {

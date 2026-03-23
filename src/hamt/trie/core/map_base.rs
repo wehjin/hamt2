@@ -1,15 +1,16 @@
-use crate::space;
-use crate::space::table::TableRoot;
 use crate::hamt::trie::core::base::TrieBase;
 use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::map::TrieMap;
 use crate::hamt::trie::core::value::TrieValue;
 use crate::hamt::trie::mem::slot::{KvTest, MemSlot};
 use crate::hamt::trie::mem::value::MemValue;
+use crate::space;
+use crate::space::table::TableRoot;
 use crate::QueryError;
 use crate::TransactError;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 pub struct TrieMapBase(pub TrieMap, pub TrieBase);
 
 impl From<&TableRoot> for TrieMapBase {

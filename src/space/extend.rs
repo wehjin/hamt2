@@ -1,10 +1,10 @@
-use crate::space::Space;
 use crate::error::ReadError;
 use crate::hamt::trie::mem::slot::MemSlot;
 use crate::space::seg::Seg;
 use crate::space::table::{TablePos, TableRoot};
 use crate::space::value::Val;
 use crate::space::value::Value;
+use crate::space::Space;
 use crate::space::{Read, TableAddr, ValueAddr};
 use crate::TransactError;
 

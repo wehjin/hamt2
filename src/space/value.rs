@@ -1,5 +1,6 @@
 use crate::space::TableAddr;
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+use serde::{Deserialize, Serialize};
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct Val(pub u16);
 
 impl std::fmt::Display for Val {
@@ -8,7 +9,7 @@ impl std::fmt::Display for Val {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Ord, PartialOrd, Serialize, Deserialize)]
 pub enum Value {
     U32(u32),
     String(String),

@@ -1,14 +1,13 @@
 use crate::error::ReadError;
-use crate::space::extend::Extend;
 use crate::space::reader::Reader;
 use crate::space::seg::Seg;
 use crate::space::value::Val;
 use crate::space::value::Value;
 use std::cell::RefCell;
 
-use crate::space::Space;
 use crate::hamt::trie::mem::slot::MemSlot;
 use crate::space::table::{TablePos, TableRoot};
+use crate::space::Space;
 use crate::TransactError;
 use std::rc::Rc;
 
@@ -24,16 +23,6 @@ impl MemSpace {
     }
 }
 impl Space for MemSpace {
-    fn read(&self) -> Result<Reader, ReadError> {
-        let segments = self.segments.borrow().clone();
-        let reader = Reader::new(segments);
-        Ok(reader)
-    }
-
-    fn extend(&self) -> Extend {
-        Extend::new(self.max_seg())
-    }
-
     fn max_seg(&self) -> Seg {
         let count = self.segments.borrow().len();
         let seq = Seg(count as u32);
@@ -59,13 +48,19 @@ impl Space for MemSpace {
         self.segments.borrow_mut().push(Rc::new(segment));
         Ok(())
     }
+
+    fn read(&self) -> Result<Reader, ReadError> {
+        let segments = self.segments.borrow().clone();
+        let reader = Reader::new(segments);
+        Ok(reader)
+    }
 }
 
 #[derive(Debug, Default)]
 pub struct MemSegment {
-    values: Vec<Value>,
-    table: Vec<MemSlot>,
-    root: Option<TableRoot>,
+    pub values: Vec<Value>,
+    pub table: Vec<MemSlot>,
+    pub root: Option<TableRoot>,
 }
 
 impl MemSegment {

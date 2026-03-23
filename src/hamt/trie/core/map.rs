@@ -1,8 +1,9 @@
 use crate::hamt::trie::core::key::TrieKey;
+use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fmt::Formatter;
 
-#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 pub struct TrieMap(pub u32);
 
 impl fmt::Debug for TrieMap {

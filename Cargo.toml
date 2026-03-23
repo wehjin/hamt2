@@ -13,3 +13,6 @@ thiserror = "2.0.18"
 tokio = { version = "1", features = ["sync", "rt", "time", "io-util"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
+redb = "3.1.1"
+tempfile = "3.27.0"
+postcard = "1.1.3"
