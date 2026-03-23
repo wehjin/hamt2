@@ -33,4 +33,7 @@ pub enum TransactError {
 
     #[error("Segment {0} already exists")]
     SegConflict(Seg),
+
+    #[error("NoSpaceInValueTable")]
+    NoSpaceInValueTable,
 }

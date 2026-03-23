@@ -1,4 +1,5 @@
 use crate::hamt::trie::core::map::TrieMap;
+use crate::hash;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Serialize, Deserialize)]
@@ -73,13 +74,5 @@ fn map_index(hash: u32, hash_index: u32) -> u8 {
 
 fn hash_key(key: u32, level: u32) -> u32 {
     let key_bytes = key.to_be_bytes() as [u8; 4];
-    let level = level as u64;
-    let mut a: u128 = 31415;
-    const B: u128 = 27183;
-    let mut hash: u128 = 0;
-    for i in 0..key_bytes.len() {
-        hash = a.wrapping_mul(hash).wrapping_mul(level as u128) + key_bytes[i] as u128;
-        a = a.wrapping_mul(B);
-    }
-    hash as u32
+    hash::universal(&key_bytes, level)
 }

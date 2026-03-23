@@ -1,10 +1,12 @@
+use crate::db::component::val_table;
 use crate::db::find::Rule;
+use crate::db::key::KEY_EAVT;
+use crate::db::vid::Vid;
 use crate::db::{Attr, Ent, Val};
 use crate::hamt::trie::mem::value::MemValue;
 use crate::hamt::trie::space::SpaceTrie;
 use crate::QueryError;
 use std::collections::HashMap;
-use crate::db::key::{KEY_EAVT, KEY_VALS};
 
 pub struct ValsWithEntAttr {
     ent: Ent,
@@ -39,10 +41,7 @@ impl Rule for ValsWithEntAttr {
             let key_values = subtrie.query_key_values()?;
             let first_key_value = key_values.first();
             if let Some((vid, _)) = first_key_value {
-                let mem_val = trie
-                    .deep_query_value([KEY_VALS, *vid])?
-                    .expect("mem_val should exist for vid");
-                let val = Val::from(mem_val);
+                let val = val_table::query(&trie, Vid::from_id(*vid))?.expect("val should exist");
                 self.vals.push(val);
             }
         }

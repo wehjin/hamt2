@@ -1,9 +1,9 @@
-use crate::db::component::MaxEid;
+use crate::db::component::{val_table, MaxEid};
 use crate::db::datom::{Attr, Datom, Ent, Val};
 use crate::db::find::EntsWithAttr;
 use crate::db::find::Rule;
 use crate::db::find::ValsWithEntAttr;
-use crate::db::key::{KEY_AEVT, KEY_EAVT, KEY_MAX_TXID, KEY_MAX_VID, KEY_VALS};
+use crate::db::key::{KEY_AEVT, KEY_EAVT, KEY_MAX_TXID};
 use crate::db::txid::Txid;
 use crate::hamt::trie::mem::value::MemValue;
 use crate::hamt::trie::space::SpaceTrie;
@@ -152,43 +152,16 @@ fn add(
 ) -> Result<SpaceTrie, TransactError> {
     let eid = e.to_id();
     let aid = attr_map.get(&a).expect("attr should exist").to_id();
-    let (vid, mut trie) = add_val(trie, v)?;
+    let (mut trie, vid) = val_table::insert(trie, v)?;
     let tid = t.u32();
-    let eavt_key = [KEY_EAVT, eid, aid, vid];
-    let aevt_key = [KEY_AEVT, aid, eid, vid];
+    let eavt_key = [KEY_EAVT, eid, aid, vid.to_id()];
+    let aevt_key = [KEY_AEVT, aid, eid, vid.to_id()];
     trie = trie.deep_insert(eavt_key, MemValue::from(tid))?;
     trie = trie.deep_insert(aevt_key, MemValue::from(tid))?;
     trie = MaxEid::read(&trie)?.update(trie, eid)?;
     Ok(trie)
 }
 
-fn add_val(mut trie: SpaceTrie, v: Val) -> Result<(i32, SpaceTrie), TransactError> {
-    let vid = max_vid(&trie)?;
-    let max_vid = vid + 1;
-    let value = mem_value(v);
-    trie = trie.deep_insert([KEY_VALS, vid], value)?;
-    trie = set_max_vid(trie, max_vid)?;
-    Ok((vid, trie))
-}
-
-fn set_max_vid(trie: SpaceTrie, max_vid: i32) -> Result<SpaceTrie, TransactError> {
-    trie.insert(KEY_MAX_VID, MemValue::from(max_vid as u32))
-}
-
-fn max_vid(trie: &SpaceTrie) -> Result<i32, QueryError> {
-    if let Some(MemValue::U32(value)) = trie.query_value(KEY_MAX_VID)? {
-        Ok(value as i32)
-    } else {
-        Ok(0)
-    }
-}
 fn set_max_tx(trie: SpaceTrie, max_tx: Txid) -> Result<SpaceTrie, TransactError> {
     trie.insert(KEY_MAX_TXID, MemValue::from(max_tx.u32()))
-}
-
-fn mem_value(v: Val) -> MemValue {
-    match v {
-        Val::U32(value) => MemValue::from(value),
-        Val::String(value) => MemValue::from(value),
-    }
 }
