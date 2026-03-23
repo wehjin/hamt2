@@ -18,8 +18,7 @@ pub struct Db {
 }
 
 impl Db {
-    pub fn new(attrs: Vec<Attr>) -> Result<Self, TransactError> {
-        let mut space = MemSpace::new();
+    pub fn new(mut space: MemSpace, attrs: Vec<Attr>) -> Result<Self, TransactError> {
         let mut trie = SpaceTrie::connect(&space)?;
         let (max_eid, attr_ents) = MaxEid::read(&trie)?.take(attrs.len());
         trie = max_eid.write(trie)?;
