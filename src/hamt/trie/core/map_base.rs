@@ -1,5 +1,5 @@
-use crate::hamt::space;
-use crate::hamt::space::table::TableRoot;
+use crate::space;
+use crate::space::table::TableRoot;
 use crate::hamt::trie::core::base::TrieBase;
 use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::map::TrieMap;

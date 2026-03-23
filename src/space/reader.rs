@@ -1,7 +1,7 @@
-use crate::hamt::space::value::Value;
-use crate::hamt::space::table::TableRoot;
-use crate::hamt::space::mem::MemSegment;
-use crate::hamt::space::{Read, ReadError, TableAddr, ValueAddr};
+use crate::space::value::Value;
+use crate::space::table::TableRoot;
+use crate::space::mem::MemSegment;
+use crate::space::{Read, ReadError, TableAddr, ValueAddr};
 use crate::hamt::trie::mem::slot::MemSlot;
 use std::rc::Rc;
 

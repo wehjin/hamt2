@@ -1,4 +1,4 @@
-use crate::hamt::space::TableAddr;
+use crate::space::TableAddr;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Val(pub u16);
 

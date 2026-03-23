@@ -1,9 +1,9 @@
-use crate::hamt::space::mem::MemSpace;
-use crate::hamt::space::seg::Seg;
-use crate::hamt::space::table::{TablePos, TableRoot};
-use crate::hamt::space::value::Val;
-use crate::hamt::space::value::Value;
-use crate::hamt::space::{Read, ReadError, TableAddr, ValueAddr};
+use crate::space::mem::MemSpace;
+use crate::space::seg::Seg;
+use crate::space::table::{TablePos, TableRoot};
+use crate::space::value::Val;
+use crate::space::value::Value;
+use crate::space::{Read, ReadError, TableAddr, ValueAddr};
 use crate::hamt::trie::mem::slot::MemSlot;
 use crate::TransactError;
 

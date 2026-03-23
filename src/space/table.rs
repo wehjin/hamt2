@@ -1,5 +1,5 @@
 use std::ops::Add;
-use crate::hamt::space::{TableAddr, ValueAddr};
+use crate::space::{TableAddr, ValueAddr};
 
 #[derive(Debug)]
 pub enum TableItem {

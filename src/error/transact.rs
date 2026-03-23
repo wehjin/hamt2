@@ -1,6 +1,6 @@
 use crate::QueryError;
-use crate::hamt::space;
-use crate::hamt::space::seg::Seg;
+use crate::space;
+use crate::space::seg::Seg;
 
 #[derive(thiserror::Error, Debug)]
 pub enum TransactError {

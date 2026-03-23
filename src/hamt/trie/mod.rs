@@ -4,7 +4,7 @@ pub mod space;
 
 #[cfg(test)]
 mod tests {
-    use crate::hamt::space::mem::MemSpace;
+    use crate::space::mem::MemSpace;
     use crate::hamt::trie::mem::value::MemValue;
     use crate::hamt::trie::space::SpaceTrie;
     use crate::QueryError;

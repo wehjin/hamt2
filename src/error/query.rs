@@ -18,7 +18,7 @@ pub enum QueryError {
     Key(#[from] keys::Error),
 
     #[error("SpaceReadError: {0}")]
-    SpaceReadError(#[from] crate::hamt::space::ReadError),
+    SpaceReadError(#[from] crate::space::ReadError),
 
     #[error("NotAValue: {0}")]
     NotAValue(u32),

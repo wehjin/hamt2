@@ -3,7 +3,7 @@ use crate::db::find::EntsWithAttr;
 use crate::db::find::Rule;
 use crate::db::find::ValsWithEntAttr;
 use crate::db::txid::Txid;
-use crate::hamt::space::mem::MemSpace;
+use crate::space::mem::MemSpace;
 use crate::hamt::trie::mem::value::MemValue;
 use crate::hamt::trie::space::SpaceTrie;
 use crate::{LoadError, QueryError, TransactError};

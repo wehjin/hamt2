@@ -11,7 +11,7 @@ pub mod reader;
 pub mod seg;
 pub mod table;
 
-use crate::hamt::space::value::Val;
+use crate::space::value::Val;
 use crate::hamt::trie::mem::slot::MemSlot;
 pub use value::Value;
 pub use reader::Reader;
@@ -40,9 +40,9 @@ pub trait Read {
 
 #[cfg(test)]
 mod tests {
-    use crate::hamt::space::value::Value;
-    use crate::hamt::space::mem::MemSpace;
-    use crate::hamt::space::Read;
+    use crate::space::value::Value;
+    use crate::space::mem::MemSpace;
+    use crate::space::Read;
 
     #[tokio::test]
     async fn space_works() {

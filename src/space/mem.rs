@@ -1,12 +1,12 @@
-use crate::hamt::space::extend::Extend;
-use crate::hamt::space::reader::Reader;
-use crate::hamt::space::seg::Seg;
-use crate::hamt::space::value::Val;
-use crate::hamt::space::value::Value;
-use crate::hamt::space::ReadError;
+use crate::space::extend::Extend;
+use crate::space::reader::Reader;
+use crate::space::seg::Seg;
+use crate::space::value::Val;
+use crate::space::value::Value;
+use crate::space::ReadError;
 use std::cell::RefCell;
 
-use crate::hamt::space::table::{TablePos, TableRoot};
+use crate::space::table::{TablePos, TableRoot};
 use crate::hamt::trie::mem::slot::MemSlot;
 use crate::TransactError;
 use std::rc::Rc;
