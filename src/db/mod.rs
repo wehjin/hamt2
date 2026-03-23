@@ -1,3 +1,6 @@
+pub mod component;
+pub mod key;
+
 mod datom;
 mod db;
 pub mod find;

@@ -1,9 +1,10 @@
 use crate::db::find::Rule;
-use crate::db::{Attr, Ent, KEY_AEVT};
+use crate::db::{Attr, Ent};
 use crate::hamt::trie::mem::value::MemValue;
 use crate::hamt::trie::space::SpaceTrie;
 use crate::QueryError;
 use std::collections::HashMap;
+use crate::db::key::KEY_AEVT;
 
 pub struct EntsWithAttr {
     name: &'static str,

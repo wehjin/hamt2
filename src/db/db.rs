@@ -1,49 +1,15 @@
+use crate::db::component::MaxEid;
 use crate::db::datom::{Attr, Datom, Ent, Val};
 use crate::db::find::EntsWithAttr;
 use crate::db::find::Rule;
 use crate::db::find::ValsWithEntAttr;
+use crate::db::key::{KEY_AEVT, KEY_EAVT, KEY_MAX_TXID, KEY_MAX_VID, KEY_VALS};
 use crate::db::txid::Txid;
-use crate::space::mem::MemSpace;
 use crate::hamt::trie::mem::value::MemValue;
 use crate::hamt::trie::space::SpaceTrie;
+use crate::space::mem::MemSpace;
 use crate::{LoadError, QueryError, TransactError};
 use std::collections::HashMap;
-
-pub(crate) const KEY_MAX_TXID: i32 = -1;
-pub(crate) const KEY_MAX_VID: i32 = -2;
-pub(crate) const KEY_VALS: i32 = -3;
-pub(crate) const KEY_EAVT: i32 = -4;
-pub(crate) const KEY_AEVT: i32 = -5;
-pub(crate) const KEY_MAX_EID: i32 = -6;
-
-struct MaxEid(i32);
-impl MaxEid {
-    fn take(self, count: usize) -> (Self, Vec<Ent>) {
-        let Self(start) = self;
-        let end = start + count as i32;
-        let ids = (start..end).map(Ent).collect();
-        (Self(end), ids)
-    }
-    fn update(mut self, trie: SpaceTrie, eid: i32) -> Result<SpaceTrie, TransactError> {
-        if eid < self.0 {
-            Ok(trie)
-        } else {
-            self.0 = eid + 1;
-            self.write(trie)
-        }
-    }
-    fn write(self, trie: SpaceTrie) -> Result<SpaceTrie, TransactError> {
-        let trie = trie.insert(KEY_MAX_EID, MemValue::from(self.0 as u32))?;
-        Ok(trie)
-    }
-    fn read(trie: &SpaceTrie) -> Result<Self, QueryError> {
-        if let Some(MemValue::U32(value)) = trie.query_value(KEY_MAX_EID)? {
-            Ok(Self(value as i32))
-        } else {
-            Ok(Self(0))
-        }
-    }
-}
 
 pub struct Db {
     attr_map: HashMap<Attr, Ent>,
