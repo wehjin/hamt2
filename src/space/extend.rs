@@ -1,11 +1,11 @@
-use crate::space::mem::MemSpace;
+use crate::space::Space;
+use crate::error::ReadError;
+use crate::hamt::trie::mem::slot::MemSlot;
 use crate::space::seg::Seg;
 use crate::space::table::{TablePos, TableRoot};
 use crate::space::value::Val;
 use crate::space::value::Value;
 use crate::space::{Read, TableAddr, ValueAddr};
-use crate::hamt::trie::mem::slot::MemSlot;
-use crate::error::ReadError;
 use crate::TransactError;
 
 pub struct Extend {
@@ -24,7 +24,7 @@ impl Extend {
             root: None,
         }
     }
-    pub fn commit(self, space: &mut MemSpace) -> Result<(), TransactError> {
+    pub fn commit<T: Space>(self, space: &mut T) -> Result<(), TransactError> {
         let Extend {
             seg,
             values,

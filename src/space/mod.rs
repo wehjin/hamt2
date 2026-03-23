@@ -2,8 +2,8 @@ mod extend;
 pub use extend::Extend;
 
 mod addr;
-pub use addr::*;
 use crate::error::ReadError;
+pub use addr::*;
 
 pub mod mem;
 pub mod reader;
@@ -12,9 +12,24 @@ pub mod table;
 pub mod value;
 
 use crate::hamt::trie::mem::slot::MemSlot;
+use crate::space::seg::Seg;
+use crate::{space, TransactError};
 pub use reader::Reader;
 use table::TableRoot;
 pub use value::Value;
+
+pub trait Space {
+    fn read(&self) -> Result<Reader, ReadError>;
+    fn extend(&self) -> space::Extend;
+    fn max_seg(&self) -> Seg;
+    fn add_segment(
+        &mut self,
+        seg: Seg,
+        values: Vec<Value>,
+        table: Vec<MemSlot>,
+        root: Option<TableRoot>,
+    ) -> Result<(), TransactError>;
+}
 
 pub trait Read {
     fn read_value(&self, addr: ValueAddr) -> Result<Value, ReadError>;
@@ -27,6 +42,7 @@ mod tests {
     use crate::space::mem::MemSpace;
     use crate::space::value::Value;
     use crate::space::Read;
+    use crate::space::Space;
 
     #[tokio::test]
     async fn space_works() {

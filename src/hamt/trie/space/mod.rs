@@ -1,12 +1,12 @@
-use crate::space;
-use crate::space::mem::MemSpace;
-use crate::space::table::TableRoot;
-use crate::space::Read;
+use crate::space::Space;
 use crate::hamt::trie::core::deep_key::DeepKey;
 use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::map_base::TrieMapBase;
 use crate::hamt::trie::core::value::TrieValue;
 use crate::hamt::trie::mem::value::MemValue;
+use crate::space;
+use crate::space::table::TableRoot;
+use crate::space::Read;
 use crate::QueryError;
 use crate::TransactError;
 use std::collections::HashMap;
@@ -18,7 +18,7 @@ pub struct SpaceTrie {
 }
 
 impl SpaceTrie {
-    pub fn connect(space: &MemSpace) -> Result<Self, QueryError> {
+    pub fn connect<T: Space>(space: &T) -> Result<Self, QueryError> {
         let reader = space.read()?;
         let map_base = match reader.read_root()? {
             None => TrieMapBase::empty(),
@@ -31,7 +31,7 @@ impl SpaceTrie {
         Ok(trie)
     }
 
-    pub fn commit(self, space: &mut MemSpace) -> Result<(), TransactError> {
+    pub fn commit<T: Space>(self, space: &mut T) -> Result<(), TransactError> {
         let TrieMapBase(map, base) = self.map_base;
         let mut extend = space.extend();
         {

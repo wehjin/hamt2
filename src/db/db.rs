@@ -7,18 +7,18 @@ use crate::db::key::{KEY_AEVT, KEY_EAVT, KEY_MAX_TXID, KEY_MAX_VID, KEY_VALS};
 use crate::db::txid::Txid;
 use crate::hamt::trie::mem::value::MemValue;
 use crate::hamt::trie::space::SpaceTrie;
-use crate::space::mem::MemSpace;
+use crate::space::Space;
 use crate::{LoadError, QueryError, TransactError};
 use std::collections::HashMap;
 
-pub struct Db {
+pub struct Db<T: Space> {
     attr_map: HashMap<Attr, Ent>,
     trie: SpaceTrie,
-    space: MemSpace,
+    space: T,
 }
 
-impl Db {
-    pub fn new(mut space: MemSpace, attrs: Vec<Attr>) -> Result<Self, TransactError> {
+impl<T: Space> Db<T> {
+    pub fn new(mut space: T, attrs: Vec<Attr>) -> Result<Self, TransactError> {
         let mut trie = SpaceTrie::connect(&space)?;
         let (max_eid, attr_ents) = MaxEid::read(&trie)?.take(attrs.len());
         trie = max_eid.write(trie)?;
@@ -41,10 +41,12 @@ impl Db {
         };
         Ok(db)
     }
-    pub fn close(self) -> MemSpace {
+
+    pub fn close(self) -> T {
         self.space
     }
-    pub fn load(space: MemSpace, attrs: Vec<Attr>) -> Result<Self, LoadError> {
+
+    pub fn load(space: T, attrs: Vec<Attr>) -> Result<Self, LoadError> {
         let user_attrs: HashMap<String, Attr> = attrs
             .into_iter()
             .map(|attr| (attr.as_str().to_string(), attr))
@@ -85,7 +87,7 @@ impl Db {
     }
 }
 
-impl Db {
+impl<T: Space> Db<T> {
     pub fn transact(self, datoms: Vec<Datom>) -> Result<Self, TransactError> {
         match datoms.is_empty() {
             true => Ok(self),
@@ -113,7 +115,7 @@ impl Db {
     }
 }
 
-impl Db {
+impl<T: Space> Db<T> {
     pub fn max_tx(&self) -> Result<Txid, QueryError> {
         let Some(MemValue::U32(value)) = self.trie.query_value(KEY_MAX_TXID)? else {
             panic!("max_tx not found");

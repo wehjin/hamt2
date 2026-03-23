@@ -1,13 +1,14 @@
+use crate::error::ReadError;
 use crate::space::extend::Extend;
 use crate::space::reader::Reader;
 use crate::space::seg::Seg;
 use crate::space::value::Val;
 use crate::space::value::Value;
-use crate::error::ReadError;
 use std::cell::RefCell;
 
-use crate::space::table::{TablePos, TableRoot};
+use crate::space::Space;
 use crate::hamt::trie::mem::slot::MemSlot;
+use crate::space::table::{TablePos, TableRoot};
 use crate::TransactError;
 use std::rc::Rc;
 
@@ -21,23 +22,25 @@ impl MemSpace {
             segments: RefCell::new(Vec::new()),
         }
     }
-    pub fn max_seg(&self) -> Seg {
-        let count = self.segments.borrow().len();
-        let seq = Seg(count as u32);
-        seq
-    }
-
-    pub fn read(&self) -> Result<Reader, ReadError> {
+}
+impl Space for MemSpace {
+    fn read(&self) -> Result<Reader, ReadError> {
         let segments = self.segments.borrow().clone();
         let reader = Reader::new(segments);
         Ok(reader)
     }
 
-    pub fn extend(&self) -> Extend {
+    fn extend(&self) -> Extend {
         Extend::new(self.max_seg())
     }
 
-    pub fn add_segment(
+    fn max_seg(&self) -> Seg {
+        let count = self.segments.borrow().len();
+        let seq = Seg(count as u32);
+        seq
+    }
+
+    fn add_segment(
         &mut self,
         seg: Seg,
         values: Vec<Value>,
