@@ -60,7 +60,6 @@ impl From<MemValue> for Val {
     fn from(value: MemValue) -> Self {
         match value {
             MemValue::U32(v) => Val::U32(v),
-            MemValue::String(v) => Val::String(v),
             MemValue::MapBase(_) => unreachable!(),
         }
     }

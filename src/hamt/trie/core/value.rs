@@ -27,7 +27,6 @@ impl TrieValue {
             TrieValue::Mem(value) => value.clone(),
             TrieValue::Space(value) => match reader.read_value(*value)? {
                 Value::U32(v) => MemValue::U32(v),
-                Value::String(v) => MemValue::String(v),
                 Value::MapBase(map, base_addr) => {
                     let map = TrieMap(map);
                     let base = TrieBase::Space(base_addr);
