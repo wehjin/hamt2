@@ -1,9 +1,10 @@
 use crate::space::value::Value;
 use crate::space::table::TableRoot;
 use crate::space::mem::MemSegment;
-use crate::space::{Read, ReadError, TableAddr, ValueAddr};
+use crate::space::{Read, TableAddr, ValueAddr};
 use crate::hamt::trie::mem::slot::MemSlot;
 use std::rc::Rc;
+use crate::error::ReadError;
 
 #[derive(Debug, Clone)]
 pub struct Reader {

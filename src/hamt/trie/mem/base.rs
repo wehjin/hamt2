@@ -1,11 +1,11 @@
-use crate::space;
-use crate::space::TableAddr;
 use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::map_base::TrieMapBase;
 use crate::hamt::trie::core::value::TrieValue;
 use crate::hamt::trie::mem::slot::MemSlot;
+use crate::space::TableAddr;
 use crate::QueryError;
 use crate::TransactError;
+use crate::{space, ReadError};
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub struct MemBase {
@@ -17,7 +17,7 @@ impl MemBase {
         addr: &TableAddr,
         count: usize,
         reader: &impl space::Read,
-    ) -> Result<Self, space::ReadError> {
+    ) -> Result<Self, ReadError> {
         let mut slots = Vec::with_capacity(count);
         for i in 0..count {
             let slot = reader.read_slot(addr, i)?;

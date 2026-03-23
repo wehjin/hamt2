@@ -3,7 +3,7 @@ use crate::space::reader::Reader;
 use crate::space::seg::Seg;
 use crate::space::value::Val;
 use crate::space::value::Value;
-use crate::space::ReadError;
+use crate::error::ReadError;
 use std::cell::RefCell;
 
 use crate::space::table::{TablePos, TableRoot};

@@ -1,6 +1,6 @@
-use crate::QueryError;
-use crate::space;
+use crate::error::read;
 use crate::space::seg::Seg;
+use crate::QueryError;
 
 #[derive(thiserror::Error, Debug)]
 pub enum TransactError {
@@ -29,7 +29,7 @@ pub enum TransactError {
     ExpectedMapBaseAtKey,
 
     #[error("SpaceReadError: {0}")]
-    SpaceReadError(#[from] space::ReadError),
+    SpaceReadError(#[from] read::ReadError),
 
     #[error("Segment {0} already exists")]
     SegConflict(Seg),

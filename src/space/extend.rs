@@ -3,8 +3,9 @@ use crate::space::seg::Seg;
 use crate::space::table::{TablePos, TableRoot};
 use crate::space::value::Val;
 use crate::space::value::Value;
-use crate::space::{Read, ReadError, TableAddr, ValueAddr};
+use crate::space::{Read, TableAddr, ValueAddr};
 use crate::hamt::trie::mem::slot::MemSlot;
+use crate::error::ReadError;
 use crate::TransactError;
 
 pub struct Extend {

@@ -1,9 +1,9 @@
-use crate::space;
-use crate::space::value::Value;
 use crate::hamt::trie::core::base::TrieBase;
 use crate::hamt::trie::core::map::TrieMap;
 use crate::hamt::trie::core::map_base::TrieMapBase;
 use crate::hamt::trie::mem::value::MemValue;
+use crate::space::value::Value;
+use crate::{space, ReadError};
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub enum TrieValue {
@@ -21,7 +21,7 @@ impl TrieValue {
         TrieValue::Mem(MemValue::U32(v))
     }
 
-    pub fn to_mem_value(&self, reader: &impl space::Read) -> Result<MemValue, space::ReadError> {
+    pub fn to_mem_value(&self, reader: &impl space::Read) -> Result<MemValue, ReadError> {
         let value = match self {
             TrieValue::Mem(value) => value.clone(),
             TrieValue::Space(value) => match reader.read_value(*value)? {

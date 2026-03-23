@@ -1,36 +1,20 @@
-use thiserror::Error;
-
 mod extend;
 pub use extend::Extend;
 
 mod addr;
 pub use addr::*;
-pub mod value;
+use crate::error::ReadError;
+
 pub mod mem;
 pub mod reader;
 pub mod seg;
 pub mod table;
+pub mod value;
 
-use crate::space::value::Val;
 use crate::hamt::trie::mem::slot::MemSlot;
-pub use value::Value;
 pub use reader::Reader;
-use table::{TablePos, TableRoot};
-
-#[derive(Error, Debug)]
-pub enum ReadError {
-    #[error("Invalid table addr {0}")]
-    InvalidTableAddr(TableAddr),
-
-    #[error("TablePos {0} with offset {1} exceeded the segment's length {2}")]
-    TablePosWithOffsetExceedsSegmentLen(TablePos, usize, usize),
-
-    #[error("Invalid value addr {0}")]
-    InvalidValueAddr(ValueAddr),
-
-    #[error("Invalid val {0}")]
-    InvalidVal(Val),
-}
+use table::TableRoot;
+pub use value::Value;
 
 pub trait Read {
     fn read_value(&self, addr: ValueAddr) -> Result<Value, ReadError>;
@@ -40,8 +24,8 @@ pub trait Read {
 
 #[cfg(test)]
 mod tests {
-    use crate::space::value::Value;
     use crate::space::mem::MemSpace;
+    use crate::space::value::Value;
     use crate::space::Read;
 
     #[tokio::test]
