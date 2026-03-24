@@ -1,26 +1,8 @@
-use crate::space::value::Val;
 use crate::space::seg::Seg;
-use std::fmt;
-use serde::{Deserialize, Serialize};
 use crate::space::table::TablePos;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub enum Addr {
-    Value(ValueAddr),
-    Table(TableAddr),
-}
-
-impl fmt::Display for Addr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Addr").finish()
-    }
-}
-
-impl From<TableAddr> for Addr {
-    fn from(addr: TableAddr) -> Self {
-        Addr::Table(addr)
-    }
-}
+use crate::space::value::Val;
+use serde::{Deserialize, Serialize};
+use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct ValueAddr(pub Seg, pub Val);
