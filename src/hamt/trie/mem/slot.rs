@@ -1,21 +1,21 @@
-use serde::{Deserialize, Serialize};
-use crate::space;
 use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::map_base::TrieMapBase;
 use crate::hamt::trie::core::value::TrieValue;
 use crate::hamt::trie::mem::value::MemValue;
+use crate::space;
 use crate::QueryError;
 use crate::TransactError;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 pub enum MemSlot {
-    KeyValue(TrieKey, TrieValue),
+    KeyValue(i32, TrieValue),
     MapBase(TrieMapBase),
 }
 
 impl MemSlot {
     pub fn one_kv(key: TrieKey, value: TrieValue) -> Result<Self, TransactError> {
-        Ok(Self::KeyValue(key, value))
+        Ok(Self::KeyValue(key.i32(), value))
     }
     pub fn two_kv(
         a_key: TrieKey,
@@ -50,6 +50,7 @@ impl MemSlot {
     ) -> Result<Self, TransactError> {
         match self {
             MemSlot::KeyValue(b_key, b_value) => {
+                let b_key = key.sync(b_key);
                 let slot = MemSlot::two_kv(b_key.next(), b_value, key.next(), value, reader)?;
                 Ok(slot)
             }
@@ -65,7 +66,7 @@ impl MemSlot {
         reader: &impl space::Read,
     ) -> Result<Vec<(i32, MemValue)>, QueryError> {
         match self {
-            MemSlot::KeyValue(key, value) => Ok(vec![(key.i32(), value.to_mem_value(reader)?)]),
+            MemSlot::KeyValue(key, value) => Ok(vec![(*key, value.to_mem_value(reader)?)]),
             MemSlot::MapBase(map_base) => map_base.query_key_values(reader),
         }
     }
@@ -76,7 +77,7 @@ impl MemSlot {
     ) -> Result<Option<TrieValue>, QueryError> {
         match self {
             MemSlot::KeyValue(k, v) => {
-                if k.i32() != key.i32() {
+                if *k != key.i32() {
                     Ok(None)
                 } else {
                     Ok(Some(v.clone()))
@@ -91,7 +92,7 @@ impl MemSlot {
     pub fn test_kv(&self, key: &TrieKey, value: &TrieValue) -> KvTest {
         match self {
             MemSlot::KeyValue(slot_key, slot_value) => {
-                if key.same_i32(slot_key) {
+                if key.i32() == *slot_key {
                     if value == slot_value {
                         KvTest::SameValue
                     } else {

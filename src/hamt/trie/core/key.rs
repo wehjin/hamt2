@@ -20,6 +20,20 @@ impl TrieKey {
         map_index: 0,
     };
 
+    pub fn sync(&self, other: i32) -> Self {
+        let level = self.level;
+        let hash = hash_key(other as u32, level);
+        let hash_index = self.hash_index;
+        let map_index = map_index(hash, hash_index);
+        Self {
+            value: other,
+            level,
+            hash,
+            hash_index,
+            map_index,
+        }
+    }
+
     pub fn new(value: i32) -> Self {
         let level = 1;
         let hash = hash_key(value as u32, level);
@@ -49,9 +63,6 @@ impl TrieKey {
 
     pub fn i32(&self) -> i32 {
         self.value
-    }
-    pub fn same_i32(&self, other: &Self) -> bool {
-        self.value == other.value
     }
     pub fn map_index(&self) -> u8 {
         self.map_index
