@@ -1,4 +1,3 @@
-use crate::space::Space;
 use crate::hamt::trie::core::deep_key::DeepKey;
 use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::map_base::TrieMapBase;
@@ -7,6 +6,7 @@ use crate::hamt::trie::mem::value::MemValue;
 use crate::space;
 use crate::space::table::TableRoot;
 use crate::space::Read;
+use crate::space::Space;
 use crate::QueryError;
 use crate::TransactError;
 use std::collections::HashMap;
@@ -32,13 +32,9 @@ impl SpaceTrie {
     }
 
     pub fn commit<T: Space>(self, space: &mut T) -> Result<(), TransactError> {
-        let TrieMapBase(map, base) = self.map_base;
         let mut extend = space.extend();
-        {
-            let table_addr = base.write(&mut extend)?;
-            let table_item = TableRoot(map.0, table_addr);
-            extend.set_root(table_item);
-        }
+        let (map, base_addr) = self.map_base.into_map_base_addr(&mut extend)?;
+        extend.set_root(TableRoot(map.0, base_addr));
         extend.commit(space)
     }
 

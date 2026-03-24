@@ -7,6 +7,7 @@ pub enum MemValue {
     U32(u32),
     MapBase(TrieMapBase),
 }
+
 impl From<u32> for MemValue {
     fn from(v: u32) -> Self {
         Self::U32(v)

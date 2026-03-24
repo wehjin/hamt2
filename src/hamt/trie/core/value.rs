@@ -1,10 +1,9 @@
-use serde::{Deserialize, Serialize};
-use crate::hamt::trie::core::base::TrieBase;
 use crate::hamt::trie::core::map::TrieMap;
 use crate::hamt::trie::core::map_base::TrieMapBase;
 use crate::hamt::trie::mem::value::MemValue;
 use crate::space::value::Value;
 use crate::{space, ReadError};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 pub enum TrieValue {
@@ -29,8 +28,7 @@ impl TrieValue {
                 Value::U32(v) => MemValue::U32(v),
                 Value::MapBase(map, base_addr) => {
                     let map = TrieMap(map);
-                    let base = TrieBase::Space(base_addr);
-                    let map_base = TrieMapBase(map, base);
+                    let map_base = TrieMapBase::Space(map, base_addr);
                     MemValue::MapBase(map_base)
                 }
             },
