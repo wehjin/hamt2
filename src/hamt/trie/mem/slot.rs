@@ -1,13 +1,12 @@
 use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::map::TrieMap;
 use crate::hamt::trie::core::map_base::TrieMapBase;
+use crate::hamt::trie::core::query::QueryKeysValues;
 use crate::hamt::trie::mem::base::MemBase;
 use crate::hamt::trie::mem::value::MemValue;
 use crate::space;
 use crate::QueryError;
-use crate::TransactError;
 use serde::{Deserialize, Serialize};
-use crate::hamt::trie::core::query::QueryKeysValues;
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum MemSlot {
@@ -16,34 +15,27 @@ pub enum MemSlot {
 }
 
 impl MemSlot {
-    pub fn one_kv(key: TrieKey, value: MemValue) -> Result<Self, TransactError> {
-        Ok(Self::KeyValue(key.i32(), value))
+    pub fn one_kv(key: TrieKey, value: MemValue) -> Self {
+        Self::KeyValue(key.i32(), value)
     }
-    pub fn two_kv(
-        a_key: TrieKey,
-        a_value: MemValue,
-        b_key: TrieKey,
-        b_value: MemValue,
-        reader: &impl space::Read,
-    ) -> Result<Self, TransactError> {
+    pub fn two_kv(a_key: TrieKey, a_value: MemValue, b_key: TrieKey, b_value: MemValue) -> Self {
         debug_assert!(a_key.i32() != b_key.i32());
         let (a_map_index, b_map_index) = (a_key.map_index(), b_key.map_index());
         if a_map_index == b_map_index {
             let map = TrieMap::set_map_index_bit(a_map_index);
-            let slot = MemSlot::two_kv(a_key.next(), a_value, b_key.next(), b_value, reader)?;
+            let slot = MemSlot::two_kv(a_key.next(), a_value, b_key.next(), b_value);
             let base = MemBase { slots: vec![slot] };
-            Ok(MemSlot::MapBase(TrieMapBase::Mem(map, base)))
+            MemSlot::MapBase(TrieMapBase::Mem(map, base))
         } else {
-            let map_base = TrieMapBase::two_kv(a_key, a_value, b_key, b_value)?;
-            Ok(MemSlot::MapBase(map_base))
+            let map_base = TrieMapBase::two_kv(a_key, a_value, b_key, b_value);
+            MemSlot::MapBase(map_base)
         }
     }
-    pub fn replace_value(self, value: MemValue) -> Result<Self, TransactError> {
+    pub fn replace_value(self, value: MemValue) -> Self {
         let MemSlot::KeyValue(key, _value) = self else {
-            return Err(TransactError::InvalidSlotType);
+            unreachable!("Should be a key-value slot, not a map-base slot:")
         };
-        let slot = MemSlot::KeyValue(key, value);
-        Ok(slot)
+        MemSlot::KeyValue(key, value)
     }
     pub fn query_key_values(
         &self,
@@ -80,20 +72,20 @@ impl MemSlot {
                     if value == slot_value {
                         KvTest::SameValue
                     } else {
-                        KvTest::ConflictOldValue
+                        KvTest::ValueConflict
                     }
                 } else {
-                    KvTest::ConflictKeyValue
+                    KvTest::KeyConflict
                 }
             }
-            MemSlot::MapBase(_) => KvTest::ConflictMapBase,
+            MemSlot::MapBase(_) => KvTest::MapBaseConflict,
         }
     }
 }
 
 pub enum KvTest {
     SameValue,
-    ConflictOldValue,
-    ConflictKeyValue,
-    ConflictMapBase,
+    ValueConflict,
+    KeyConflict,
+    MapBaseConflict,
 }

@@ -40,7 +40,7 @@ impl TrieMap {
         let left_count = u32::count_ones(mask & self.0) as usize;
         left_count
     }
-    pub fn to_base_index(&self, key: TrieKey) -> Option<usize> {
+    pub fn try_base_index(&self, key: TrieKey) -> Option<usize> {
         if self.is_present(key) {
             let base_index = self.count_left(key);
             Some(base_index)

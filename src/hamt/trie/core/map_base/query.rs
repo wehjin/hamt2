@@ -13,8 +13,7 @@ impl QueryKeysValues for TrieMapBase {
                 let slot_count = map.slot_count();
                 debug_assert_eq!(slot_count, base.len());
                 for base_index in 0..slot_count {
-                    let slot = base.as_slot(base_index)?;
-                    let keys_values = slot.query_key_values(reader)?;
+                    let keys_values = base[base_index].query_key_values(reader)?;
                     out.extend(keys_values);
                 }
             }

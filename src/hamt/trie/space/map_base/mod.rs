@@ -17,6 +17,36 @@ pub struct SpaceMapBase {
 }
 
 impl SpaceMapBase {
+    pub fn save(
+        extend: &mut space::Extend<impl Space>,
+        map: TrieMap,
+        base: MemBase,
+    ) -> Result<Self, TransactError> {
+        let mut slot_values: Vec<SlotValue> = vec![];
+        for slot in base.slots {
+            match slot {
+                MemSlot::KeyValue(key, value) => {
+                    let u32 = value.into_u32(extend)?;
+                    let slot_value = SpaceKeyValue::new(key, u32).into_slot_value();
+                    slot_values.push(slot_value);
+                }
+                MemSlot::MapBase(map_base) => {
+                    let space_map_base = map_base.into_space_map_base(extend)?;
+                    let slot_value = space_map_base.into_slot_value();
+                    slot_values.push(slot_value);
+                }
+            }
+        }
+        let space_map_base = SpaceMapBase::new_from_slots(slot_values, map, extend)?;
+        Ok(space_map_base)
+    }
+    pub fn load(reader: &impl Read, addr: TableAddr) -> Result<Self, QueryError> {
+        let slot_value = reader.read_slot(&addr, 0)?;
+        Ok(Self::assert(slot_value))
+    }
+}
+
+impl SpaceMapBase {
     pub fn new(map: TrieMap, base_addr: TableAddr) -> Self {
         Self { map, base_addr }
     }
@@ -30,11 +60,12 @@ impl SpaceMapBase {
         let map_base = Self::new(map, base_addr);
         Ok(map_base)
     }
+}
 
+impl SpaceMapBase {
     pub fn into_slot_value(self) -> SlotValue {
         SpaceSlot::from_map_base(self.map, self.base_addr).into_slot_value()
     }
-
     pub fn assert(slot_value: SlotValue) -> Self {
         let space_slot = SpaceSlot::assert(slot_value);
         let Some(map_base) = space_slot.to_map_base() else {
@@ -42,10 +73,9 @@ impl SpaceMapBase {
         };
         map_base
     }
-    pub fn load(reader: &impl Read, addr: TableAddr) -> Result<Self, QueryError> {
-        let slot_value = reader.read_slot(&addr, 0)?;
-        Ok(Self::assert(slot_value))
-    }
+}
+
+impl SpaceMapBase {
     pub fn query_value(
         &self,
         key: TrieKey,
@@ -114,7 +144,7 @@ impl SpaceMapBase {
         key: TrieKey,
         reader: &impl Read,
     ) -> Result<Option<SpaceSlot>, QueryError> {
-        if let Some(base_index) = self.to_map().to_base_index(key) {
+        if let Some(base_index) = self.to_map().try_base_index(key) {
             let base = self.extract_base();
             let slot = base.read_slot(reader, base_index)?;
             Ok(Some(slot))
