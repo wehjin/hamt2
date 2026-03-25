@@ -142,7 +142,7 @@ impl Space for FileSpace {
                     .expect("open slots table");
                 let mut key = start_addr.0;
                 for slot in &slots {
-                    let value = ((slot.0 as u64) << 32) | (slot.1 as u64);
+                    let value = slot.to_u64();
                     table.insert(key, value).expect("insert slot");
                     key += 1;
                 }

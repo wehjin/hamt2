@@ -5,7 +5,7 @@ use std::ops::Index;
 use std::rc::Rc;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Serialize, Deserialize)]
-pub struct SlotValue(pub u32, pub u32);
+pub struct SlotValue(u32, u32);
 
 impl SlotValue {
     pub fn left(&self) -> u32 {
@@ -13,6 +13,15 @@ impl SlotValue {
     }
     pub fn right(&self) -> u32 {
         self.1
+    }
+    pub fn to_u64(&self) -> u64 {
+        (self.0 as u64) << 32 | (self.1 as u64)
+    }
+}
+
+impl From<(u32, u32)> for SlotValue {
+    fn from(value: (u32, u32)) -> Self {
+        Self(value.0, value.1)
     }
 }
 

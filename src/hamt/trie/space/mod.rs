@@ -4,7 +4,6 @@ use crate::hamt::trie::core::map::TrieMap;
 use crate::hamt::trie::core::map_base::TrieMapBase;
 use crate::hamt::trie::mem::value::MemValue;
 use crate::hamt::trie::space::map_base::SpaceMapBase;
-use crate::space::reader::SlotValue;
 use crate::space::Space;
 use crate::space::{Read, TableAddr};
 use crate::TransactError;
@@ -12,13 +11,13 @@ use crate::{space, QueryError};
 use std::collections::HashMap;
 
 pub mod map_base;
+pub mod slots;
 
 pub struct SpaceRoot(pub TrieMap, pub TableAddr);
 impl SpaceRoot {
     pub fn from_root_addr(root_addr: u32, reader: &impl Read) -> Result<Self, QueryError> {
         debug_assert_eq!(root_addr & 0x8000_0000, 0);
-        let addr = TableAddr(root_addr);
-        let slot_value = reader.read_slot(&addr, 0)?;
+        let slot_value = reader.read_slot(&TableAddr(root_addr), 0)?;
         let (key, addr) = SpaceMapBase::assert(slot_value).into_map_base_addr();
         Ok(Self(key, addr))
     }
@@ -26,20 +25,13 @@ impl SpaceRoot {
         self,
         extend: &mut space::Extend<T>,
     ) -> Result<TableAddr, TransactError> {
-        let slot_value = SlotValue(self.to_slot_left(), self.to_slot_right());
-        let root_addr = extend.add_slots(vec![slot_value]);
+        let slot_value = SpaceMapBase::new(self.0, self.1).into_slot_value();
+        let slots = vec![slot_value];
+        let root_addr = extend.add_slots(slots);
         Ok(root_addr)
     }
-
     pub fn into_trie_map_base(self) -> TrieMapBase {
-        let slot_value = SlotValue(self.to_slot_left(), self.to_slot_right());
-        SpaceMapBase::assert(slot_value).into_trie_map_base()
-    }
-    pub fn to_slot_left(&self) -> u32 {
-        self.0.u32()
-    }
-    pub fn to_slot_right(&self) -> u32 {
-        self.1.u32() | 0x8000_0000
+        SpaceMapBase::new(self.0, self.1).into_trie_map_base()
     }
 }
 

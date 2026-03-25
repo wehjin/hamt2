@@ -27,7 +27,11 @@ impl TrieMapBase {
     pub fn map(&self) -> TrieMap {
         match self {
             TrieMapBase::Mem(map, _) => map.clone(),
-            TrieMapBase::Space(slot_value) => TrieMap(slot_value.0),
+            TrieMapBase::Space(slot_value) => {
+                let map_base = SpaceMapBase::assert(*slot_value);
+                let map = map_base.to_map();
+                map
+            }
         }
     }
     pub fn empty() -> Self {

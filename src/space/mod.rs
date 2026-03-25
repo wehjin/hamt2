@@ -56,13 +56,13 @@ mod tests {
             assert_eq!(TableAddr::ZERO, space.max_addr());
             {
                 let mut extend = space.extend().unwrap();
-                let slot = SlotValue(1, 2);
+                let slot = SlotValue::from((1, 2));
                 addr = extend.add_slots(vec![slot]);
                 extend.commit(&mut space).unwrap();
             }
             let reader = space.read().unwrap();
             let slot = reader.read_slot(&addr, 0).unwrap();
-            assert_eq!(SlotValue(1, 2), slot);
+            assert_eq!(SlotValue::from((1, 2)), slot);
         }
     }
 
@@ -75,19 +75,19 @@ mod tests {
             assert_eq!(TableAddr::ZERO, space.max_addr());
             {
                 let mut extend = space.extend().unwrap();
-                let slot = SlotValue(1, 2);
+                let slot = SlotValue::from((1, 2));
                 addr = extend.add_slots(vec![slot]);
                 extend.commit(&mut space).unwrap();
             }
             let reader = space.read().unwrap();
             let slot = reader.read_slot(&addr, 0).unwrap();
-            assert_eq!(SlotValue(1, 2), slot);
+            assert_eq!(SlotValue::from((1, 2)), slot);
         }
         {
             let space = FileSpace::load(file.path()).expect("load red space");
             let reader = space.read().expect("read red space");
             let slot = reader.read_slot(&addr, 0).unwrap();
-            assert_eq!(SlotValue(1, 2), slot);
+            assert_eq!(SlotValue::from((1, 2)), slot);
         }
     }
 }
