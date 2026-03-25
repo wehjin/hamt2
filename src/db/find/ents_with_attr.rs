@@ -1,7 +1,7 @@
 use crate::db::find::Rule;
 use crate::db::key::KEY_AEVT;
 use crate::db::{Attr, Ent};
-use crate::hamt::trie::space::SpaceTrie;
+use crate::hamt::trie::space::trie::SpaceTrie;
 use crate::space::Space;
 use crate::QueryError;
 use std::collections::HashMap;
@@ -37,9 +37,7 @@ impl Rule for EntsWithAttr {
         let aevt_key = [KEY_AEVT, aid];
         let eids = if let Some(value) = trie.deep_query_value(aevt_key)? {
             let subtrie = trie.to_subtrie_from_value(value)?;
-            let key_values = subtrie.query_key_values()?;
-            dbg!("rule-time");
-            dbg!(&key_values);
+            let key_values = subtrie.query_keys_values()?;
             let eids = key_values
                 .into_iter()
                 .map(|(eid, _)| Ent(eid))

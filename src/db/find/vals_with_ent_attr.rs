@@ -3,7 +3,7 @@ use crate::db::find::Rule;
 use crate::db::key::KEY_EAVT;
 use crate::db::vid::Vid;
 use crate::db::{Attr, Ent, Val};
-use crate::hamt::trie::space::SpaceTrie;
+use crate::hamt::trie::space::trie::SpaceTrie;
 use crate::space::Space;
 use crate::QueryError;
 use std::collections::HashMap;
@@ -42,7 +42,7 @@ impl Rule for ValsWithEntAttr {
         let eavt_value = trie.deep_query_value(eavt_key)?;
         if let Some(mem_value) = eavt_value {
             let subtrie = trie.to_subtrie_from_value(mem_value)?;
-            let key_values = subtrie.query_key_values()?;
+            let key_values = subtrie.query_keys_values()?;
             let first_key_value = key_values.first();
             if let Some((vid, _)) = first_key_value {
                 let val = val_table::query(&trie, Vid::from_id(*vid))?.expect("val should exist");

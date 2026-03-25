@@ -63,21 +63,6 @@ impl SpaceMapBase {
         }
         Ok(None)
     }
-    pub fn query_key_values(&self, reader: &impl Read) -> Result<Vec<(i32, MemValue)>, QueryError> {
-        let slot_count = self.to_map().slot_count();
-        let base = self.extract_base();
-        let mut out = Vec::new();
-        for i in 0..slot_count {
-            let slot = base.read_slot(reader, i)?;
-            if let Some(key_value) = slot.to_key_value() {
-                out.push(key_value.to_key_and_value(reader)?);
-            } else if let Some(map_base) = slot.to_map_base() {
-                let more = map_base.query_key_values(reader)?;
-                out.extend(more);
-            }
-        }
-        Ok(out)
-    }
     pub fn top_into_mem(self, reader: &impl Read) -> Result<TrieMapBase, QueryError> {
         let map = self.to_map();
         let base = self.extract_base();
@@ -107,6 +92,10 @@ impl SpaceMapBase {
     pub fn into_trie_map_base(self) -> TrieMapBase {
         let slot_value = self.into_slot_value();
         TrieMapBase::Space(slot_value)
+    }
+
+    pub fn as_map(&self) -> &TrieMap {
+        &self.map
     }
     pub fn to_map(&self) -> TrieMap {
         self.map

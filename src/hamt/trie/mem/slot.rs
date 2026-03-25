@@ -7,6 +7,7 @@ use crate::space;
 use crate::QueryError;
 use crate::TransactError;
 use serde::{Deserialize, Serialize};
+use crate::hamt::trie::core::query::QueryKeysValues;
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum MemSlot {
@@ -50,7 +51,7 @@ impl MemSlot {
     ) -> Result<Vec<(i32, MemValue)>, QueryError> {
         match self {
             MemSlot::KeyValue(key, value) => Ok(vec![(*key, value.clone())]),
-            MemSlot::MapBase(map_base) => map_base.query_key_values(reader),
+            MemSlot::MapBase(map_base) => map_base.query_keys_values(reader),
         }
     }
     pub fn query_value<'a>(

@@ -5,7 +5,7 @@ pub mod space;
 #[cfg(test)]
 mod tests {
     use crate::hamt::trie::mem::value::MemValue;
-    use crate::hamt::trie::space::SpaceTrie;
+    use crate::hamt::trie::space::trie::SpaceTrie;
     use crate::space::mem::MemSpace;
 
     #[tokio::test]
@@ -14,7 +14,7 @@ mod tests {
         let mut trie = SpaceTrie::connect(&space).expect("connect");
         trie = trie.insert(1, MemValue::U32(1)).expect("insert");
         trie = trie.insert(2, MemValue::U32(2)).expect("insert");
-        let key_values = trie.query_key_values().expect("all_keys_values");
+        let key_values = trie.query_keys_values().expect("all_keys_values");
         let mut key_values = key_values
             .into_iter()
             .map(|kv| {

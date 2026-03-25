@@ -6,7 +6,7 @@ use crate::db::find::ValsWithEntAttr;
 use crate::db::key::{KEY_AEVT, KEY_EAVT, KEY_MAX_TXID};
 use crate::db::txid::Txid;
 use crate::hamt::trie::mem::value::MemValue;
-use crate::hamt::trie::space::SpaceTrie;
+use crate::hamt::trie::space::trie::SpaceTrie;
 use crate::space::Space;
 use crate::{LoadError, QueryError, TransactError};
 use std::collections::HashMap;
@@ -88,18 +88,6 @@ impl<T: Space> Db<T> {
     }
 }
 
-pub fn print_aevt<T: Space>(trie: &SpaceTrie<T>, message: &str) -> Result<(), QueryError> {
-    let x = trie.deep_query_value([KEY_AEVT, 0])?;
-    let Some(mem_value) = x else {
-        panic!("aevt should exist");
-    };
-    let sub_trie = trie.to_subtrie_from_value(mem_value)?;
-    let key_values = sub_trie.query_key_values()?;
-    dbg!(message);
-    dbg!(&key_values);
-    Ok(())
-}
-
 impl<T: Space> Db<T> {
     pub fn transact(self, datoms: Vec<Datom>) -> Result<Self, TransactError> {
         match datoms.is_empty() {
@@ -117,16 +105,13 @@ impl<T: Space> Db<T> {
                     }
                 }
                 trie = set_max_tx(trie, tx + 1)?;
-                print_aevt(&trie, "pre-commit")?;
                 trie.commit(&mut space)?;
-                dbg!(&space);
-                let trie = SpaceTrie::connect(&space)?;
-                print_aevt(&trie, "post-commit")?;
-                Ok(Self {
+                let db = Self {
                     attr_map,
-                    trie,
+                    trie: SpaceTrie::connect(&space)?,
                     space,
-                })
+                };
+                Ok(db)
             }
         }
     }

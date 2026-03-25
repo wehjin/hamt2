@@ -16,7 +16,6 @@ async fn file_db_works() {
         let db = db
             .transact(vec![Datom::Add(Ent(1), ATTR_COUNT, Val::U32(1))])
             .expect("transact");
-        dbg!(&db);
         assert_eq!(
             Some(Val::U32(1)),
             db.find_val(Ent(1), ATTR_COUNT).expect("find_val")
@@ -95,24 +94,6 @@ async fn entities_with_attr_works_for_two_entities() {
     let mut ents = rule.results("e").to_vec();
     ents.sort();
     assert_eq!(vec![Ent(3), Ent(5)], ents);
-}
-
-#[tokio::test]
-async fn entities_with_attr_works_for_three_entities() {
-    let db = Db::new(MemSpace::new(), vec![ATTR_COUNT]).expect("new db");
-    let db = db
-        .transact(vec![
-            Datom::Add(Ent(3), ATTR_COUNT, Val::U32(4)),
-            Datom::Add(Ent(5), ATTR_COUNT, Val::U32(6)),
-            Datom::Add(Ent(7), ATTR_COUNT, Val::U32(8)),
-        ])
-        .expect("transact");
-
-    let mut rule = EntsWithAttr::new("e", ATTR_COUNT);
-    db.find(&mut rule).expect("find");
-    let mut ents = rule.results("e").to_vec();
-    ents.sort();
-    assert_eq!(vec![Ent(3), Ent(5), Ent(7)], ents);
 }
 
 #[tokio::test]

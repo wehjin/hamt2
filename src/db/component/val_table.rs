@@ -3,7 +3,7 @@ use crate::db::key::KEY_VAL_TABLE;
 use crate::db::Val;
 use crate::db::Vid;
 use crate::hamt::trie::mem::value::MemValue;
-use crate::hamt::trie::space::SpaceTrie;
+use crate::hamt::trie::space::trie::SpaceTrie;
 use crate::space::Space;
 use crate::{hash, QueryError, TransactError};
 use redb::Value;

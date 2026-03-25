@@ -1,5 +1,5 @@
 use crate::db::{Attr, Ent};
-use crate::hamt::trie::space::SpaceTrie;
+use crate::hamt::trie::space::trie::SpaceTrie;
 use crate::QueryError;
 use std::collections::HashMap;
 

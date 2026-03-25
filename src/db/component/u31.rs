@@ -1,5 +1,5 @@
 use crate::hamt::trie::mem::value::MemValue;
-use crate::hamt::trie::space::SpaceTrie;
+use crate::hamt::trie::space::trie::SpaceTrie;
 use crate::space::Space;
 
 pub struct U31Streamer<'a> {

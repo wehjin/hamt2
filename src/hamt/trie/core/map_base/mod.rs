@@ -1,5 +1,6 @@
 use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::map::TrieMap;
+use crate::hamt::trie::core::query::QueryKeysValues;
 use crate::hamt::trie::mem::base::MemBase;
 use crate::hamt::trie::mem::slot::{KvTest, MemSlot};
 use crate::hamt::trie::mem::value::MemValue;
@@ -10,6 +11,8 @@ use crate::space::Space;
 use crate::QueryError;
 use crate::TransactError;
 use serde::{Deserialize, Serialize};
+
+pub mod query;
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum TrieMapBase {
@@ -100,7 +103,7 @@ impl TrieMapBase {
         reader: &impl space::Read,
     ) -> Result<Self, TransactError> {
         let pre_map_base = self.top_into_mem(reader)?;
-        let pre_count = pre_map_base.query_key_values(reader)?.len();
+        let pre_count = pre_map_base.query_keys_values(reader)?.len();
         let post_map_base = match pre_map_base {
             TrieMapBase::Mem(_, _) => match pre_map_base.as_slot(key, reader)? {
                 Some(slot) => {
@@ -108,19 +111,19 @@ impl TrieMapBase {
                     match test {
                         KvTest::SameValue => {
                             let post = pre_map_base;
-                            let post_count = post.query_key_values(reader)?.len();
+                            let post_count = post.query_keys_values(reader)?.len();
                             debug_assert_eq!(post_count, pre_count);
                             post
                         }
                         KvTest::ConflictOldValue => {
                             let post = pre_map_base.replace_existing_value(key, value, reader)?;
-                            let post_count = post.query_key_values(reader)?.len();
+                            let post_count = post.query_keys_values(reader)?.len();
                             debug_assert_eq!(post_count, pre_count);
                             post
                         }
                         KvTest::ConflictKeyValue => {
                             let post = pre_map_base.kick_kv(key, value, reader)?;
-                            let post_count = post.query_key_values(reader)?.len();
+                            let post_count = post.query_keys_values(reader)?.len();
                             debug_assert_eq!(post_count, pre_count + 1);
                             post
                         }
@@ -184,31 +187,6 @@ impl TrieMapBase {
 }
 
 impl TrieMapBase {
-    pub fn query_key_values(
-        &self,
-        reader: &impl space::Read,
-    ) -> Result<Vec<(i32, MemValue)>, QueryError> {
-        let mut result = Vec::new();
-        let slot_count = self.map().slot_count();
-        for base_index in 0..slot_count {
-            let key_values = match self {
-                TrieMapBase::Mem(_, base) => {
-                    debug_assert!(slot_count == base.len());
-                    let slot = base.as_slot(base_index)?;
-                    let keys_values = slot.query_key_values(reader)?;
-                    keys_values
-                }
-                TrieMapBase::Space(slot_value) => {
-                    let map_base = SpaceMapBase::assert(*slot_value);
-                    let key_values = map_base.query_key_values(reader)?;
-                    key_values
-                }
-            };
-            result.extend(key_values);
-        }
-        Ok(result)
-    }
-
     pub fn query_value(
         &self,
         key: TrieKey,

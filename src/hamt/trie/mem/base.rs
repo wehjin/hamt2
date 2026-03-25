@@ -13,25 +13,6 @@ pub struct MemBase {
 }
 
 impl MemBase {
-    // pub fn load(
-    //     addr: &TableAddr,
-    //     count: usize,
-    //     reader: &impl space::Read,
-    // ) -> Result<Self, ReadError> {
-    //     let mut mem_slots = Vec::with_capacity(count);
-    //     for i in 0..count {
-    //         let slot = reader.read_slot(addr, i)?;
-    //         let space_slot = SpaceSlot::assert(slot);
-    //         if let Some(key_value) = space_slot.to_key_value() {
-    //             let mem_slot = key_value.to_mem_slot();
-    //             mem_slots.push(mem_slot);
-    //         } else if let Some(map_base) = space_slot.to_map_base() {
-    //
-    //         }
-    //         mem_slots.push(slot.clone());
-    //     }
-    //     Ok(Self { slots: mem_slots })
-    // }
     pub fn new() -> Self {
         Self { slots: vec![] }
     }
