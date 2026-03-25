@@ -1,5 +1,6 @@
 use crate::hamt::trie::core::map_base::TrieMapBase;
 use crate::hamt::trie::space::SpaceRoot;
+use crate::space::Space;
 use crate::{space, TransactError};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Formatter};
@@ -11,7 +12,7 @@ pub enum MemValue {
 }
 
 impl MemValue {
-    pub fn into_u32(self, extend: &mut space::Extend) -> Result<u32, TransactError> {
+    pub fn into_u32<T: Space>(self, extend: &mut space::Extend<T>) -> Result<u32, TransactError> {
         match self {
             MemValue::U32(v) => Ok(v),
             MemValue::MapBase(map_base) => {

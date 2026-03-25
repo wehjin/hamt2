@@ -38,6 +38,8 @@ impl Rule for EntsWithAttr {
         let eids = if let Some(value) = trie.deep_query_value(aevt_key)? {
             let subtrie = trie.to_subtrie_from_value(value)?;
             let key_values = subtrie.query_key_values()?;
+            dbg!("rule-time");
+            dbg!(&key_values);
             let eids = key_values
                 .into_iter()
                 .map(|(eid, _)| Ent(eid))

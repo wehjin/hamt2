@@ -1,17 +1,19 @@
 use crate::space::reader::{SlotTable, SlotValue};
-use crate::space::Space;
 use crate::space::TableAddr;
-use crate::TransactError;
+use crate::space::{Read, Space};
+use crate::{ReadError, TransactError};
 
-pub struct Extend {
+pub struct Extend<T: Space> {
+    reader: T::Reader,
     start_addr: TableAddr,
     slots: SlotTable,
     root: Option<TableAddr>,
 }
 
-impl Extend {
-    pub fn new(start_addr: TableAddr) -> Self {
+impl<T: Space> Extend<T> {
+    pub fn new(start_addr: TableAddr, reader: T::Reader) -> Self {
         Self {
+            reader,
             start_addr,
             slots: SlotTable::new(),
             root: None,
@@ -32,13 +34,32 @@ impl Extend {
         self.root = Some(root);
     }
 
-    pub fn commit<T: Space>(self, space: &mut T) -> Result<(), TransactError> {
-        let Extend {
-            start_addr,
-            slots,
-            root,
-        } = self;
-        space.add_segment(start_addr, slots.into_slots(), root)?;
+    pub fn commit(self, space: &mut T) -> Result<(), TransactError> {
+        space.add_segment(self.start_addr, self.slots.into_slots(), self.root)?;
         Ok(())
+    }
+}
+
+impl<T: Space> Read for Extend<T> {
+    fn read_slot(&self, addr: &TableAddr, offset: usize) -> Result<SlotValue, ReadError> {
+        let offset_addr = addr + offset;
+        if offset_addr >= self.max_addr() {
+            let index = offset_addr - self.start_addr;
+            if index >= self.slots.len() {
+                return Err(ReadError::InvalidTableAddr(offset_addr));
+            }
+            let slot = self.slots[index];
+            Ok(slot)
+        } else {
+            self.reader.read_slot(addr, offset)
+        }
+    }
+
+    fn read_root(&self) -> Result<&Option<TableAddr>, ReadError> {
+        if self.root.is_some() {
+            Ok(&self.root)
+        } else {
+            self.reader.read_root()
+        }
     }
 }

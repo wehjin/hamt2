@@ -51,6 +51,13 @@ impl From<u64> for SlotValue {
     }
 }
 
+impl Index<usize> for SlotTable {
+    type Output = SlotValue;
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.slots[index]
+    }
+}
+
 impl Index<TableAddr> for SlotTable {
     type Output = SlotValue;
 

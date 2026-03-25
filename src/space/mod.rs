@@ -1,7 +1,7 @@
 mod extend;
 
-use std::fmt::Debug;
 pub use extend::Extend;
+use std::fmt::Debug;
 
 mod addr;
 use crate::error::ReadError;
@@ -19,7 +19,7 @@ use crate::TransactError;
 pub use reader::MemReader;
 pub use value::Value;
 
-pub trait Space {
+pub trait Space: Debug + Sized {
     type Reader: Read + Clone + Debug;
 
     fn add_segment(
@@ -30,8 +30,9 @@ pub trait Space {
     ) -> Result<(), TransactError>;
     fn read(&self) -> Result<Self::Reader, ReadError>;
     fn max_addr(&self) -> TableAddr;
-    fn extend(&self) -> Extend {
-        Extend::new(self.max_addr())
+    fn extend(&self) -> Result<Extend<Self>, TransactError> {
+        let reader = self.read()?;
+        Ok(Extend::new(self.max_addr(), reader))
     }
 }
 
@@ -54,7 +55,7 @@ mod tests {
             let mut space = MemSpace::new();
             assert_eq!(TableAddr::ZERO, space.max_addr());
             {
-                let mut extend = space.extend();
+                let mut extend = space.extend().unwrap();
                 let slot = SlotValue(1, 2);
                 addr = extend.add_slots(vec![slot]);
                 extend.commit(&mut space).unwrap();
@@ -73,7 +74,7 @@ mod tests {
             let mut space = FileSpace::new(file.path()).expect("create red space");
             assert_eq!(TableAddr::ZERO, space.max_addr());
             {
-                let mut extend = space.extend();
+                let mut extend = space.extend().unwrap();
                 let slot = SlotValue(1, 2);
                 addr = extend.add_slots(vec![slot]);
                 extend.commit(&mut space).unwrap();

@@ -6,6 +6,7 @@ use crate::hamt::trie::mem::value::MemValue;
 use crate::hamt::trie::space::map_base::{SpaceKeyValue, SpaceMapBase};
 use crate::space;
 use crate::space::reader::SlotValue;
+use crate::space::Space;
 use crate::QueryError;
 use crate::TransactError;
 use serde::{Deserialize, Serialize};
@@ -255,9 +256,9 @@ impl TrieMapBase {
 }
 
 impl TrieMapBase {
-    pub fn into_space_map_base(
+    pub fn into_space_map_base<T: Space>(
         self,
-        extend: &mut space::Extend,
+        extend: &mut space::Extend<T>,
     ) -> Result<SpaceMapBase, TransactError> {
         match self {
             Self::Space(slot_value) => {

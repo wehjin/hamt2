@@ -88,6 +88,18 @@ impl<T: Space> Db<T> {
     }
 }
 
+pub fn print_aevt<T: Space>(trie: &SpaceTrie<T>, message: &str) -> Result<(), QueryError> {
+    let x = trie.deep_query_value([KEY_AEVT, 0])?;
+    let Some(mem_value) = x else {
+        panic!("aevt should exist");
+    };
+    let sub_trie = trie.to_subtrie_from_value(mem_value)?;
+    let key_values = sub_trie.query_key_values()?;
+    dbg!(message);
+    dbg!(&key_values);
+    Ok(())
+}
+
 impl<T: Space> Db<T> {
     pub fn transact(self, datoms: Vec<Datom>) -> Result<Self, TransactError> {
         match datoms.is_empty() {
@@ -105,10 +117,14 @@ impl<T: Space> Db<T> {
                     }
                 }
                 trie = set_max_tx(trie, tx + 1)?;
+                print_aevt(&trie, "pre-commit")?;
                 trie.commit(&mut space)?;
+                dbg!(&space);
+                let trie = SpaceTrie::connect(&space)?;
+                print_aevt(&trie, "post-commit")?;
                 Ok(Self {
                     attr_map,
-                    trie: SpaceTrie::connect(&space)?,
+                    trie,
                     space,
                 })
             }
@@ -159,6 +175,7 @@ fn add<T: Space>(
     let aevt_key = [KEY_AEVT, aid, eid, vid.to_id()];
     trie = trie.deep_insert(eavt_key, MemValue::from(tid))?;
     trie = trie.deep_insert(aevt_key, MemValue::from(tid))?;
+
     trie = MaxEid::read(&trie)?.update(trie, eid)?;
     Ok(trie)
 }

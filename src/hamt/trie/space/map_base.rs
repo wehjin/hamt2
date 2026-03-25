@@ -5,7 +5,7 @@ use crate::hamt::trie::mem::base::MemBase;
 use crate::hamt::trie::mem::slot::MemSlot;
 use crate::hamt::trie::mem::value::MemValue;
 use crate::space::reader::SlotValue;
-use crate::space::{Read, TableAddr};
+use crate::space::{Read, Space, TableAddr};
 use crate::{space, QueryError, TransactError};
 
 pub struct SpaceMapBase(SlotValue);
@@ -17,10 +17,10 @@ impl SpaceMapBase {
         Self(SlotValue(map.u32(), base_addr | 0x80000000))
     }
 
-    pub fn new_from_slots(
+    pub fn new_from_slots<T: Space>(
         slot_values: Vec<SlotValue>,
         map: TrieMap,
-        extend: &mut space::Extend,
+        extend: &mut space::Extend<T>,
     ) -> Result<Self, TransactError> {
         let base_addr = extend.add_slots(slot_values);
         let map_base = Self::new(map, base_addr);

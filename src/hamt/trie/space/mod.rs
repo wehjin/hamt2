@@ -22,7 +22,10 @@ impl SpaceRoot {
         let (key, addr) = SpaceMapBase::assert(slot_value).into_map_base_addr();
         Ok(Self(key, addr))
     }
-    pub fn into_root_addr(self, extend: &mut space::Extend) -> Result<TableAddr, TransactError> {
+    pub fn into_root_addr<T: Space>(
+        self,
+        extend: &mut space::Extend<T>,
+    ) -> Result<TableAddr, TransactError> {
         let slot_value = SlotValue(self.to_slot_left(), self.to_slot_right());
         let root_addr = extend.add_slots(vec![slot_value]);
         Ok(root_addr)
@@ -61,12 +64,13 @@ impl<T: Space> SpaceTrie<T> {
     }
 
     pub fn commit(self, space: &mut T) -> Result<(), TransactError> {
-        let mut extend = space.extend();
+        let mut extend = space.extend()?;
         let root_addr = {
             let space_map_base = self.map_base.into_space_map_base(&mut extend)?;
             let (map, base_addr) = space_map_base.into_map_base_addr();
             let space_root = SpaceRoot(map, base_addr);
-            space_root.into_root_addr(&mut extend)?
+            let root_addr = space_root.into_root_addr(&mut extend)?;
+            root_addr
         };
         extend.set_root(root_addr);
         extend.commit(space)
