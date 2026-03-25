@@ -1,10 +1,10 @@
 use crate::db::find::Rule;
+use crate::db::key::KEY_AEVT;
 use crate::db::{Attr, Ent};
-use crate::hamt::trie::mem::value::MemValue;
 use crate::hamt::trie::space::SpaceTrie;
+use crate::space::Space;
 use crate::QueryError;
 use std::collections::HashMap;
-use crate::db::key::KEY_AEVT;
 
 pub struct EntsWithAttr {
     name: &'static str,
@@ -28,19 +28,21 @@ impl Rule for EntsWithAttr {
     fn results(&self, name: &'static str) -> &[Self::Output] {
         if name == self.name { &self.values } else { &[] }
     }
-    fn update(
+    fn update<T: Space>(
         &mut self,
-        trie: &SpaceTrie,
+        trie: &SpaceTrie<T>,
         attrs: &HashMap<Attr, Ent>,
     ) -> Result<bool, QueryError> {
         let aid = attrs.get(&self.attr).expect("attr should exist").to_id();
         let aevt_key = [KEY_AEVT, aid];
-        let eids = if let Some(MemValue::MapBase(map_base)) = trie.deep_query_value(aevt_key)? {
-            trie.to_subtrie(map_base)
-                .query_key_values()?
+        let eids = if let Some(value) = trie.deep_query_value(aevt_key)? {
+            let subtrie = trie.to_subtrie_from_value(value)?;
+            let key_values = subtrie.query_key_values()?;
+            let eids = key_values
                 .into_iter()
                 .map(|(eid, _)| Ent(eid))
-                .collect::<Vec<_>>()
+                .collect::<Vec<_>>();
+            eids
         } else {
             Vec::new()
         };

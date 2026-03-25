@@ -6,15 +6,10 @@ use std::fmt::Formatter;
 #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 pub struct TrieMap(pub u32);
 
-impl fmt::Debug for TrieMap {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.debug_tuple("TrieMap")
-            .field(&format_args!("{:032b}", &self.0))
-            .finish()
-    }
-}
-
 impl TrieMap {
+    pub fn u32(&self) -> u32 {
+        self.0
+    }
     pub fn slot_count(&self) -> usize {
         self.0.count_ones() as usize
     }
@@ -52,5 +47,13 @@ impl TrieMap {
         } else {
             None
         }
+    }
+}
+
+impl fmt::Debug for TrieMap {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_tuple("TrieMap")
+            .field(&format_args!("{:032b}", &self.0))
+            .finish()
     }
 }

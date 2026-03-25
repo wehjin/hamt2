@@ -1,31 +1,37 @@
-use serde::{Deserialize, Serialize};
 use crate::hamt::trie::core::key::TrieKey;
 use crate::hamt::trie::core::map_base::TrieMapBase;
-use crate::hamt::trie::core::value::TrieValue;
 use crate::hamt::trie::mem::slot::MemSlot;
-use crate::space::TableAddr;
+use crate::hamt::trie::mem::value::MemValue;
+use crate::space;
 use crate::QueryError;
 use crate::TransactError;
-use crate::{space, ReadError};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct MemBase {
     pub slots: Vec<MemSlot>,
 }
 
 impl MemBase {
-    pub fn load(
-        addr: &TableAddr,
-        count: usize,
-        reader: &impl space::Read,
-    ) -> Result<Self, ReadError> {
-        let mut slots = Vec::with_capacity(count);
-        for i in 0..count {
-            let slot = reader.read_slot(addr, i)?;
-            slots.push(slot.clone());
-        }
-        Ok(Self { slots })
-    }
+    // pub fn load(
+    //     addr: &TableAddr,
+    //     count: usize,
+    //     reader: &impl space::Read,
+    // ) -> Result<Self, ReadError> {
+    //     let mut mem_slots = Vec::with_capacity(count);
+    //     for i in 0..count {
+    //         let slot = reader.read_slot(addr, i)?;
+    //         let space_slot = SpaceSlot::assert(slot);
+    //         if let Some(key_value) = space_slot.to_key_value() {
+    //             let mem_slot = key_value.to_mem_slot();
+    //             mem_slots.push(mem_slot);
+    //         } else if let Some(map_base) = space_slot.to_map_base() {
+    //
+    //         }
+    //         mem_slots.push(slot.clone());
+    //     }
+    //     Ok(Self { slots: mem_slots })
+    // }
     pub fn new() -> Self {
         Self { slots: vec![] }
     }
@@ -34,7 +40,7 @@ impl MemBase {
         let slots = vec![slot];
         Ok(Self { slots })
     }
-    pub fn new_kv(key: TrieKey, value: TrieValue) -> Result<Self, TransactError> {
+    pub fn new_kv(key: TrieKey, value: MemValue) -> Result<Self, TransactError> {
         let slot = MemSlot::one_kv(key, value)?;
         let slots = vec![slot];
         Ok(Self { slots })
@@ -49,31 +55,72 @@ impl MemBase {
         self,
         base_index: usize,
         key: TrieKey,
-        value: TrieValue,
+        value: MemValue,
     ) -> Result<Self, TransactError> {
         let slot = MemSlot::one_kv(key, value)?;
         let MemBase { mut slots } = self;
         slots.insert(base_index, slot);
         Ok(Self { slots })
     }
-    pub fn replace_value(self, base_index: usize, value: TrieValue) -> Result<Self, TransactError> {
+    pub fn replace_value(self, base_index: usize, value: MemValue) -> Result<Self, TransactError> {
         let MemBase { mut slots } = self;
         let slot = slots.remove(base_index).replace_value(value)?;
         slots.insert(base_index, slot);
         Ok(Self { slots })
     }
+    pub fn query_key_values(
+        &self,
+        reader: &impl space::Read,
+    ) -> Result<Vec<(i32, MemValue)>, QueryError> {
+        let mut result = Vec::new();
+        for slot in &self.slots {
+            let key_values = slot.query_key_values(reader)?;
+            result.extend(key_values);
+        }
+        Ok(result)
+    }
+
+    pub fn kick_kv(
+        self,
+        base_index: usize,
+        key: TrieKey,
+        value: MemValue,
+        reader: &impl space::Read,
+    ) -> Result<Self, TransactError> {
+        let MemBase { mut slots } = self;
+        let pre_slot = slots.remove(base_index);
+        let slot = {
+            let MemSlot::KeyValue(b_key, b_value) = pre_slot else {
+                unreachable!("Should be a key-value slot, not a map-base slot:")
+            };
+            let b_key = key.sync(b_key);
+            debug_assert!(b_key.i32() != key.i32());
+            MemSlot::two_kv(b_key.next(), b_value, key.next(), value, reader)?
+        };
+        slots.insert(base_index, slot);
+        let post = Self { slots };
+        Ok(post)
+    }
+
     pub fn merge_kv(
         self,
         base_index: usize,
         key: TrieKey,
-        value: TrieValue,
+        value: MemValue,
         reader: &impl space::Read,
     ) -> Result<Self, TransactError> {
         let MemBase { mut slots } = self;
-        let slot = slots.remove(base_index);
-        let slot = slot.merge_kv(key, value, reader)?;
-        slots.insert(base_index, slot);
-        Ok(Self { slots })
+        let pre_slot = slots.remove(base_index);
+        let post_slot = {
+            let MemSlot::MapBase(map_base) = pre_slot else {
+                unreachable!("Should be a map-base slot, not a key-value slot:")
+            };
+            let post_map_base = map_base.insert_kv(key.next(), value, reader)?;
+            MemSlot::MapBase(post_map_base)
+        };
+        slots.insert(base_index, post_slot);
+        let post_base = Self { slots };
+        Ok(post_base)
     }
     pub fn as_slot(&self, base_index: usize) -> Result<&MemSlot, QueryError> {
         self.slots

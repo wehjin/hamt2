@@ -1,43 +1,90 @@
-use crate::space::value::Value;
-use crate::space::table::TableRoot;
-use crate::space::mem::MemSegment;
-use crate::space::{Read, TableAddr, ValueAddr};
-use crate::hamt::trie::mem::slot::MemSlot;
-use std::rc::Rc;
 use crate::error::ReadError;
+use crate::space::{Read, TableAddr};
+use serde::{Deserialize, Serialize};
+use std::ops::Index;
+use std::rc::Rc;
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Serialize, Deserialize)]
+pub struct SlotValue(pub u32, pub u32);
+
+impl SlotValue {
+    pub fn left(&self) -> u32 {
+        self.0
+    }
+    pub fn right(&self) -> u32 {
+        self.1
+    }
+}
 
 #[derive(Debug, Clone)]
-pub struct Reader {
-    segments: Vec<Rc<MemSegment>>,
+pub struct SlotTable {
+    slots: Vec<SlotValue>,
 }
 
-impl Read for Reader {
-    fn read_value(&self, addr: ValueAddr) -> Result<Value, ReadError> {
-        let ValueAddr(seg, val) = addr;
-        let segment = &self.segments[seg.0 as usize];
-        let value = segment.read_value(val)?;
-        Ok(value)
+impl SlotTable {
+    pub fn new() -> Self {
+        Self { slots: Vec::new() }
     }
 
-    fn read_slot(&self, addr: &TableAddr, offset: usize) -> Result<&MemSlot, ReadError> {
-        let TableAddr(seg, pos) = addr;
-        let segment = &self.segments[seg.0 as usize];
-        let item = segment.read_slot(pos, offset);
-        Ok(item)
+    pub fn max_index(&self) -> TableAddr {
+        TableAddr(self.slots.len() as u32)
     }
 
-    fn read_root(&self) -> Result<&Option<TableRoot>, ReadError> {
-        let result = if let Some(segment) = self.segments.last() {
-            segment.read_root()?
+    pub fn len(&self) -> usize {
+        self.slots.len()
+    }
+
+    pub fn extend<T: IntoIterator<Item = SlotValue>>(&mut self, iter: T) {
+        self.slots.extend(iter);
+    }
+
+    pub fn into_slots(self) -> Vec<SlotValue> {
+        self.slots
+    }
+}
+
+impl From<u64> for SlotValue {
+    fn from(value: u64) -> Self {
+        let left = (value >> 32) as u32;
+        let right = (value & 0xffff_ffff) as u32;
+        Self(left, right)
+    }
+}
+
+impl Index<TableAddr> for SlotTable {
+    type Output = SlotValue;
+
+    fn index(&self, index: TableAddr) -> &Self::Output {
+        &self.slots[index.0 as usize]
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct MemReader {
+    slots: Rc<SlotTable>,
+    root: Option<TableAddr>,
+}
+
+impl MemReader {
+    pub fn new(slots: SlotTable, root: Option<TableAddr>) -> Self {
+        Self {
+            slots: Rc::new(slots),
+            root,
+        }
+    }
+}
+
+impl Read for MemReader {
+    fn read_slot(&self, addr: &TableAddr, offset: usize) -> Result<SlotValue, ReadError> {
+        let offset_addr = addr + offset;
+        if offset_addr >= self.slots.max_index() {
+            Err(ReadError::InvalidTableAddr(*addr))
         } else {
-            &None
-        };
-        Ok(result)
+            Ok(self.slots[offset_addr])
+        }
     }
-}
 
-impl Reader {
-    pub fn new(segments: Vec<Rc<MemSegment>>) -> Self {
-        Self { segments }
+    fn read_root(&self) -> Result<&Option<TableAddr>, ReadError> {
+        Ok(&self.root)
     }
 }

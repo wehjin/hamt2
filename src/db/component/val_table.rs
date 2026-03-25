@@ -4,6 +4,7 @@ use crate::db::Val;
 use crate::db::Vid;
 use crate::hamt::trie::mem::value::MemValue;
 use crate::hamt::trie::space::SpaceTrie;
+use crate::space::Space;
 use crate::{hash, QueryError, TransactError};
 use redb::Value;
 
@@ -41,7 +42,10 @@ mod tests {
     }
 }
 
-pub fn insert(trie: SpaceTrie, val: Val) -> Result<(SpaceTrie, Vid), TransactError> {
+pub fn insert<T: Space>(
+    trie: SpaceTrie<T>,
+    val: Val,
+) -> Result<(SpaceTrie<T>, Vid), TransactError> {
     let bytes = match &val {
         Val::U32(u) => &u.to_be_bytes(),
         Val::String(s) => s.as_bytes(),
@@ -53,7 +57,8 @@ pub fn insert(trie: SpaceTrie, val: Val) -> Result<(SpaceTrie, Vid), TransactErr
 
     let mut hash = (hash::universal(bytes, 1) & 0x7FFFFFFF) as i32;
     for _ in 0..1000 {
-        match find_hash_trie(&trie, hash)? {
+        let hash_trie = find_hash_trie(&trie, hash)?;
+        match hash_trie {
             None => {
                 let trie = insert_bytes(trie, hash, bytes, bytes_type)?;
                 return Ok((trie, Vid::from_id(hash)));
@@ -73,7 +78,7 @@ pub fn insert(trie: SpaceTrie, val: Val) -> Result<(SpaceTrie, Vid), TransactErr
     Err(TransactError::NoSpaceInValueTable)
 }
 
-pub fn query(trie: &SpaceTrie, vid: Vid) -> Result<Option<Val>, QueryError> {
+pub fn query<T: Space>(trie: &SpaceTrie<T>, vid: Vid) -> Result<Option<Val>, QueryError> {
     match find_hash_trie(trie, vid.to_id())? {
         None => Ok(None),
         Some(val_trie) => {
@@ -105,12 +110,12 @@ const VAL_TYPE_U32: u8 = 0;
 
 const VAL_TYPE_STRING: u8 = 1;
 
-fn insert_bytes(
-    mut trie: SpaceTrie,
+fn insert_bytes<T: Space>(
+    mut trie: SpaceTrie<T>,
     hash: i32,
     bytes: &[u8],
     bytes_type: u8,
-) -> Result<SpaceTrie, TransactError> {
+) -> Result<SpaceTrie<T>, TransactError> {
     let stream = U31Streamer::new(bytes);
     for (key, value) in stream {
         trie = trie.deep_insert([KEY_VAL_TABLE, hash, key], MemValue::U32(value))?;
@@ -126,7 +131,11 @@ fn insert_bytes(
     Ok(trie)
 }
 
-fn is_equal_bytes(hash_trie: &SpaceTrie, bytes: &[u8], bytes_type: u8) -> Result<bool, QueryError> {
+fn is_equal_bytes<T: Space>(
+    hash_trie: &SpaceTrie<T>,
+    bytes: &[u8],
+    bytes_type: u8,
+) -> Result<bool, QueryError> {
     let Some(MemValue::U32(len)) = hash_trie.query_value(KEY_LEN)? else {
         panic!("Unexpected MemValue variant")
     };
@@ -160,15 +169,15 @@ fn is_equal_bytes(hash_trie: &SpaceTrie, bytes: &[u8], bytes_type: u8) -> Result
     }
 }
 
-fn find_hash_trie(trie: &SpaceTrie, hash: i32) -> Result<Option<SpaceTrie>, QueryError> {
+fn find_hash_trie<T: Space>(
+    trie: &SpaceTrie<T>,
+    hash: i32,
+) -> Result<Option<SpaceTrie<T>>, QueryError> {
     let key = [KEY_VAL_TABLE, hash];
     match trie.deep_query_value(key)? {
         None => Ok(None),
         Some(mem_value) => {
-            let MemValue::MapBase(map_base) = mem_value else {
-                panic!("Unexpected MemValue variant")
-            };
-            let bytes_trie = trie.to_subtrie(map_base);
+            let bytes_trie = trie.to_subtrie_from_value(mem_value)?;
             Ok(Some(bytes_trie))
         }
     }

@@ -1,138 +1,164 @@
-use crate::hamt::trie::mem::slot::MemSlot;
-use crate::space::mem::MemSegment;
-use crate::space::seg::Seg;
-use crate::space::table::TableRoot;
-use crate::space::{Reader, Space, Value};
-use crate::{ReadError, TransactError};
-use redb::{Database, ReadableDatabase, TableDefinition};
+use crate::space::reader::SlotValue;
+use crate::space::{Space, TableAddr};
+use crate::{space, FileError, ReadError, TransactError};
+use lru::LruCache;
+use redb::{Database, ReadableDatabase, TableDefinition, WriteTransaction};
 use serde::{Deserialize, Serialize};
+use std::cell::RefCell;
+use std::num::NonZeroUsize;
 use std::path::Path;
 use std::rc::Rc;
-use thiserror::Error;
 
-#[derive(Error, Debug)]
-pub enum FileError {
-    #[error("Red database error: {0:?}")]
-    RedDatabase(#[from] redb::DatabaseError),
+const SLOTS_TABLE: TableDefinition<'static, u32, u64> = TableDefinition::new("slots");
 
-    #[error("Red transaction error: {0:?}")]
-    RedTransaction(#[from] redb::TransactionError),
-
-    #[error("Red table error: {0:?}")]
-    RedTable(#[from] redb::TableError),
-
-    #[error("Red storage error: {0:?}")]
-    RedStorage(#[from] redb::StorageError),
-
-    #[error("Red commit error: {0:?}")]
-    RedCommit(#[from] redb::CommitError),
+#[derive(Debug, Clone)]
+pub struct DbReader {
+    db: Rc<Database>,
+    details: Details,
+    lru: RefCell<LruCache<TableAddr, SlotValue>>,
 }
 
+impl DbReader {
+    pub(crate) fn new(db: Rc<Database>, details: Details) -> Self {
+        Self {
+            db,
+            details,
+            lru: RefCell::new(LruCache::new(NonZeroUsize::new(1000).unwrap())),
+        }
+    }
+}
+impl space::Read for DbReader {
+    fn read_slot(&self, addr: &TableAddr, offset: usize) -> Result<SlotValue, ReadError> {
+        let slot_addr = addr + offset;
+        if slot_addr > self.details.max_addr() {
+            return Err(ReadError::InvalidTableAddr(*addr));
+        }
+        if let Some(slot) = self.lru.borrow_mut().get(&slot_addr) {
+            Ok(slot.clone())
+        } else {
+            let read = self.db.begin_read().expect("begin read");
+            let table = read.open_table(SLOTS_TABLE).expect("open slots table");
+            let slot_u64 = table
+                .get(slot_addr.u32())
+                .expect("get slot")
+                .expect("get slot value")
+                .value();
+            let slot = SlotValue::from(slot_u64);
+            self.lru.borrow_mut().put(slot_addr, slot);
+            Ok(slot)
+        }
+    }
+
+    fn read_root(&self) -> Result<&Option<TableAddr>, ReadError> {
+        Ok(&self.details.root)
+    }
+}
+
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+pub(crate) struct Details {
+    slot_count: usize,
+    root: Option<TableAddr>,
+}
+
+impl Details {
+    pub fn max_addr(&self) -> TableAddr {
+        TableAddr::from(self.slot_count)
+    }
+
+    pub fn with_update(&self, more_slots: usize, root: Option<TableAddr>) -> Self {
+        Self {
+            slot_count: self.slot_count + more_slots,
+            root,
+        }
+    }
+
+    const TABLE: TableDefinition<'static, &str, Vec<u8>> = TableDefinition::new("details");
+    pub fn write(self: &Self, write: &WriteTransaction) -> Result<(), FileError> {
+        let mut table = write.open_table(Self::TABLE)?;
+        let bytes = postcard::to_allocvec(self)?;
+        table.insert("main", bytes)?;
+        Ok(())
+    }
+    pub fn read(db: &Database) -> Result<Self, FileError> {
+        let read = db.begin_read()?;
+        let table = read.open_table(Self::TABLE)?;
+        let bytes = table.get("main")?.expect("get details").value();
+        let details: Self = postcard::from_bytes(&bytes)?;
+        Ok(details)
+    }
+}
+
+#[derive(Debug)]
 pub struct FileSpace {
-    db: Database,
-    max_seg: Seg,
+    db: Rc<Database>,
+    details: Details,
 }
-
-const COUNTS_TABLE: TableDefinition<&str, u32> = TableDefinition::new("counts");
-const SEGMENTS_TABLE: TableDefinition<u32, Vec<u8>> = TableDefinition::new("segments");
 
 impl FileSpace {
     pub fn new(path: impl AsRef<Path>) -> Result<Self, FileError> {
         let db = Database::create(path)?;
-        let max_seg = Seg(0);
-        let seg = Seg(0);
+        let details = Details {
+            slot_count: 0,
+            root: None,
+        };
         let write = db.begin_write()?;
-        {
-            let mut counts = write.open_table(COUNTS_TABLE)?;
-            counts.insert("segments", seg.0)?;
-        }
+        details.write(&write)?;
         write.commit()?;
-        ();
-        Ok(Self { db, max_seg })
+        Ok(Self {
+            db: Rc::new(db),
+            details,
+        })
     }
 
     pub fn load(path: impl AsRef<Path>) -> Result<Self, FileError> {
         let db = Database::open(path)?;
-        let max_seg = {
-            let read = db.begin_read()?;
-            let table = read.open_table(COUNTS_TABLE)?;
-            let seg = table.get("segments")?.expect("get segment count").value();
-            Seg(seg)
-        };
-        Ok(Self { db, max_seg })
+        let details = Details::read(&db)?;
+        Ok(Self {
+            db: Rc::new(db),
+            details,
+        })
     }
+    const SLOTS_TABLE: TableDefinition<'static, u32, u64> = TableDefinition::new("slots");
 }
-
 impl Space for FileSpace {
-    fn max_seg(&self) -> Seg {
-        self.max_seg
-    }
+    type Reader = DbReader;
 
     fn add_segment(
         &mut self,
-        seg: Seg,
-        values: Vec<Value>,
-        table: Vec<MemSlot>,
-        root: Option<TableRoot>,
+        start_addr: TableAddr,
+        slots: Vec<SlotValue>,
+        root: Option<TableAddr>,
     ) -> Result<(), TransactError> {
-        if seg != self.max_seg {
-            return Err(TransactError::SegConflict(seg));
+        if start_addr != self.max_addr() {
+            return Err(TransactError::InvalidStartAddr(start_addr));
         }
-        let write = self.db.begin_write().expect("begin write");
+
+        let new_details: Details;
         {
-            let segment = FileSegment {
-                values,
-                table,
-                root,
-            };
-            let bytes = postcard::to_allocvec(&segment).expect("serialize segment");
-            let mut segments = write
-                .open_table(SEGMENTS_TABLE)
-                .expect("open segments table");
-            segments.insert(seg.0, bytes).expect("insert segment");
+            let write = self.db.begin_write().expect("begin write");
+            {
+                let mut table = write
+                    .open_table(FileSpace::SLOTS_TABLE)
+                    .expect("open slots table");
+                let mut key = start_addr.0;
+                for slot in &slots {
+                    let value = ((slot.0 as u64) << 32) | (slot.1 as u64);
+                    table.insert(key, value).expect("insert slot");
+                    key += 1;
+                }
+            }
+            new_details = self.details.with_update(slots.len(), root);
+            new_details.write(&write).expect("write details");
+            write.commit().expect("commit");
         }
-        {
-            self.max_seg = seg + 1;
-            let mut counts = write.open_table(COUNTS_TABLE).expect("open counts table");
-            counts
-                .insert("segments", self.max_seg.0)
-                .expect("insert segment count");
-        }
-        write.commit().expect("commit");
+        self.details = new_details;
         Ok(())
     }
-
-    fn read(&self) -> Result<Reader, ReadError> {
-        // For now, we just read the whole database.
-        let mut segments = Vec::new();
-        for seg in 0..self.max_seg.0 {
-            let bytes = {
-                let read = self.db.begin_read().expect("begin read");
-                let table = read
-                    .open_table(SEGMENTS_TABLE)
-                    .expect("open segments table");
-                table
-                    .get(seg)
-                    .expect("get segment")
-                    .expect("get segment bytes")
-                    .value()
-            };
-            let segment: FileSegment = postcard::from_bytes(&bytes).expect("deserialize segment");
-            let mem_segment = MemSegment {
-                values: segment.values,
-                table: segment.table,
-                root: segment.root,
-            };
-            segments.push(Rc::new(mem_segment));
-        }
-        let reader = Reader::new(segments);
+    fn read(&self) -> Result<Self::Reader, ReadError> {
+        let reader = DbReader::new(self.db.clone(), self.details.clone());
         Ok(reader)
     }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct FileSegment {
-    values: Vec<Value>,
-    table: Vec<MemSlot>,
-    root: Option<TableRoot>,
+    fn max_addr(&self) -> TableAddr {
+        self.details.max_addr()
+    }
 }

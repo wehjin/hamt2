@@ -1,5 +1,6 @@
 use crate::hamt::trie::mem::value::MemValue;
 use crate::hamt::trie::space::SpaceTrie;
+use crate::space::Space;
 
 pub struct U31Streamer<'a> {
     bytes: &'a [u8],
@@ -74,15 +75,15 @@ impl Iterator for U31Streamer<'_> {
     }
 }
 
-pub struct U31Builder<'a> {
-    hash_trie: &'a SpaceTrie,
+pub struct U31Builder<'a, T: Space> {
+    hash_trie: &'a SpaceTrie<T>,
     bytes_left: usize,
     u31_index: i32,
     current_u32: Option<(u32, usize)>,
 }
 
-impl<'a> U31Builder<'a> {
-    pub fn new(hash_trie: &'a SpaceTrie, bytes_max: usize) -> Self {
+impl<'a, T: Space> U31Builder<'a, T> {
+    pub fn new(hash_trie: &'a SpaceTrie<T>, bytes_max: usize) -> Self {
         Self {
             hash_trie,
             bytes_left: bytes_max,
@@ -100,7 +101,7 @@ impl<'a> U31Builder<'a> {
     }
 }
 
-impl Iterator for U31Builder<'_> {
+impl<T: Space> Iterator for U31Builder<'_, T> {
     type Item = u8;
 
     fn next(&mut self) -> Option<Self::Item> {

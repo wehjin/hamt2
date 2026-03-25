@@ -11,9 +11,10 @@ use crate::space::Space;
 use crate::{LoadError, QueryError, TransactError};
 use std::collections::HashMap;
 
+#[derive(Debug)]
 pub struct Db<T: Space> {
     attr_map: HashMap<Attr, Ent>,
-    trie: SpaceTrie,
+    trie: SpaceTrie<T>,
     space: T,
 }
 
@@ -142,14 +143,14 @@ impl<T: Space> Db<T> {
     }
 }
 
-fn add(
-    trie: SpaceTrie,
+fn add<T: Space>(
+    trie: SpaceTrie<T>,
     attr_map: &HashMap<Attr, Ent>,
     e: Ent,
     a: Attr,
     v: Val,
     t: &Txid,
-) -> Result<SpaceTrie, TransactError> {
+) -> Result<SpaceTrie<T>, TransactError> {
     let eid = e.to_id();
     let aid = attr_map.get(&a).expect("attr should exist").to_id();
     let (mut trie, vid) = val_table::insert(trie, v)?;
@@ -162,6 +163,6 @@ fn add(
     Ok(trie)
 }
 
-fn set_max_tx(trie: SpaceTrie, max_tx: Txid) -> Result<SpaceTrie, TransactError> {
+fn set_max_tx<T: Space>(trie: SpaceTrie<T>, max_tx: Txid) -> Result<SpaceTrie<T>, TransactError> {
     trie.insert(KEY_MAX_TXID, MemValue::from(max_tx.u32()))
 }

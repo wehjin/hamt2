@@ -1,69 +1,44 @@
-use crate::error::ReadError;
-use crate::hamt::trie::mem::slot::MemSlot;
-use crate::space::seg::Seg;
-use crate::space::table::{TablePos, TableRoot};
-use crate::space::value::Val;
-use crate::space::value::Value;
+use crate::space::reader::{SlotTable, SlotValue};
 use crate::space::Space;
-use crate::space::{Read, TableAddr, ValueAddr};
+use crate::space::TableAddr;
 use crate::TransactError;
 
 pub struct Extend {
-    seg: Seg,
-    values: Vec<Value>,
-    table: Vec<MemSlot>,
-    root: Option<TableRoot>,
+    start_addr: TableAddr,
+    slots: SlotTable,
+    root: Option<TableAddr>,
 }
 
 impl Extend {
-    pub fn new(seg: Seg) -> Self {
+    pub fn new(start_addr: TableAddr) -> Self {
         Self {
-            seg,
-            values: Vec::new(),
-            table: Vec::new(),
+            start_addr,
+            slots: SlotTable::new(),
             root: None,
         }
     }
-    pub fn commit<T: Space>(self, space: &mut T) -> Result<(), TransactError> {
-        let Extend {
-            seg,
-            values,
-            table,
-            root,
-        } = self;
-        assert_eq!(space.max_seg(), seg);
-        space.add_segment(seg, values, table, root)?;
-        Ok(())
+
+    fn max_addr(&self) -> TableAddr {
+        self.start_addr + self.slots.len()
     }
 
-    pub fn add_value(&mut self, value: Value) -> ValueAddr {
-        let val = Val(self.values.len() as u16);
-        self.values.push(value);
-        ValueAddr(self.seg, val)
+    pub fn add_slots(&mut self, items: Vec<SlotValue>) -> TableAddr {
+        let pos = self.max_addr();
+        self.slots.extend(items);
+        pos
     }
 
-    pub fn add_items(&mut self, items: Vec<MemSlot>) -> TableAddr {
-        let pos = TablePos(self.table.len() as u32);
-        self.table.extend(items);
-        TableAddr(self.seg, pos)
-    }
-    pub fn set_root(&mut self, root: TableRoot) {
+    pub fn set_root(&mut self, root: TableAddr) {
         self.root = Some(root);
     }
-}
 
-impl Read for Extend {
-    fn read_value(&self, addr: ValueAddr) -> Result<Value, ReadError> {
-        let ValueAddr(seg, val) = addr;
-        debug_assert_eq!(seg, self.seg);
-        Ok(self.values[val.0 as usize].clone())
-    }
-    fn read_slot(&self, addr: &TableAddr, offset: usize) -> Result<&MemSlot, ReadError> {
-        let TableAddr(seg, pos) = addr;
-        debug_assert_eq!(seg, &self.seg);
-        Ok(&self.table[pos.0 as usize + offset])
-    }
-    fn read_root(&self) -> Result<&Option<TableRoot>, ReadError> {
-        Ok(&self.root)
+    pub fn commit<T: Space>(self, space: &mut T) -> Result<(), TransactError> {
+        let Extend {
+            start_addr,
+            slots,
+            root,
+        } = self;
+        space.add_segment(start_addr, slots.into_slots(), root)?;
+        Ok(())
     }
 }

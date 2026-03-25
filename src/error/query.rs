@@ -32,9 +32,6 @@ pub enum QueryError {
     #[error("BaseIndexOutOfBounds: {0}")]
     BaseIndexOutOfBounds(usize),
 
-    #[error("ExpectedMapBaseAtKey: {0}")]
-    NoSubtrieAtKeyIndex(usize),
-
     #[error("NoRootInReader")]
     NoRootInReader,
 }

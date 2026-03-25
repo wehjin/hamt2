@@ -1,72 +1,55 @@
 use crate::hamt::trie::core::key::TrieKey;
+use crate::hamt::trie::core::map::TrieMap;
 use crate::hamt::trie::core::map_base::TrieMapBase;
-use crate::hamt::trie::core::value::TrieValue;
+use crate::hamt::trie::mem::base::MemBase;
 use crate::hamt::trie::mem::value::MemValue;
 use crate::space;
 use crate::QueryError;
 use crate::TransactError;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum MemSlot {
-    KeyValue(i32, TrieValue),
+    KeyValue(i32, MemValue),
     MapBase(TrieMapBase),
 }
 
 impl MemSlot {
-    pub fn one_kv(key: TrieKey, value: TrieValue) -> Result<Self, TransactError> {
+    pub fn one_kv(key: TrieKey, value: MemValue) -> Result<Self, TransactError> {
         Ok(Self::KeyValue(key.i32(), value))
     }
     pub fn two_kv(
         a_key: TrieKey,
-        a_value: TrieValue,
+        a_value: MemValue,
         b_key: TrieKey,
-        b_value: TrieValue,
+        b_value: MemValue,
         reader: &impl space::Read,
     ) -> Result<Self, TransactError> {
+        debug_assert!(a_key.i32() != b_key.i32());
         let (a_map_index, b_map_index) = (a_key.map_index(), b_key.map_index());
-        if a_map_index != b_map_index {
-            let map_base = TrieMapBase::two_kv(a_key, a_value, b_key, b_value, reader)?;
-            Ok(MemSlot::MapBase(map_base))
+        if a_map_index == b_map_index {
+            let map = TrieMap::set_map_index_bit(a_map_index);
+            let slot = MemSlot::two_kv(a_key.next(), a_value, b_key.next(), b_value, reader)?;
+            let base = MemBase { slots: vec![slot] };
+            Ok(MemSlot::MapBase(TrieMapBase::Mem(map, base)))
         } else {
-            let map_index = a_map_index;
-            let inner_slot = MemSlot::two_kv(a_key.next(), a_value, b_key.next(), b_value, reader)?;
-            let map_base = TrieMapBase::one_slot(map_index, inner_slot)?;
+            let map_base = TrieMapBase::two_kv(a_key, a_value, b_key, b_value)?;
             Ok(MemSlot::MapBase(map_base))
         }
     }
-    pub fn replace_value(self, value: TrieValue) -> Result<Self, TransactError> {
+    pub fn replace_value(self, value: MemValue) -> Result<Self, TransactError> {
         let MemSlot::KeyValue(key, _value) = self else {
             return Err(TransactError::InvalidSlotType);
         };
         let slot = MemSlot::KeyValue(key, value);
         Ok(slot)
     }
-    pub fn merge_kv(
-        self,
-        key: TrieKey,
-        value: TrieValue,
-        reader: &impl space::Read,
-    ) -> Result<Self, TransactError> {
-        match self {
-            MemSlot::KeyValue(b_key, b_value) => {
-                let b_key = key.sync(b_key);
-                let slot = MemSlot::two_kv(b_key.next(), b_value, key.next(), value, reader)?;
-                Ok(slot)
-            }
-            MemSlot::MapBase(map_base) => {
-                let map_base = map_base.insert_kv(key.next(), value, reader)?;
-                let slot = MemSlot::MapBase(map_base);
-                Ok(slot)
-            }
-        }
-    }
     pub fn query_key_values(
         &self,
         reader: &impl space::Read,
     ) -> Result<Vec<(i32, MemValue)>, QueryError> {
         match self {
-            MemSlot::KeyValue(key, value) => Ok(vec![(*key, value.to_mem_value(reader)?)]),
+            MemSlot::KeyValue(key, value) => Ok(vec![(*key, value.clone())]),
             MemSlot::MapBase(map_base) => map_base.query_key_values(reader),
         }
     }
@@ -74,7 +57,7 @@ impl MemSlot {
         &self,
         key: TrieKey,
         reader: &impl space::Read,
-    ) -> Result<Option<TrieValue>, QueryError> {
+    ) -> Result<Option<MemValue>, QueryError> {
         match self {
             MemSlot::KeyValue(k, v) => {
                 if *k != key.i32() {
@@ -89,7 +72,7 @@ impl MemSlot {
             }
         }
     }
-    pub fn test_kv(&self, key: &TrieKey, value: &TrieValue) -> KvTest {
+    pub fn test_kv(&self, key: &TrieKey, value: &MemValue) -> KvTest {
         match self {
             MemSlot::KeyValue(slot_key, slot_value) => {
                 if key.i32() == *slot_key {

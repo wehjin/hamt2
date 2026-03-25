@@ -1,5 +1,5 @@
 use crate::error::read;
-use crate::space::seg::Seg;
+use crate::space::TableAddr;
 use crate::QueryError;
 
 #[derive(thiserror::Error, Debug)]
@@ -31,9 +31,9 @@ pub enum TransactError {
     #[error("SpaceReadError: {0}")]
     SpaceReadError(#[from] read::ReadError),
 
-    #[error("Segment {0} already exists")]
-    SegConflict(Seg),
-
     #[error("NoSpaceInValueTable")]
     NoSpaceInValueTable,
+
+    #[error("Invalid start address: {0}")]
+    InvalidStartAddr(TableAddr),
 }

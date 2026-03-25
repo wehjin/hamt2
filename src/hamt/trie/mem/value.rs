@@ -1,11 +1,28 @@
 use crate::hamt::trie::core::map_base::TrieMapBase;
+use crate::hamt::trie::space::SpaceRoot;
+use crate::{space, TransactError};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Formatter};
 
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum MemValue {
     U32(u32),
     MapBase(TrieMapBase),
+}
+
+impl MemValue {
+    pub fn into_u32(self, extend: &mut space::Extend) -> Result<u32, TransactError> {
+        match self {
+            MemValue::U32(v) => Ok(v),
+            MemValue::MapBase(map_base) => {
+                let space_map_base = map_base.into_space_map_base(extend)?;
+                let (map, base_addr) = space_map_base.into_map_base_addr();
+                let space_root = SpaceRoot(map, base_addr);
+                let root_addr = space_root.into_root_addr(extend)?;
+                Ok(root_addr.u32())
+            }
+        }
+    }
 }
 
 impl From<u32> for MemValue {

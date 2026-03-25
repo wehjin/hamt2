@@ -2,6 +2,7 @@ use crate::db::key::KEY_MAX_EID;
 use crate::db::Ent;
 use crate::hamt::trie::mem::value::MemValue;
 use crate::hamt::trie::space::SpaceTrie;
+use crate::space::Space;
 use crate::{QueryError, TransactError};
 
 pub(crate) struct MaxEid(pub i32);
@@ -13,7 +14,11 @@ impl MaxEid {
         let ids = (start..end).map(Ent).collect();
         (Self(end), ids)
     }
-    pub fn update(mut self, trie: SpaceTrie, eid: i32) -> Result<SpaceTrie, TransactError> {
+    pub fn update<T: Space>(
+        mut self,
+        trie: SpaceTrie<T>,
+        eid: i32,
+    ) -> Result<SpaceTrie<T>, TransactError> {
         if eid < self.0 {
             Ok(trie)
         } else {
@@ -21,11 +26,11 @@ impl MaxEid {
             self.write(trie)
         }
     }
-    pub fn write(self, trie: SpaceTrie) -> Result<SpaceTrie, TransactError> {
+    pub fn write<T: Space>(self, trie: SpaceTrie<T>) -> Result<SpaceTrie<T>, TransactError> {
         let trie = trie.insert(KEY_MAX_EID, MemValue::from(self.0 as u32))?;
         Ok(trie)
     }
-    pub fn read(trie: &SpaceTrie) -> Result<Self, QueryError> {
+    pub fn read<T: Space>(trie: &SpaceTrie<T>) -> Result<Self, QueryError> {
         if let Some(MemValue::U32(value)) = trie.query_value(KEY_MAX_EID)? {
             Ok(Self(value as i32))
         } else {
