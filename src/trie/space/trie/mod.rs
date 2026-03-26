@@ -1,9 +1,9 @@
+use crate::space::{Read, Space};
 use crate::trie::core::deep_key::DeepKey;
 use crate::trie::core::key::TrieKey;
 use crate::trie::core::map_base::TrieMapBase;
 use crate::trie::mem::value::MemValue;
 use crate::trie::space::SpaceRoot;
-use crate::space::{Read, Space};
 use crate::{QueryError, TransactError};
 use std::collections::HashMap;
 
@@ -13,6 +13,14 @@ pub mod query;
 pub struct SpaceTrie<T: Space> {
     map_base: TrieMapBase,
     reader: T::Reader,
+}
+
+impl<T: Space> Clone for SpaceTrie<T> {
+    fn clone(&self) -> Self {
+        let map_base = self.map_base.clone();
+        let reader = self.reader.clone();
+        Self { map_base, reader }
+    }
 }
 
 impl<T: Space> SpaceTrie<T> {
