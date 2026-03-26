@@ -1,6 +1,6 @@
-use crate::hamt::trie::core::key::TrieKey;
-use crate::hamt::trie::mem::slot::MemSlot;
-use crate::hamt::trie::mem::value::MemValue;
+use crate::trie::core::key::TrieKey;
+use crate::trie::mem::slot::MemSlot;
+use crate::trie::mem::value::MemValue;
 use crate::space;
 use crate::TransactError;
 use serde::{Deserialize, Serialize};

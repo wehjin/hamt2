@@ -1,4 +1,4 @@
-use crate::hamt::trie::mem::value::MemValue;
+use crate::trie::mem::value::MemValue;
 use crate::{space, QueryError};
 
 pub trait QueryKeysValues {

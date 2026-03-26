@@ -1,5 +1,5 @@
-use crate::hamt::trie::core::map::TrieMap;
-use crate::hamt::trie::space::map_base::{SpaceKeyValue, SpaceMapBase};
+use crate::trie::core::map::TrieMap;
+use crate::trie::space::map_base::{SpaceKeyValue, SpaceMapBase};
 use crate::space::reader::SlotValue;
 use crate::space::TableAddr;
 

@@ -1,4 +1,4 @@
-use crate::hamt::trie::core::key::TrieKey;
+use crate::trie::core::key::TrieKey;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fmt::Formatter;

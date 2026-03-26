@@ -1,5 +1,5 @@
-use crate::hamt::trie::core::map_base::TrieMapBase;
-use crate::hamt::trie::space::SpaceRoot;
+use crate::trie::core::map_base::TrieMapBase;
+use crate::trie::space::SpaceRoot;
 use crate::space::Space;
 use crate::{space, TransactError};
 use serde::{Deserialize, Serialize};

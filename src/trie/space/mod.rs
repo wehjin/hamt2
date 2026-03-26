@@ -1,7 +1,7 @@
-use crate::hamt::trie::core::map::TrieMap;
-use crate::hamt::trie::core::map_base::TrieMapBase;
+use crate::trie::core::map::TrieMap;
+use crate::trie::core::map_base::TrieMapBase;
 
-use crate::hamt::trie::space::map_base::SpaceMapBase;
+use crate::trie::space::map_base::SpaceMapBase;
 use crate::space::Space;
 use crate::space::{Read, TableAddr};
 use crate::TransactError;

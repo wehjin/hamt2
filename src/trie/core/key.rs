@@ -1,4 +1,4 @@
-use crate::hamt::trie::core::map::TrieMap;
+use crate::trie::core::map::TrieMap;
 use crate::hash;
 use serde::{Deserialize, Serialize};
 

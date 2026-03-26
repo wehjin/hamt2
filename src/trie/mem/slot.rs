@@ -1,9 +1,9 @@
-use crate::hamt::trie::core::key::TrieKey;
-use crate::hamt::trie::core::map::TrieMap;
-use crate::hamt::trie::core::map_base::TrieMapBase;
-use crate::hamt::trie::core::query::QueryKeysValues;
-use crate::hamt::trie::mem::base::MemBase;
-use crate::hamt::trie::mem::value::MemValue;
+use crate::trie::core::key::TrieKey;
+use crate::trie::core::map::TrieMap;
+use crate::trie::core::map_base::TrieMapBase;
+use crate::trie::core::query::QueryKeysValues;
+use crate::trie::mem::base::MemBase;
+use crate::trie::mem::value::MemValue;
 use crate::space;
 use crate::QueryError;
 use serde::{Deserialize, Serialize};

@@ -1,10 +1,10 @@
-use crate::hamt::trie::core::key::TrieKey;
-use crate::hamt::trie::core::map::TrieMap;
-use crate::hamt::trie::core::map_base::TrieMapBase;
-use crate::hamt::trie::mem::base::MemBase;
-use crate::hamt::trie::mem::slot::MemSlot;
-use crate::hamt::trie::mem::value::MemValue;
-use crate::hamt::trie::space::slots::SpaceSlot;
+use crate::trie::core::key::TrieKey;
+use crate::trie::core::map::TrieMap;
+use crate::trie::core::map_base::TrieMapBase;
+use crate::trie::mem::base::MemBase;
+use crate::trie::mem::slot::MemSlot;
+use crate::trie::mem::value::MemValue;
+use crate::trie::space::slots::SpaceSlot;
 use crate::space::reader::SlotValue;
 use crate::space::{Read, Space, TableAddr};
 use crate::{space, QueryError, TransactError};

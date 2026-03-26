@@ -1,7 +1,7 @@
 use crate::db::find::Rule;
 use crate::db::key::KEY_AEVT;
 use crate::db::{Attr, Ent};
-use crate::hamt::trie::space::trie::SpaceTrie;
+use crate::trie::space::trie::SpaceTrie;
 use crate::space::Space;
 use crate::QueryError;
 use std::collections::HashMap;

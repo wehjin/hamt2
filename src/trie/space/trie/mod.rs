@@ -1,8 +1,8 @@
-use crate::hamt::trie::core::deep_key::DeepKey;
-use crate::hamt::trie::core::key::TrieKey;
-use crate::hamt::trie::core::map_base::TrieMapBase;
-use crate::hamt::trie::mem::value::MemValue;
-use crate::hamt::trie::space::SpaceRoot;
+use crate::trie::core::deep_key::DeepKey;
+use crate::trie::core::key::TrieKey;
+use crate::trie::core::map_base::TrieMapBase;
+use crate::trie::mem::value::MemValue;
+use crate::trie::space::SpaceRoot;
 use crate::space::{Read, Space};
 use crate::{QueryError, TransactError};
 use std::collections::HashMap;

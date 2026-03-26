@@ -1,7 +1,7 @@
-use crate::hamt::trie::core::query::QueryKeysValues;
-use crate::hamt::trie::mem::value::MemValue;
-use crate::hamt::trie::space::map_base::SpaceMapBase;
-use crate::hamt::trie::space::slots::SpaceSlot;
+use crate::trie::core::query::QueryKeysValues;
+use crate::trie::mem::value::MemValue;
+use crate::trie::space::map_base::SpaceMapBase;
+use crate::trie::space::slots::SpaceSlot;
 use crate::space::{Read, TableAddr};
 use crate::QueryError;
 
