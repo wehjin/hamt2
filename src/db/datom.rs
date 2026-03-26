@@ -1,4 +1,5 @@
 use crate::trie::mem::value::MemValue;
+use std::fmt::Display;
 use std::hash::Hash;
 
 pub enum Datom {
@@ -30,8 +31,17 @@ pub struct Attr(pub &'static str);
 
 impl Attr {
     pub const DB_IDENT: Attr = Attr("db/ident");
+    pub fn ident(&self) -> &str {
+        self.as_str()
+    }
     pub fn as_str(&self) -> &str {
         self.0
+    }
+}
+
+impl Display for Attr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.0)
     }
 }
 
@@ -48,10 +58,25 @@ impl Val {
             Val::String(_) => panic!("Not a u32"),
         }
     }
+    pub fn try_into_u32(self) -> Option<u32> {
+        match self {
+            Val::U32(v) => Some(v),
+            Val::String(_) => None,
+        }
+    }
+}
+
+impl Val {
     pub fn as_str(&self) -> &str {
         match self {
             Val::U32(_) => panic!("Not a string"),
             Val::String(s) => s,
+        }
+    }
+    pub fn try_into_string(self) -> Option<String> {
+        match self {
+            Val::U32(_) => None,
+            Val::String(s) => Some(s.clone()),
         }
     }
 }
