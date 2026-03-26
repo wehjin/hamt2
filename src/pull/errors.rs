@@ -19,12 +19,12 @@ pub enum BuildError {
 }
 
 #[derive(Error, Debug)]
-pub enum PushError {
+pub enum DatomsError {
     #[error("Serde {0}")]
     CustomSerde(String),
 }
 
-impl ser::Error for PushError {
+impl ser::Error for DatomsError {
     fn custom<T>(msg: T) -> Self
     where
         T: Display,

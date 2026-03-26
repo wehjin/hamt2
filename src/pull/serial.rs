@@ -1,5 +1,5 @@
 use crate::db::{Attr, Datom, Ent, Val};
-use crate::pull::errors::PushError;
+use crate::pull::errors::DatomsError;
 use serde::ser::Impossible;
 use serde::{ser, Serialize};
 
@@ -23,7 +23,7 @@ impl Serializer {
 
 impl<'a> ser::SerializeStruct for &'a mut Serializer {
     type Ok = ();
-    type Error = PushError;
+    type Error = DatomsError;
     fn serialize_field<T>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>
     where
         T: ?Sized + Serialize,
@@ -42,7 +42,7 @@ impl<'a> ser::SerializeStruct for &'a mut Serializer {
 
 impl<'a> ser::Serializer for &'a mut Serializer {
     type Ok = ();
-    type Error = PushError;
+    type Error = DatomsError;
     type SerializeSeq = Impossible<Self::Ok, Self::Error>;
     type SerializeTuple = Impossible<Self::Ok, Self::Error>;
     type SerializeTupleStruct = Impossible<Self::Ok, Self::Error>;

@@ -15,7 +15,7 @@ fn push_test() {
         price_each: 101,
         direction: -1,
     };
-    let datoms = basis.push(27).expect("into_datoms");
+    let datoms = basis.into_datoms(27).expect("into_datoms");
     assert_eq!(
         vec![
             Datom::Add(Ent(27), Attr("basis", "symbol"), Val::from_str("ABC")),
@@ -33,19 +33,17 @@ fn pull_trait() {
     let attrs = register.to_attrs();
     // Push
     let (id, space) = {
-        let mut db = Db::new(MemSpace::new(), attrs.clone()).unwrap();
-        let id = db.max_eid().unwrap();
-        let datoms = Basis {
+        let basis = Basis {
             symbol: "ABC".to_string(),
             shares: 100,
             price_each: 100,
             direction: -1,
-        }
-        .push(id)
-        .unwrap();
+        };
+        let mut db = Db::new(MemSpace::new(), attrs.clone()).unwrap();
+        let id = db.max_eid().unwrap();
+        let datoms = basis.into_datoms(id).unwrap();
         db = db.transact(datoms).unwrap();
-        let space = db.close();
-        (id, space)
+        (id, db.close())
     };
     // Pull
     assert_eq!(
