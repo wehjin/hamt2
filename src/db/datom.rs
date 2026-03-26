@@ -1,7 +1,8 @@
 use crate::trie::mem::value::MemValue;
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 use std::hash::Hash;
 
+#[derive(Debug, Eq, PartialEq)]
 pub enum Datom {
     Add(Ent, Attr, Val),
 }
@@ -27,21 +28,18 @@ impl From<i32> for Ent {
 }
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct Attr(pub &'static str);
+pub struct Attr(pub &'static str, pub &'static str);
 
 impl Attr {
-    pub const DB_IDENT: Attr = Attr("db/ident");
-    pub fn ident(&self) -> &str {
-        self.as_str()
-    }
-    pub fn as_str(&self) -> &str {
-        self.0
+    pub const DB_IDENT: Attr = Attr("db", "ident");
+    pub fn to_ident(&self) -> String {
+        format!("{}/{}", self.0, self.1)
     }
 }
 
 impl Display for Attr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.0)
+        f.write_str(self.to_ident().as_str())
     }
 }
 
@@ -67,6 +65,9 @@ impl Val {
 }
 
 impl Val {
+    pub fn from_str(s: &str) -> Self {
+        Val::String(s.to_string())
+    }
     pub fn as_str(&self) -> &str {
         match self {
             Val::U32(_) => panic!("Not a string"),
@@ -96,8 +97,8 @@ impl From<u32> for Val {
     }
 }
 
-impl From<&Attr> for Val {
-    fn from(a: &Attr) -> Self {
-        Self::String(a.0.to_string())
+impl From<&str> for Val {
+    fn from(s: &str) -> Self {
+        Self::String(s.to_string())
     }
 }

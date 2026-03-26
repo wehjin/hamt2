@@ -4,8 +4,8 @@ use hamt2::space::file::FileSpace;
 use hamt2::space::mem::MemSpace;
 use hamt2::LoadError;
 
-const ATTR_COUNT: Attr = Attr("counter/count");
-const ATTR_GREETING: Attr = Attr("speech/greeting");
+const ATTR_COUNT: Attr = Attr("counter", "count");
+const ATTR_GREETING: Attr = Attr("speech", "greeting");
 
 #[tokio::test]
 async fn file_db_works() {

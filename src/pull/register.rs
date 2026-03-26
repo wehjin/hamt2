@@ -1,6 +1,6 @@
 use crate::db::Attr;
 use crate::pull::errors::RegisterError;
-use crate::pull::Pull;
+use crate::pull::pull::Pull;
 use std::collections::HashMap;
 
 pub struct Register {
@@ -16,8 +16,8 @@ impl Register {
 
     pub fn register<T: Pull>(mut self) -> Result<Self, RegisterError> {
         for attr in T::attrs() {
-            let ident = attr.ident();
-            if self.attrs.contains_key(ident) {
+            let ident = attr.to_ident();
+            if self.attrs.contains_key(&ident) {
                 return Err(RegisterError::DuplicateAttr(attr));
             }
             self.attrs.insert(ident.to_string(), attr);

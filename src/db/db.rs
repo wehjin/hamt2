@@ -5,9 +5,9 @@ use crate::db::find::Rule;
 use crate::db::find::ValsWithEntAttr;
 use crate::db::key::{KEY_AEVT, KEY_EAVT, KEY_MAX_TXID};
 use crate::db::txid::Txid;
+use crate::space::Space;
 use crate::trie::mem::value::MemValue;
 use crate::trie::space::trie::SpaceTrie;
-use crate::space::Space;
 use crate::{LoadError, QueryError, TransactError};
 use std::collections::HashMap;
 
@@ -30,7 +30,7 @@ impl<T: Space> Db<T> {
             .collect::<HashMap<_, _>>();
         attr_map.insert(Attr::DB_IDENT, Ent::DB_IDENT);
         for (at, a_ent) in &attr_map {
-            let ident = Val::from(at);
+            let ident = Val::from(at.to_ident().as_str());
             trie = add(trie, &attr_map, *a_ent, Attr::DB_IDENT, ident, &Txid::SETUP)?;
         }
         trie = set_max_tx(trie, Txid::FLOOR)?;
@@ -50,7 +50,7 @@ impl<T: Space> Db<T> {
     pub fn load(space: T, attrs: Vec<Attr>) -> Result<Self, LoadError> {
         let user_attrs: HashMap<String, Attr> = attrs
             .into_iter()
-            .map(|attr| (attr.as_str().to_string(), attr))
+            .map(|attr| (attr.to_ident(), attr))
             .collect();
         let trie = SpaceTrie::connect(&space)?;
         let attr_map = {
