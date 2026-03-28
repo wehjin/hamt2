@@ -1,20 +1,28 @@
+use crate::db::Eid;
+
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum Ent {
-    Id(i32),
+    Id(Eid),
+    Temp(&'static str),
 }
 
 impl Ent {
-    pub const DB_IDENT: Ent = Ent::Id(-1);
-
-    pub fn to_id(&self) -> i32 {
+    pub fn to_eid(&self) -> Eid {
         match self {
-            Ent::Id(id) => *id,
+            Ent::Id(eid) => *eid,
+            Ent::Temp(_) => panic!("Cannot directly convert temporary entity to Eid"),
         }
     }
 }
 
 impl From<i32> for Ent {
     fn from(i: i32) -> Self {
-        Self::Id(i)
+        Self::Id(Eid(i))
+    }
+}
+
+impl From<&'static str> for Ent {
+    fn from(s: &'static str) -> Self {
+        Self::Temp(s)
     }
 }

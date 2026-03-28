@@ -4,11 +4,10 @@ use crate::db::core::ent::Ent;
 use crate::db::find::Rule;
 use crate::db::key::KEY_EAVT;
 use crate::db::vid::Vid;
-use crate::db::Val;
+use crate::db::{Schema, Val};
 use crate::space::Space;
 use crate::trie::space::trie::SpaceTrie;
 use crate::QueryError;
-use std::collections::HashMap;
 
 pub struct ValsWithEntAttr {
     ent: Ent,
@@ -36,10 +35,10 @@ impl Rule for ValsWithEntAttr {
     fn update<T: Space>(
         &mut self,
         trie: &SpaceTrie<T>,
-        attrs: &HashMap<Attr, Ent>,
+        schema: &Schema,
     ) -> Result<bool, QueryError> {
-        let eid = self.ent.to_id();
-        let aid = attrs.get(&self.attr).expect("attr should exist").to_id();
+        let eid = self.ent.to_eid().to_i32();
+        let aid = schema.get(&self.attr).expect("attr should exist").to_i32();
         let eavt_key = [KEY_EAVT, eid, aid];
         let eavt_value = trie.deep_query_value(eavt_key)?;
         if let Some(mem_value) = eavt_value {

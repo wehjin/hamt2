@@ -2,10 +2,10 @@ use crate::db::core::attr::Attr;
 use crate::db::core::ent::Ent;
 use crate::db::find::Rule;
 use crate::db::key::KEY_AEVT;
+use crate::db::{Eid, Schema};
 use crate::space::Space;
 use crate::trie::space::trie::SpaceTrie;
 use crate::QueryError;
-use std::collections::HashMap;
 
 pub struct EntsWithAttr {
     name: &'static str,
@@ -32,16 +32,16 @@ impl Rule for EntsWithAttr {
     fn update<T: Space>(
         &mut self,
         trie: &SpaceTrie<T>,
-        attrs: &HashMap<Attr, Ent>,
+        schema: &Schema,
     ) -> Result<bool, QueryError> {
-        let aid = attrs.get(&self.attr).expect("attr should exist").to_id();
+        let aid = schema.get(&self.attr).expect("attr should exist").to_i32();
         let aevt_key = [KEY_AEVT, aid];
         let eids = if let Some(value) = trie.deep_query_value(aevt_key)? {
             let subtrie = trie.to_subtrie_from_value(value)?;
             let key_values = subtrie.query_keys_values()?;
             let eids = key_values
                 .into_iter()
-                .map(|(eid, _)| Ent::Id(eid))
+                .map(|(eid, _)| Ent::Id(Eid(eid)))
                 .collect::<Vec<_>>();
             eids
         } else {

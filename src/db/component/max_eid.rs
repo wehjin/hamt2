@@ -1,40 +1,43 @@
 use crate::db::key::KEY_MAX_EID;
+use crate::db::Eid;
 use crate::space::Space;
 use crate::trie::mem::value::MemValue;
 use crate::trie::space::trie::SpaceTrie;
 use crate::{QueryError, TransactError};
-use crate::db::Ent;
 
-pub(crate) struct MaxEid(pub i32);
+pub(crate) struct MaxEid {
+    start: Eid,
+    current: Eid,
+}
 
 impl MaxEid {
-    pub fn take(self, count: usize) -> (Self, Vec<Ent>) {
-        let Self(start) = self;
-        let end = start + count as i32;
-        let ids = (start..end).map(|id| Ent::Id(id)).collect();
-        (Self(end), ids)
-    }
-    pub fn update<T: Space>(
-        mut self,
-        trie: SpaceTrie<T>,
-        eid: i32,
-    ) -> Result<SpaceTrie<T>, TransactError> {
-        if eid < self.0 {
-            Ok(trie)
-        } else {
-            self.0 = eid + 1;
-            self.write(trie)
+    pub fn new(eid: Eid) -> Self {
+        Self {
+            start: eid,
+            current: eid,
         }
-    }
-    pub fn write<T: Space>(self, trie: SpaceTrie<T>) -> Result<SpaceTrie<T>, TransactError> {
-        let trie = trie.insert(KEY_MAX_EID, MemValue::from(self.0 as u32))?;
-        Ok(trie)
     }
     pub fn read<T: Space>(trie: &SpaceTrie<T>) -> Result<Self, QueryError> {
         if let Some(MemValue::U32(value)) = trie.query_value(KEY_MAX_EID)? {
-            Ok(Self(value as i32))
+            Ok(Self::new(Eid(value as i32)))
         } else {
-            Ok(Self(0))
+            Ok(Self::new(Eid(0)))
         }
+    }
+    pub fn take(&mut self, count: usize) -> Vec<Eid> {
+        let mut taken = Vec::new();
+        for _ in 0..count {
+            taken.push(self.current);
+            self.current += 1;
+        }
+        taken
+    }
+    pub fn write<T: Space>(self, trie: SpaceTrie<T>) -> Result<SpaceTrie<T>, TransactError> {
+        let trie = if self.current > self.start {
+            trie.insert(KEY_MAX_EID, MemValue::from(self.current.to_i32() as u32))?
+        } else {
+            trie
+        };
+        Ok(trie)
     }
 }

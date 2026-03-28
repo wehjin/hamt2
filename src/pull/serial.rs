@@ -7,16 +7,16 @@ use serde::ser::Impossible;
 use serde::{ser, Serialize};
 
 pub struct Serializer {
-    eid: i32,
+    ent: Ent,
     group: Option<&'static str>,
     pub datoms: Vec<Datom>,
     pub val: Option<Val>,
 }
 
 impl Serializer {
-    pub fn new(eid: i32) -> Self {
+    pub fn new(ent: Ent) -> Self {
         Self {
-            eid,
+            ent,
             group: None,
             datoms: Vec::new(),
             val: None,
@@ -34,7 +34,7 @@ impl<'a> ser::SerializeStruct for &'a mut Serializer {
         let _ = value.serialize(&mut **self)?;
         let val = self.val.take().expect("val should be set");
         let attr = Attr(self.group.unwrap(), key);
-        let ent = Ent::Id(self.eid);
+        let ent = Ent::from(self.ent);
         self.datoms.push(Datom::Add(ent, attr, val));
         Ok(())
     }

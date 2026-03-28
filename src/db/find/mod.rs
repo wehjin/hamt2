@@ -1,12 +1,10 @@
-use crate::db::core::attr::Attr;
 use crate::trie::space::trie::SpaceTrie;
 use crate::QueryError;
-use std::collections::HashMap;
 
 mod ents_with_attr;
 mod vals_with_ent_attr;
 
-use crate::db::core::ent::Ent;
+use crate::db::Schema;
 use crate::space::Space;
 pub use ents_with_attr::*;
 pub use vals_with_ent_attr::*;
@@ -17,6 +15,6 @@ pub trait Rule {
     fn update<T: Space>(
         &mut self,
         trie: &SpaceTrie<T>,
-        attrs: &HashMap<Attr, Ent>,
+        schema: &Schema,
     ) -> Result<bool, QueryError>;
 }
