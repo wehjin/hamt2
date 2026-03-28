@@ -14,7 +14,7 @@ impl Register {
         }
     }
 
-    pub fn register<T: Pull>(mut self) -> Result<Self, RegisterError> {
+    pub fn register<'a, T: Pull<'a>>(mut self) -> Result<Self, RegisterError> {
         for attr in T::attrs() {
             let ident = attr.to_ident();
             if self.attrs.contains_key(&ident) {

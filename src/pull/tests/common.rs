@@ -1,9 +1,6 @@
 use crate::db::attr::Attr;
-use crate::pull::errors::BuildError;
 use crate::pull::pull::Pull;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use crate::db::Val;
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename = "basis")]
@@ -21,8 +18,7 @@ impl Basis {
     const DIRECTION: Attr = Attr("basis", "direction");
 }
 
-impl Pull for Basis {
-    type Target = Self;
+impl<'a> Pull<'a> for Basis {
     fn attrs() -> Vec<Attr> {
         vec![
             Self::SYMBOL,
@@ -30,34 +26,5 @@ impl Pull for Basis {
             Self::PRICE_EACH,
             Self::DIRECTION,
         ]
-    }
-    fn build(bindings: Vec<(Attr, Option<Val>)>) -> Result<Self::Target, BuildError> {
-        let mut map = bindings
-            .into_iter()
-            .filter_map(|(attr, val)| val.map(|val| (attr, val)))
-            .collect::<HashMap<_, _>>();
-        let symbol = map
-            .remove(&Self::SYMBOL)
-            .and_then(|v| v.try_into_string())
-            .ok_or_else(|| anyhow::Error::msg("missing symbol"))?;
-        let shares = map
-            .remove(&Self::SHARES)
-            .and_then(|v| v.try_into_u32())
-            .ok_or_else(|| anyhow::Error::msg("missing shares"))?;
-        let price_each = map
-            .remove(&Self::PRICE_EACH)
-            .and_then(|v| v.try_into_u32())
-            .ok_or_else(|| anyhow::Error::msg("missing price_each"))?;
-        let direction = map
-            .remove(&Self::DIRECTION)
-            .and_then(|v| v.try_into_u32())
-            .ok_or_else(|| anyhow::Error::msg("missing direction"))?;
-        let basis = Basis {
-            symbol,
-            shares,
-            price_each,
-            direction: direction as i32,
-        };
-        Ok(basis)
     }
 }

@@ -1,14 +1,12 @@
 use crate::db::attr::Attr;
 use crate::db::Datom;
-use crate::db::{Ent, Val};
-use crate::pull::errors::{BuildError, DatomsError};
+use crate::db::Ent;
+use crate::pull::errors::DatomsError;
 use crate::pull::into_datoms;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-pub trait Pull: Sized + Serialize {
-    type Target;
+pub trait Pull<'a>: Sized + Serialize + Deserialize<'a> {
     fn attrs() -> Vec<Attr>;
-    fn build(bindings: Vec<(Attr, Option<Val>)>) -> Result<Self::Target, BuildError>;
     fn into_datoms(self, ent: Ent) -> Result<Vec<Datom>, DatomsError> {
         into_datoms(self, ent)
     }

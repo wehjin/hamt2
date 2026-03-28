@@ -4,6 +4,7 @@ use serde::Serialize;
 use serial::Serializer;
 
 pub mod db;
+pub mod deserial;
 pub mod errors;
 pub mod pull;
 pub mod register;

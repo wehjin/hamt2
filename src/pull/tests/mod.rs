@@ -10,6 +10,35 @@ use common::Basis;
 pub mod common;
 
 #[test]
+fn pull_test() {
+    let space = {
+        let basis = Basis {
+            symbol: "ABC".to_string(),
+            shares: 100,
+            price_each: 101,
+            direction: -1,
+        };
+        let ent = Ent::from(27);
+        let mut db = Db::new(MemSpace::new(), Basis::attrs()).expect("Db::new");
+        let datoms = basis.into_datoms(ent).expect("into_datoms");
+        db = db.transact(datoms).expect("db.transact");
+        db.close()
+    };
+    {
+        let db = Db::load(space, Basis::attrs()).expect("Db::load");
+        assert_eq!(
+            Basis {
+                symbol: "ABC".to_string(),
+                shares: 100,
+                price_each: 101,
+                direction: -1,
+            },
+            db.pull::<Basis>(Eid(27)).expect("db.pull2")
+        )
+    }
+}
+
+#[test]
 fn push_test() {
     let _register = Register::new().register::<Basis>().unwrap();
     let basis = Basis {
@@ -28,35 +57,5 @@ fn push_test() {
             Datom::Add(ent, Attr("basis", "direction"), Val::U32(u32::MAX)),
         ],
         datoms
-    );
-}
-
-#[test]
-fn pull_trait() {
-    let register = Register::new().register::<Basis>().unwrap();
-    let attrs = register.to_attrs();
-    // Push
-    let space = {
-        let basis = Basis {
-            symbol: "ABC".to_string(),
-            shares: 100,
-            price_each: 100,
-            direction: -1,
-        };
-        let mut db = Db::new(MemSpace::new(), attrs.clone()).unwrap();
-        let datoms = basis.into_datoms(Ent::from(57)).unwrap();
-        db = db.transact(datoms).unwrap();
-        db.close()
-    };
-    // Pull
-    let db = Db::load(space, attrs).unwrap();
-    assert_eq!(
-        Basis {
-            symbol: "ABC".to_string(),
-            shares: 100,
-            price_each: 100,
-            direction: -1,
-        },
-        db.pull::<Basis>(Eid(57)).unwrap()
     );
 }

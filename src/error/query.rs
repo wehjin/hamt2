@@ -1,4 +1,5 @@
 use crate::iroh_db::client::keys;
+use std::fmt::Display;
 
 #[derive(thiserror::Error, Debug)]
 pub enum QueryError {
@@ -34,4 +35,16 @@ pub enum QueryError {
 
     #[error("NoRootInReader")]
     NoRootInReader,
+
+    #[error("SerdeError: {0}")]
+    SerdeError(String),
+}
+
+impl serde::de::Error for QueryError {
+    fn custom<T>(msg: T) -> Self
+    where
+        T: Display,
+    {
+        QueryError::SerdeError(msg.to_string())
+    }
 }
