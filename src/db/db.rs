@@ -1,10 +1,13 @@
 use crate::db::component::{val_table, MaxEid};
-use crate::db::datom::{Attr, Datom, Ent, Val};
+use crate::db::core::attr::Attr;
+use crate::db::core::datom::Datom;
+use crate::db::core::ent::Ent;
 use crate::db::find::EntsWithAttr;
 use crate::db::find::Rule;
 use crate::db::find::ValsWithEntAttr;
 use crate::db::key::{KEY_AEVT, KEY_EAVT, KEY_MAX_TXID};
 use crate::db::txid::Txid;
+use crate::db::Val;
 use crate::space::Space;
 use crate::trie::mem::value::MemValue;
 use crate::trie::space::trie::SpaceTrie;

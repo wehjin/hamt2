@@ -1,8 +1,8 @@
+use crate::db::core::ent::Ent;
 use crate::db::key::KEY_MAX_EID;
-use crate::db::Ent;
+use crate::space::Space;
 use crate::trie::mem::value::MemValue;
 use crate::trie::space::trie::SpaceTrie;
-use crate::space::Space;
 use crate::{QueryError, TransactError};
 
 pub(crate) struct MaxEid(pub i32);

@@ -1,8 +1,9 @@
-use crate::db::{Attr, Val};
+use crate::db::attr::Attr;
 use crate::pull::errors::BuildError;
 use crate::pull::pull::Pull;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use crate::db::Val;
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename = "basis")]

@@ -1,4 +1,5 @@
-use crate::db::{Db, Ent};
+use crate::db::Db;
+use crate::db::ent::Ent;
 use crate::pull::errors::BuildError;
 use crate::pull::pull::Pull;
 use crate::space::Space;

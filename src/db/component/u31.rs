@@ -1,6 +1,6 @@
+use crate::space::Space;
 use crate::trie::mem::value::MemValue;
 use crate::trie::space::trie::SpaceTrie;
-use crate::space::Space;
 
 pub struct U31Streamer<'a> {
     bytes: &'a [u8],
@@ -141,9 +141,9 @@ impl<T: Space> Iterator for U31Builder<'_, T> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+	use super::*;
 
-    #[test]
+	#[test]
     fn boundary_works() {
         let bytes = [0u8, 0, 0, 2];
         let streamer = U31Streamer::new(&bytes);

@@ -1,4 +1,4 @@
-use crate::db::Attr;
+use crate::db::attr::Attr;
 use crate::pull::errors::RegisterError;
 use crate::pull::pull::Pull;
 use std::collections::HashMap;

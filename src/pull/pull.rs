@@ -1,7 +1,9 @@
-use crate::db::{Attr, Datom, Val};
+use crate::db::Datom;
 use crate::pull::errors::{BuildError, DatomsError};
 use crate::pull::into_datoms;
 use serde::Serialize;
+use crate::db::attr::Attr;
+use crate::db::Val;
 
 pub trait Pull: Sized + Serialize {
     type Target;

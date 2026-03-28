@@ -1,4 +1,4 @@
-use crate::db::Attr;
+use crate::db::attr::Attr;
 use serde::ser;
 use std::fmt::Display;
 use thiserror::Error;

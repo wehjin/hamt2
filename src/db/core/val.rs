@@ -1,47 +1,4 @@
 use crate::trie::mem::value::MemValue;
-use std::fmt::{Debug, Display};
-use std::hash::Hash;
-
-#[derive(Debug, Eq, PartialEq)]
-pub enum Datom {
-    Add(Ent, Attr, Val),
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct Ent(pub i32);
-
-impl Ent {
-    pub const DB_IDENT: Ent = Ent(-1);
-
-    pub fn i32(&self) -> i32 {
-        self.0
-    }
-    pub fn to_id(&self) -> i32 {
-        self.0
-    }
-}
-
-impl From<i32> for Ent {
-    fn from(i: i32) -> Self {
-        Self(i)
-    }
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct Attr(pub &'static str, pub &'static str);
-
-impl Attr {
-    pub const DB_IDENT: Attr = Attr("db", "ident");
-    pub fn to_ident(&self) -> String {
-        format!("{}/{}", self.0, self.1)
-    }
-}
-
-impl Display for Attr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.to_ident().as_str())
-    }
-}
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Val {

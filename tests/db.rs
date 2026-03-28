@@ -1,5 +1,8 @@
 use hamt2::db::find::{EntsWithAttr, Rule};
-use hamt2::db::{Attr, Datom, Db, Ent, Txid, Val};
+use hamt2::db::{Datom, Db, Txid};
+use hamt2::db::attr::Attr;
+use hamt2::db::ent::Ent;
+use hamt2::db::Val;
 use hamt2::space::file::FileSpace;
 use hamt2::space::mem::MemSpace;
 use hamt2::LoadError;

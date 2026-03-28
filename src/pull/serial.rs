@@ -1,7 +1,10 @@
-use crate::db::{Attr, Datom, Ent, Val};
+use crate::db::Datom;
 use crate::pull::errors::DatomsError;
 use serde::ser::Impossible;
 use serde::{ser, Serialize};
+use crate::db::attr::Attr;
+use crate::db::ent::Ent;
+use crate::db::Val;
 
 pub struct Serializer {
     eid: i32,

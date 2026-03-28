@@ -1,8 +1,11 @@
-use crate::db::{Attr, Datom, Db, Ent, Val};
+use crate::db::{Datom, Db};
 use crate::pull::pull::Pull;
 use crate::pull::register::Register;
 use crate::space::mem::MemSpace;
 use common::Basis;
+use crate::db::attr::Attr;
+use crate::db::ent::Ent;
+use crate::db::Val;
 
 pub mod common;
 

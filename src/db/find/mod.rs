@@ -1,4 +1,4 @@
-use crate::db::{Attr, Ent};
+use crate::db::core::attr::Attr;
 use crate::trie::space::trie::SpaceTrie;
 use crate::QueryError;
 use std::collections::HashMap;
@@ -6,6 +6,7 @@ use std::collections::HashMap;
 mod ents_with_attr;
 mod vals_with_ent_attr;
 
+use crate::db::core::ent::Ent;
 use crate::space::Space;
 pub use ents_with_attr::*;
 pub use vals_with_ent_attr::*;

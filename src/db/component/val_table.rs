@@ -1,10 +1,9 @@
 use crate::db::component::u31::{U31Builder, U31Streamer};
 use crate::db::key::KEY_VAL_TABLE;
-use crate::db::Val;
-use crate::db::Vid;
+use crate::db::{Val, Vid};
+use crate::space::Space;
 use crate::trie::mem::value::MemValue;
 use crate::trie::space::trie::SpaceTrie;
-use crate::space::Space;
 use crate::{hash, QueryError, TransactError};
 use redb::Value;
 

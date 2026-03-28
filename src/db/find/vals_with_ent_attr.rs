@@ -1,10 +1,12 @@
 use crate::db::component::val_table;
+use crate::db::core::attr::Attr;
+use crate::db::core::ent::Ent;
 use crate::db::find::Rule;
 use crate::db::key::KEY_EAVT;
 use crate::db::vid::Vid;
-use crate::db::{Attr, Ent, Val};
-use crate::trie::space::trie::SpaceTrie;
+use crate::db::Val;
 use crate::space::Space;
+use crate::trie::space::trie::SpaceTrie;
 use crate::QueryError;
 use std::collections::HashMap;
 
