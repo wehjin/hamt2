@@ -6,7 +6,7 @@ use crate::space::Space;
 
 impl<T: Space> Db<T> {
     pub fn pull<U: Pull>(&self, id: i32) -> Result<U::Target, BuildError> {
-        let ent = Ent(id);
+        let ent = Ent::Id(id);
 
         let mut bindings = vec![];
         for attr in U::attrs() {

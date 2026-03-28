@@ -41,7 +41,7 @@ impl Rule for EntsWithAttr {
             let key_values = subtrie.query_keys_values()?;
             let eids = key_values
                 .into_iter()
-                .map(|(eid, _)| Ent(eid))
+                .map(|(eid, _)| Ent::Id(eid))
                 .collect::<Vec<_>>();
             eids
         } else {

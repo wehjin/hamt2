@@ -1,9 +1,9 @@
-use crate::db::core::ent::Ent;
 use crate::db::key::KEY_MAX_EID;
 use crate::space::Space;
 use crate::trie::mem::value::MemValue;
 use crate::trie::space::trie::SpaceTrie;
 use crate::{QueryError, TransactError};
+use crate::db::Ent;
 
 pub(crate) struct MaxEid(pub i32);
 
@@ -11,7 +11,7 @@ impl MaxEid {
     pub fn take(self, count: usize) -> (Self, Vec<Ent>) {
         let Self(start) = self;
         let end = start + count as i32;
-        let ids = (start..end).map(Ent).collect();
+        let ids = (start..end).map(|id| Ent::Id(id)).collect();
         (Self(end), ids)
     }
     pub fn update<T: Space>(

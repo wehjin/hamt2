@@ -21,10 +21,10 @@ fn push_test() {
     let datoms = basis.into_datoms(27).expect("into_datoms");
     assert_eq!(
         vec![
-            Datom::Add(Ent(27), Attr("basis", "symbol"), Val::from_str("ABC")),
-            Datom::Add(Ent(27), Attr("basis", "shares"), Val::U32(100)),
-            Datom::Add(Ent(27), Attr("basis", "price_each"), Val::U32(101)),
-            Datom::Add(Ent(27), Attr("basis", "direction"), Val::U32(u32::MAX)),
+            Datom::Add(Ent::Id(27), Attr("basis", "symbol"), Val::from_str("ABC")),
+            Datom::Add(Ent::Id(27), Attr("basis", "shares"), Val::U32(100)),
+            Datom::Add(Ent::Id(27), Attr("basis", "price_each"), Val::U32(101)),
+            Datom::Add(Ent::Id(27), Attr("basis", "direction"), Val::U32(u32::MAX)),
         ],
         datoms
     );

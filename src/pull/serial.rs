@@ -1,10 +1,10 @@
+use crate::db::attr::Attr;
+use crate::db::ent::Ent;
 use crate::db::Datom;
+use crate::db::Val;
 use crate::pull::errors::DatomsError;
 use serde::ser::Impossible;
 use serde::{ser, Serialize};
-use crate::db::attr::Attr;
-use crate::db::ent::Ent;
-use crate::db::Val;
 
 pub struct Serializer {
     eid: i32,
@@ -34,7 +34,7 @@ impl<'a> ser::SerializeStruct for &'a mut Serializer {
         let _ = value.serialize(&mut **self)?;
         let val = self.val.take().expect("val should be set");
         let attr = Attr(self.group.unwrap(), key);
-        let ent = Ent(self.eid);
+        let ent = Ent::Id(self.eid);
         self.datoms.push(Datom::Add(ent, attr, val));
         Ok(())
     }
