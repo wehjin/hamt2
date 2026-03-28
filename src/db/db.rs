@@ -20,7 +20,7 @@ pub struct Schema {
     map: HashMap<Attr, Eid>,
 }
 impl Schema {
-    pub fn basic() -> Self {
+    fn basic() -> Self {
         Self {
             map: HashMap::from([(Attr::DB_IDENT, Eid::DB_IDENT)]),
         }
