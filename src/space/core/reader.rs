@@ -15,7 +15,12 @@ impl SlotValue {
         self.1
     }
     pub fn to_u64(&self) -> u64 {
-        (self.0 as u64) << 32 | (self.1 as u64)
+        ((self.0 as u64) << 32) | ((self.1 as u64) << 0)
+    }
+    pub fn from_u64(value: u64) -> Self {
+        let left = ((value >> 32) & 0xffff_ffff) as u32;
+        let right = ((value >> 0) & 0xffff_ffff) as u32;
+        Self(left, right)
     }
 }
 
@@ -49,14 +54,6 @@ impl SlotTable {
 
     pub fn into_slots(self) -> Vec<SlotValue> {
         self.slots
-    }
-}
-
-impl From<u64> for SlotValue {
-    fn from(value: u64) -> Self {
-        let left = (value >> 32) as u32;
-        let right = (value & 0xffff_ffff) as u32;
-        Self(left, right)
     }
 }
 
@@ -94,7 +91,7 @@ impl Read for MemReader {
     fn read_slot(&self, addr: &TableAddr, offset: usize) -> Result<SlotValue, ReadError> {
         let offset_addr = addr + offset;
         if offset_addr >= self.slots.max_index() {
-            Err(ReadError::InvalidTableAddr(*addr))
+            Err(ReadError::SlotAddressOutOfBounds(*addr, offset))
         } else {
             Ok(self.slots[offset_addr])
         }

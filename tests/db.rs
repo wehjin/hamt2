@@ -1,38 +1,12 @@
-use hamt2::db::attr::Attr;
+use common::{ATTR_COUNT, ATTR_GREETING};
 use hamt2::db::ent::Ent;
 use hamt2::db::find::{EntsWithAttr, Rule};
 use hamt2::db::Val;
 use hamt2::db::{Datom, Db, Txid};
-use hamt2::space::file::FileSpace;
 use hamt2::space::mem::MemSpace;
 use hamt2::LoadError;
 
-const ATTR_COUNT: Attr = Attr("counter", "count");
-const ATTR_GREETING: Attr = Attr("speech", "greeting");
-
-#[tokio::test]
-async fn file_db_works() {
-    let file = tempfile::NamedTempFile::new().expect("tempfile");
-    {
-        let space = FileSpace::new(file.path()).expect("create file space");
-        let db = Db::new(space, vec![ATTR_COUNT]).expect("new db");
-        let db = db
-            .transact(vec![Datom::Add(Ent::from(1), ATTR_COUNT, Val::U32(1))])
-            .expect("transact");
-        assert_eq!(
-            Some(Val::U32(1)),
-            db.find_val(Ent::from(1), ATTR_COUNT).expect("find_val")
-        );
-    }
-    {
-        let space = FileSpace::load(file.path()).expect("load red space");
-        let db = Db::load(space, vec![ATTR_COUNT]).expect("load db");
-        assert_eq!(
-            Some(Val::U32(1)),
-            db.find_val(Ent::from(1), ATTR_COUNT).expect("find_val")
-        );
-    }
-}
+mod common;
 
 #[tokio::test]
 async fn load_works() {

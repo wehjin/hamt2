@@ -8,9 +8,9 @@ pub mod core;
 pub mod file;
 pub mod mem;
 
-use core::reader::SlotValue;
 use crate::TransactError;
 pub use core::reader::MemReader;
+use core::reader::SlotValue;
 pub use core::value::Value;
 
 pub trait Space: Debug + Sized {
@@ -37,9 +37,8 @@ pub trait Read {
 
 #[cfg(test)]
 mod tests {
-    use crate::space::file::FileSpace;
-    use crate::space::mem::MemSpace;
     use crate::space::core::reader::SlotValue;
+    use crate::space::mem::MemSpace;
     use crate::space::{Read, Space, TableAddr};
 
     #[tokio::test]
@@ -55,31 +54,6 @@ mod tests {
                 extend.commit(&mut space).unwrap();
             }
             let reader = space.read().unwrap();
-            let slot = reader.read_slot(&addr, 0).unwrap();
-            assert_eq!(SlotValue::from((1, 2)), slot);
-        }
-    }
-
-    #[tokio::test]
-    async fn file_space_works() {
-        let file = tempfile::NamedTempFile::new().expect("tempfile");
-        let addr: TableAddr;
-        {
-            let mut space = FileSpace::new(file.path()).expect("create red space");
-            assert_eq!(TableAddr::ZERO, space.max_addr());
-            {
-                let mut extend = space.extend().unwrap();
-                let slot = SlotValue::from((1, 2));
-                addr = extend.add_slots(vec![slot]);
-                extend.commit(&mut space).unwrap();
-            }
-            let reader = space.read().unwrap();
-            let slot = reader.read_slot(&addr, 0).unwrap();
-            assert_eq!(SlotValue::from((1, 2)), slot);
-        }
-        {
-            let space = FileSpace::load(file.path()).expect("load red space");
-            let reader = space.read().expect("read red space");
             let slot = reader.read_slot(&addr, 0).unwrap();
             assert_eq!(SlotValue::from((1, 2)), slot);
         }

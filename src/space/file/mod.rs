@@ -1,16 +1,18 @@
 use crate::space::core::reader::SlotValue;
+use crate::space::file::block::BlockTable;
 use crate::space::{Space, TableAddr};
 use crate::{FileError, ReadError, TransactError};
 use details::Details;
 use reader::DbReader;
-use redb::{Database, TableDefinition};
+use redb::Database;
 use std::path::Path;
 use std::rc::Rc;
 
+pub mod block;
 pub mod details;
 pub mod reader;
-
-const SLOTS_TABLE: TableDefinition<'static, u32, u64> = TableDefinition::new("slots");
+#[cfg(test)]
+mod tests;
 
 #[derive(Debug)]
 pub struct FileSpace {
@@ -42,7 +44,6 @@ impl FileSpace {
             details,
         })
     }
-    const SLOTS_TABLE: TableDefinition<'static, u32, u64> = TableDefinition::new("slots");
 }
 impl Space for FileSpace {
     type Reader = DbReader;
@@ -56,25 +57,13 @@ impl Space for FileSpace {
         if start_addr != self.max_addr() {
             return Err(TransactError::InvalidStartAddr(start_addr));
         }
-
-        let new_details: Details;
+        let new_details = self.details.with_update(slots.len(), root);
+        let write = self.db.begin_write().expect("begin write");
         {
-            let write = self.db.begin_write().expect("begin write");
-            {
-                let mut table = write
-                    .open_table(FileSpace::SLOTS_TABLE)
-                    .expect("open slots table");
-                let mut key = start_addr.0;
-                for slot in &slots {
-                    let value = slot.to_u64();
-                    table.insert(key, value).expect("insert slot");
-                    key += 1;
-                }
-            }
-            new_details = self.details.with_update(slots.len(), root);
+            BlockTable::write_slots(&write, start_addr, slots);
             new_details.write(&write).expect("write details");
-            write.commit().expect("commit");
         }
+        write.commit().expect("commit");
         self.details = new_details;
         Ok(())
     }

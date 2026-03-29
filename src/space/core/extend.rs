@@ -46,7 +46,7 @@ impl<T: Space> Read for Extend<T> {
         if offset_addr >= self.max_addr() {
             let index = offset_addr - self.start_addr;
             if index >= self.slots.len() {
-                return Err(ReadError::InvalidTableAddr(offset_addr));
+                return Err(ReadError::SlotAddressOutOfBounds(*addr, offset));
             }
             let slot = self.slots[index];
             Ok(slot)

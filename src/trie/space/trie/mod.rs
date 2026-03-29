@@ -28,7 +28,11 @@ impl<T: Space> SpaceTrie<T> {
         let reader = space.read()?;
         let map_base = match reader.read_root()? {
             None => TrieMapBase::empty(),
-            Some(root) => TrieMapBase::from(reader.read_slot(&root, 0)?),
+            Some(root) => {
+                let space_root = SpaceRoot::from_root_addr(root.u32(), &reader)?;
+                let trie_map_base = space_root.into_trie_map_base();
+                trie_map_base
+            }
         };
         let trie = Self { map_base, reader };
         Ok(trie)

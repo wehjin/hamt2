@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use std::ops::{Add, Sub};
+use std::ops::{Add, AddAssign, Sub};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct TableAddr(pub u32);
@@ -18,6 +18,11 @@ impl TableAddr {
 impl From<usize> for TableAddr {
     fn from(index: usize) -> Self {
         TableAddr(index as u32)
+    }
+}
+impl From<u32> for TableAddr {
+    fn from(index: u32) -> Self {
+        TableAddr(index)
     }
 }
 
@@ -39,6 +44,12 @@ impl Add<usize> for TableAddr {
     type Output = TableAddr;
     fn add(self, rhs: usize) -> Self::Output {
         TableAddr(self.0 + rhs as u32)
+    }
+}
+
+impl AddAssign<usize> for TableAddr {
+    fn add_assign(&mut self, rhs: usize) {
+        self.0 += rhs as u32;
     }
 }
 

@@ -1,12 +1,12 @@
+use crate::space;
+use crate::space::core::reader::SlotValue;
+use crate::space::Space;
 use crate::trie::core::key::TrieKey;
 use crate::trie::core::map::TrieMap;
 use crate::trie::mem::base::MemBase;
 use crate::trie::mem::slot::{KvTest, MemSlot};
 use crate::trie::mem::value::MemValue;
 use crate::trie::space::map_base::SpaceMapBase;
-use crate::space;
-use crate::space::core::reader::SlotValue;
-use crate::space::Space;
 use crate::QueryError;
 use crate::TransactError;
 use serde::{Deserialize, Serialize};
@@ -19,13 +19,12 @@ pub enum TrieMapBase {
     Space(SlotValue),
 }
 
-impl From<SlotValue> for TrieMapBase {
-    fn from(slot_value: SlotValue) -> Self {
-        TrieMapBase::Space(slot_value)
-    }
-}
-
 impl TrieMapBase {
+    pub fn from_slot_value(slot_value: SlotValue) -> Self {
+        let space_map_base = SpaceMapBase::assert(slot_value);
+        Self::Space(space_map_base.into_slot_value())
+    }
+
     pub fn map(&self) -> TrieMap {
         match self {
             TrieMapBase::Mem(map, _) => map.clone(),

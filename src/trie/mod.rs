@@ -4,9 +4,29 @@ pub mod space;
 
 #[cfg(test)]
 mod tests {
+    use crate::space::file::FileSpace;
+    use crate::space::mem::MemSpace;
     use crate::trie::mem::value::MemValue;
     use crate::trie::space::trie::SpaceTrie;
-    use crate::space::mem::MemSpace;
+
+    #[test]
+    fn file_trie_works() {
+        let file = tempfile::NamedTempFile::new().expect("tempfile");
+        {
+            let mut space = FileSpace::new(file.path()).expect("create file space");
+            let trie = SpaceTrie::connect(&space).expect("connect");
+            trie.insert(1, MemValue::U32(1))
+                .expect("insert")
+                .commit(&mut space)
+                .expect("commit");
+        }
+        {
+            let space = FileSpace::load(file.path()).expect("load file space");
+            let trie = SpaceTrie::connect(&space).expect("connect");
+            let value = trie.query_value(1).expect("query_value");
+            assert_eq!(Some(MemValue::U32(1)), value);
+        }
+    }
 
     #[tokio::test]
     async fn query_key_values_works() {

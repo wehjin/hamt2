@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
-use redb::{Database, ReadableDatabase, TableDefinition, WriteTransaction};
-use crate::FileError;
 use crate::space::TableAddr;
+use crate::FileError;
+use redb::{Database, ReadableDatabase, TableDefinition, WriteTransaction};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct Details {
@@ -21,16 +21,16 @@ impl Details {
         }
     }
 
-    const TABLE: TableDefinition<'static, &str, Vec<u8>> = TableDefinition::new("details");
+    const DETAILS_TABLE: TableDefinition<'static, &str, Vec<u8>> = TableDefinition::new("details");
     pub fn write(self: &Self, write: &WriteTransaction) -> Result<(), FileError> {
-        let mut table = write.open_table(Self::TABLE)?;
+        let mut table = write.open_table(Self::DETAILS_TABLE)?;
         let bytes = postcard::to_allocvec(self)?;
         table.insert("main", bytes)?;
         Ok(())
     }
     pub fn read(db: &Database) -> Result<Self, FileError> {
         let read = db.begin_read()?;
-        let table = read.open_table(Self::TABLE)?;
+        let table = read.open_table(Self::DETAILS_TABLE)?;
         let bytes = table.get("main")?.expect("get details").value();
         let details: Self = postcard::from_bytes(&bytes)?;
         Ok(details)

@@ -1,8 +1,9 @@
-use crate::trie::core::map::TrieMap;
-use crate::trie::space::map_base::{SpaceKeyValue, SpaceMapBase};
 use crate::space::core::reader::SlotValue;
 use crate::space::TableAddr;
+use crate::trie::core::map::TrieMap;
+use crate::trie::space::map_base::{SpaceKeyValue, SpaceMapBase};
 
+#[derive(Debug)]
 pub struct SpaceSlot(SlotValue);
 
 impl SpaceSlot {
