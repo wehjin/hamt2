@@ -1,4 +1,4 @@
-use crate::space::reader::SlotValue;
+use crate::space::core::reader::SlotValue;
 use crate::space::{Space, TableAddr};
 use crate::{space, FileError, ReadError, TransactError};
 use lru::LruCache;

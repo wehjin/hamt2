@@ -5,7 +5,7 @@ use crate::trie::mem::base::MemBase;
 use crate::trie::mem::slot::MemSlot;
 use crate::trie::mem::value::MemValue;
 use crate::trie::space::slots::SpaceSlot;
-use crate::space::reader::SlotValue;
+use crate::space::core::reader::SlotValue;
 use crate::space::{Read, Space, TableAddr};
 use crate::{space, QueryError, TransactError};
 

@@ -1,5 +1,5 @@
 use crate::error::ReadError;
-use crate::space::reader::{MemReader, SlotTable, SlotValue};
+use crate::space::core::reader::{MemReader, SlotTable, SlotValue};
 
 use crate::space::{Space, TableAddr};
 use crate::TransactError;

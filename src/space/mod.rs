@@ -1,23 +1,17 @@
-mod extend;
-
-pub use extend::Extend;
+pub use core::extend::Extend;
 use std::fmt::Debug;
 
-mod addr;
 use crate::error::ReadError;
-pub use addr::*;
+pub use core::addr::*;
 
+pub mod core;
 pub mod file;
 pub mod mem;
-pub mod reader;
-pub mod seg;
-pub mod table;
-pub mod value;
 
-use crate::space::reader::SlotValue;
+use core::reader::SlotValue;
 use crate::TransactError;
-pub use reader::MemReader;
-pub use value::Value;
+pub use core::reader::MemReader;
+pub use core::value::Value;
 
 pub trait Space: Debug + Sized {
     type Reader: Read + Clone + Debug;
@@ -45,7 +39,7 @@ pub trait Read {
 mod tests {
     use crate::space::file::FileSpace;
     use crate::space::mem::MemSpace;
-    use crate::space::reader::SlotValue;
+    use crate::space::core::reader::SlotValue;
     use crate::space::{Read, Space, TableAddr};
 
     #[tokio::test]

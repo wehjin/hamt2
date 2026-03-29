@@ -1,4 +1,4 @@
-use crate::space::reader::{SlotTable, SlotValue};
+use crate::space::core::reader::{SlotTable, SlotValue};
 use crate::space::TableAddr;
 use crate::space::{Read, Space};
 use crate::{ReadError, TransactError};

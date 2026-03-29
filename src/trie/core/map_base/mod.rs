@@ -5,7 +5,7 @@ use crate::trie::mem::slot::{KvTest, MemSlot};
 use crate::trie::mem::value::MemValue;
 use crate::trie::space::map_base::SpaceMapBase;
 use crate::space;
-use crate::space::reader::SlotValue;
+use crate::space::core::reader::SlotValue;
 use crate::space::Space;
 use crate::QueryError;
 use crate::TransactError;

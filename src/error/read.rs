@@ -1,4 +1,4 @@
-use crate::space::value::Val;
+use crate::space::core::value::Val;
 use crate::space::TableAddr;
 use thiserror::Error;
 
