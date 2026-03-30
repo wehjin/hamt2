@@ -1,55 +1,43 @@
-use crate::space::core::block_store::Details;
-use crate::space::core::block_store::{Block, BlockStore};
 use crate::space::core::reader::SlotValue;
 use crate::space::file::block_store::RedBlockStore;
 use crate::space::{Space, TableAddr};
 use crate::{FileError, ReadError, TransactError};
-use reader::DbReader;
+use crate::space::block::reader::BlockReader;
 use redb::Database;
+use std::fmt::Debug;
 use std::path::Path;
+use crate::space::block::BlockSpace;
 
 pub mod block_store;
 pub mod block_table;
 pub mod details_table;
-pub mod reader;
 #[cfg(test)]
 mod tests;
 
 #[derive(Debug)]
 pub struct FileSpace {
-    block_store: RedBlockStore,
-    details: Details,
+    block_space: BlockSpace<RedBlockStore>,
 }
 
 impl FileSpace {
     pub fn new(path: impl AsRef<Path>) -> Result<Self, FileError> {
         let db = Database::create(path)?;
         let block_store = RedBlockStore::new(db);
-        let details = Details {
-            slot_count: 0,
-            root: None,
-        };
-        block_store.write_details(&details);
-        let space = Self {
-            block_store,
-            details,
-        };
-        Ok(space)
+        let block_space = BlockSpace::new(block_store)?;
+        let red_space = Self { block_space };
+        Ok(red_space)
     }
 
     pub fn load(path: impl AsRef<Path>) -> Result<Self, FileError> {
         let db = Database::open(path)?;
         let block_store = RedBlockStore::new(db);
-        let details = block_store.read_details();
-        let space = Self {
-            block_store,
-            details,
-        };
-        Ok(space)
+        let block_space = BlockSpace::load(block_store)?;
+        let red_space = Self { block_space };
+        Ok(red_space)
     }
 }
 impl Space for FileSpace {
-    type Reader = DbReader;
+    type Reader = BlockReader<RedBlockStore>;
 
     fn add_segment(
         &mut self,
@@ -57,20 +45,12 @@ impl Space for FileSpace {
         slots: Vec<SlotValue>,
         root: Option<TableAddr>,
     ) -> Result<(), TransactError> {
-        if start_addr != self.max_addr() {
-            return Err(TransactError::InvalidStartAddr(start_addr));
-        }
-        let new_details = self.details.with_update(slots.len(), root);
-        let block = Block { start_addr, slots };
-        self.block_store.write_block_details(block, &new_details);
-        self.details = new_details;
-        Ok(())
+        self.block_space.add_segment(start_addr, slots, root)
     }
     fn read(&self) -> Result<Self::Reader, ReadError> {
-        let reader = DbReader::new(self.block_store.clone(), self.details.clone());
-        Ok(reader)
+        self.block_space.read()
     }
     fn max_addr(&self) -> TableAddr {
-        self.details.max_addr()
+        self.block_space.max_addr()
     }
 }

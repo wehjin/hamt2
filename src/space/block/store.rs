@@ -1,6 +1,7 @@
 use crate::space::core::reader::SlotValue;
 use crate::space::TableAddr;
 use serde::{Deserialize, Serialize};
+use std::fmt::Debug;
 
 pub trait BlockStore {
     fn write_details(&self, details: &Details);

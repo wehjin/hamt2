@@ -1,23 +1,22 @@
+use crate::space::block::store::Details;
+use crate::space::block::store::{Block, BlockStore};
 use crate::space::core::reader::SlotValue;
-use crate::space::file::block_store::RedBlockStore;
-use crate::space::core::block_store::Details;
 use crate::space::TableAddr;
 use crate::{space, ReadError};
 use lru::LruCache;
 use std::cell::RefCell;
 use std::fmt::Debug;
 use std::num::NonZeroUsize;
-use crate::space::core::block_store::{Block, BlockStore};
 
 #[derive(Debug, Clone)]
-pub struct DbReader {
-    block_store: RedBlockStore,
+pub struct BlockReader<T: BlockStore + Debug + Clone> {
+    block_store: T,
     details: Details,
     lru: RefCell<LruCache<TableAddr, Vec<SlotValue>>>,
 }
 
-impl DbReader {
-    pub(crate) fn new(block_store: RedBlockStore, details: Details) -> Self {
+impl<T: BlockStore + Debug + Clone> BlockReader<T> {
+    pub(crate) fn new(block_store: T, details: Details) -> Self {
         Self {
             block_store,
             details,
@@ -45,7 +44,7 @@ impl DbReader {
     }
 }
 
-impl space::Read for DbReader {
+impl<T: BlockStore + Debug + Clone> space::Read for BlockReader<T> {
     fn read_slot(&self, addr: &TableAddr, offset: usize) -> Result<SlotValue, ReadError> {
         let slot_addr = addr + offset;
         if slot_addr >= self.details.max_addr() {

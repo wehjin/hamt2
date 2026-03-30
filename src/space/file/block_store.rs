@@ -1,6 +1,6 @@
-use crate::space::core::block_store::{Block, BlockStore};
+use crate::space::block::store::Details;
+use crate::space::block::store::{Block, BlockStore};
 use crate::space::file::block_table::BlockTable;
-use crate::space::core::block_store::Details;
 use crate::space::file::details_table::DetailsTable;
 use crate::space::TableAddr;
 use redb::{Database, ReadableDatabase};

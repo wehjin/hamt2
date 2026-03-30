@@ -4,6 +4,7 @@ use std::fmt::Debug;
 use crate::error::ReadError;
 pub use core::addr::*;
 
+pub mod block;
 pub mod core;
 pub mod file;
 pub mod iroh;
