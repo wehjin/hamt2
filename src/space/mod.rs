@@ -6,6 +6,7 @@ pub use core::addr::*;
 
 pub mod core;
 pub mod file;
+pub mod iroh;
 pub mod mem;
 
 use crate::TransactError;

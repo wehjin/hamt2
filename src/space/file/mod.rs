@@ -1,48 +1,51 @@
+use crate::space::core::block_store::Details;
+use crate::space::core::block_store::{Block, BlockStore};
 use crate::space::core::reader::SlotValue;
-use crate::space::file::block::BlockTable;
+use crate::space::file::block_store::RedBlockStore;
 use crate::space::{Space, TableAddr};
 use crate::{FileError, ReadError, TransactError};
-use details::Details;
 use reader::DbReader;
 use redb::Database;
 use std::path::Path;
-use std::rc::Rc;
 
-pub mod block;
-pub mod details;
+pub mod block_store;
+pub mod block_table;
+pub mod details_table;
 pub mod reader;
 #[cfg(test)]
 mod tests;
 
 #[derive(Debug)]
 pub struct FileSpace {
-    db: Rc<Database>,
+    block_store: RedBlockStore,
     details: Details,
 }
 
 impl FileSpace {
     pub fn new(path: impl AsRef<Path>) -> Result<Self, FileError> {
         let db = Database::create(path)?;
+        let block_store = RedBlockStore::new(db);
         let details = Details {
             slot_count: 0,
             root: None,
         };
-        let write = db.begin_write()?;
-        details.write(&write)?;
-        write.commit()?;
-        Ok(Self {
-            db: Rc::new(db),
+        block_store.write_details(&details);
+        let space = Self {
+            block_store,
             details,
-        })
+        };
+        Ok(space)
     }
 
     pub fn load(path: impl AsRef<Path>) -> Result<Self, FileError> {
         let db = Database::open(path)?;
-        let details = Details::read(&db)?;
-        Ok(Self {
-            db: Rc::new(db),
+        let block_store = RedBlockStore::new(db);
+        let details = block_store.read_details();
+        let space = Self {
+            block_store,
             details,
-        })
+        };
+        Ok(space)
     }
 }
 impl Space for FileSpace {
@@ -58,17 +61,13 @@ impl Space for FileSpace {
             return Err(TransactError::InvalidStartAddr(start_addr));
         }
         let new_details = self.details.with_update(slots.len(), root);
-        let write = self.db.begin_write().expect("begin write");
-        {
-            BlockTable::write_slots(&write, start_addr, slots);
-            new_details.write(&write).expect("write details");
-        }
-        write.commit().expect("commit");
+        let block = Block { start_addr, slots };
+        self.block_store.write_block_details(block, &new_details);
         self.details = new_details;
         Ok(())
     }
     fn read(&self) -> Result<Self::Reader, ReadError> {
-        let reader = DbReader::new(self.db.clone(), self.details.clone());
+        let reader = DbReader::new(self.block_store.clone(), self.details.clone());
         Ok(reader)
     }
     fn max_addr(&self) -> TableAddr {

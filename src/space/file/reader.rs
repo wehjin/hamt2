@@ -1,25 +1,25 @@
 use crate::space::core::reader::SlotValue;
-use crate::space::file::block::BlockTable;
-use crate::space::file::details::Details;
+use crate::space::file::block_store::RedBlockStore;
+use crate::space::core::block_store::Details;
 use crate::space::TableAddr;
 use crate::{space, ReadError};
 use lru::LruCache;
-use redb::{Database, ReadableDatabase};
 use std::cell::RefCell;
+use std::fmt::Debug;
 use std::num::NonZeroUsize;
-use std::rc::Rc;
+use crate::space::core::block_store::{Block, BlockStore};
 
 #[derive(Debug, Clone)]
 pub struct DbReader {
-    pub db: Rc<Database>,
-    pub details: Details,
-    pub lru: RefCell<LruCache<TableAddr, Vec<SlotValue>>>,
+    block_store: RedBlockStore,
+    details: Details,
+    lru: RefCell<LruCache<TableAddr, Vec<SlotValue>>>,
 }
 
 impl DbReader {
-    pub(crate) fn new(db: Rc<Database>, details: Details) -> Self {
+    pub(crate) fn new(block_store: RedBlockStore, details: Details) -> Self {
         Self {
-            db,
+            block_store,
             details,
             lru: RefCell::new(LruCache::new(NonZeroUsize::new(5).unwrap())),
         }
@@ -38,11 +38,9 @@ impl DbReader {
 
     fn fill_cache(&self, slot_addr: TableAddr) {
         let mut lru = self.lru.borrow_mut();
-        let read = self.db.begin_read().expect("begin read");
-        let entry = BlockTable::read_slots(&read, slot_addr);
-        if let Some((block_start, block_slots)) = entry {
-            let block_start = TableAddr(block_start);
-            lru.put(block_start, block_slots);
+        let block = self.block_store.read_block(slot_addr);
+        if let Some(Block { start_addr, slots }) = block {
+            lru.put(start_addr, slots);
         }
     }
 }
