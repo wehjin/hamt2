@@ -29,16 +29,16 @@ impl Rule for EntsWithAttr {
     fn results(&self, name: &'static str) -> &[Self::Output] {
         if name == self.name { &self.values } else { &[] }
     }
-    fn update<T: Space>(
+    async fn update<T: Space>(
         &mut self,
         trie: &SpaceTrie<T>,
         schema: &Schema,
     ) -> Result<bool, QueryError> {
         let aid = schema.get(&self.attr).expect("attr should exist").to_i32();
         let aevt_key = [KEY_AEVT, aid];
-        let eids = if let Some(value) = trie.deep_query_value(aevt_key)? {
-            let subtrie = trie.to_subtrie_from_value(value)?;
-            let key_values = subtrie.query_keys_values()?;
+        let eids = if let Some(value) = trie.deep_query_value(aevt_key).await? {
+            let subtrie = trie.to_subtrie_from_value(value).await?;
+            let key_values = subtrie.query_keys_values().await?;
             let eids = key_values
                 .into_iter()
                 .map(|(eid, _)| Ent::Id(Eid(eid)))

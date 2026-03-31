@@ -65,24 +65,24 @@ impl TrieMapBase {
         TrieMapBase::Mem(map, base)
     }
 
-    pub fn top_into_mem(self, reader: &impl space::Read) -> Result<TrieMapBase, QueryError> {
+    pub async fn top_into_mem(self, reader: &impl space::Read) -> Result<TrieMapBase, QueryError> {
         match self {
             TrieMapBase::Mem(_, _) => Ok(self),
             TrieMapBase::Space(slot_value) => {
                 let map_base = SpaceMapBase::assert(slot_value);
-                let mem_map_base = map_base.top_into_mem(reader)?;
+                let mem_map_base = map_base.top_into_mem(reader).await?;
                 Ok(mem_map_base)
             }
         }
     }
 
-    pub fn insert_kv(
+    pub async fn insert_kv(
         self,
         key: TrieKey,
         value: MemValue,
         reader: &impl space::Read,
     ) -> Result<Self, TransactError> {
-        let post_map_base = match self.top_into_mem(reader)? {
+        let post_map_base = match self.top_into_mem(reader).await? {
             TrieMapBase::Mem(map, base) => match map.try_base_index(key) {
                 Some(base_index) => match base[base_index].test_kv(&key, &value) {
                     KvTest::SameValue => TrieMapBase::Mem(map, base),
@@ -93,7 +93,8 @@ impl TrieMapBase {
                         TrieMapBase::Mem(map, MemBase::kick_kv(base, base_index, key, value))
                     }
                     KvTest::MapBaseConflict => {
-                        let post_base = MemBase::merge_kv(base, base_index, key, value, reader)?;
+                        let post_base =
+                            MemBase::merge_kv(base, base_index, key, value, reader).await?;
                         TrieMapBase::Mem(map, post_base)
                     }
                 },
@@ -117,18 +118,20 @@ impl TrieMapBase {
 }
 
 impl TrieMapBase {
-    pub fn query_value(
+    pub async fn query_value(
         &self,
         key: TrieKey,
         reader: &impl space::Read,
     ) -> Result<Option<MemValue>, QueryError> {
         let value = match self {
             TrieMapBase::Mem(map, base) => match map.try_base_index(key) {
-                Some(base_index) => base[base_index].query_value(key, reader)?,
+                Some(base_index) => Box::pin(base[base_index].query_value(key, reader)).await?,
                 None => None,
             },
             TrieMapBase::Space(slot_value) => {
-                SpaceMapBase::assert(*slot_value).query_value(key, reader)?
+                SpaceMapBase::assert(*slot_value)
+                    .query_value(key, reader)
+                    .await?
             }
         };
         Ok(value)

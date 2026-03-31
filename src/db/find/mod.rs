@@ -11,10 +11,12 @@ pub use vals_with_ent_attr::*;
 
 pub trait Rule {
     type Output;
+
     fn results(&self, name: &'static str) -> &[Self::Output];
+
     fn update<T: Space>(
         &mut self,
         trie: &SpaceTrie<T>,
         schema: &Schema,
-    ) -> Result<bool, QueryError>;
+    ) -> impl Future<Output = Result<bool, QueryError>>;
 }

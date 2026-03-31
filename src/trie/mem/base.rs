@@ -1,7 +1,7 @@
+use crate::space;
 use crate::trie::core::key::TrieKey;
 use crate::trie::mem::slot::MemSlot;
 use crate::trie::mem::value::MemValue;
-use crate::space;
 use crate::TransactError;
 use serde::{Deserialize, Serialize};
 use std::ops::Index;
@@ -53,7 +53,7 @@ impl MemBase {
         Self { slots }
     }
 
-    pub fn merge_kv(
+    pub async fn merge_kv(
         self,
         base_index: usize,
         key: TrieKey,
@@ -66,7 +66,7 @@ impl MemBase {
             let MemSlot::MapBase(map_base) = pre_slot else {
                 unreachable!("Should be a map-base slot, not a key-value slot:")
             };
-            let post_map_base = map_base.insert_kv(key.next(), value, reader)?;
+            let post_map_base = Box::pin(map_base.insert_kv(key.next(), value, reader)).await?;
             MemSlot::MapBase(post_map_base)
         };
         slots.insert(base_index, post_slot);

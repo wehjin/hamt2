@@ -1,5 +1,8 @@
 use crate::db::attr::Attr;
+use crate::db::{Db, Eid, Ent};
 use crate::pull::pull::Pull;
+use crate::space::Space;
+use crate::QueryError;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
@@ -26,5 +29,30 @@ impl<'a> Pull<'a> for Basis {
             Self::PRICE_EACH,
             Self::DIRECTION,
         ]
+    }
+
+    async fn pull<T: Space>(db: &Db<T>, eid: Eid) -> Result<Self, QueryError> {
+        let symbol = db
+            .find_val(Ent::Id(eid), Self::SYMBOL)
+            .await?
+            .expect("symbol");
+        let shares = db
+            .find_val(Ent::Id(eid), Self::SHARES)
+            .await?
+            .expect("shares");
+        let price_each = db
+            .find_val(Ent::Id(eid), Self::PRICE_EACH)
+            .await?
+            .expect("price_each");
+        let direction = db
+            .find_val(Ent::Id(eid), Self::DIRECTION)
+            .await?
+            .expect("direction");
+        Ok(Self {
+            symbol: symbol.as_str().to_string(),
+            shares: shares.u32(),
+            price_each: price_each.u32(),
+            direction: direction.u32() as i32,
+        })
     }
 }

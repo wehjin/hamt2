@@ -32,7 +32,7 @@ impl Rule for ValsWithEntAttr {
         &self.vals
     }
 
-    fn update<T: Space>(
+    async fn update<T: Space>(
         &mut self,
         trie: &SpaceTrie<T>,
         schema: &Schema,
@@ -40,13 +40,13 @@ impl Rule for ValsWithEntAttr {
         let eid = self.ent.to_eid().to_i32();
         let aid = schema.get(&self.attr).expect("attr should exist").to_i32();
         let eavt_key = [KEY_EAVT, eid, aid];
-        let eavt_value = trie.deep_query_value(eavt_key)?;
+        let eavt_value = trie.deep_query_value(eavt_key).await?;
         if let Some(mem_value) = eavt_value {
-            let subtrie = trie.to_subtrie_from_value(mem_value)?;
-            let key_values = subtrie.query_keys_values()?;
+            let subtrie = trie.to_subtrie_from_value(mem_value).await?;
+            let key_values = subtrie.query_keys_values().await?;
             let first_key_value = key_values.first();
             if let Some((vid, _)) = first_key_value {
-                let val = val_table::query(&trie, Vid::from_id(*vid))?.expect("val should exist");
+                let val = val_table::query(&trie, Vid::from_id(*vid)).await?.expect("val should exist");
                 self.vals.push(val);
             }
         }

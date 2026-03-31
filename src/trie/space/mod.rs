@@ -20,9 +20,9 @@ impl SpaceRoot {
         let root_addr = extend.add_slots(vec![slot_value]);
         Ok(root_addr)
     }
-    pub fn from_root_addr(root_addr: u32, reader: &impl Read) -> Result<Self, QueryError> {
+    pub async fn from_root_addr(root_addr: u32, reader: &impl Read) -> Result<Self, QueryError> {
         debug_assert_eq!(root_addr & 0x8000_0000, 0);
-        let slot_value = reader.read_slot(&TableAddr(root_addr), 0)?;
+        let slot_value = reader.read_slot(&TableAddr(root_addr), 0).await?;
         let (key, addr) = SpaceMapBase::assert(slot_value).into_map_base_addr();
         Ok(Self(key, addr))
     }

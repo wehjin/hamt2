@@ -19,7 +19,7 @@ impl MemSpace {
 }
 impl Space for MemSpace {
     type Reader = MemReader;
-    fn add_segment(
+    async fn add_segment(
         &mut self,
         start_addr: TableAddr,
         slots: Vec<SlotValue>,
@@ -33,7 +33,7 @@ impl Space for MemSpace {
         Ok(())
     }
 
-    fn read(&self) -> Result<Self::Reader, ReadError> {
+    async fn read(&self) -> Result<Self::Reader, ReadError> {
         let reader = MemReader::new(self.slots.clone(), self.root);
         Ok(reader)
     }

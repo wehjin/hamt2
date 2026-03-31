@@ -34,32 +34,42 @@ impl<T: Space> Extend<T> {
         self.root = Some(root);
     }
 
-    pub fn commit(self, space: &mut T) -> Result<(), TransactError> {
-        space.add_segment(self.start_addr, self.slots.into_slots(), self.root)?;
+    pub async fn commit(self, space: &mut T) -> Result<(), TransactError> {
+        space
+            .add_segment(self.start_addr, self.slots.into_slots(), self.root)
+            .await?;
         Ok(())
     }
 }
 
 impl<T: Space> Read for Extend<T> {
-    fn read_slot(&self, addr: &TableAddr, offset: usize) -> Result<SlotValue, ReadError> {
-        let offset_addr = addr + offset;
-        if offset_addr >= self.max_addr() {
-            let index = offset_addr - self.start_addr;
-            if index >= self.slots.len() {
-                return Err(ReadError::SlotAddressOutOfBounds(*addr, offset));
+    fn read_slot(
+        &self,
+        addr: &TableAddr,
+        offset: usize,
+    ) -> impl Future<Output = Result<SlotValue, ReadError>> {
+        async move {
+            let offset_addr = addr + offset;
+            if offset_addr >= self.max_addr() {
+                let index = offset_addr - self.start_addr;
+                if index >= self.slots.len() {
+                    return Err(ReadError::SlotAddressOutOfBounds(*addr, offset));
+                }
+                let slot = self.slots[index];
+                Ok(slot)
+            } else {
+                self.reader.read_slot(addr, offset).await
             }
-            let slot = self.slots[index];
-            Ok(slot)
-        } else {
-            self.reader.read_slot(addr, offset)
         }
     }
 
-    fn read_root(&self) -> Result<&Option<TableAddr>, ReadError> {
-        if self.root.is_some() {
-            Ok(&self.root)
-        } else {
-            self.reader.read_root()
+    fn read_root(&self) -> impl Future<Output = Result<&Option<TableAddr>, ReadError>> {
+        async move {
+            if self.root.is_some() {
+                Ok(&self.root)
+            } else {
+                self.reader.read_root().await
+            }
         }
     }
 }

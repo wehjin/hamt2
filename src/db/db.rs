@@ -31,18 +31,18 @@ impl Schema {
         schema.extend(more);
         schema
     }
-    pub fn save<T: Space>(
+    pub async fn save<T: Space>(
         &self,
         mut trie: SpaceTrie<T>,
         txid: Txid,
     ) -> Result<SpaceTrie<T>, TransactError> {
         for (at, a_ent) in self.map.iter() {
             let ident = Val::from(at.to_ident().as_str());
-            trie = add(trie, &self.map, *a_ent, Attr::DB_IDENT, ident, &txid)?;
+            trie = add(trie, &self.map, *a_ent, Attr::DB_IDENT, ident, &txid).await?;
         }
         Ok(trie)
     }
-    pub fn load<T: Space>(attrs: Vec<Attr>, trie: &SpaceTrie<T>) -> Result<Self, LoadError> {
+    pub async fn load<T: Space>(attrs: Vec<Attr>, trie: &SpaceTrie<T>) -> Result<Self, LoadError> {
         let attrs_by_ident: HashMap<String, Attr> = attrs
             .into_iter()
             .map(|attr| (attr.to_ident(), attr))
@@ -51,12 +51,12 @@ impl Schema {
         let mut schema = Schema::basic();
         let ents_with_idents = {
             let mut rule = EntsWithAttr::new("e", Attr::DB_IDENT);
-            rule.update(&trie, &schema)?;
+            rule.update(&trie, &schema).await?;
             rule.results("e").to_vec()
         };
         for ent_with_ident in ents_with_idents {
             let mut rule = ValsWithEntAttr::new("v", ent_with_ident, Attr::DB_IDENT);
-            rule.update(&trie, &schema)?;
+            rule.update(&trie, &schema).await?;
             let ident = rule
                 .results("v")
                 .first()
@@ -99,19 +99,19 @@ impl<T: Space> Db<T> {
         self.space
     }
 
-    pub fn new(mut space: T, attrs: Vec<Attr>) -> Result<Self, TransactError> {
+    pub async fn new(mut space: T, attrs: Vec<Attr>) -> Result<Self, TransactError> {
         let schema = {
-            let mut trie = SpaceTrie::connect(&space)?;
-            let mut max_eid = MaxEid::read(&trie)?;
+            let mut trie = SpaceTrie::connect(&space).await?;
+            let mut max_eid = MaxEid::read(&trie).await?;
             let attr_eids = max_eid.take(attrs.len());
             let schema = Schema::new(attrs, attr_eids);
-            trie = schema.save(trie, Txid::SETUP)?;
-            trie = set_max_tx(trie, Txid::FLOOR)?;
-            trie = max_eid.write(trie)?;
-            trie.commit(&mut space)?;
+            trie = schema.save(trie, Txid::SETUP).await?;
+            trie = set_max_tx(trie, Txid::FLOOR).await?;
+            trie = max_eid.write(trie).await?;
+            trie.commit(&mut space).await?;
             schema
         };
-        let trie = SpaceTrie::connect(&space)?;
+        let trie = SpaceTrie::connect(&space).await?;
         let db = Self {
             schema,
             trie,
@@ -120,9 +120,9 @@ impl<T: Space> Db<T> {
         Ok(db)
     }
 
-    pub fn load(space: T, attrs: Vec<Attr>) -> Result<Self, LoadError> {
-        let trie = SpaceTrie::connect(&space)?;
-        let schema = Schema::load(attrs, &trie)?;
+    pub async fn load(space: T, attrs: Vec<Attr>) -> Result<Self, LoadError> {
+        let trie = SpaceTrie::connect(&space).await?;
+        let schema = Schema::load(attrs, &trie).await?;
         Ok(Self {
             schema,
             trie,
@@ -132,13 +132,13 @@ impl<T: Space> Db<T> {
 }
 
 impl<T: Space> Db<T> {
-    pub fn transact(self, datoms: Vec<Datom>) -> Result<Self, TransactError> {
+    pub async fn transact(self, datoms: Vec<Datom>) -> Result<Self, TransactError> {
         let mut new_eids = HashMap::new();
-        let mut max_eid = MaxEid::read(&self.trie)?;
+        let mut max_eid = MaxEid::read(&self.trie).await?;
         match datoms.is_empty() {
             true => Ok(self),
             false => {
-                let tx = self.max_tx()?;
+                let tx = self.max_tx().await?;
                 let Self {
                     schema: attr_map,
                     mut space,
@@ -160,16 +160,16 @@ impl<T: Space> Db<T> {
                                     }
                                 }
                             };
-                            add(trie, &attr_map, eid, a, v, &tx)?
+                            add(trie, &attr_map, eid, a, v, &tx).await?
                         }
                     }
                 }
-                trie = set_max_tx(trie, tx + 1)?;
-                trie = max_eid.write(trie)?;
-                trie.commit(&mut space)?;
+                trie = set_max_tx(trie, tx + 1).await?;
+                trie = max_eid.write(trie).await?;
+                trie.commit(&mut space).await?;
                 let db = Self {
                     schema: attr_map,
-                    trie: SpaceTrie::connect(&space)?,
+                    trie: SpaceTrie::connect(&space).await?,
                     space,
                 };
                 Ok(db)
@@ -179,20 +179,20 @@ impl<T: Space> Db<T> {
 }
 
 impl<T: Space> Db<T> {
-    pub fn max_tx(&self) -> Result<Txid, QueryError> {
-        let Some(MemValue::U32(value)) = self.trie.query_value(KEY_MAX_TXID)? else {
+    pub async fn max_tx(&self) -> Result<Txid, QueryError> {
+        let Some(MemValue::U32(value)) = self.trie.query_value(KEY_MAX_TXID).await? else {
             panic!("max_tx not found");
         };
         Ok(Txid::from(value))
     }
 
-    pub fn find(&self, rule: &mut impl Rule) -> Result<bool, QueryError> {
-        rule.update(&self.trie, &self.schema)
+    pub async fn find(&self, rule: &mut impl Rule) -> Result<bool, QueryError> {
+        rule.update(&self.trie, &self.schema).await
     }
 
-    pub fn find_val(&self, e: Ent, a: Attr) -> Result<Option<Val>, QueryError> {
+    pub async fn find_val(&self, e: Ent, a: Attr) -> Result<Option<Val>, QueryError> {
         let mut rule = ValsWithEntAttr::new("v", e, a);
-        self.find(&mut rule)?;
+        self.find(&mut rule).await?;
         let vals = rule.results("v");
         match vals.first() {
             None => Ok(None),
@@ -201,7 +201,7 @@ impl<T: Space> Db<T> {
     }
 }
 
-fn add<T: Space>(
+async fn add<T: Space>(
     trie: SpaceTrie<T>,
     attr_map: &HashMap<Attr, Eid>,
     e: Eid,
@@ -211,15 +211,19 @@ fn add<T: Space>(
 ) -> Result<SpaceTrie<T>, TransactError> {
     let eid = e.to_i32();
     let aid = attr_map.get(&a).expect("attr should exist").to_i32();
-    let (mut trie, vid) = val_table::insert(trie, v)?;
+    let (mut trie, vid) = val_table::insert(trie, v).await?;
     let tid = t.u32();
     let eavt_key = [KEY_EAVT, eid, aid, vid.to_id()];
     let aevt_key = [KEY_AEVT, aid, eid, vid.to_id()];
-    trie = trie.deep_insert(eavt_key, MemValue::from(tid))?;
-    trie = trie.deep_insert(aevt_key, MemValue::from(tid))?;
+    trie = trie.deep_insert(eavt_key, MemValue::from(tid)).await?;
+    trie = trie.deep_insert(aevt_key, MemValue::from(tid)).await?;
     Ok(trie)
 }
 
-fn set_max_tx<T: Space>(trie: SpaceTrie<T>, max_tx: Txid) -> Result<SpaceTrie<T>, TransactError> {
+async fn set_max_tx<T: Space>(
+    trie: SpaceTrie<T>,
+    max_tx: Txid,
+) -> Result<SpaceTrie<T>, TransactError> {
     trie.insert(KEY_MAX_TXID, MemValue::from(max_tx.u32()))
+        .await
 }

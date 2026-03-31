@@ -17,8 +17,8 @@ impl MaxEid {
             current: eid,
         }
     }
-    pub fn read<T: Space>(trie: &SpaceTrie<T>) -> Result<Self, QueryError> {
-        if let Some(MemValue::U32(value)) = trie.query_value(KEY_MAX_EID)? {
+    pub async fn read<T: Space>(trie: &SpaceTrie<T>) -> Result<Self, QueryError> {
+        if let Some(MemValue::U32(value)) = trie.query_value(KEY_MAX_EID).await? {
             Ok(Self::new(Eid(value as i32)))
         } else {
             Ok(Self::new(Eid(0)))
@@ -32,9 +32,10 @@ impl MaxEid {
         }
         taken
     }
-    pub fn write<T: Space>(self, trie: SpaceTrie<T>) -> Result<SpaceTrie<T>, TransactError> {
+    pub async fn write<T: Space>(self, trie: SpaceTrie<T>) -> Result<SpaceTrie<T>, TransactError> {
         let trie = if self.current > self.start {
-            trie.insert(KEY_MAX_EID, MemValue::from(self.current.to_i32() as u32))?
+            trie.insert(KEY_MAX_EID, MemValue::from(self.current.to_i32() as u32))
+                .await?
         } else {
             trie
         };

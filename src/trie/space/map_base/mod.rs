@@ -40,8 +40,8 @@ impl SpaceMapBase {
         let space_map_base = SpaceMapBase::new_from_slots(slot_values, map, extend)?;
         Ok(space_map_base)
     }
-    pub fn load(reader: &impl Read, addr: TableAddr) -> Result<Self, QueryError> {
-        let slot_value = reader.read_slot(&addr, 0)?;
+    pub async fn load(reader: &impl Read, addr: TableAddr) -> Result<Self, QueryError> {
+        let slot_value = reader.read_slot(&addr, 0).await?;
         Ok(Self::assert(slot_value))
     }
 }
@@ -79,29 +79,29 @@ impl SpaceMapBase {
 }
 
 impl SpaceMapBase {
-    pub fn query_value(
+    pub async fn query_value(
         &self,
         key: TrieKey,
         reader: &impl Read,
     ) -> Result<Option<MemValue>, QueryError> {
-        let slot = self.to_slot(key, reader)?;
+        let slot = self.to_slot(key, reader).await?;
         if let Some(slot) = slot {
             if let Some(key_value) = slot.to_key_value() {
                 let value = key_value.query_value(key, reader)?;
                 return Ok(value);
             } else if let Some(map_base) = slot.to_map_base() {
-                let value = map_base.query_value(key.next(), reader)?;
+                let value = Box::pin(map_base.query_value(key.next(), reader)).await?;
                 return Ok(value);
             }
         }
         Ok(None)
     }
-    pub fn top_into_mem(self, reader: &impl Read) -> Result<TrieMapBase, QueryError> {
+    pub async fn top_into_mem(self, reader: &impl Read) -> Result<TrieMapBase, QueryError> {
         let map = self.to_map();
         let base = self.extract_base();
         let mut mem_slots = Vec::new();
         for i in 0..map.slot_count() {
-            let slot = base.read_slot(reader, i)?;
+            let slot = base.read_slot(reader, i).await?;
             if let Some(key_value) = slot.to_key_value() {
                 let mem_slot = key_value.to_mem_slot();
                 mem_slots.push(mem_slot);
@@ -142,14 +142,14 @@ impl SpaceMapBase {
         SpaceBase(addr)
     }
 
-    pub fn to_slot(
+    pub async fn to_slot(
         &self,
         key: TrieKey,
         reader: &impl Read,
     ) -> Result<Option<SpaceSlot>, QueryError> {
         if let Some(base_index) = self.to_map().try_base_index(key) {
             let base = self.extract_base();
-            let slot = base.read_slot(reader, base_index)?;
+            let slot = base.read_slot(reader, base_index).await?;
             Ok(Some(slot))
         } else {
             Ok(None)
@@ -202,8 +202,12 @@ impl SpaceKeyValue {
 pub struct SpaceBase(TableAddr);
 
 impl SpaceBase {
-    pub fn read_slot(&self, reader: &impl Read, offset: usize) -> Result<SpaceSlot, QueryError> {
-        let slot_value = reader.read_slot(&self.0, offset)?;
+    pub async fn read_slot(
+        &self,
+        reader: &impl Read,
+        offset: usize,
+    ) -> Result<SpaceSlot, QueryError> {
+        let slot_value = reader.read_slot(&self.0, offset).await?;
         Ok(SpaceSlot::assert(slot_value))
     }
 }

@@ -1,12 +1,12 @@
 use crate::space::block::store::{Block, BlockStore, Details};
 use crate::space::core::reader::SlotValue;
-use reader::BlockReader;
 use crate::space::{Space, TableAddr};
 use crate::{FileError, ReadError, TransactError};
+use reader::BlockReader;
 use std::fmt::Debug;
 
-pub mod store;
 pub mod reader;
+pub mod store;
 
 #[derive(Debug)]
 pub struct BlockSpace<T: BlockStore + Debug> {
@@ -15,12 +15,12 @@ pub struct BlockSpace<T: BlockStore + Debug> {
 }
 
 impl<T: BlockStore + Debug> BlockSpace<T> {
-    pub fn new(block_store: T) -> Result<Self, FileError> {
+    pub async fn new(block_store: T) -> Result<Self, FileError> {
         let details = Details {
             slot_count: 0,
             root: None,
         };
-        block_store.write_details(&details);
+        block_store.write_details(&details).await;
         let space = Self {
             block_store,
             details,
@@ -28,8 +28,8 @@ impl<T: BlockStore + Debug> BlockSpace<T> {
         Ok(space)
     }
 
-    pub fn load(block_store: T) -> Result<Self, FileError> {
-        let details = block_store.read_details();
+    pub async fn load(block_store: T) -> Result<Self, FileError> {
+        let details = block_store.read_details().await;
         let space = Self {
             block_store,
             details,
@@ -41,7 +41,7 @@ impl<T: BlockStore + Debug> BlockSpace<T> {
 impl<T: BlockStore + Debug + Clone> Space for BlockSpace<T> {
     type Reader = BlockReader<T>;
 
-    fn add_segment(
+    async fn add_segment(
         &mut self,
         start_addr: TableAddr,
         slots: Vec<SlotValue>,
@@ -52,11 +52,13 @@ impl<T: BlockStore + Debug + Clone> Space for BlockSpace<T> {
         }
         let new_details = self.details.with_update(slots.len(), root);
         let block = Block { start_addr, slots };
-        self.block_store.write_block_details(block, &new_details);
+        self.block_store
+            .write_block_details(block, &new_details)
+            .await;
         self.details = new_details;
         Ok(())
     }
-    fn read(&self) -> Result<Self::Reader, ReadError> {
+    async fn read(&self) -> Result<Self::Reader, ReadError> {
         let reader = BlockReader::new(self.block_store.clone(), self.details.clone());
         Ok(reader)
     }

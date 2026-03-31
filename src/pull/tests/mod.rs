@@ -9,8 +9,8 @@ use common::Basis;
 
 pub mod common;
 
-#[test]
-fn pull_test() {
+#[tokio::test]
+async fn pull_test() {
     let space = {
         let basis = Basis {
             symbol: "ABC".to_string(),
@@ -19,13 +19,15 @@ fn pull_test() {
             direction: -1,
         };
         let ent = Ent::from(27);
-        let mut db = Db::new(MemSpace::new(), Basis::attrs()).expect("Db::new");
+        let mut db = Db::new(MemSpace::new(), Basis::attrs())
+            .await
+            .expect("Db::new");
         let datoms = basis.into_datoms(ent).expect("into_datoms");
-        db = db.transact(datoms).expect("db.transact");
+        db = db.transact(datoms).await.expect("db.transact");
         db.close()
     };
     {
-        let db = Db::load(space, Basis::attrs()).expect("Db::load");
+        let db = Db::load(space, Basis::attrs()).await.expect("Db::load");
         assert_eq!(
             Basis {
                 symbol: "ABC".to_string(),
@@ -33,7 +35,7 @@ fn pull_test() {
                 price_each: 101,
                 direction: -1,
             },
-            db.pull::<Basis>(Eid(27)).expect("db.pull2")
+            Basis::pull(&db, Eid(27)).await.expect("Basis::pull")
         )
     }
 }

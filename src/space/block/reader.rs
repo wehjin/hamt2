@@ -35,9 +35,9 @@ impl<T: BlockStore + Debug + Clone> BlockReader<T> {
         None
     }
 
-    fn fill_cache(&self, slot_addr: TableAddr) {
+    async fn fill_cache(&self, slot_addr: TableAddr) {
         let mut lru = self.lru.borrow_mut();
-        let block = self.block_store.read_block(slot_addr);
+        let block = self.block_store.read_block(slot_addr).await;
         if let Some(Block { start_addr, slots }) = block {
             lru.put(start_addr, slots);
         }
@@ -45,7 +45,7 @@ impl<T: BlockStore + Debug + Clone> BlockReader<T> {
 }
 
 impl<T: BlockStore + Debug + Clone> space::Read for BlockReader<T> {
-    fn read_slot(&self, addr: &TableAddr, offset: usize) -> Result<SlotValue, ReadError> {
+    async fn read_slot(&self, addr: &TableAddr, offset: usize) -> Result<SlotValue, ReadError> {
         let slot_addr = addr + offset;
         if slot_addr >= self.details.max_addr() {
             return Err(ReadError::SlotAddressOutOfBounds(*addr, offset));
@@ -53,7 +53,7 @@ impl<T: BlockStore + Debug + Clone> space::Read for BlockReader<T> {
         if let Some(slot) = self.read_cache(slot_addr) {
             return Ok(slot);
         }
-        self.fill_cache(slot_addr);
+        self.fill_cache(slot_addr).await;
         if let Some(slot) = self.read_cache(slot_addr) {
             Ok(slot)
         } else {
@@ -61,7 +61,7 @@ impl<T: BlockStore + Debug + Clone> space::Read for BlockReader<T> {
         }
     }
 
-    fn read_root(&self) -> Result<&Option<TableAddr>, ReadError> {
+    async fn read_root(&self) -> Result<&Option<TableAddr>, ReadError> {
         Ok(&self.details.root)
     }
 }

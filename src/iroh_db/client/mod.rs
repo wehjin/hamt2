@@ -22,9 +22,9 @@ pub struct Client {
     _endpoint: Endpoint,
     _router: Router,
     _docs: Docs,
-    author: AuthorId,
+    pub author: AuthorId,
     store: Store,
-    doc: Doc,
+    pub doc: Doc,
 }
 
 impl Client {

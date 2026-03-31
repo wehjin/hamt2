@@ -88,7 +88,7 @@ impl MemReader {
 }
 
 impl Read for MemReader {
-    fn read_slot(&self, addr: &TableAddr, offset: usize) -> Result<SlotValue, ReadError> {
+    async fn read_slot(&self, addr: &TableAddr, offset: usize) -> Result<SlotValue, ReadError> {
         let offset_addr = addr + offset;
         if offset_addr >= self.slots.max_index() {
             Err(ReadError::SlotAddressOutOfBounds(*addr, offset))
@@ -97,7 +97,7 @@ impl Read for MemReader {
         }
     }
 
-    fn read_root(&self) -> Result<&Option<TableAddr>, ReadError> {
+    async fn read_root(&self) -> Result<&Option<TableAddr>, ReadError> {
         Ok(&self.root)
     }
 }

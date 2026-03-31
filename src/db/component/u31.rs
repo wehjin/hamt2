@@ -92,26 +92,30 @@ impl<'a, T: Space> U31Builder<'a, T> {
         }
     }
 
-    fn next_u31(&mut self) -> u32 {
-        let Ok(Some(MemValue::U32(u31))) = self.hash_trie.query_value(self.u31_index) else {
+    async fn next_u31(&mut self) -> u32 {
+        let Ok(Some(MemValue::U32(u31))) = self.hash_trie.query_value(self.u31_index).await else {
             panic!("Unexpected MemValue variant")
         };
         self.u31_index += 1;
         u31
     }
-}
 
-impl<T: Space> Iterator for U31Builder<'_, T> {
-    type Item = u8;
+    pub async fn into_bytes(mut self) -> Vec<u8> {
+        let mut vec = Vec::with_capacity(self.bytes_left);
+        while let Some(byte) = self.next().await {
+            vec.push(byte);
+        }
+        vec
+    }
 
-    fn next(&mut self) -> Option<Self::Item> {
+    async fn next(&mut self) -> Option<u8> {
         if self.bytes_left == 0 {
             None
         } else {
             let (u32, bits_available) = match self.current_u32 {
                 Some(current) => current,
                 None => {
-                    let u31 = self.next_u31();
+                    let u31 = self.next_u31().await;
                     (u31 << 1, 31)
                 }
             };
@@ -127,7 +131,8 @@ impl<T: Space> Iterator for U31Builder<'_, T> {
             } else {
                 let bits_needed = 8 - bits_available;
                 let take_available = (u32 >> (24 + bits_needed)) as u8;
-                let new_u32 = self.next_u31() << 1;
+                let u31 = self.next_u31().await;
+                let new_u32 = u31 << 1;
                 let take_needed = (new_u32 >> (24 + bits_available)) as u8;
                 let take = (take_available << bits_needed) | take_needed;
                 self.current_u32 = Some((new_u32 << bits_needed, 31 - bits_needed));
@@ -141,9 +146,9 @@ impl<T: Space> Iterator for U31Builder<'_, T> {
 
 #[cfg(test)]
 mod tests {
-	use super::*;
+    use super::*;
 
-	#[test]
+    #[test]
     fn boundary_works() {
         let bytes = [0u8, 0, 0, 2];
         let streamer = U31Streamer::new(&bytes);

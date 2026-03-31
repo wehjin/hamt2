@@ -23,18 +23,24 @@ pub trait Space: Debug + Sized {
         start_addr: TableAddr,
         slots: Vec<SlotValue>,
         root: Option<TableAddr>,
-    ) -> Result<(), TransactError>;
-    fn read(&self) -> Result<Self::Reader, ReadError>;
+    ) -> impl Future<Output = Result<(), TransactError>>;
+    fn read(&self) -> impl Future<Output = Result<Self::Reader, ReadError>>;
     fn max_addr(&self) -> TableAddr;
-    fn extend(&self) -> Result<Extend<Self>, TransactError> {
-        let reader = self.read()?;
-        Ok(Extend::new(self.max_addr(), reader))
+    fn extend(&self) -> impl Future<Output = Result<Extend<Self>, TransactError>> {
+        async move {
+            let reader = self.read().await?;
+            Ok(Extend::new(self.max_addr(), reader))
+        }
     }
 }
 
 pub trait Read {
-    fn read_slot(&self, addr: &TableAddr, offset: usize) -> Result<SlotValue, ReadError>;
-    fn read_root(&self) -> Result<&Option<TableAddr>, ReadError>;
+    fn read_slot(
+        &self,
+        addr: &TableAddr,
+        offset: usize,
+    ) -> impl Future<Output = Result<SlotValue, ReadError>>;
+    fn read_root(&self) -> impl Future<Output = Result<&Option<TableAddr>, ReadError>>;
 }
 
 #[cfg(test)]
@@ -50,13 +56,13 @@ mod tests {
             let mut space = MemSpace::new();
             assert_eq!(TableAddr::ZERO, space.max_addr());
             {
-                let mut extend = space.extend().unwrap();
+                let mut extend = space.extend().await.unwrap();
                 let slot = SlotValue::from((1, 2));
                 addr = extend.add_slots(vec![slot]);
-                extend.commit(&mut space).unwrap();
+                extend.commit(&mut space).await.unwrap();
             }
-            let reader = space.read().unwrap();
-            let slot = reader.read_slot(&addr, 0).unwrap();
+            let reader = space.read().await.unwrap();
+            let slot = reader.read_slot(&addr, 0).await.unwrap();
             assert_eq!(SlotValue::from((1, 2)), slot);
         }
     }

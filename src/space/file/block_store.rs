@@ -18,13 +18,13 @@ impl RedBlockStore {
 }
 
 impl BlockStore for RedBlockStore {
-    fn write_details(&self, details: &Details) {
+    async fn write_details(&self, details: &Details) {
         let write = self.db.begin_write().expect("begin write");
         DetailsTable::write(details, &write).expect("write details");
         write.commit().expect("commit");
     }
 
-    fn write_block_details(&self, block: Block, details: &Details) {
+    async fn write_block_details(&self, block: Block, details: &Details) {
         let write = self.db.begin_write().expect("begin write");
         {
             BlockTable::write_slots(&write, block.start_addr, block.slots);
@@ -33,7 +33,7 @@ impl BlockStore for RedBlockStore {
         write.commit().expect("commit");
     }
 
-    fn read_block(&self, addr: TableAddr) -> Option<Block> {
+    async fn read_block(&self, addr: TableAddr) -> Option<Block> {
         let read = self.db.begin_read().expect("begin read");
         let entry = BlockTable::read_slots(&read, addr);
         let block = entry.map(|(start_index, slots)| Block {
@@ -43,7 +43,7 @@ impl BlockStore for RedBlockStore {
         block
     }
 
-    fn read_details(&self) -> Details {
+    async fn read_details(&self) -> Details {
         let read = self.db.begin_read().expect("begin read");
         let details = DetailsTable::read(&read).expect("read details");
         details

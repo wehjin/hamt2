@@ -1,12 +1,12 @@
+use crate::space::block::reader::BlockReader;
+use crate::space::block::BlockSpace;
 use crate::space::core::reader::SlotValue;
 use crate::space::file::block_store::RedBlockStore;
 use crate::space::{Space, TableAddr};
 use crate::{FileError, ReadError, TransactError};
-use crate::space::block::reader::BlockReader;
 use redb::Database;
 use std::fmt::Debug;
 use std::path::Path;
-use crate::space::block::BlockSpace;
 
 pub mod block_store;
 pub mod block_table;
@@ -20,18 +20,18 @@ pub struct FileSpace {
 }
 
 impl FileSpace {
-    pub fn new(path: impl AsRef<Path>) -> Result<Self, FileError> {
+    pub async fn new(path: impl AsRef<Path>) -> Result<Self, FileError> {
         let db = Database::create(path)?;
         let block_store = RedBlockStore::new(db);
-        let block_space = BlockSpace::new(block_store)?;
+        let block_space = BlockSpace::new(block_store).await?;
         let red_space = Self { block_space };
         Ok(red_space)
     }
 
-    pub fn load(path: impl AsRef<Path>) -> Result<Self, FileError> {
+    pub async fn load(path: impl AsRef<Path>) -> Result<Self, FileError> {
         let db = Database::open(path)?;
         let block_store = RedBlockStore::new(db);
-        let block_space = BlockSpace::load(block_store)?;
+        let block_space = BlockSpace::load(block_store).await?;
         let red_space = Self { block_space };
         Ok(red_space)
     }
@@ -39,16 +39,16 @@ impl FileSpace {
 impl Space for FileSpace {
     type Reader = BlockReader<RedBlockStore>;
 
-    fn add_segment(
+    async fn add_segment(
         &mut self,
         start_addr: TableAddr,
         slots: Vec<SlotValue>,
         root: Option<TableAddr>,
     ) -> Result<(), TransactError> {
-        self.block_space.add_segment(start_addr, slots, root)
+        self.block_space.add_segment(start_addr, slots, root).await
     }
-    fn read(&self) -> Result<Self::Reader, ReadError> {
-        self.block_space.read()
+    async fn read(&self) -> Result<Self::Reader, ReadError> {
+        self.block_space.read().await
     }
     fn max_addr(&self) -> TableAddr {
         self.block_space.max_addr()

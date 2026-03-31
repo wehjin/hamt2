@@ -4,10 +4,10 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
 pub trait BlockStore {
-    fn write_details(&self, details: &Details);
-    fn write_block_details(&self, block: Block, details: &Details);
-    fn read_block(&self, addr: TableAddr) -> Option<Block>;
-    fn read_details(&self) -> Details;
+    fn write_details(&self, details: &Details) -> impl Future<Output = ()>;
+    fn write_block_details(&self, block: Block, details: &Details) -> impl Future<Output = ()>;
+    fn read_block(&self, addr: TableAddr) -> impl Future<Output = Option<Block>>;
+    fn read_details(&self) -> impl Future<Output = Details>;
 }
 
 pub struct Block {
