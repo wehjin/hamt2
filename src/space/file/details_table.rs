@@ -1,6 +1,6 @@
-use redb::{ReadTransaction, TableDefinition, WriteTransaction};
-use crate::FileError;
 use crate::space::block::store::Details;
+use crate::FileError;
+use redb::{ReadTransaction, TableDefinition, WriteTransaction};
 
 pub struct DetailsTable;
 

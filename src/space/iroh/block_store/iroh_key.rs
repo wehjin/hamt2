@@ -62,9 +62,9 @@ impl From<&[u8]> for IrohKey {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::space::TableAddr;
-    #[test]
+	use super::*;
+	use crate::space::TableAddr;
+	#[test]
     fn into_bytes_for_block() {
         let addr = TableAddr::from(0x01020304u32);
         let iroh_key = IrohKey::Block(BlockKey::new(addr, 0x05060708));

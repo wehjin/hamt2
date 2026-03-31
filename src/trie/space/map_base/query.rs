@@ -1,8 +1,8 @@
+use crate::space::{Read, TableAddr};
 use crate::trie::core::query::QueryKeysValues;
 use crate::trie::mem::value::MemValue;
 use crate::trie::space::map_base::SpaceMapBase;
 use crate::trie::space::slots::SpaceSlot;
-use crate::space::{Read, TableAddr};
 use crate::QueryError;
 
 struct Job {
@@ -24,7 +24,10 @@ impl Job {
 }
 
 impl QueryKeysValues for SpaceMapBase {
-    async fn query_keys_values(&self, reader: &impl Read) -> Result<Vec<(i32, MemValue)>, QueryError> {
+    async fn query_keys_values(
+        &self,
+        reader: &impl Read,
+    ) -> Result<Vec<(i32, MemValue)>, QueryError> {
         let mut queue: Vec<Job> = {
             let job = Job {
                 slot_count: self.map.slot_count(),
@@ -39,7 +42,9 @@ impl QueryKeysValues for SpaceMapBase {
         let mut out = Vec::new();
         while let Some(current) = queue.pop() {
             let new = if current.slot_offset < current.slot_count {
-                let slot = reader.read_slot(&current.base_addr, current.slot_offset).await?;
+                let slot = reader
+                    .read_slot(&current.base_addr, current.slot_offset)
+                    .await?;
                 let space_slot = SpaceSlot::assert(slot);
                 if let Some(key_value) = space_slot.to_key_value() {
                     let key = key_value.to_key();

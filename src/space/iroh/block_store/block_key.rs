@@ -49,9 +49,9 @@ impl From<&[u8]> for BlockKey {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+	use super::*;
 
-    #[test]
+	#[test]
     fn block_key_into_bytes() {
         let addr_u32 = 0x01020304u32;
         let block_key = BlockKey {

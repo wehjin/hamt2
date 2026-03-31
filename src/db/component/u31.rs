@@ -146,9 +146,9 @@ impl<'a, T: Space> U31Builder<'a, T> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+	use super::*;
 
-    #[test]
+	#[test]
     fn boundary_works() {
         let bytes = [0u8, 0, 0, 2];
         let streamer = U31Streamer::new(&bytes);

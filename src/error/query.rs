@@ -1,4 +1,3 @@
-use crate::iroh_db::client::keys;
 use std::fmt::Display;
 
 #[derive(thiserror::Error, Debug)]
@@ -14,9 +13,6 @@ pub enum QueryError {
 
     #[error("Utf8: {0}")]
     Utf8(#[from] std::str::Utf8Error),
-
-    #[error("Key: {0}")]
-    Key(#[from] keys::Error),
 
     #[error("SpaceReadError: {0}")]
     SpaceReadError(#[from] crate::error::ReadError),

@@ -9,10 +9,10 @@ use redb::Value;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::space::mem::MemSpace;
+	use super::*;
+	use crate::space::mem::MemSpace;
 
-    #[tokio::test]
+	#[tokio::test]
     async fn insert_and_query() {
         let space = MemSpace::new();
         let mut trie = SpaceTrie::connect(&space)

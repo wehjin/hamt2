@@ -1,5 +1,5 @@
-use crate::trie::core::map::TrieMap;
 use crate::hash;
+use crate::trie::core::map::TrieMap;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Serialize, Deserialize)]

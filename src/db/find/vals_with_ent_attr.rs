@@ -46,7 +46,9 @@ impl Rule for ValsWithEntAttr {
             let key_values = subtrie.query_keys_values().await?;
             let first_key_value = key_values.first();
             if let Some((vid, _)) = first_key_value {
-                let val = val_table::query(&trie, Vid::from_id(*vid)).await?.expect("val should exist");
+                let val = val_table::query(&trie, Vid::from_id(*vid))
+                    .await?
+                    .expect("val should exist");
                 self.vals.push(val);
             }
         }

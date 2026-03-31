@@ -22,19 +22,31 @@ async fn high_bits_work() {
         let reader = space.read().await.expect("read red space");
         assert_eq!(
             SlotValue::from((0u32, 0u32)),
-            reader.read_slot(&TableAddr::ZERO, 0).await.expect("read slot")
+            reader
+                .read_slot(&TableAddr::ZERO, 0)
+                .await
+                .expect("read slot")
         );
         assert_eq!(
             SlotValue::from((0u32, 0x8000_0000u32)),
-            reader.read_slot(&TableAddr::ZERO, 1).await.expect("read slot")
+            reader
+                .read_slot(&TableAddr::ZERO, 1)
+                .await
+                .expect("read slot")
         );
         assert_eq!(
             SlotValue::from((0x8000_0000u32, 0u32)),
-            reader.read_slot(&TableAddr::ZERO, 2).await.expect("read slot")
+            reader
+                .read_slot(&TableAddr::ZERO, 2)
+                .await
+                .expect("read slot")
         );
         assert_eq!(
             SlotValue::from((0x8000_0000u32, 0x8000_0000u32)),
-            reader.read_slot(&TableAddr::ZERO, 3).await.expect("read slot")
+            reader
+                .read_slot(&TableAddr::ZERO, 3)
+                .await
+                .expect("read slot")
         );
     }
 }

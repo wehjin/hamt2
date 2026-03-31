@@ -1,6 +1,6 @@
+use crate::space::Space;
 use crate::trie::core::map_base::TrieMapBase;
 use crate::trie::space::SpaceRoot;
-use crate::space::Space;
 use crate::{space, TransactError};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Formatter};

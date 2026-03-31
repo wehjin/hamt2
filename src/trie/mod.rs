@@ -4,12 +4,12 @@ pub mod space;
 
 #[cfg(test)]
 mod tests {
-    use crate::space::file::FileSpace;
-    use crate::space::mem::MemSpace;
-    use crate::trie::mem::value::MemValue;
-    use crate::trie::space::trie::SpaceTrie;
+	use crate::space::file::FileSpace;
+	use crate::space::mem::MemSpace;
+	use crate::trie::mem::value::MemValue;
+	use crate::trie::space::trie::SpaceTrie;
 
-    #[tokio::test]
+	#[tokio::test]
     async fn file_trie_works() -> anyhow::Result<()> {
         let file = tempfile::NamedTempFile::new()?;
         {

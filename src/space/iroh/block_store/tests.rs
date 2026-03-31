@@ -7,15 +7,15 @@ use iroh::SecretKey;
 
 #[tokio::test]
 async fn read_and_writes_details() -> anyhow::Result<()> {
-let client = IrohClient::new_mem().await?;
-let store = IrohBlockStore::new(client);
-let details = Details {
-slot_count: 30,
-root: Some(TableAddr::from(0x01020304u32)),
-};
-store.write_details(&details).await;
-assert_eq!(details, store.read_details().await);
-Ok(())
+    let client = IrohClient::new_mem().await?;
+    let store = IrohBlockStore::new(client);
+    let details = Details {
+        slot_count: 30,
+        root: Some(TableAddr::from(0x01020304u32)),
+    };
+    store.write_details(&details).await;
+    assert_eq!(details, store.read_details().await);
+    Ok(())
 }
 
 #[tokio::test]
