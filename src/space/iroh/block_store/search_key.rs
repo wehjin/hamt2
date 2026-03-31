@@ -41,10 +41,13 @@ mod tests {
 
     #[test]
     fn search_key_next() {
-        let key = SearchKey::from_addr(&TableAddr::from(0x00000104u32));
-        let next_key = key.next().map(Into::<Bytes>::into);
-        assert_eq!(Some(Bytes::from_static(&[00, 00, 0])), next_key);
-        let final_key = key.next().map(Into::<Bytes>::into);
+        let mut key = SearchKey::from_addr(&TableAddr::from(0x00000104u32));
+        key = key.next().expect("Failed to get next key");
+        {
+            let key_bytes: Bytes = key.clone().into();
+            assert_eq!(&[0u8; 3], key_bytes.as_ref());
+        }
+        let final_key = key.next();
         assert_eq!(None, final_key);
     }
 }

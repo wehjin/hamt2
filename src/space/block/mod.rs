@@ -36,6 +36,9 @@ impl<T: BlockStore + Debug> BlockSpace<T> {
         };
         Ok(space)
     }
+    pub fn close(self) -> T {
+        self.block_store
+    }
 }
 
 impl<T: BlockStore + Debug + Clone> Space for BlockSpace<T> {

@@ -19,4 +19,7 @@ pub enum FileError {
 
     #[error("Postcard error: {0:?}")]
     Postcard(#[from] postcard::Error),
+
+    #[error("Anyhow error: {0:?}")]
+    Anyhow(#[from] anyhow::Error),
 }

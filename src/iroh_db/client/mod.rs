@@ -2,7 +2,7 @@ use crate::iroh_db::client::transact::Transact;
 use crate::iroh_db::core::Datom;
 use crate::iroh_db::reader::Reader;
 use crate::TransactError;
-use iroh::endpoint::BindError;
+use iroh::endpoint::{presets, BindError};
 use iroh::protocol::Router;
 use iroh::Endpoint;
 use iroh_blobs::api::Store;
@@ -19,17 +19,15 @@ pub mod transact;
 pub mod values;
 
 pub struct Client {
-    _endpoint: Endpoint,
-    _router: Router,
-    _docs: Docs,
     pub author: AuthorId,
     store: Store,
     pub doc: Doc,
+    pub router: Router,
 }
 
 impl Client {
     pub async fn connect() -> Result<Self, ConnectError> {
-        let endpoint = Endpoint::builder().bind().await?;
+        let endpoint = Endpoint::bind(presets::N0).await?;
         let store = MemStore::default();
         let gossip = Gossip::builder().spawn(endpoint.clone());
         let docs = Docs::memory()
@@ -44,12 +42,10 @@ impl Client {
         let author = docs.author_default().await?;
         let doc = docs.create().await?;
         Ok(Self {
-            _endpoint: endpoint,
-            _docs: docs,
-            _router: router,
             author,
             store: (*store).clone(),
             doc,
+            router,
         })
     }
 
