@@ -11,7 +11,7 @@ impl BlockTable {
         let mut table = write
             .open_table(Self::BLOCKS_TABLE)
             .expect("open blocks table");
-        let key = start.u32();
+        let key = start.to_u32();
         let value = slots.into_iter().map(|s| s.to_u64()).collect::<Vec<_>>();
         table.insert(key, value).expect("insert slots");
     }
@@ -23,7 +23,7 @@ impl BlockTable {
         let table = read
             .open_table(Self::BLOCKS_TABLE)
             .expect("open blocks table");
-        let mut range = table.range(..=start.u32()).expect("get range");
+        let mut range = table.range(..=start.to_u32()).expect("get range");
         match range.next_back() {
             None => None,
             Some(entry) => {

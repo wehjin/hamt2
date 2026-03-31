@@ -5,17 +5,18 @@ use std::fmt::Debug;
 
 pub trait BlockStore {
     fn write_details(&self, details: &Details) -> impl Future<Output = ()>;
+    fn read_details(&self) -> impl Future<Output = Details>;
     fn write_block_details(&self, block: Block, details: &Details) -> impl Future<Output = ()>;
     fn read_block(&self, addr: TableAddr) -> impl Future<Output = Option<Block>>;
-    fn read_details(&self) -> impl Future<Output = Details>;
 }
 
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Block {
     pub start_addr: TableAddr,
     pub slots: Vec<SlotValue>,
 }
 
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Details {
     pub slot_count: usize,
     pub root: Option<TableAddr>,

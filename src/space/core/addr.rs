@@ -7,7 +7,7 @@ pub struct TableAddr(pub u32);
 
 impl TableAddr {
     pub const ZERO: TableAddr = TableAddr(0);
-    pub fn u32(&self) -> u32 {
+    pub fn to_u32(&self) -> u32 {
         self.0
     }
     pub fn to_usize(&self) -> usize {

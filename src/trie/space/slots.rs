@@ -55,7 +55,7 @@ impl SpaceSlot {
     pub fn from_map_base(map: TrieMap, base_addr: TableAddr) -> Self {
         let left = map.u32();
         let right = {
-            let base_addr = base_addr.u32();
+            let base_addr = base_addr.to_u32();
             debug_assert_eq!(0, base_addr & 0x8000_0000);
             base_addr | 0x8000_0000
         };

@@ -20,7 +20,7 @@ impl MemValue {
                 let (map, base_addr) = space_map_base.into_map_base_addr();
                 let space_root = SpaceRoot(map, base_addr);
                 let root_addr = space_root.into_root_addr(extend)?;
-                Ok(root_addr.u32())
+                Ok(root_addr.to_u32())
             }
         }
     }

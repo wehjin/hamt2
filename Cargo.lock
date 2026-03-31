@@ -1123,6 +1123,7 @@ name = "hamt2"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bytes",
  "iroh",
  "iroh-blobs",
  "iroh-docs",
@@ -1135,6 +1136,7 @@ dependencies = [
  "tempfile",
  "thiserror 2.0.18",
  "tokio",
+ "tokio-stream",
 ]
 
 [[package]]
