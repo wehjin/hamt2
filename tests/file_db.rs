@@ -11,7 +11,7 @@ pub const ATTR_GREETING: Attr = Attr("speech", "greeting");
 async fn file_db_works() {
     let file = tempfile::NamedTempFile::new().expect("tempfile");
     {
-        let space = FileSpace::new(file.path()).await.expect("create file space");
+        let space = FileSpace::new(&file).await.expect("create file space");
         let db = Db::new(space, vec![ATTR_COUNT]).await.expect("new db");
         let db = db
             .transact(vec![Datom::Add(Ent::from(1), ATTR_COUNT, Val::U32(1))])
@@ -25,7 +25,7 @@ async fn file_db_works() {
         );
     }
     {
-        let space = FileSpace::load(file.path()).await.expect("load red space");
+        let space = FileSpace::load(&file).await.expect("load red space");
         let db = Db::load(space, vec![ATTR_COUNT]).await.expect("load db");
         assert_eq!(
             Some(Val::U32(1)),
@@ -41,7 +41,7 @@ async fn file_db_strings_work() {
     let schema = vec![ATTR_GREETING];
     let file = tempfile::NamedTempFile::new().expect("tempfile");
     {
-        let space = FileSpace::new(file.path()).await.expect("create file space");
+        let space = FileSpace::new(&file).await.expect("create file space");
         let db = Db::new(space, schema.clone()).await.expect("new db");
         let db = db
             .transact(vec![Datom::Add(
@@ -59,7 +59,7 @@ async fn file_db_strings_work() {
         );
     }
     {
-        let space = FileSpace::load(file.path()).await.expect("load red space");
+        let space = FileSpace::load(&file).await.expect("load red space");
         let db = Db::load(space, schema).await.expect("load db");
         assert_eq!(
             Some(Val::from("hello")),

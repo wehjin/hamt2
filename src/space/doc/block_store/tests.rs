@@ -83,7 +83,7 @@ async fn persistent_block_store_works() -> anyhow::Result<()> {
     let temp_dir = tempfile::tempdir()?;
     let doc_id: NamespaceId;
     {
-        let client = DocsClient::connect(temp_dir.path(), secret_key.clone()).await?;
+        let client = DocsClient::connect(&temp_dir, secret_key.clone()).await?;
         let doc = client.docs.create().await?;
         doc_id = doc.id();
         let store = DocBlockStore::new(client, doc);

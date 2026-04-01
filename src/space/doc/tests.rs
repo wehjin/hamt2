@@ -65,7 +65,7 @@ async fn persistent_doc_space_works() -> anyhow::Result<()> {
     let temp_dir = tempfile::tempdir()?;
     let doc_id: NamespaceId;
     {
-        let client = DocsClient::connect(temp_dir.path(), secret_key.clone()).await?;
+        let client = DocsClient::connect(&temp_dir, secret_key.clone()).await?;
         let mut space = DocSpace::new(client).await?;
         doc_id = space.doc_id();
         {

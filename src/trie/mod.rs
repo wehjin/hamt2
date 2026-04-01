@@ -13,7 +13,7 @@ mod tests {
     async fn file_trie_works() -> anyhow::Result<()> {
         let file = tempfile::NamedTempFile::new()?;
         {
-            let mut space = FileSpace::new(file.path()).await?;
+            let mut space = FileSpace::new(&file).await?;
             let trie = SpaceTrie::connect(&space).await?;
             trie.insert(1, MemValue::U32(1))
                 .await?
@@ -21,7 +21,7 @@ mod tests {
                 .await?
         }
         {
-            let space = FileSpace::load(file.path()).await?;
+            let space = FileSpace::load(&file).await?;
             let trie = SpaceTrie::connect(&space).await?;
             let value = trie.query_value(1).await?;
             assert_eq!(Some(MemValue::U32(1)), value);

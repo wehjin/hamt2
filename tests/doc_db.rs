@@ -12,7 +12,7 @@ async fn memory_doc_db_works() -> anyhow::Result<()> {
     let space = DocSpace::new(client).await?;
     let mut db = Db::new(space, vec![ATTR_COUNT]).await?;
     db = db
-        .transact(vec![Datom::Add(Ent::from(1), ATTR_COUNT, Val::U32(1))])
+        .transact([Datom::Add(Ent::from(1), ATTR_COUNT, Val::U32(1))])
         .await?;
     let val = db.find_val(Ent::from(1), ATTR_COUNT).await?;
     assert_eq!(Some(Val::U32(1)), val);
@@ -22,7 +22,7 @@ async fn memory_doc_db_works() -> anyhow::Result<()> {
 #[tokio::test]
 async fn persistent_doc_db_works() -> anyhow::Result<()> {
     let secret_key = SecretKey::from_bytes(&[0x01u8; 32]);
-    let temp_dir = dbg!(tempfile::tempdir()?.keep());
+    let temp_dir = tempfile::tempdir()?;
     let doc_id: NamespaceId;
     {
         let client = DocsClient::connect(&temp_dir, secret_key.clone()).await?;
@@ -30,7 +30,7 @@ async fn persistent_doc_db_works() -> anyhow::Result<()> {
         doc_id = space.doc_id();
         let db = Db::new(space, vec![ATTR_COUNT])
             .await?
-            .transact(vec![Datom::Add(Ent::from(1), ATTR_COUNT, Val::U32(1))])
+            .transact([Datom::Add(Ent::from(1), ATTR_COUNT, Val::U32(1))])
             .await?;
         let space = db.close();
         space.close().await?;

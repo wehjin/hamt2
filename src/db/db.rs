@@ -132,7 +132,8 @@ impl<T: Space> Db<T> {
 }
 
 impl<T: Space> Db<T> {
-    pub async fn transact(self, datoms: Vec<Datom>) -> Result<Self, TransactError> {
+    pub async fn transact(self, datoms: impl Into<Vec<Datom>>) -> Result<Self, TransactError> {
+        let datoms = datoms.into();
         let mut new_eids = HashMap::new();
         let mut max_eid = MaxEid::read(&self.trie).await?;
         match datoms.is_empty() {

@@ -6,7 +6,7 @@ use crate::space::{Read, Space, TableAddr};
 async fn high_bits_work() {
     let file = tempfile::NamedTempFile::new().expect("tempfile");
     {
-        let mut space = FileSpace::new(file.path()).await.expect("create red space");
+        let mut space = FileSpace::new(&file).await.expect("create red space");
         assert_eq!(TableAddr::ZERO, space.max_addr());
         let mut extend = space.extend().await.unwrap();
         extend.add_slots(vec![
@@ -18,7 +18,7 @@ async fn high_bits_work() {
         extend.commit(&mut space).await.unwrap();
     }
     {
-        let space = FileSpace::load(file.path()).await.expect("load red space");
+        let space = FileSpace::load(&file).await.expect("load red space");
         let reader = space.read().await.expect("read red space");
         assert_eq!(
             SlotValue::from((0u32, 0u32)),
@@ -55,7 +55,7 @@ async fn high_bits_work() {
 async fn file_space_works() {
     let file = tempfile::NamedTempFile::new().expect("tempfile");
     {
-        let mut space = FileSpace::new(file.path()).await.expect("create red space");
+        let mut space = FileSpace::new(&file).await.expect("create red space");
         assert_eq!(TableAddr::ZERO, space.max_addr());
         for count in 1..=3 {
             let mut extend = space.extend().await.unwrap();
@@ -68,7 +68,7 @@ async fn file_space_works() {
         assert_eq!(TableAddr::from(6usize), space.max_addr());
     }
     {
-        let space = FileSpace::load(file.path()).await.expect("load red space");
+        let space = FileSpace::load(&file).await.expect("load red space");
         let reader = space.read().await.expect("read red space");
         let mut slots = Vec::new();
         let mut addr = TableAddr::ZERO;
