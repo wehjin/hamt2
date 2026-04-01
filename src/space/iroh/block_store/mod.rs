@@ -6,6 +6,7 @@ use crate::space::iroh::block_store::search_key::SearchKey;
 use crate::space::iroh::client::IrohClient;
 use crate::space::TableAddr;
 use bytes::Bytes;
+use iroh_docs::api::Doc;
 use iroh_docs::store::{Query, SortDirection};
 use tokio_stream::StreamExt;
 
@@ -16,11 +17,12 @@ mod search_key;
 #[derive(Debug, Clone)]
 pub struct IrohBlockStore {
     client: IrohClient,
+    doc: Doc,
 }
 
 impl IrohBlockStore {
-    pub fn new(client: IrohClient) -> Self {
-        Self { client }
+    pub fn new(client: IrohClient, doc: Doc) -> Self {
+        Self { client, doc }
     }
     pub fn close(self) -> IrohClient {
         self.client
@@ -30,8 +32,7 @@ impl IrohBlockStore {
 impl BlockStore for IrohBlockStore {
     async fn write_details(&self, details: &Details) {
         let card = postcard::to_allocvec(details).expect("Failed to serialize details");
-        self.client
-            .doc
+        self.doc
             .set_bytes(self.client.author, IrohKey::Details, card)
             .await
             .expect("Failed to set details");
@@ -41,7 +42,6 @@ impl BlockStore for IrohBlockStore {
         let key_bytes: Bytes = IrohKey::Details.into();
         let query = Query::single_latest_per_key().key_exact(key_bytes.as_ref());
         let details_entry = self
-            .client
             .doc
             .get_one(query)
             .await
@@ -64,8 +64,7 @@ impl BlockStore for IrohBlockStore {
         let key = IrohKey::Block(BlockKey::new(start_addr, slots.len() as u32));
         let key_bytes: Bytes = key.into();
         let slot_bytes = slots_into_bytes(slots);
-        self.client
-            .doc
+        self.doc
             .set_bytes(self.client.author, key_bytes, slot_bytes)
             .await
             .expect("Failed to set block");
@@ -79,12 +78,7 @@ impl BlockStore for IrohBlockStore {
             let query = Query::single_latest_per_key()
                 .key_prefix(prefix_bytes.as_ref())
                 .sort_direction(SortDirection::Desc);
-            let results = self
-                .client
-                .doc
-                .get_many(query)
-                .await
-                .expect("Failed to get block");
+            let results = self.doc.get_many(query).await.expect("Failed to get block");
             tokio::pin!(results);
             while let Some(entry) = results.next().await {
                 let entry = entry.expect("Failed to get block entry");

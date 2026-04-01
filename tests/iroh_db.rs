@@ -25,9 +25,9 @@ async fn iroh_path_db_works() -> anyhow::Result<()> {
     let temp_dir = dbg!(tempfile::tempdir()?.keep());
     let doc_id: NamespaceId;
     {
-        let client = IrohClient::connect(&temp_dir, None, secret_key.clone()).await?;
-        doc_id = client.doc.id();
+        let client = IrohClient::connect(&temp_dir, secret_key.clone()).await?;
         let space = IrohSpace::new(client).await?;
+        doc_id = space.doc_id;
         let db = Db::new(space, vec![ATTR_COUNT])
             .await?
             .transact(vec![Datom::Add(Ent::from(1), ATTR_COUNT, Val::U32(1))])
@@ -37,8 +37,8 @@ async fn iroh_path_db_works() -> anyhow::Result<()> {
         client.router.shutdown().await?;
     }
     {
-        let client = IrohClient::connect(&temp_dir, Some(doc_id), secret_key.clone()).await?;
-        let space = IrohSpace::load(client).await?;
+        let client = IrohClient::connect(&temp_dir, secret_key.clone()).await?;
+        let space = IrohSpace::load(client, doc_id).await?;
         let db = Db::load(space, vec![ATTR_COUNT]).await?;
         assert_eq!(
             Some(Val::U32(1)),

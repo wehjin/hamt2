@@ -4,9 +4,8 @@ use iroh::{Endpoint, SecretKey};
 use iroh_blobs::api::Store;
 use iroh_blobs::store::fs::FsStore;
 use iroh_blobs::store::mem::MemStore;
-use iroh_docs::api::Doc;
 use iroh_docs::protocol::{Builder, Docs};
-use iroh_docs::{AuthorId, NamespaceId};
+use iroh_docs::AuthorId;
 use iroh_gossip::Gossip;
 use std::path::Path;
 
@@ -15,22 +14,27 @@ mod tests {
     use crate::space::iroh::client::IrohClient;
     use iroh::SecretKey;
     use iroh_docs::store::Query;
+    use iroh_docs::NamespaceId;
 
     #[tokio::test]
     async fn file_client_works() -> anyhow::Result<()> {
         let temp_dir = tempfile::tempdir()?;
         let secret_key = SecretKey::from_bytes(&[0x01u8; 32]);
-        let mut doc_id = None;
+        let doc_id: NamespaceId;
         {
-            let client = IrohClient::connect(temp_dir.path(), doc_id, secret_key.clone()).await?;
-            doc_id = Some(client.doc.id());
-            client.doc.set_bytes(client.author, "key", "value").await?;
+            let client = IrohClient::connect(temp_dir.path(), secret_key.clone()).await?;
+            let doc = client.docs.create().await?;
+            doc_id = doc.id();
+            doc.set_bytes(client.author, "key", "value").await?;
             client.router.shutdown().await?;
         }
         {
-            let client = IrohClient::connect(temp_dir.path(), doc_id, secret_key).await?;
-            let result = client.doc.get_one(Query::key_exact("key")).await?;
-            let entry = result.expect("entry should exist");
+            let client = IrohClient::connect(temp_dir.path(), secret_key).await?;
+            let doc = client.docs.open(doc_id).await?.expect("doc should exist");
+            let entry = doc
+                .get_one(Query::key_exact("key"))
+                .await?
+                .expect("entry should exist");
             assert_eq!("key".as_bytes(), entry.key());
             client.router.shutdown().await?;
         }
@@ -42,7 +46,7 @@ mod tests {
 pub struct IrohClient {
     pub author: AuthorId,
     pub store: Store,
-    pub doc: Doc,
+    pub docs: Docs,
     pub router: Router,
 }
 
@@ -51,12 +55,11 @@ impl IrohClient {
         let secret_key = SecretKey::from_bytes(&[0x01u8; 32]);
         let store = MemStore::new();
         let docs_builder = Docs::memory();
-        Self::build((*store).clone(), docs_builder, None, secret_key).await
+        Self::build((*store).clone(), docs_builder, secret_key).await
     }
 
     pub async fn connect(
         path: impl AsRef<Path>,
-        doc_id: Option<NamespaceId>,
         secret_key: SecretKey,
     ) -> Result<Self, anyhow::Error> {
         let path = path.as_ref();
@@ -65,13 +68,12 @@ impl IrohClient {
         let docs_path = path.join("docs");
         tokio::fs::create_dir_all(&docs_path).await?;
         let docs_store = Docs::persistent(docs_path);
-        Self::build((*blobs_store).clone(), docs_store, doc_id, secret_key).await
+        Self::build((*blobs_store).clone(), docs_store, secret_key).await
     }
 
     async fn build(
         blobs_store: Store,
         docs_builder: Builder,
-        doc_id: Option<NamespaceId>,
         secret_key: SecretKey,
     ) -> anyhow::Result<Self> {
         let endpoint = Endpoint::builder(presets::N0)
@@ -91,15 +93,10 @@ impl IrohClient {
             .accept(iroh_docs::ALPN, docs.clone())
             .spawn();
         let author = docs.author_default().await?;
-        let doc = if let Some(id) = doc_id {
-            docs.open(id).await?.expect("doc not found")
-        } else {
-            docs.create().await?
-        };
         Ok(Self {
             author,
             store: blobs_store,
-            doc,
+            docs,
             router,
         })
     }
