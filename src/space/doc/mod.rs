@@ -16,7 +16,7 @@ mod tests;
 #[derive(Debug)]
 pub struct DocSpace {
     block_space: BlockSpace<DocBlockStore>,
-    pub doc_id: NamespaceId,
+    doc_id: NamespaceId,
 }
 
 impl DocSpace {
@@ -43,9 +43,14 @@ impl DocSpace {
         Ok(space)
     }
 
-    pub fn close(self) -> DocsClient {
+    pub fn doc_id(&self) -> NamespaceId {
+        self.doc_id
+    }
+
+    pub async fn close(self) -> anyhow::Result<()> {
         let client = self.block_space.close().close();
-        client
+        client.router.shutdown().await?;
+        Ok(())
     }
 }
 

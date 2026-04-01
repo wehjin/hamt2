@@ -67,13 +67,13 @@ async fn persistent_doc_space_works() -> anyhow::Result<()> {
     {
         let client = DocsClient::connect(temp_dir.path(), secret_key.clone()).await?;
         let mut space = DocSpace::new(client).await?;
-        doc_id = space.doc_id;
+        doc_id = space.doc_id();
         {
             let mut extend = space.extend().await?;
             extend.add_slots(vec![SlotValue::from_u64(8)]);
             extend.commit(&mut space).await?;
         }
-        space.close().router.shutdown().await?;
+        space.close().await?
     }
     {
         let client = DocsClient::connect(&temp_dir, secret_key.clone()).await?;
@@ -83,7 +83,7 @@ async fn persistent_doc_space_works() -> anyhow::Result<()> {
             SlotValue::from_u64(8),
             reader.read_slot(&TableAddr::from(0u32), 0).await?
         );
-        space.close().router.shutdown().await?;
+        space.close().await?
     }
     Ok(())
 }

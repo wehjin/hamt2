@@ -27,14 +27,13 @@ async fn persistent_doc_db_works() -> anyhow::Result<()> {
     {
         let client = DocsClient::connect(&temp_dir, secret_key.clone()).await?;
         let space = DocSpace::new(client).await?;
-        doc_id = space.doc_id;
+        doc_id = space.doc_id();
         let db = Db::new(space, vec![ATTR_COUNT])
             .await?
             .transact(vec![Datom::Add(Ent::from(1), ATTR_COUNT, Val::U32(1))])
             .await?;
         let space = db.close();
-        let client = space.close();
-        client.router.shutdown().await?;
+        space.close().await?;
     }
     {
         let client = DocsClient::connect(&temp_dir, secret_key.clone()).await?;
@@ -45,8 +44,7 @@ async fn persistent_doc_db_works() -> anyhow::Result<()> {
             db.find_val(Ent::from(1), ATTR_COUNT).await?
         );
         let space = db.close();
-        let client = space.close();
-        client.router.shutdown().await?;
+        space.close().await?;
     }
     Ok(())
 }
