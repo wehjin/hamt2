@@ -2,6 +2,7 @@ use crate::trie::space::trie::SpaceTrie;
 use crate::QueryError;
 
 mod ents_with_attr;
+pub mod program;
 mod vals_with_ent_attr;
 
 use crate::db::Schema;
