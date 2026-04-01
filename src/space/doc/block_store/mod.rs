@@ -1,9 +1,9 @@
-use crate::space::block::store::{Block, BlockStore, Details};
+use crate::space::core::block_space::store::{Block, BlockStore, Details};
 use crate::space::core::reader::SlotValue;
-use crate::space::iroh::block_store::block_key::BlockKey;
-use crate::space::iroh::block_store::iroh_key::IrohKey;
-use crate::space::iroh::block_store::search_key::SearchKey;
-use crate::space::iroh::client::IrohClient;
+use crate::space::doc::block_store::block_key::BlockKey;
+use crate::space::doc::block_store::doc_key::DocKey;
+use crate::space::doc::block_store::search_key::SearchKey;
+use crate::space::doc::client::DocsClient;
 use crate::space::TableAddr;
 use bytes::Bytes;
 use iroh_docs::api::Doc;
@@ -11,35 +11,35 @@ use iroh_docs::store::{Query, SortDirection};
 use tokio_stream::StreamExt;
 
 mod block_key;
-mod iroh_key;
+mod doc_key;
 mod search_key;
 
 #[derive(Debug, Clone)]
-pub struct IrohBlockStore {
-    client: IrohClient,
+pub struct DocBlockStore {
+    client: DocsClient,
     doc: Doc,
 }
 
-impl IrohBlockStore {
-    pub fn new(client: IrohClient, doc: Doc) -> Self {
+impl DocBlockStore {
+    pub fn new(client: DocsClient, doc: Doc) -> Self {
         Self { client, doc }
     }
-    pub fn close(self) -> IrohClient {
+    pub fn close(self) -> DocsClient {
         self.client
     }
 }
 
-impl BlockStore for IrohBlockStore {
+impl BlockStore for DocBlockStore {
     async fn write_details(&self, details: &Details) {
         let card = postcard::to_allocvec(details).expect("Failed to serialize details");
         self.doc
-            .set_bytes(self.client.author, IrohKey::Details, card)
+            .set_bytes(self.client.author, DocKey::Details, card)
             .await
             .expect("Failed to set details");
     }
 
     async fn read_details(&self) -> Details {
-        let key_bytes: Bytes = IrohKey::Details.into();
+        let key_bytes: Bytes = DocKey::Details.into();
         let query = Query::single_latest_per_key().key_exact(key_bytes.as_ref());
         let details_entry = self
             .doc
@@ -61,7 +61,7 @@ impl BlockStore for IrohBlockStore {
 
     async fn write_block_details(&self, block: Block, details: &Details) {
         let Block { start_addr, slots } = block;
-        let key = IrohKey::Block(BlockKey::new(start_addr, slots.len() as u32));
+        let key = DocKey::Block(BlockKey::new(start_addr, slots.len() as u32));
         let key_bytes: Bytes = key.into();
         let slot_bytes = slots_into_bytes(slots);
         self.doc
@@ -72,7 +72,7 @@ impl BlockStore for IrohBlockStore {
     }
 
     async fn read_block(&self, addr: TableAddr) -> Option<Block> {
-        let mut search_queue = Some(IrohKey::Search(SearchKey::from_addr(&addr)));
+        let mut search_queue = Some(DocKey::Search(SearchKey::from_addr(&addr)));
         while let Some(iroh_search) = search_queue.take() {
             let prefix_bytes: Bytes = iroh_search.into();
             let query = Query::single_latest_per_key()
@@ -82,7 +82,7 @@ impl BlockStore for IrohBlockStore {
             tokio::pin!(results);
             while let Some(entry) = results.next().await {
                 let entry = entry.expect("Failed to get block entry");
-                let block_key = IrohKey::from(entry.key().as_ref()).into_block_key();
+                let block_key = DocKey::from(entry.key().as_ref()).into_block_key();
                 if block_key.handles_addr(addr) {
                     let start_addr = block_key.to_addr();
                     let slots_hash = entry.content_hash();
@@ -92,7 +92,7 @@ impl BlockStore for IrohBlockStore {
                     return Some(block);
                 }
             }
-            search_queue = iroh_search.into_search_key().next().map(IrohKey::Search);
+            search_queue = iroh_search.into_search_key().next().map(DocKey::Search);
         }
         None
     }

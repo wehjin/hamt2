@@ -1,4 +1,4 @@
-use crate::space::block::store::Details;
+use crate::space::core::block_space::store::Details;
 use crate::FileError;
 use redb::{ReadTransaction, TableDefinition, WriteTransaction};
 

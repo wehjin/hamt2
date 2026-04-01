@@ -4,6 +4,9 @@ use crate::space::core::reader::{MemReader, SlotTable, SlotValue};
 use crate::space::{Space, TableAddr};
 use crate::TransactError;
 
+#[cfg(test)]
+mod tests;
+
 #[derive(Debug)]
 pub struct MemSpace {
     slots: SlotTable,

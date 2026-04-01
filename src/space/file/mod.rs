@@ -1,5 +1,5 @@
-use crate::space::block::reader::BlockReader;
-use crate::space::block::BlockSpace;
+use crate::space::core::block_space::reader::BlockReader;
+use crate::space::core::block_space::BlockSpace;
 use crate::space::core::reader::SlotValue;
 use crate::space::file::block_store::RedBlockStore;
 use crate::space::{Space, TableAddr};

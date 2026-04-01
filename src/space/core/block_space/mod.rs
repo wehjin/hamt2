@@ -1,4 +1,4 @@
-use crate::space::block::store::{Block, BlockStore, Details};
+use crate::space::core::block_space::store::{Block, BlockStore, Details};
 use crate::space::core::reader::SlotValue;
 use crate::space::{Space, TableAddr};
 use crate::{FileError, ReadError, TransactError};
