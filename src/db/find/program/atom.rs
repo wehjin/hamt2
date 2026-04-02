@@ -45,10 +45,12 @@ impl Atom {
     pub fn derive_subs(&self, subs: Vec<Substitution>, kb: &KnowledgeBase) -> Vec<Substitution> {
         let mut new_subs = Vec::new();
         for sub in subs {
+            // Try improving the atom by replacing variables with values.
             let earth_atom = self.ground(&sub);
+            // Try improving the substitution using facts from the KB.
             for kb_atom in kb.iter() {
-                if let Some(unified_sub) = earth_atom.unify(kb_atom) {
-                    let extended = sub.extend(unified_sub);
+                if let Some(tail_sub) = earth_atom.unify(kb_atom) {
+                    let extended = sub.extend(tail_sub);
                     new_subs.push(extended);
                 }
             }
