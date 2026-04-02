@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 use crate::db::find::program::atom::Atom;
-use crate::db::find::program::KnowledgeBase;
+use crate::db::find::program::kb::KnowledgeBase;
 use crate::db::find::program::sub::Substitution;
 
 #[derive(Debug, Clone)]

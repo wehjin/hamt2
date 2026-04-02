@@ -1,4 +1,4 @@
-use crate::db::find::program::KnowledgeBase;
+use crate::db::find::program::kb::KnowledgeBase;
 use crate::db::find::program::sub::Substitution;
 use crate::db::find::program::term::Term;
 use crate::db::find::program::var::Var;
@@ -46,7 +46,7 @@ impl Atom {
         let mut new_subs = Vec::new();
         for sub in subs {
             let earth_atom = self.ground(&sub);
-            for kb_atom in &kb.0 {
+            for kb_atom in kb.iter() {
                 if let Some(unified_sub) = earth_atom.unify(kb_atom) {
                     let extended = sub.extend(unified_sub);
                     new_subs.push(extended);
