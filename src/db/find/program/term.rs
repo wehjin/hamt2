@@ -1,0 +1,17 @@
+use crate::db::find::program::var::Var;
+use crate::db::Val;
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub enum Term {
+    Var(Var),
+    Val(Val),
+}
+
+impl Term {
+    pub fn str_val(s: impl AsRef<str>) -> Self {
+        Term::Val(Val::String(s.as_ref().to_string()))
+    }
+    pub fn var(s: &'static str) -> Self {
+        Term::Var(Var(s))
+    }
+}
