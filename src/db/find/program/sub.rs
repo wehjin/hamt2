@@ -1,18 +1,23 @@
 use crate::db::find::program::var::Var;
 use crate::db::Val;
-use std::collections::HashMap;
+use std::collections::HashSet;
 
-pub struct Substitution(HashMap<Var, Val>);
+pub struct Substitution(HashSet<(Var, Val)>);
 
 impl Substitution {
     pub fn new() -> Self {
-        Self(HashMap::new())
+        Self(HashSet::new())
     }
     pub fn get(&self, var: &Var) -> Option<&Val> {
-        self.0.get(var)
+        for (k, v) in &self.0 {
+            if k == var {
+                return Some(v);
+            }
+        }
+        None
     }
     pub fn with_head(mut self, var: Var, val: Val) -> Self {
-        self.0.insert(var, val);
+        self.0.insert((var, val));
         self
     }
 
