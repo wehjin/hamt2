@@ -68,7 +68,7 @@ impl Atom {
             .collect::<Vec<_>>();
         fn unify_terms(terms: &[(&Term, &Term)]) -> Option<Substitution> {
             if terms.len() == 0 {
-                Some(Substitution::EMPTY)
+                Some(Substitution::new())
             } else {
                 let (a, b) = terms[0];
                 match (a, b) {

@@ -1,7 +1,7 @@
-use std::collections::HashSet;
 use crate::db::find::program::atom::Atom;
 use crate::db::find::program::kb::KnowledgeBase;
 use crate::db::find::program::sub::Substitution;
+use std::collections::HashSet;
 
 #[derive(Debug, Clone)]
 pub struct Rule {
@@ -29,7 +29,7 @@ impl Rule {
     fn derive_body_subs(&self, kb: &KnowledgeBase) -> Vec<Substitution> {
         let mut body_subs = Vec::new();
         for atom in self.body.iter() {
-            let atom_subs = atom.derive_subs(vec![Substitution::EMPTY], kb);
+            let atom_subs = atom.derive_subs(vec![Substitution::new()], kb);
             body_subs.extend(atom_subs);
         }
         body_subs

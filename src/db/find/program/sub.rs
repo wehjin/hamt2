@@ -1,23 +1,22 @@
 use crate::db::find::program::var::Var;
 use crate::db::Val;
+use std::collections::HashMap;
 
-pub struct Substitution(Vec<(Var, Val)>);
+pub struct Substitution(HashMap<Var, Val>);
 
 impl Substitution {
-    pub const EMPTY: Self = Self(vec![]);
+    pub fn new() -> Self {
+        Self(HashMap::new())
+    }
     pub fn get(&self, var: &Var) -> Option<&Val> {
-        for subst in &self.0 {
-            if &subst.0 == var {
-                return Some(&subst.1);
-            }
-        }
-        None
+        self.0.get(var)
     }
     pub fn with_head(mut self, var: Var, val: Val) -> Self {
-        self.0.insert(0, (var, val));
+        self.0.insert(var, val);
         self
     }
 
+    #[must_use]
     pub fn extend(&self, substitution: Substitution) -> Self {
         let mut pairs = self.0.clone();
         pairs.extend(substitution.0);
