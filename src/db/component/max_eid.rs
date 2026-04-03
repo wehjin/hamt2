@@ -1,4 +1,4 @@
-use crate::db::key::KEY_MAX_EID;
+use crate::db::core::key::KEY_MAX_EID;
 use crate::db::Eid;
 use crate::space::Space;
 use crate::trie::mem::value::MemValue;

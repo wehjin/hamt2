@@ -1,5 +1,5 @@
 use crate::db::component::u31::{U31Builder, U31Streamer};
-use crate::db::key::KEY_VAL_TABLE;
+use crate::db::core::key::KEY_VAL_TABLE;
 use crate::db::{Val, Vid};
 use crate::space::Space;
 use crate::trie::mem::value::MemValue;

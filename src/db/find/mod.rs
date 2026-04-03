@@ -5,7 +5,7 @@ mod ents_with_attr;
 pub mod program;
 mod vals_with_ent_attr;
 
-use crate::db::Schema;
+use crate::db::schema::Schema;
 use crate::space::Space;
 pub use ents_with_attr::*;
 pub use vals_with_ent_attr::*;

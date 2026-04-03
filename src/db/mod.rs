@@ -1,14 +1,12 @@
 pub mod component;
 mod core;
-pub mod key;
-
 mod db;
 pub mod find;
-mod txid;
-mod vid;
+mod schema;
 
 pub use core::datom::*;
+pub use core::txid::*;
+pub use core::vid::*;
 pub use core::*;
 pub use db::*;
-pub use txid::*;
-pub use vid::*;
+pub use schema::*;

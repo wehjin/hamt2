@@ -2,6 +2,10 @@ pub mod attr;
 pub mod datom;
 pub mod ent;
 pub mod val;
+pub mod key;
+pub mod txid;
+pub mod vid;
+pub mod trie;
 
 pub use attr::*;
 pub use ent::*;
