@@ -1,4 +1,4 @@
-use crate::trie::space::trie::SpaceTrie;
+use crate::trie::SpaceTrie;
 use crate::QueryError;
 
 mod ents_with_attr;

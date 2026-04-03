@@ -4,7 +4,7 @@ use crate::db::find::Rule;
 use crate::db::key::KEY_AEVT;
 use crate::db::{Eid, Schema};
 use crate::space::Space;
-use crate::trie::space::trie::SpaceTrie;
+use crate::trie::SpaceTrie;
 use crate::QueryError;
 
 pub struct EntsWithAttr {

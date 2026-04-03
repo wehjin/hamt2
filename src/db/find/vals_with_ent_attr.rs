@@ -6,7 +6,7 @@ use crate::db::key::KEY_EAVT;
 use crate::db::vid::Vid;
 use crate::db::{Schema, Val};
 use crate::space::Space;
-use crate::trie::space::trie::SpaceTrie;
+use crate::trie::SpaceTrie;
 use crate::QueryError;
 
 pub struct ValsWithEntAttr {

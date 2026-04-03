@@ -1,6 +1,6 @@
 use crate::space::Space;
 use crate::trie::mem::value::MemValue;
-use crate::trie::space::trie::SpaceTrie;
+use crate::trie::SpaceTrie;
 
 pub struct U31Streamer<'a> {
     bytes: &'a [u8],

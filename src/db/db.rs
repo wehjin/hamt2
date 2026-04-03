@@ -10,7 +10,7 @@ use crate::db::txid::Txid;
 use crate::db::{Eid, Val};
 use crate::space::Space;
 use crate::trie::mem::value::MemValue;
-use crate::trie::space::trie::SpaceTrie;
+use crate::trie::SpaceTrie;
 use crate::{LoadError, QueryError, TransactError};
 use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};

@@ -1,88 +1,13 @@
-use crate::space::{Read, Space};
+use std::collections::HashMap;
+use crate::space::Space;
+use crate::{QueryError, TransactError};
 use crate::trie::core::deep_key::DeepKey;
-use crate::trie::core::key::TrieKey;
 use crate::trie::core::map_base::TrieMapBase;
 use crate::trie::mem::value::MemValue;
-use crate::trie::space::SpaceRoot;
-use crate::{QueryError, TransactError};
-use std::collections::HashMap;
-
-pub mod query;
-
-#[derive(Debug)]
-pub struct SpaceTrie<T: Space> {
-    map_base: TrieMapBase,
-    reader: T::Reader,
-}
-
-impl<T: Space> Clone for SpaceTrie<T> {
-    fn clone(&self) -> Self {
-        let map_base = self.map_base.clone();
-        let reader = self.reader.clone();
-        Self { map_base, reader }
-    }
-}
+use crate::trie::space::root::SpaceRoot;
+use crate::trie::SpaceTrie;
 
 impl<T: Space> SpaceTrie<T> {
-    pub async fn connect(space: &T) -> Result<Self, QueryError> {
-        let reader = space.read().await?;
-        let map_base = match reader.read_root().await? {
-            None => TrieMapBase::empty(),
-            Some(root) => {
-                let space_root = SpaceRoot::from_root_addr(root.to_u32(), &reader).await?;
-                let trie_map_base = space_root.into_trie_map_base();
-                trie_map_base
-            }
-        };
-        let trie = Self { map_base, reader };
-        Ok(trie)
-    }
-
-    pub async fn commit(self, space: &mut T) -> Result<(), TransactError> {
-        let mut extend = space.extend().await?;
-        let root_addr = {
-            let space_map_base = self.map_base.into_space_map_base(&mut extend)?;
-            let (map, base_addr) = space_map_base.into_map_base_addr();
-            let space_root = SpaceRoot(map, base_addr);
-            let root_addr = space_root.into_root_addr(&mut extend)?;
-            root_addr
-        };
-        extend.set_root(root_addr);
-        extend.commit(space).await
-    }
-
-    pub async fn to_subtrie_from_value(&self, value: MemValue) -> Result<Self, QueryError> {
-        let map_base = match value {
-            MemValue::MapBase(map_base) => map_base,
-            MemValue::U32(u32) => SpaceRoot::from_root_addr(u32, &self.reader)
-                .await?
-                .into_trie_map_base(),
-        };
-        let subtrie = self.to_subtrie(map_base);
-        Ok(subtrie)
-    }
-
-    pub fn to_subtrie(&self, map_base: TrieMapBase) -> Self {
-        Self {
-            map_base,
-            reader: self.reader.clone(),
-        }
-    }
-
-    pub async fn insert(self, key: i32, value: MemValue) -> Result<Self, TransactError> {
-        let key = TrieKey::new(key);
-        let map_base = self.map_base.insert_kv(key, value, &self.reader).await?;
-        Ok(Self {
-            map_base,
-            reader: self.reader,
-        })
-    }
-
-    pub async fn query_value(&self, key: i32) -> Result<Option<MemValue>, QueryError> {
-        let key = TrieKey::new(key);
-        self.map_base.query_value(key, &self.reader).await
-    }
-
     pub async fn deep_insert<const N: usize>(
         self,
         key: [i32; N],

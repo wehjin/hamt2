@@ -2,7 +2,7 @@ use crate::db::key::KEY_MAX_EID;
 use crate::db::Eid;
 use crate::space::Space;
 use crate::trie::mem::value::MemValue;
-use crate::trie::space::trie::SpaceTrie;
+use crate::trie::SpaceTrie;
 use crate::{QueryError, TransactError};
 
 pub(crate) struct MaxEid {

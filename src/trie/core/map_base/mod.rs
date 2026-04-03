@@ -35,7 +35,7 @@ mod tests {
     use crate::trie::core::key::TrieKey;
     use crate::trie::core::map_base::*;
     use crate::trie::mem::value::MemValue;
-    use crate::trie::space::SpaceRoot;
+    use crate::trie::space::root::SpaceRoot;
     use crate::ReadError;
     use tokio_stream::StreamExt;
 
