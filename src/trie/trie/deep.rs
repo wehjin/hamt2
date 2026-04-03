@@ -1,11 +1,10 @@
-use std::collections::HashMap;
 use crate::space::Space;
-use crate::{QueryError, TransactError};
 use crate::trie::core::deep_key::DeepKey;
-use crate::trie::core::map_base::TrieMapBase;
 use crate::trie::mem::value::MemValue;
 use crate::trie::space::root::SpaceRoot;
 use crate::trie::SpaceTrie;
+use crate::{QueryError, TransactError};
+use std::collections::HashMap;
 
 impl<T: Space> SpaceTrie<T> {
     pub async fn deep_insert<const N: usize>(
@@ -20,20 +19,11 @@ impl<T: Space> SpaceTrie<T> {
         for i in 0..last_index {
             let key = deep_key[i].clone();
             let map_base = map_bases.get(&i).expect("map_base should exist");
-            match map_base.query_value(key, &self.reader).await? {
-                None => {
-                    map_bases.insert(i + 1, TrieMapBase::empty());
-                }
-                Some(value) => {
-                    let map_base = match value {
-                        MemValue::MapBase(map_base) => map_base,
-                        MemValue::U32(u32) => SpaceRoot::from_root_addr(u32, &self.reader)
-                            .await?
-                            .into_trie_map_base(),
-                    };
-                    map_bases.insert(i + 1, map_base);
-                }
-            }
+            let subtrie = match map_base.query_value(key, &self.reader).await? {
+                None => self.new_subtrie(),
+                Some(value) => self.to_subtrie_from_value(value).await?,
+            };
+            map_bases.insert(i + 1, subtrie.unwrap());
         }
         let mut value = value;
         for i in (0..=last_index).rev() {

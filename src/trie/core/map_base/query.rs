@@ -5,14 +5,14 @@ use crate::trie::core::query::QueryKeysValues;
 use crate::trie::mem::slot::MemSlot;
 use crate::trie::mem::value::MemValue;
 use crate::trie::space::map_base::SpaceMapBase;
-use crate::{space, QueryError};
+use crate::QueryError;
 use futures::stream;
 
 impl TrieMapBase {
     pub async fn query_value(
         &self,
         key: TrieKey,
-        reader: &impl space::Read,
+        reader: &impl Read,
     ) -> Result<Option<MemValue>, QueryError> {
         let value = match self {
             TrieMapBase::Mem(map, base) => match map.try_base_index(key) {
@@ -28,12 +28,9 @@ impl TrieMapBase {
         Ok(value)
     }
 
-    pub fn kv_stream<R: Read + Clone>(
-        &self,
-        reader: &R,
-    ) -> impl futures::Stream<Item = (i32, MemValue)> {
+    pub fn kv_stream(&self, reader: &impl Read) -> impl futures::Stream<Item = (i32, MemValue)> {
         let state = State {
-            reader: reader.clone(),
+            reader,
             jobs: Job::start(self).into_iter().collect::<Vec<_>>(),
         };
         stream::unfold(state, |mut state| async move {
@@ -66,7 +63,7 @@ impl TrieMapBase {
                         // and restart the job. Slot_offset should always be 0 here.
                         debug_assert_eq!(job.slot_offset, 0);
                         let space_map_base = SpaceMapBase::assert(*slot_value);
-                        match space_map_base.top_into_mem(&state.reader).await {
+                        match space_map_base.top_into_mem(state.reader).await {
                             Ok(mem_map_base) => {
                                 if let Some(mem_job) = Job::start(&mem_map_base) {
                                     // We have a mem job that matches the current space job,
@@ -89,8 +86,8 @@ impl TrieMapBase {
     }
 }
 
-struct State<R: space::Read> {
-    reader: R,
+struct State<'a, R: Read> {
+    reader: &'a R,
     jobs: Vec<Job>,
 }
 struct Job {

@@ -2,6 +2,7 @@ use crate::space::{Read, Space};
 use crate::trie::core::map_base::TrieMapBase;
 use crate::trie::space::root::SpaceRoot;
 use crate::{QueryError, TransactError};
+
 pub mod deep;
 pub mod insert;
 pub mod query;
@@ -46,5 +47,8 @@ impl<T: Space> SpaceTrie<T> {
         };
         extend.set_root(root_addr);
         extend.commit(space).await
+    }
+    pub fn unwrap(self) -> TrieMapBase {
+        self.map_base
     }
 }
