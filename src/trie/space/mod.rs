@@ -29,4 +29,12 @@ impl SpaceRoot {
     pub fn into_trie_map_base(self) -> TrieMapBase {
         SpaceMapBase::new(self.0, self.1).into_trie_map_base()
     }
+    pub fn from_trie_map_base<T: Space>(
+        trie_map_base: TrieMapBase,
+        extend: &mut space::Extend<T>,
+    ) -> Result<Self, TransactError> {
+        let space_map_base = trie_map_base.into_space_map_base(extend)?;
+        let (key, addr) = space_map_base.into_map_base_addr();
+        Ok(Self(key, addr))
+    }
 }
