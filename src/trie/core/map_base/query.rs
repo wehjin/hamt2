@@ -1,9 +1,31 @@
 use crate::space::Read;
+use crate::trie::core::key::TrieKey;
 use crate::trie::core::map_base::TrieMapBase;
 use crate::trie::core::query::QueryKeysValues;
 use crate::trie::mem::value::MemValue;
 use crate::trie::space::map_base::SpaceMapBase;
-use crate::QueryError;
+use crate::{space, QueryError};
+
+impl TrieMapBase {
+    pub async fn query_value(
+        &self,
+        key: TrieKey,
+        reader: &impl space::Read,
+    ) -> Result<Option<MemValue>, QueryError> {
+        let value = match self {
+            TrieMapBase::Mem(map, base) => match map.try_base_index(key) {
+                Some(base_index) => Box::pin(base[base_index].query_value(key, reader)).await?,
+                None => None,
+            },
+            TrieMapBase::Space(slot_value) => {
+                SpaceMapBase::assert(*slot_value)
+                    .query_value(key, reader)
+                    .await?
+            }
+        };
+        Ok(value)
+    }
+}
 
 impl QueryKeysValues for TrieMapBase {
     async fn query_keys_values(

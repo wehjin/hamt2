@@ -1,7 +1,7 @@
 use atom::Atom;
 use kb::KnowledgeBase;
 use rule::Rule;
-use term::Term;
+
 pub mod atom;
 pub mod kb;
 pub mod rule;
@@ -51,6 +51,7 @@ impl Program {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::db::find::program::term::Term;
     #[test]
     fn program_test() {
         let program = Program::new(
@@ -64,7 +65,13 @@ mod tests {
             )],
         );
         let kb = program.solve();
-        let answers = kb.query("query");
-        dbg!(answers);
+        let query_result = kb.query("query");
+        let mut answers = query_result
+            .iter()
+            .flatten()
+            .map(|x| x.as_str())
+            .collect::<Vec<_>>();
+        answers.sort();
+        assert_eq!(vec!["Alice", "Cliff"], answers);
     }
 }

@@ -46,7 +46,7 @@ impl DocsClient {
         docs_builder: Builder,
         secret_key: SecretKey,
     ) -> anyhow::Result<Self> {
-        let endpoint = Endpoint::builder(presets::N0)
+        let endpoint = Endpoint::builder(presets::N0DisableRelay)
             .secret_key(secret_key)
             .bind()
             .await?;
