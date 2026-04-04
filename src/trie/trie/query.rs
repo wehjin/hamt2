@@ -17,7 +17,7 @@ impl<T: Space> SpaceTrie<T> {
         self.map_base.query_keys_values(&self.reader).await
     }
 
-    pub async fn filter_map<V, Fut: Future<Output = Option<V>>>(
+    pub fn filter_map<V, Fut: Future<Output = Option<V>>>(
         &self,
         reader: &impl Read,
         filter: impl Fn((i32, MemValue)) -> Fut,
@@ -33,7 +33,7 @@ impl<T: Space> SpaceTrie<T> {
             }
         })
     }
-    pub async fn u32_stream(&self) -> impl Stream<Item = (i32, u32)> {
+    pub fn u32_stream(&self) -> impl Stream<Item = (i32, u32)> {
         self.filter_map(&self.reader, |(key, value)| async move {
             if let MemValue::U32(val) = value {
                 Some((key, val))
@@ -41,10 +41,9 @@ impl<T: Space> SpaceTrie<T> {
                 None
             }
         })
-        .await
     }
 
-    pub async fn subtrie_stream(&self) -> impl Stream<Item = (i32, SpaceTrie<T>)> {
+    pub fn subtrie_stream(&self) -> impl Stream<Item = (i32, SpaceTrie<T>)> {
         let clone_reader = Rc::new(|| self.reader.clone());
         self.filter_map(&self.reader, move |(key, value)| {
             let reader_source = clone_reader.clone();
@@ -55,7 +54,6 @@ impl<T: Space> SpaceTrie<T> {
                     .map(|subtrie| (key, subtrie))
             }
         })
-        .await
     }
 }
 
@@ -80,7 +78,7 @@ mod tests {
             trie.commit(&mut space).await?;
         }
         let trie = SpaceTrie::connect(&space).await?;
-        let mut u32s = trie.u32_stream().await.collect::<Vec<_>>().await;
+        let mut u32s = trie.u32_stream().collect::<Vec<_>>().await;
         u32s.sort_by_key(|(key, _u32)| *key);
         // The subtrie turns into an integer after the commit.
         assert_eq!(vec![(1, 1), (2, 2), (3, 0)], u32s);
@@ -104,7 +102,7 @@ mod tests {
         }
         let space = FileSpace::load(&file).await?;
         let trie = SpaceTrie::connect(&space).await?;
-        let subtries = trie.subtrie_stream().await.collect::<Vec<_>>().await;
+        let subtries = trie.subtrie_stream().collect::<Vec<_>>().await;
         assert_eq!(2, subtries.len());
         Ok(())
     }

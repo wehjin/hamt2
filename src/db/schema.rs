@@ -1,11 +1,11 @@
-use std::collections::HashMap;
-use std::ops::{Deref, DerefMut};
-use crate::db::{Attr, Eid, Txid, Val};
-use crate::space::Space;
-use crate::{LoadError, TransactError};
 use crate::db::core::trie;
 use crate::db::find::{EntsWithAttr, Rule, ValsWithEntAttr};
+use crate::db::{Attr, Eid, Txid, Val};
+use crate::space::Space;
 use crate::trie::SpaceTrie;
+use crate::{LoadError, TransactError};
+use std::collections::HashMap;
+use std::ops::{Deref, DerefMut, Index};
 
 #[derive(Debug)]
 pub struct Schema {
@@ -66,6 +66,13 @@ impl Schema {
             }
         }
         Ok(schema)
+    }
+}
+
+impl Index<Attr> for Schema {
+    type Output = Eid;
+    fn index(&self, key: Attr) -> &Self::Output {
+        &self.map[&key]
     }
 }
 
