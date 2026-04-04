@@ -1,6 +1,7 @@
 use crate::db::find::program::atom::Atom;
 use crate::db::find::program::kb::KnowledgeBase;
 use crate::db::find::program::sub::Substitution;
+use crate::space::Space;
 use std::collections::HashSet;
 
 #[derive(Debug, Clone)]
@@ -17,7 +18,7 @@ impl Rule {
         }
     }
 
-    pub fn derive_facts(&self, kb: &KnowledgeBase) -> Vec<Atom> {
+    pub fn derive_facts<'a, T: Space>(&self, kb: &KnowledgeBase<'a, T>) -> Vec<Atom> {
         let mut new_facts = Vec::new();
         for body_sub in self.derive_body_subs(kb) {
             let new_fact = self.head.ground(&body_sub);
@@ -26,7 +27,7 @@ impl Rule {
         new_facts
     }
 
-    fn derive_body_subs(&self, kb: &KnowledgeBase) -> Vec<Substitution> {
+    fn derive_body_subs<'a, T: Space>(&self, kb: &KnowledgeBase<'a, T>) -> Vec<Substitution> {
         let mut body_subs = Vec::new();
         for atom in self.body.iter() {
             let body_atom_subs = atom.derive_body_atom_subs(vec![Substitution::new()], kb);

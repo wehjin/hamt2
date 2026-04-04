@@ -3,6 +3,7 @@ use crate::db::find::program::sub::Substitution;
 use crate::db::find::program::term::Term;
 use crate::db::find::program::var::Var;
 use crate::db::Attr;
+use crate::space::Space;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Atom {
@@ -43,10 +44,10 @@ impl Atom {
     }
 
     #[must_use]
-    pub fn derive_body_atom_subs(
+    pub fn derive_body_atom_subs<'a, T: Space>(
         &self,
         subs: Vec<Substitution>,
-        kb: &KnowledgeBase,
+        kb: &KnowledgeBase<'a, T>,
     ) -> Vec<Substitution> {
         let mut new_subs = Vec::new();
         for sub in subs {

@@ -1,3 +1,5 @@
+use crate::db::Db;
+use crate::space::Space;
 use atom::Atom;
 use kb::KnowledgeBase;
 use rule::Rule;
@@ -22,29 +24,21 @@ impl Program {
         }
     }
 
-    pub fn solve(self) -> KnowledgeBase {
+    pub fn solve<T: Space>(self, db: &Db<T>) -> KnowledgeBase<'_, T> {
         for rule in &self.rules {
             if !rule.is_range_restricted() {
                 panic!("The program is not range restricted: {:?}", rule);
             }
         }
-        fn step(kb: &KnowledgeBase, rules: &Vec<Rule>) -> KnowledgeBase {
-            let mut new_facts = Vec::new();
-            for rule in rules {
-                let rule_facts = rule.derive_facts(&kb);
-                new_facts.extend(rule_facts);
+        let mut kb = KnowledgeBase::from_facts(db, self.facts);
+        loop {
+            let new_kb = kb.step(&self.rules);
+            if new_kb == kb {
+                return kb;
+            } else {
+                kb = new_kb;
             }
-            kb.with_facts(new_facts)
         }
-        let (mut kb, mut old_kb) = (
-            KnowledgeBase::from_facts(self.facts),
-            KnowledgeBase::empty(),
-        );
-        while kb != old_kb {
-            let new_db = step(&kb, &self.rules);
-            (kb, old_kb) = (new_db, kb);
-        }
-        kb
     }
 }
 
@@ -52,13 +46,29 @@ impl Program {
 mod tests {
     use super::*;
     use crate::db::find::program::term::Term;
-    use crate::db::Attr;
+    use crate::db::{Attr, Datom, Db, Ent, Val};
+    use crate::space::mem::MemSpace;
 
     const ADVISOR: Attr = Attr("member", "advisor");
+    const NAME: Attr = Attr("member", "name");
     const QUERY: Attr = Attr("query", "1");
 
-    #[test]
-    fn program_test() {
+    #[tokio::test]
+    async fn program_test() -> anyhow::Result<()> {
+        let schema = vec![ADVISOR, NAME];
+        let space: MemSpace;
+        {
+            let mut db = Db::new(MemSpace::new(), schema.clone()).await?;
+            db = db
+                .transact([
+                    Datom::Add(Ent::from(100), ADVISOR, Val::from(103)),
+                    Datom::Add(Ent::from(101), ADVISOR, Val::from(103)),
+                ])
+                .await?;
+            space = db.close();
+        }
+        let db = Db::load(space, schema).await?;
+
         let program = Program::new(
             [
                 Atom::new(ADVISOR, [Term::str_val("Alice"), Term::str_val("Bob")]),
@@ -69,7 +79,7 @@ mod tests {
                 [Atom::new(ADVISOR, [Term::var("x"), Term::var("y")])],
             )],
         );
-        let kb = program.solve();
+        let kb = program.solve(&db);
         let query_result = kb.query(QUERY);
         let mut answers = query_result
             .iter()
@@ -78,5 +88,6 @@ mod tests {
             .collect::<Vec<_>>();
         answers.sort();
         assert_eq!(vec!["Alice", "Cliff"], answers);
+        Ok(())
     }
 }
