@@ -22,7 +22,7 @@ impl Substitution {
     }
 
     #[must_use]
-    pub fn extend(&self, substitution: Substitution) -> Self {
+    pub fn with_extension(&self, substitution: Substitution) -> Self {
         let mut pairs = self.0.clone();
         pairs.extend(substitution.0);
         Self(pairs)

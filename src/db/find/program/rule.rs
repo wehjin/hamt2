@@ -29,8 +29,8 @@ impl Rule {
     fn derive_body_subs(&self, kb: &KnowledgeBase) -> Vec<Substitution> {
         let mut body_subs = Vec::new();
         for atom in self.body.iter() {
-            let atom_subs = atom.derive_subs(vec![Substitution::new()], kb);
-            body_subs.extend(atom_subs);
+            let body_atom_subs = atom.derive_body_atom_subs(vec![Substitution::new()], kb);
+            body_subs.extend(body_atom_subs);
         }
         body_subs
     }

@@ -1,8 +1,8 @@
 use crate::db::find::program::atom::Atom;
+use crate::db::find::program::sub::Substitution;
 use crate::db::find::program::term::Term;
 use crate::db::{Attr, Val};
 use std::collections::HashSet;
-use std::ops::Deref;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct KnowledgeBase(HashSet<Atom>);
@@ -37,11 +37,19 @@ impl KnowledgeBase {
         }
         results
     }
-}
 
-impl Deref for KnowledgeBase {
-    type Target = HashSet<Atom>;
-    fn deref(&self) -> &Self::Target {
-        &self.0
+    pub fn unify_earth_atom(
+        &self,
+        earth_atom: &Atom,
+        grounding_sub: &Substitution,
+    ) -> Vec<Substitution> {
+        let mut new_subs = Vec::new();
+        for kb_atom in self.0.iter() {
+            if let Some(extension) = earth_atom.unify(kb_atom) {
+                let new_sub = grounding_sub.with_extension(extension);
+                new_subs.push(new_sub);
+            }
+        }
+        new_subs
     }
 }
