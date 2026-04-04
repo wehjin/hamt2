@@ -44,7 +44,7 @@ impl Atom {
     }
 
     #[must_use]
-    pub fn derive_body_atom_subs<'a, T: Space>(
+    pub async fn derive_body_atom_subs<'a, T: Space>(
         &self,
         subs: Vec<Substitution>,
         kb: &KnowledgeBase<'a, T>,
@@ -54,7 +54,7 @@ impl Atom {
             // Try improving the atom by replacing variables with values.
             let earth_atom = self.ground(&sub);
             // Try improving the substitution using facts from the KB.
-            let kb_subs = kb.unify_earth_atom(&earth_atom, &sub);
+            let kb_subs = kb.unify_earth_atom(&earth_atom, &sub).await;
             new_subs.extend(kb_subs);
         }
         new_subs

@@ -4,6 +4,8 @@ use crate::db::find::program::sub::Substitution;
 use crate::db::find::program::term::Term;
 use crate::db::{Attr, Db, Val};
 use crate::space::Space;
+use async_stream::stream;
+use futures::{pin_mut, StreamExt};
 use std::collections::HashSet;
 
 #[derive(Debug, Clone)]
@@ -46,14 +48,31 @@ impl<'a, T: Space> KnowledgeBase<'a, T> {
         results
     }
 
-    pub fn unify_earth_atom(
+    fn facts_stream(&self, earth_atom: &Atom) -> impl futures::Stream<Item = Atom> {
+        stream! {
+            if earth_atom.terms.len() == 2 {
+                let ev_stream = self.db.ev_stream(earth_atom.attr);
+                pin_mut!(ev_stream);
+                while let Some((e,v)) = ev_stream.next().await {
+                    yield Atom::new(earth_atom.attr, [Term::from(e), Term::from(v)]);
+                }
+            }
+            for fact in self.facts.iter() {
+                yield fact.clone();
+            }
+        }
+    }
+
+    pub async fn unify_earth_atom(
         &self,
         earth_atom: &Atom,
         grounding_sub: &Substitution,
     ) -> Vec<Substitution> {
         let mut new_subs = Vec::new();
-        for kb_atom in self.facts.iter() {
-            if let Some(extension) = earth_atom.unify(kb_atom) {
+        let facts_stream = self.facts_stream(earth_atom);
+        pin_mut!(facts_stream);
+        while let Some(kb_atom) = facts_stream.next().await {
+            if let Some(extension) = earth_atom.unify(&kb_atom) {
                 let new_sub = grounding_sub.with_extension(extension);
                 new_subs.push(new_sub);
             }
@@ -61,10 +80,10 @@ impl<'a, T: Space> KnowledgeBase<'a, T> {
         new_subs
     }
 
-    pub fn step(&self, rules: &Vec<Rule>) -> Self {
+    pub async fn step(&self, rules: &Vec<Rule>) -> Self {
         let mut new_facts = Vec::new();
         for rule in rules {
-            let rule_facts = rule.derive_facts(self);
+            let rule_facts = rule.derive_facts(self).await;
             new_facts.extend(rule_facts);
         }
         self.with_facts(new_facts)

@@ -18,19 +18,21 @@ impl Rule {
         }
     }
 
-    pub fn derive_facts<'a, T: Space>(&self, kb: &KnowledgeBase<'a, T>) -> Vec<Atom> {
+    pub async fn derive_facts<'a, T: Space>(&self, kb: &KnowledgeBase<'a, T>) -> Vec<Atom> {
         let mut new_facts = Vec::new();
-        for body_sub in self.derive_body_subs(kb) {
+        for body_sub in self.derive_body_subs(kb).await {
             let new_fact = self.head.ground(&body_sub);
             new_facts.push(new_fact);
         }
         new_facts
     }
 
-    fn derive_body_subs<'a, T: Space>(&self, kb: &KnowledgeBase<'a, T>) -> Vec<Substitution> {
+    async fn derive_body_subs<'a, T: Space>(&self, kb: &KnowledgeBase<'a, T>) -> Vec<Substitution> {
         let mut body_subs = Vec::new();
         for atom in self.body.iter() {
-            let body_atom_subs = atom.derive_body_atom_subs(vec![Substitution::new()], kb);
+            let body_atom_subs = atom
+                .derive_body_atom_subs(vec![Substitution::new()], kb)
+                .await;
             body_subs.extend(body_atom_subs);
         }
         body_subs

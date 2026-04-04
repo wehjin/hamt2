@@ -15,3 +15,15 @@ impl Term {
         Term::Var(Var(s))
     }
 }
+
+impl From<i32> for Term {
+    fn from(i: i32) -> Self {
+        Term::Val(Val::U32(i as u32))
+    }
+}
+
+impl From<Val> for Term {
+    fn from(v: Val) -> Self {
+        Term::Val(v)
+    }
+}

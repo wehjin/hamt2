@@ -24,7 +24,7 @@ impl Program {
         }
     }
 
-    pub fn solve<T: Space>(self, db: &Db<T>) -> KnowledgeBase<'_, T> {
+    pub async fn solve<T: Space>(self, db: &Db<T>) -> KnowledgeBase<'_, T> {
         for rule in &self.rules {
             if !rule.is_range_restricted() {
                 panic!("The program is not range restricted: {:?}", rule);
@@ -32,7 +32,7 @@ impl Program {
         }
         let mut kb = KnowledgeBase::from_facts(db, self.facts);
         loop {
-            let new_kb = kb.step(&self.rules);
+            let new_kb = kb.step(&self.rules).await;
             if new_kb == kb {
                 return kb;
             } else {
@@ -70,24 +70,18 @@ mod tests {
         let db = Db::load(space, schema).await?;
 
         let program = Program::new(
-            [
-                Atom::new(ADVISOR, [Term::str_val("Alice"), Term::str_val("Bob")]),
-                Atom::new(ADVISOR, [Term::str_val("Cliff"), Term::str_val("Bob")]),
-            ],
+            [],
             [Rule::new(
                 Atom::new(QUERY, [Term::var("x")]),
                 [Atom::new(ADVISOR, [Term::var("x"), Term::var("y")])],
             )],
         );
-        let kb = program.solve(&db);
+        let kb = program.solve(&db).await;
         let query_result = kb.query(QUERY);
-        let mut answers = query_result
-            .iter()
-            .flatten()
-            .map(|x| x.as_str())
-            .collect::<Vec<_>>();
+        let mut answers = query_result.into_iter().flatten().collect::<Vec<_>>();
         answers.sort();
-        assert_eq!(vec!["Alice", "Cliff"], answers);
+        dbg!(&answers);
+        assert_eq!(vec![Val::from(100), Val::from(101)], answers);
         Ok(())
     }
 }

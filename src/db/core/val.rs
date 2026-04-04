@@ -1,6 +1,6 @@
 use crate::trie::mem::value::MemValue;
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum Val {
     U32(u32),
     String(String),
