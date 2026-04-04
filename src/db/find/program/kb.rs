@@ -1,6 +1,6 @@
 use crate::db::find::program::atom::Atom;
 use crate::db::find::program::term::Term;
-use crate::db::Val;
+use crate::db::{Attr, Val};
 use std::collections::HashSet;
 use std::ops::Deref;
 
@@ -22,10 +22,10 @@ impl KnowledgeBase {
     }
 
     #[must_use]
-    pub fn query(&self, query: &'static str) -> Vec<Vec<Val>> {
+    pub fn query(&self, query: Attr) -> Vec<Vec<Val>> {
         let mut results = Vec::new();
         for atom in &self.0 {
-            if atom.pred_sym == query {
+            if atom.attr == query {
                 let mut vals = Vec::new();
                 for term in atom.terms.iter() {
                     if let Term::Val(val) = term {

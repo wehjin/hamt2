@@ -52,20 +52,25 @@ impl Program {
 mod tests {
     use super::*;
     use crate::db::find::program::term::Term;
+    use crate::db::Attr;
+
+    const ADVISOR: Attr = Attr("member", "advisor");
+    const QUERY: Attr = Attr("query", "1");
+
     #[test]
     fn program_test() {
         let program = Program::new(
             [
-                Atom::new("advisor", [Term::str_val("Alice"), Term::str_val("Bob")]),
-                Atom::new("advisor", [Term::str_val("Cliff"), Term::str_val("Bob")]),
+                Atom::new(ADVISOR, [Term::str_val("Alice"), Term::str_val("Bob")]),
+                Atom::new(ADVISOR, [Term::str_val("Cliff"), Term::str_val("Bob")]),
             ],
             [Rule::new(
-                Atom::new("query", [Term::var("x")]),
-                [Atom::new("advisor", [Term::var("x"), Term::var("y")])],
+                Atom::new(QUERY, [Term::var("x")]),
+                [Atom::new(ADVISOR, [Term::var("x"), Term::var("y")])],
             )],
         );
         let kb = program.solve();
-        let query_result = kb.query("query");
+        let query_result = kb.query(QUERY);
         let mut answers = query_result
             .iter()
             .flatten()

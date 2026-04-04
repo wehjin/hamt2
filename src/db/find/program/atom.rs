@@ -2,17 +2,18 @@ use crate::db::find::program::kb::KnowledgeBase;
 use crate::db::find::program::sub::Substitution;
 use crate::db::find::program::term::Term;
 use crate::db::find::program::var::Var;
+use crate::db::Attr;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Atom {
-    pub pred_sym: &'static str,
+    pub attr: Attr,
     pub terms: Vec<Term>,
 }
 
 impl Atom {
-    pub fn new(pred_sym: &'static str, terms: impl Into<Vec<Term>>) -> Self {
+    pub fn new(attr: Attr, terms: impl Into<Vec<Term>>) -> Self {
         let terms = terms.into();
-        Self { pred_sym, terms }
+        Self { attr, terms }
     }
     pub fn to_vars(&self) -> Vec<Var> {
         self.terms
@@ -24,7 +25,7 @@ impl Atom {
             .collect()
     }
     pub fn ground(&self, substitution: &Substitution) -> Atom {
-        let pred_sym = self.pred_sym;
+        let attr = self.attr;
         let mut terms = Vec::with_capacity(self.terms.len());
         {
             for term in self.terms.clone() {
@@ -38,7 +39,7 @@ impl Atom {
                 terms.push(term);
             }
         }
-        Atom { pred_sym, terms }
+        Atom { attr, terms }
     }
 
     #[must_use]
@@ -59,7 +60,7 @@ impl Atom {
     }
 
     pub fn unify(&self, other: &Atom) -> Option<Substitution> {
-        if self.pred_sym != other.pred_sym {
+        if self.attr != other.attr {
             return None;
         }
         debug_assert_eq!(self.terms.len(), other.terms.len());
