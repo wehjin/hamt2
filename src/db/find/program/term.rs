@@ -1,6 +1,10 @@
 use crate::db::find::program::var::Var;
 use crate::db::Val;
 
+pub fn term(from: impl Into<Term>) -> Term {
+    from.into()
+}
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum Term {
     Var(Var),
@@ -25,5 +29,11 @@ impl From<i32> for Term {
 impl From<Val> for Term {
     fn from(v: Val) -> Self {
         Term::Val(v)
+    }
+}
+
+impl From<Var> for Term {
+    fn from(v: Var) -> Self {
+        Term::Var(v)
     }
 }

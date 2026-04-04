@@ -5,6 +5,10 @@ use crate::db::find::program::var::Var;
 use crate::db::Attr;
 use crate::space::Space;
 
+pub fn atom(attr: impl Into<Attr>, terms: impl Into<Vec<Term>>) -> Atom {
+    Atom::new(attr.into(), terms)
+}
+
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Atom {
     pub attr: Attr,
@@ -41,6 +45,13 @@ impl Atom {
             }
         }
         Atom { attr, terms }
+    }
+
+    pub fn is_grounded(&self) -> bool {
+        self.terms.iter().all(|term| match term {
+            Term::Val(_) => true,
+            Term::Var(_) => false,
+        })
     }
 
     #[must_use]

@@ -45,13 +45,18 @@ impl Program {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::find::program::term::Term;
-    use crate::db::{dat, Attr, Datom, Db, Ent, Val};
+    use crate::db::find::program::atom::atom;
+    use crate::db::find::program::rule::rule;
+    use crate::db::find::program::term::term;
+    use crate::db::find::program::var::var;
+    use crate::db::{datom, ent, val, Attr, Db};
     use crate::space::mem::MemSpace;
 
     const ADVISOR: Attr = Attr("member", "advisor");
     const NAME: Attr = Attr("member", "name");
-    const QUERY: Attr = Attr("query", "1");
+    const QUERY_1: Attr = Attr("query", "1");
+    const QUERY_2: Attr = Attr("query", "2");
+    const QUERY_3: Attr = Attr("query", "3");
 
     #[tokio::test]
     async fn program_test() -> anyhow::Result<()> {
@@ -61,27 +66,50 @@ mod tests {
             let mut db = Db::new(MemSpace::new(), schema.clone()).await?;
             db = db
                 .transact([
-                    Datom::Add(Ent::from(100), ADVISOR, dat(Val::from(103))),
-                    Datom::Add(Ent::from(101), ADVISOR, dat(Val::from(103))),
+                    datom("a", NAME, val("Alice")),
+                    datom("b", NAME, val("Bob")),
+                    datom("c", NAME, val("Clark")),
+                    datom("a", ADVISOR, ent("c")),
+                    datom("b", ADVISOR, ent("c")),
                 ])
                 .await?;
             space = db.close();
         }
         let db = Db::load(space, schema).await?;
-
-        let program = Program::new(
-            [],
-            [Rule::new(
-                Atom::new(QUERY, [Term::var("x")]),
-                [Atom::new(ADVISOR, [Term::var("x"), Term::var("y")])],
-            )],
+        let query1 = rule(
+            atom(QUERY_1, [term(var("name"))]),
+            [
+                atom(ADVISOR, [term(var("advisor")), term(var("advisee"))]),
+                atom(NAME, [term(var("advisor")), term(var("name"))]),
+            ],
         );
+        let query2 = rule(
+            atom(QUERY_2, []),
+            [
+                atom(NAME, [term(var("a")), term(val("Alice"))]),
+                atom(NAME, [term(var("c")), term(val("Clark"))]),
+                atom(ADVISOR, [term(var("a")), term(var("c"))]),
+            ],
+        );
+        let query3 = rule(
+            atom(QUERY_3, []),
+            [
+                atom(NAME, [term(var("a")), term(val("Alice"))]),
+                atom(NAME, [term(var("b")), term(val("Bob"))]),
+                atom(ADVISOR, [term(var("a")), term(var("b"))]),
+            ],
+        );
+        let program = Program::new([], [query1, query2, query3]);
         let kb = program.solve(&db).await;
-        let query_result = kb.query(QUERY);
-        let mut answers = query_result.into_iter().flatten().collect::<Vec<_>>();
+        let q1_result = kb.query(QUERY_1);
+        dbg!(&q1_result);
+        let mut answers = q1_result.into_iter().flatten().collect::<Vec<_>>();
         answers.sort();
-        dbg!(&answers);
-        assert_eq!(vec![Val::from(100), Val::from(101)], answers);
+        assert_eq!(vec![val("Alice"), val("Bob")], answers);
+        let q2_result = kb.query(QUERY_2);
+        dbg!(&q2_result);
+        let q3_result = kb.query(QUERY_3);
+        dbg!(&q3_result);
         Ok(())
     }
 }

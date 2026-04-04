@@ -15,3 +15,9 @@ impl From<Val> for Dat {
         Dat::Val(val)
     }
 }
+
+impl From<Ent> for Dat {
+    fn from(ent: Ent) -> Self {
+        Dat::Ent(ent)
+    }
+}

@@ -16,6 +16,7 @@ pub struct KnowledgeBase<'a, T: Space> {
 
 impl<'a, T: Space> KnowledgeBase<'a, T> {
     pub fn from_facts(db: &'a Db<T>, facts: Vec<Atom>) -> Self {
+        debug_assert!(facts.iter().all(|atom| atom.is_grounded()));
         Self::empty(db).with_facts(facts)
     }
     pub fn empty(db: &'a Db<T>) -> Self {
@@ -26,6 +27,7 @@ impl<'a, T: Space> KnowledgeBase<'a, T> {
     }
     #[must_use]
     pub fn with_facts(&self, new_facts: Vec<Atom>) -> Self {
+        debug_assert!(new_facts.iter().all(|atom| atom.is_grounded()));
         let mut facts = self.facts.clone();
         facts.extend(new_facts);
         Self { db: self.db, facts }
@@ -38,9 +40,11 @@ impl<'a, T: Space> KnowledgeBase<'a, T> {
             if atom.attr == query {
                 let mut vals = Vec::new();
                 for term in atom.terms.iter() {
-                    if let Term::Val(val) = term {
-                        vals.push(val.clone());
-                    }
+                    let val = match term {
+                        Term::Val(val) => val.clone(),
+                        Term::Var(_var) => panic!("Ungrounded atom in kb: {:?}", atom),
+                    };
+                    vals.push(val);
                 }
                 results.push(vals);
             }
@@ -84,6 +88,7 @@ impl<'a, T: Space> KnowledgeBase<'a, T> {
         let mut new_facts = Vec::new();
         for rule in rules {
             let rule_facts = rule.derive_facts(self).await;
+            debug_assert!(rule_facts.iter().all(|atom| atom.is_grounded()));
             new_facts.extend(rule_facts);
         }
         self.with_facts(new_facts)

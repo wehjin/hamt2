@@ -4,6 +4,10 @@ use crate::db::find::program::sub::Substitution;
 use crate::space::Space;
 use std::collections::HashSet;
 
+pub fn rule(head: impl Into<Atom>, body: impl Into<Vec<Atom>>) -> Rule {
+    Rule::new(head.into(), body)
+}
+
 #[derive(Debug, Clone)]
 pub struct Rule {
     pub head: Atom,
@@ -22,20 +26,18 @@ impl Rule {
         let mut new_facts = Vec::new();
         for body_sub in self.derive_body_subs(kb).await {
             let new_fact = self.head.ground(&body_sub);
+            debug_assert!(new_fact.is_grounded());
             new_facts.push(new_fact);
         }
         new_facts
     }
 
     async fn derive_body_subs<'a, T: Space>(&self, kb: &KnowledgeBase<'a, T>) -> Vec<Substitution> {
-        let mut body_subs = Vec::new();
-        for atom in self.body.iter() {
-            let body_atom_subs = atom
-                .derive_body_atom_subs(vec![Substitution::new()], kb)
-                .await;
-            body_subs.extend(body_atom_subs);
+        let mut subs = vec![Substitution::new()];
+        for body_atom in self.body.iter() {
+            subs = body_atom.derive_body_atom_subs(subs, kb).await;
         }
-        body_subs
+        subs
     }
 
     pub fn is_range_restricted(&self) -> bool {

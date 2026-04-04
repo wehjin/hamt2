@@ -1,5 +1,9 @@
 use crate::db::Eid;
 
+pub fn ent(ent: impl Into<Ent>) -> Ent {
+    ent.into()
+}
+
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum Ent {
     Id(Eid),
