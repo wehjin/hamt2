@@ -1,11 +1,12 @@
 use crate::db::component::val_table;
-use crate::db::key::{KEY_AEVT, KEY_EAVT, KEY_MAX_TXID};
-use crate::db::{Attr, Eid, Txid, Val};
+use crate::db::component::key::{KEY_AEVT, KEY_EAVT, KEY_MAX_TXID};
+use crate::db::{Attr, Txid, Val};
 use crate::space::Space;
 use crate::trie::mem::value::MemValue;
 use crate::trie::SpaceTrie;
 use crate::TransactError;
 use std::collections::HashMap;
+use crate::db::Eid;
 
 pub(crate) async fn trie_add<T: Space>(
     trie: SpaceTrie<T>,

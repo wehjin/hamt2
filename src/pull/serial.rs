@@ -1,7 +1,7 @@
 use crate::db::attr::Attr;
 use crate::db::ent::Ent;
-use crate::db::Datom;
 use crate::db::Val;
+use crate::db::{dat, Dat, Datom};
 use crate::pull::errors::DatomsError;
 use serde::ser::Impossible;
 use serde::{ser, Serialize};
@@ -10,7 +10,7 @@ pub struct Serializer {
     ent: Ent,
     group: Option<&'static str>,
     pub datoms: Vec<Datom>,
-    pub val: Option<Val>,
+    pub dat: Option<Dat>,
 }
 
 impl Serializer {
@@ -19,7 +19,7 @@ impl Serializer {
             ent,
             group: None,
             datoms: Vec::new(),
-            val: None,
+            dat: None,
         }
     }
 }
@@ -32,10 +32,10 @@ impl<'a> ser::SerializeStruct for &'a mut Serializer {
         T: ?Sized + Serialize,
     {
         let _ = value.serialize(&mut **self)?;
-        let val = self.val.take().expect("val should be set");
+        let dat = self.dat.take().expect("val should be set");
         let attr = Attr(self.group.unwrap(), key);
         let ent = Ent::from(self.ent);
-        self.datoms.push(Datom::Add(ent, attr, val));
+        self.datoms.push(Datom::Add(ent, attr, dat));
         Ok(())
     }
     fn end(self) -> Result<Self::Ok, Self::Error> {
@@ -55,22 +55,22 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     type SerializeStructVariant = Impossible<Self::Ok, Self::Error>;
 
     fn serialize_bool(self, v: bool) -> Result<Self::Ok, Self::Error> {
-        self.val = Some(Val::U32(v as u32));
+        self.dat = Some(dat(Val::U32(v as u32)));
         Ok(())
     }
 
     fn serialize_i8(self, v: i8) -> Result<Self::Ok, Self::Error> {
-        self.val = Some(Val::U32(v as u32));
+        self.dat = Some(dat(Val::U32(v as u32)));
         Ok(())
     }
 
     fn serialize_i16(self, v: i16) -> Result<Self::Ok, Self::Error> {
-        self.val = Some(Val::U32(v as u32));
+        self.dat = Some(dat(Val::U32(v as u32)));
         Ok(())
     }
 
     fn serialize_i32(self, v: i32) -> Result<Self::Ok, Self::Error> {
-        self.val = Some(Val::U32(v as u32));
+        self.dat = Some(dat(Val::U32(v as u32)));
         Ok(())
     }
 
@@ -79,17 +79,17 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     }
 
     fn serialize_u8(self, v: u8) -> Result<Self::Ok, Self::Error> {
-        self.val = Some(Val::U32(v as u32));
+        self.dat = Some(dat(Val::U32(v as u32)));
         Ok(())
     }
 
     fn serialize_u16(self, v: u16) -> Result<Self::Ok, Self::Error> {
-        self.val = Some(Val::U32(v as u32));
+        self.dat = Some(dat(Val::U32(v as u32)));
         Ok(())
     }
 
     fn serialize_u32(self, v: u32) -> Result<Self::Ok, Self::Error> {
-        self.val = Some(Val::U32(v));
+        self.dat = Some(dat(Val::U32(v)));
         Ok(())
     }
 
@@ -111,7 +111,7 @@ impl<'a> ser::Serializer for &'a mut Serializer {
 
     fn serialize_str(self, v: &str) -> Result<Self::Ok, Self::Error> {
         let val = Val::String(v.to_string());
-        self.val = Some(val);
+        self.dat = Some(dat(val));
         Ok(())
     }
 

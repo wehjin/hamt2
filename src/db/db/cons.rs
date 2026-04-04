@@ -1,8 +1,9 @@
-use crate::db::{trie, Attr, Db, Txid};
+use crate::db::{Attr, Db, Txid};
 use crate::db::component::MaxEid;
 use crate::db::schema::Schema;
 use crate::space::Space;
 use crate::{LoadError, TransactError};
+use crate::db::component::trie;
 use crate::trie::SpaceTrie;
 
 impl<T: Space> Db<T> {

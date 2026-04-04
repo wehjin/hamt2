@@ -1,7 +1,7 @@
-use crate::db::core::attr::Attr;
-use crate::db::core::ent::Ent;
+use crate::db::core::datom::attr::Attr;
+use crate::db::core::datom::ent::Ent;
 use crate::db::find::Rule;
-use crate::db::core::key::KEY_AEVT;
+use crate::db::component::key::KEY_AEVT;
 use crate::db::Eid;
 use crate::db::schema::Schema;
 use crate::space::Space;

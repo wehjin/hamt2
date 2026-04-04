@@ -1,14 +1,14 @@
-use std::collections::HashMap;
-use crate::db::{trie, Datom, Db, Ent};
 use crate::db::component::MaxEid;
+use crate::db::component::ent_eid::EntEid;
+use crate::db::component::trie;
+use crate::db::{val, Dat, Datom, Db, Ent};
 use crate::space::Space;
-use crate::TransactError;
 use crate::trie::SpaceTrie;
+use crate::TransactError;
 
 impl<T: Space> Db<T> {
     pub async fn transact(self, datoms: impl Into<Vec<Datom>>) -> Result<Self, TransactError> {
         let datoms = datoms.into();
-        let mut new_eids = HashMap::new();
         let mut max_eid = MaxEid::read(&self.trie).await?;
         match datoms.is_empty() {
             true => Ok(self),
@@ -19,23 +19,25 @@ impl<T: Space> Db<T> {
                     mut space,
                     mut trie,
                 } = self;
+                let ent_eid = EntEid::new(&datoms, &mut max_eid);
                 for datom in datoms {
                     trie = match datom {
-                        Datom::Add(e, a, v) => {
-                            let eid = match e {
+                        Datom::Add(ent, attr, dat) => {
+                            let eid = match ent {
                                 Ent::Id(eid) => eid,
-                                Ent::Temp(name) => {
-                                    if let Some(eid) = new_eids.get(name) {
-                                        *eid
-                                    } else {
-                                        let eid =
-                                            max_eid.take(1).pop().expect("max_eid should exist");
-                                        new_eids.insert(name, eid);
-                                        eid
-                                    }
+                                Ent::Temp(name) => ent_eid[name],
+                            };
+                            let val = match dat {
+                                Dat::Val(val) => val,
+                                Dat::Ent(ent) => {
+                                    let eid = match ent {
+                                        Ent::Id(eid) => eid,
+                                        Ent::Temp(name) => ent_eid[name],
+                                    };
+                                    val(eid)
                                 }
                             };
-                            trie::trie_add(trie, &attr_map, eid, a, v, &tx).await?
+                            trie::trie_add(trie, &attr_map, eid, attr, val, &tx).await?
                         }
                     }
                 }

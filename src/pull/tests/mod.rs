@@ -1,11 +1,12 @@
 use crate::db::attr::Attr;
 use crate::db::ent::Ent;
-use crate::db::{Datom, Db};
-use crate::db::{Eid, Val};
+use crate::db::{dat, Datom, Db};
+use crate::db::Val;
 use crate::pull::pull::Pull;
 use crate::pull::register::Register;
 use crate::space::mem::MemSpace;
 use common::Basis;
+use crate::db::Eid;
 
 pub mod common;
 
@@ -53,10 +54,10 @@ fn push_test() {
     let datoms = basis.into_datoms(ent).expect("into_datoms");
     assert_eq!(
         vec![
-            Datom::Add(ent, Attr("basis", "symbol"), Val::from_str("ABC")),
-            Datom::Add(ent, Attr("basis", "shares"), Val::U32(100)),
-            Datom::Add(ent, Attr("basis", "price_each"), Val::U32(101)),
-            Datom::Add(ent, Attr("basis", "direction"), Val::U32(u32::MAX)),
+            Datom::Add(ent, Attr("basis", "symbol"), dat(Val::from_str("ABC"))),
+            Datom::Add(ent, Attr("basis", "shares"), dat(Val::U32(100))),
+            Datom::Add(ent, Attr("basis", "price_each"), dat(Val::U32(101))),
+            Datom::Add(ent, Attr("basis", "direction"), dat(Val::U32(u32::MAX))),
         ],
         datoms
     );

@@ -1,4 +1,9 @@
+use crate::db::Eid;
 use crate::trie::mem::value::MemValue;
+
+pub fn val(from: impl Into<Val>) -> Val {
+    from.into()
+}
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum Val {
@@ -45,6 +50,18 @@ impl From<MemValue> for Val {
             MemValue::U32(v) => Val::U32(v),
             MemValue::MapBase(_) => unreachable!(),
         }
+    }
+}
+
+impl From<Eid> for Val {
+    fn from(value: Eid) -> Self {
+        val(value.to_i32())
+    }
+}
+
+impl From<i32> for Val {
+    fn from(i: i32) -> Self {
+        Self::U32(i as u32)
     }
 }
 

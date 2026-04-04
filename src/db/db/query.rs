@@ -1,6 +1,6 @@
 use crate::db::component::val_table;
 use crate::db::find::{Rule, ValsWithEntAttr};
-use crate::db::key::{KEY_AEVT, KEY_MAX_TXID};
+use crate::db::component::key::{KEY_AEVT, KEY_MAX_TXID};
 use crate::db::{Attr, Db, Ent, Txid, Val, Vid};
 use crate::space::Space;
 use crate::trie::mem::value::MemValue;
@@ -75,7 +75,7 @@ fn evid_stream<T: Space>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::Datom;
+    use crate::db::{dat, Datom};
     use crate::space::mem::MemSpace;
     #[tokio::test]
     async fn ev_stream_test() -> anyhow::Result<()> {
@@ -85,8 +85,8 @@ mod tests {
         let mut db = Db::new(space, schema.clone()).await?;
         db = db
             .transact(vec![
-                Datom::Add(Ent::from(10), COUNT, Val::from(10)),
-                Datom::Add(Ent::from(11), COUNT, Val::from(11)),
+                Datom::Add(Ent::from(10), COUNT, dat(Val::from(10))),
+                Datom::Add(Ent::from(11), COUNT, dat(Val::from(11))),
             ])
             .await?;
 

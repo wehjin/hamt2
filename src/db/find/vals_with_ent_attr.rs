@@ -1,9 +1,9 @@
 use crate::db::component::val_table;
-use crate::db::core::attr::Attr;
-use crate::db::core::ent::Ent;
+use crate::db::core::datom::attr::Attr;
+use crate::db::core::datom::ent::Ent;
 use crate::db::find::Rule;
-use crate::db::core::key::KEY_EAVT;
-use crate::db::core::vid::Vid;
+use crate::db::component::key::KEY_EAVT;
+use crate::db::component::vid::Vid;
 use crate::db::Val;
 use crate::db::schema::Schema;
 use crate::space::Space;

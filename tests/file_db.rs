@@ -1,4 +1,4 @@
-use hamt2::db::Db;
+use hamt2::db::{dat, Db};
 use hamt2::db::Ent;
 use hamt2::db::Val;
 use hamt2::db::{Attr, Datom};
@@ -14,7 +14,7 @@ async fn file_db_works() {
         let space = FileSpace::new(&file).await.expect("create file space");
         let db = Db::new(space, vec![ATTR_COUNT]).await.expect("new db");
         let db = db
-            .transact(vec![Datom::Add(Ent::from(1), ATTR_COUNT, Val::U32(1))])
+            .transact(vec![Datom::Add(Ent::from(1), ATTR_COUNT, dat(Val::U32(1)))])
             .await
             .expect("transact");
         assert_eq!(
@@ -47,7 +47,7 @@ async fn file_db_strings_work() {
             .transact(vec![Datom::Add(
                 Ent::from(1),
                 ATTR_GREETING,
-                Val::from("hello"),
+                dat(Val::from("hello")),
             )])
             .await
             .expect("transact");

@@ -1,9 +1,10 @@
 use crate::db::attr::Attr;
-use crate::db::{Db, Eid, Ent};
+use crate::db::{Db, Ent};
 use crate::pull::pull::Pull;
 use crate::space::Space;
 use crate::QueryError;
 use serde::{Deserialize, Serialize};
+use crate::db::Eid;
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename = "basis")]

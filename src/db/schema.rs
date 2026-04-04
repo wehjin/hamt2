@@ -1,11 +1,12 @@
-use crate::db::core::trie;
+use crate::db::component::trie;
 use crate::db::find::{EntsWithAttr, Rule, ValsWithEntAttr};
-use crate::db::{Attr, Eid, Txid, Val};
+use crate::db::{Attr, Txid, Val};
 use crate::space::Space;
 use crate::trie::SpaceTrie;
 use crate::{LoadError, TransactError};
 use std::collections::HashMap;
 use std::ops::{Deref, DerefMut, Index};
+use crate::db::Eid;
 
 #[derive(Debug)]
 pub struct Schema {

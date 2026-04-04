@@ -1,6 +1,6 @@
 use hamt2::db::ent::Ent;
 use hamt2::db::find::{EntsWithAttr, Rule};
-use hamt2::db::{Attr, Val};
+use hamt2::db::{dat, Attr, Val};
 use hamt2::db::{Datom, Db, Txid};
 use hamt2::space::mem::MemSpace;
 use hamt2::LoadError;
@@ -13,7 +13,7 @@ async fn load_works() {
     let space = Db::new(MemSpace::new(), vec![ATTR_COUNT])
         .await
         .expect("new db")
-        .transact(vec![Datom::Add(Ent::from(1), ATTR_COUNT, Val::U32(1))])
+        .transact(vec![Datom::Add(Ent::from(1), ATTR_COUNT, dat(Val::U32(1)))])
         .await
         .expect("transact")
         .close();
@@ -44,7 +44,11 @@ async fn transact_and_pull_simple() {
         .await
         .expect("new db");
     let db = db
-        .transact(vec![Datom::Add(Ent::from(15), ATTR_COUNT, Val::U32(15))])
+        .transact(vec![Datom::Add(
+            Ent::from(15),
+            ATTR_COUNT,
+            dat(Val::U32(15)),
+        )])
         .await
         .expect("transact");
     let v15 = db
@@ -60,7 +64,11 @@ async fn entities_with_attr_works_for_single_entity() {
         .await
         .expect("new db");
     let db = db
-        .transact(vec![Datom::Add(Ent::from(15), ATTR_COUNT, Val::U32(15))])
+        .transact(vec![Datom::Add(
+            Ent::from(15),
+            ATTR_COUNT,
+            dat(Val::U32(15)),
+        )])
         .await
         .expect("transact");
 
@@ -77,8 +85,8 @@ async fn entities_with_attr_works_for_two_entities() {
         .expect("new db");
     let db = db
         .transact(vec![
-            Datom::Add(Ent::from(3), ATTR_COUNT, Val::U32(4)),
-            Datom::Add(Ent::from(5), ATTR_COUNT, Val::U32(6)),
+            Datom::Add(Ent::from(3), ATTR_COUNT, dat(Val::U32(4))),
+            Datom::Add(Ent::from(5), ATTR_COUNT, dat(Val::U32(6))),
         ])
         .await
         .expect("transact");
@@ -99,7 +107,7 @@ async fn transact_assigns_id_to_ent() {
         .transact(vec![Datom::Add(
             Ent::Temp("new_count"),
             ATTR_COUNT,
-            Val::U32(35),
+            dat(Val::U32(35)),
         )])
         .await
         .expect("transact");
@@ -107,7 +115,7 @@ async fn transact_assigns_id_to_ent() {
         .transact(vec![Datom::Add(
             Ent::Temp("new_count"),
             ATTR_COUNT,
-            Val::U32(35),
+            dat(Val::U32(35)),
         )])
         .await
         .expect("transact");
@@ -128,8 +136,8 @@ async fn transact_and_pull_works() {
     // Add a few datoms.
     let db = db
         .transact(vec![
-            Datom::Add(Ent::from(15), ATTR_COUNT, Val::U32(15)),
-            Datom::Add(Ent::from(5), ATTR_COUNT, Val::U32(5)),
+            Datom::Add(Ent::from(15), ATTR_COUNT, dat(Val::U32(15))),
+            Datom::Add(Ent::from(5), ATTR_COUNT, dat(Val::U32(5))),
         ])
         .await
         .expect("transact");

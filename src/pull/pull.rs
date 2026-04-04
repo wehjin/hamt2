@@ -1,5 +1,6 @@
 use crate::db::attr::Attr;
-use crate::db::{Datom, Eid};
+use crate::db::Datom;
+use crate::db::Eid;
 use crate::db::{Db, Ent};
 use crate::pull::errors::DatomsError;
 use crate::pull::into_datoms;

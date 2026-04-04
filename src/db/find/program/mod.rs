@@ -46,7 +46,7 @@ impl Program {
 mod tests {
     use super::*;
     use crate::db::find::program::term::Term;
-    use crate::db::{Attr, Datom, Db, Ent, Val};
+    use crate::db::{dat, Attr, Datom, Db, Ent, Val};
     use crate::space::mem::MemSpace;
 
     const ADVISOR: Attr = Attr("member", "advisor");
@@ -61,8 +61,8 @@ mod tests {
             let mut db = Db::new(MemSpace::new(), schema.clone()).await?;
             db = db
                 .transact([
-                    Datom::Add(Ent::from(100), ADVISOR, Val::from(103)),
-                    Datom::Add(Ent::from(101), ADVISOR, Val::from(103)),
+                    Datom::Add(Ent::from(100), ADVISOR, dat(Val::from(103))),
+                    Datom::Add(Ent::from(101), ADVISOR, dat(Val::from(103))),
                 ])
                 .await?;
             space = db.close();

@@ -1,11 +1,11 @@
-use crate::db::core::key::KEY_MAX_EID;
+use crate::db::component::key::KEY_MAX_EID;
 use crate::db::Eid;
 use crate::space::Space;
 use crate::trie::mem::value::MemValue;
 use crate::trie::SpaceTrie;
 use crate::{QueryError, TransactError};
 
-pub(crate) struct MaxEid {
+pub struct MaxEid {
     start: Eid,
     current: Eid,
 }
