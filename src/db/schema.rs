@@ -1,25 +1,25 @@
-use crate::db::component::trie;
-use crate::db::find::{EntsWithAttr, Rule, ValsWithEntAttr};
+use crate::db::component::db_trie;
+use crate::db::find::{AnyAttrAny, Find};
+use crate::db::Ein;
 use crate::db::{Attr, Txid, Val};
 use crate::space::Space;
 use crate::trie::SpaceTrie;
 use crate::{LoadError, TransactError};
 use std::collections::HashMap;
 use std::ops::{Deref, DerefMut, Index};
-use crate::db::Eid;
 
 #[derive(Debug)]
 pub struct Schema {
-    map: HashMap<Attr, Eid>,
+    map: HashMap<Attr, Ein>,
 }
 
 impl Schema {
     fn basic() -> Self {
         Self {
-            map: HashMap::from([(Attr::DB_IDENT, Eid::DB_IDENT)]),
+            map: HashMap::from([(Attr::DB_IDENT, Ein::DB_IDENT)]),
         }
     }
-    pub fn new(attrs: Vec<Attr>, eids: Vec<Eid>) -> Self {
+    pub fn new(attrs: Vec<Attr>, eids: Vec<Ein>) -> Self {
         let mut schema = Self::basic();
         let more = attrs.iter().cloned().zip(eids).collect::<Vec<_>>();
         schema.extend(more);
@@ -32,7 +32,7 @@ impl Schema {
     ) -> Result<SpaceTrie<T>, TransactError> {
         for (at, a_ent) in self.map.iter() {
             let ident = Val::from(at.to_ident().as_str());
-            trie = trie::trie_add(trie, &self.map, *a_ent, Attr::DB_IDENT, ident, &txid).await?;
+            trie = db_trie::add(trie, &self.map, *a_ent, Attr::DB_IDENT, ident, &txid).await?;
         }
         Ok(trie)
     }
@@ -43,21 +43,11 @@ impl Schema {
             .collect();
         // Read attr eids from the trie.
         let mut schema = Schema::basic();
-        let ents_with_idents = {
-            let mut rule = EntsWithAttr::new("e", Attr::DB_IDENT);
-            rule.update(&trie, &schema).await?;
-            rule.results("e").to_vec()
-        };
-        for ent_with_ident in ents_with_idents {
-            let mut rule = ValsWithEntAttr::new("v", ent_with_ident, Attr::DB_IDENT);
-            rule.update(&trie, &schema).await?;
-            let ident = rule
-                .results("v")
-                .first()
-                .expect("val should exist")
-                .as_str();
+        let ident_evs = AnyAttrAny::new(Attr::DB_IDENT).apply(trie, &schema).await?;
+        for (ein, val) in ident_evs {
+            let ident = val.as_str();
             if let Some(attr) = attrs_by_ident.get(ident) {
-                schema.insert(*attr, ent_with_ident.to_eid());
+                schema.insert(*attr, ein);
             }
         }
         // Confirm all requested attrs have eids.
@@ -71,14 +61,14 @@ impl Schema {
 }
 
 impl Index<Attr> for Schema {
-    type Output = Eid;
+    type Output = Ein;
     fn index(&self, key: Attr) -> &Self::Output {
         &self.map[&key]
     }
 }
 
 impl Deref for Schema {
-    type Target = HashMap<Attr, Eid>;
+    type Target = HashMap<Attr, Ein>;
     fn deref(&self) -> &Self::Target {
         &self.map
     }

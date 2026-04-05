@@ -1,6 +1,6 @@
-use hamt2::db::{dat, Db};
 use hamt2::db::Ent;
 use hamt2::db::Val;
+use hamt2::db::{dat, ein, Db};
 use hamt2::db::{Attr, Datom};
 use hamt2::space::file::FileSpace;
 
@@ -19,9 +19,7 @@ async fn file_db_works() {
             .expect("transact");
         assert_eq!(
             Some(Val::U32(1)),
-            db.find_val(Ent::from(1), ATTR_COUNT)
-                .await
-                .expect("find_val")
+            db.find_val(ein(1), ATTR_COUNT).await.expect("find_val")
         );
     }
     {
@@ -29,9 +27,7 @@ async fn file_db_works() {
         let db = Db::load(space, vec![ATTR_COUNT]).await.expect("load db");
         assert_eq!(
             Some(Val::U32(1)),
-            db.find_val(Ent::from(1), ATTR_COUNT)
-                .await
-                .expect("find_val")
+            db.find_val(ein(1), ATTR_COUNT).await.expect("find_val")
         );
     }
 }
@@ -53,9 +49,7 @@ async fn file_db_strings_work() {
             .expect("transact");
         assert_eq!(
             Some(Val::from("hello")),
-            db.find_val(Ent::from(1), ATTR_GREETING)
-                .await
-                .expect("find_val")
+            db.find_val(ein(1), ATTR_GREETING).await.expect("find_val")
         );
     }
     {
@@ -63,9 +57,7 @@ async fn file_db_strings_work() {
         let db = Db::load(space, schema).await.expect("load db");
         assert_eq!(
             Some(Val::from("hello")),
-            db.find_val(Ent::from(1), ATTR_GREETING)
-                .await
-                .expect("find_val")
+            db.find_val(ein(1), ATTR_GREETING).await.expect("find_val")
         );
     }
 }

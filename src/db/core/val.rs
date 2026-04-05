@@ -1,4 +1,4 @@
-use crate::db::Eid;
+use crate::db::Ein;
 use crate::trie::mem::value::MemValue;
 
 pub fn val(from: impl Into<Val>) -> Val {
@@ -53,8 +53,8 @@ impl From<MemValue> for Val {
     }
 }
 
-impl From<Eid> for Val {
-    fn from(value: Eid) -> Self {
+impl From<Ein> for Val {
+    fn from(value: Ein) -> Self {
         val(value.to_i32())
     }
 }

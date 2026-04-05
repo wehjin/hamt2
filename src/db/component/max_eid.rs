@@ -1,17 +1,17 @@
 use crate::db::component::key::KEY_MAX_EID;
-use crate::db::Eid;
+use crate::db::Ein;
 use crate::space::Space;
 use crate::trie::mem::value::MemValue;
 use crate::trie::SpaceTrie;
 use crate::{QueryError, TransactError};
 
 pub struct MaxEid {
-    start: Eid,
-    current: Eid,
+    start: Ein,
+    current: Ein,
 }
 
 impl MaxEid {
-    pub fn new(eid: Eid) -> Self {
+    pub fn new(eid: Ein) -> Self {
         Self {
             start: eid,
             current: eid,
@@ -19,12 +19,12 @@ impl MaxEid {
     }
     pub async fn read<T: Space>(trie: &SpaceTrie<T>) -> Result<Self, QueryError> {
         if let Some(MemValue::U32(value)) = trie.query_value(KEY_MAX_EID).await? {
-            Ok(Self::new(Eid(value as i32)))
+            Ok(Self::new(Ein(value as i32)))
         } else {
-            Ok(Self::new(Eid(0)))
+            Ok(Self::new(Ein(0)))
         }
     }
-    pub fn take(&mut self, count: usize) -> Vec<Eid> {
+    pub fn take(&mut self, count: usize) -> Vec<Ein> {
         let mut taken = Vec::new();
         for _ in 0..count {
             taken.push(self.current);

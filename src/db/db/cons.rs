@@ -1,10 +1,10 @@
-use crate::db::{Attr, Db, Txid};
+use crate::db::component::db_trie;
 use crate::db::component::MaxEid;
 use crate::db::schema::Schema;
+use crate::db::{Attr, Db, Txid};
 use crate::space::Space;
-use crate::{LoadError, TransactError};
-use crate::db::component::trie;
 use crate::trie::SpaceTrie;
+use crate::{LoadError, TransactError};
 
 impl<T: Space> Db<T> {
     pub async fn new(mut space: T, attrs: Vec<Attr>) -> Result<Self, TransactError> {
@@ -14,7 +14,7 @@ impl<T: Space> Db<T> {
             let attr_eids = max_eid.take(attrs.len());
             let schema = Schema::new(attrs, attr_eids);
             trie = schema.save(trie, Txid::SETUP).await?;
-            trie = trie::trie_set_max_tx(trie, Txid::FLOOR).await?;
+            trie = db_trie::set_max_tx(trie, Txid::FLOOR).await?;
             trie = max_eid.write(trie).await?;
             trie.commit(&mut space).await?;
             schema

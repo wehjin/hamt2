@@ -1,28 +1,29 @@
+use crate::db::component::db_trie;
 use crate::db::find::program::atom::Atom;
 use crate::db::find::program::rule::Rule;
 use crate::db::find::program::sub::Substitution;
 use crate::db::find::program::term::Term;
-use crate::db::{Attr, Db, Val};
+use crate::db::{Attr, Schema, Val};
 use crate::space::Space;
+use crate::trie::SpaceTrie;
 use async_stream::stream;
 use futures::{pin_mut, StreamExt};
 use std::collections::HashSet;
 
 #[derive(Debug, Clone)]
 pub struct KnowledgeBase<'a, T: Space> {
-    db: &'a Db<T>,
+    db_trie: &'a SpaceTrie<T>,
+    schema: &'a Schema,
     facts: HashSet<Atom>,
 }
 
 impl<'a, T: Space> KnowledgeBase<'a, T> {
-    pub fn from_facts(db: &'a Db<T>, facts: Vec<Atom>) -> Self {
+    pub fn from_facts(db_trie: &'a SpaceTrie<T>, schema: &'a Schema, facts: Vec<Atom>) -> Self {
         debug_assert!(facts.iter().all(|atom| atom.is_grounded()));
-        Self::empty(db).with_facts(facts)
-    }
-    pub fn empty(db: &'a Db<T>) -> Self {
         Self {
-            db,
-            facts: HashSet::new(),
+            db_trie,
+            schema,
+            facts: facts.into_iter().collect(),
         }
     }
     #[must_use]
@@ -30,7 +31,11 @@ impl<'a, T: Space> KnowledgeBase<'a, T> {
         debug_assert!(new_facts.iter().all(|atom| atom.is_grounded()));
         let mut facts = self.facts.clone();
         facts.extend(new_facts);
-        Self { db: self.db, facts }
+        Self {
+            db_trie: self.db_trie,
+            schema: self.schema,
+            facts,
+        }
     }
 
     #[must_use]
@@ -55,7 +60,7 @@ impl<'a, T: Space> KnowledgeBase<'a, T> {
     fn facts_stream(&self, earth_atom: &Atom) -> impl futures::Stream<Item = Atom> {
         stream! {
             if earth_atom.terms.len() == 2 {
-                let ev_stream = self.db.ev_stream(earth_atom.attr);
+                let ev_stream = db_trie::ev_stream(&self.db_trie, earth_atom.attr, &self.schema);
                 pin_mut!(ev_stream);
                 while let Some((e,v)) = ev_stream.next().await {
                     yield Atom::new(earth_atom.attr, [Term::from(e), Term::from(v)]);

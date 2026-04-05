@@ -1,5 +1,6 @@
 pub mod datom;
 mod eid;
+pub mod find_result;
 pub mod txid;
 pub mod val;
 

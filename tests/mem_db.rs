@@ -1,7 +1,6 @@
-use hamt2::db::ent::Ent;
-use hamt2::db::find::{EntsWithAttr, Rule};
-use hamt2::db::{dat, Attr, Val};
-use hamt2::db::{Datom, Db, Txid};
+use hamt2::db::find::{AnyAttrIgnore, Find};
+use hamt2::db::{dat, datom, ein, ent, Attr, Val};
+use hamt2::db::{Db, Txid};
 use hamt2::space::mem::MemSpace;
 use hamt2::LoadError;
 
@@ -13,16 +12,14 @@ async fn load_works() {
     let space = Db::new(MemSpace::new(), vec![ATTR_COUNT])
         .await
         .expect("new db")
-        .transact(vec![Datom::Add(Ent::from(1), ATTR_COUNT, dat(Val::U32(1)))])
+        .transact(vec![datom(ent(1), ATTR_COUNT, dat(Val::U32(1)))])
         .await
         .expect("transact")
         .close();
     let db = Db::load(space, vec![ATTR_COUNT]).await.expect("load db");
     assert_eq!(
         Some(Val::U32(1)),
-        db.find_val(Ent::from(1), ATTR_COUNT)
-            .await
-            .expect("find_val")
+        db.find_val(ein(1), ATTR_COUNT).await.expect("find_val")
     );
 }
 
@@ -44,17 +41,10 @@ async fn transact_and_pull_simple() {
         .await
         .expect("new db");
     let db = db
-        .transact(vec![Datom::Add(
-            Ent::from(15),
-            ATTR_COUNT,
-            dat(Val::U32(15)),
-        )])
+        .transact(vec![datom(ent(15), ATTR_COUNT, dat(Val::U32(15)))])
         .await
         .expect("transact");
-    let v15 = db
-        .find_val(Ent::from(15), ATTR_COUNT)
-        .await
-        .expect("find_val");
+    let v15 = db.find_val(ein(15), ATTR_COUNT).await.expect("find_val");
     assert_eq!(Some(Val::U32(15)), v15);
 }
 
@@ -64,18 +54,15 @@ async fn entities_with_attr_works_for_single_entity() {
         .await
         .expect("new db");
     let db = db
-        .transact(vec![Datom::Add(
-            Ent::from(15),
-            ATTR_COUNT,
-            dat(Val::U32(15)),
-        )])
+        .transact(vec![datom(ent(15), ATTR_COUNT, dat(Val::U32(15)))])
         .await
         .expect("transact");
 
-    let mut rule = EntsWithAttr::new("e", ATTR_COUNT);
-    db.find(&mut rule).await.expect("find");
-    let ents = rule.results("e").to_vec();
-    assert_eq!(vec![Ent::from(15)], ents);
+    let eins = AnyAttrIgnore::new(ATTR_COUNT)
+        .apply_db(&db)
+        .await
+        .expect("apply");
+    assert_eq!(vec![ein(15)], eins);
 }
 
 #[tokio::test]
@@ -85,17 +72,18 @@ async fn entities_with_attr_works_for_two_entities() {
         .expect("new db");
     let db = db
         .transact(vec![
-            Datom::Add(Ent::from(3), ATTR_COUNT, dat(Val::U32(4))),
-            Datom::Add(Ent::from(5), ATTR_COUNT, dat(Val::U32(6))),
+            datom(ent(3), ATTR_COUNT, dat(Val::U32(4))),
+            datom(ent(5), ATTR_COUNT, dat(Val::U32(6))),
         ])
         .await
         .expect("transact");
 
-    let mut rule = EntsWithAttr::new("e", ATTR_COUNT);
-    db.find(&mut rule).await.expect("find");
-    let mut ents = rule.results("e").to_vec();
-    ents.sort();
-    assert_eq!(vec![Ent::from(3), Ent::from(5)], ents);
+    let mut eins = AnyAttrIgnore::new(ATTR_COUNT)
+        .apply_db(&db)
+        .await
+        .expect("apply");
+    eins.sort();
+    assert_eq!(vec![ein(3), ein(5)], eins);
 }
 
 #[tokio::test]
@@ -104,25 +92,19 @@ async fn transact_assigns_id_to_ent() {
         .await
         .expect("new db");
     db = db
-        .transact(vec![Datom::Add(
-            Ent::Temp("new_count"),
-            ATTR_COUNT,
-            dat(Val::U32(35)),
-        )])
+        .transact(vec![datom(ent("new_count"), ATTR_COUNT, dat(Val::U32(35)))])
         .await
         .expect("transact");
     db = db
-        .transact(vec![Datom::Add(
-            Ent::Temp("new_count"),
-            ATTR_COUNT,
-            dat(Val::U32(35)),
-        )])
+        .transact(vec![datom(ent("new_count"), ATTR_COUNT, dat(Val::U32(35)))])
         .await
         .expect("transact");
 
-    let mut rule = EntsWithAttr::new("e", ATTR_COUNT);
-    db.find(&mut rule).await.expect("find");
-    assert_eq!(2, rule.results("e").len());
+    let eins = AnyAttrIgnore::new(ATTR_COUNT)
+        .apply_db(&db)
+        .await
+        .expect("find");
+    assert_eq!(2, eins.len());
 }
 
 #[tokio::test]
@@ -136,8 +118,8 @@ async fn transact_and_pull_works() {
     // Add a few datoms.
     let db = db
         .transact(vec![
-            Datom::Add(Ent::from(15), ATTR_COUNT, dat(Val::U32(15))),
-            Datom::Add(Ent::from(5), ATTR_COUNT, dat(Val::U32(5))),
+            datom(ent(15), ATTR_COUNT, dat(Val::U32(15))),
+            datom(ent(5), ATTR_COUNT, dat(Val::U32(5))),
         ])
         .await
         .expect("transact");
@@ -145,22 +127,17 @@ async fn transact_and_pull_works() {
     let max_tx = db.max_tx().await.expect("max_tx");
     assert_eq!(Txid::FLOOR + 1, max_tx);
 
-    let v15 = db
-        .find_val(Ent::from(15), ATTR_COUNT)
-        .await
-        .expect("find_val");
+    let v15 = db.find_val(ein(15), ATTR_COUNT).await.expect("find_val");
     assert_eq!(Some(Val::U32(15)), v15);
 
-    let v5 = db
-        .find_val(Ent::from(5), ATTR_COUNT)
-        .await
-        .expect("find_val");
+    let v5 = db.find_val(ein(5), ATTR_COUNT).await.expect("find_val");
     assert_eq!(Some(Val::U32(5)), v5);
 
     // Discover the entities with an attribute.
-    let mut rule = EntsWithAttr::new("e", ATTR_COUNT);
-    db.find(&mut rule).await.expect("find");
-    let mut ents = rule.results("e").to_vec();
-    ents.sort();
-    assert_eq!(vec![Ent::from(5), Ent::from(15)], ents);
+    let mut eins = AnyAttrIgnore::new(ATTR_COUNT)
+        .apply_db(&db)
+        .await
+        .expect("apply");
+    eins.sort();
+    assert_eq!(vec![ein(5), ein(15)], eins);
 }

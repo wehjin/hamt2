@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use std::ops::Index;
 use crate::db::component::MaxEid;
-use crate::db::{Datom, Eid, Ent};
+use crate::db::{Datom, Ein, Ent};
 
-pub struct EntEid<'a>(HashMap<&'a str, Eid>);
+pub struct EntEid<'a>(HashMap<&'a str, Ein>);
 
 impl EntEid<'_> {
     pub fn new(datoms: impl AsRef<[Datom]>, max_eid: &mut MaxEid) -> Self {
@@ -25,7 +25,7 @@ impl EntEid<'_> {
 }
 
 impl Index<&str> for EntEid<'_> {
-    type Output = Eid;
+    type Output = Ein;
     fn index(&self, name: &str) -> &Self::Output {
         &self.0[name]
     }

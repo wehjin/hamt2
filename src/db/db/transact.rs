@@ -1,6 +1,6 @@
 use crate::db::component::MaxEid;
 use crate::db::component::ent_eid::EntEid;
-use crate::db::component::trie;
+use crate::db::component::db_trie;
 use crate::db::{val, Dat, Datom, Db, Ent};
 use crate::space::Space;
 use crate::trie::SpaceTrie;
@@ -37,11 +37,11 @@ impl<T: Space> Db<T> {
                                     val(eid)
                                 }
                             };
-                            trie::trie_add(trie, &attr_map, eid, attr, val, &tx).await?
+                            db_trie::add(trie, &attr_map, eid, attr, val, &tx).await?
                         }
                     }
                 }
-                trie = trie::trie_set_max_tx(trie, tx + 1).await?;
+                trie = db_trie::set_max_tx(trie, tx + 1).await?;
                 trie = max_eid.write(trie).await?;
                 trie.commit(&mut space).await?;
                 let db = Self {

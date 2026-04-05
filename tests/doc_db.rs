@@ -1,4 +1,4 @@
-use hamt2::db::{dat, Attr, Datom, Db, Ent, Val};
+use hamt2::db::{dat, ein, ent, Attr, Datom, Db, Val};
 use hamt2::space::doc::client::DocsClient;
 use hamt2::space::doc::DocSpace;
 use iroh::SecretKey;
@@ -12,9 +12,9 @@ async fn memory_doc_db_works() -> anyhow::Result<()> {
     let space = DocSpace::new(client).await?;
     let mut db = Db::new(space, vec![ATTR_COUNT]).await?;
     db = db
-        .transact([Datom::Add(Ent::from(1), ATTR_COUNT, dat(Val::U32(1)))])
+        .transact([Datom::Add(ent(1), ATTR_COUNT, dat(Val::U32(1)))])
         .await?;
-    let val = db.find_val(Ent::from(1), ATTR_COUNT).await?;
+    let val = db.find_val(ein(1), ATTR_COUNT).await?;
     assert_eq!(Some(Val::U32(1)), val);
     Ok(())
 }
@@ -30,7 +30,7 @@ async fn persistent_doc_db_works() -> anyhow::Result<()> {
         doc_id = space.doc_id();
         let db = Db::new(space, vec![ATTR_COUNT])
             .await?
-            .transact([Datom::Add(Ent::from(1), ATTR_COUNT, dat(Val::U32(1)))])
+            .transact([Datom::Add(ent(1), ATTR_COUNT, dat(Val::U32(1)))])
             .await?;
         let space = db.close();
         space.close().await?;
@@ -39,10 +39,7 @@ async fn persistent_doc_db_works() -> anyhow::Result<()> {
         let client = DocsClient::connect(&temp_dir, secret_key.clone()).await?;
         let space = DocSpace::load(client, doc_id).await?;
         let db = Db::load(space, vec![ATTR_COUNT]).await?;
-        assert_eq!(
-            Some(Val::U32(1)),
-            db.find_val(Ent::from(1), ATTR_COUNT).await?
-        );
+        assert_eq!(Some(Val::U32(1)), db.find_val(ein(1), ATTR_COUNT).await?);
         let space = db.close();
         space.close().await?;
     }

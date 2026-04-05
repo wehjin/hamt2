@@ -1,5 +1,6 @@
-use crate::db::Db;
+use crate::db::Schema;
 use crate::space::Space;
+use crate::trie::SpaceTrie;
 use atom::Atom;
 use kb::KnowledgeBase;
 use rule::Rule;
@@ -24,13 +25,17 @@ impl Program {
         }
     }
 
-    pub async fn solve<T: Space>(self, db: &Db<T>) -> KnowledgeBase<'_, T> {
+    pub async fn solve<'a, T: Space>(
+        self,
+        db_trie: &'a SpaceTrie<T>,
+        schema: &'a Schema,
+    ) -> KnowledgeBase<'a, T> {
         for rule in &self.rules {
             if !rule.is_range_restricted() {
                 panic!("The program is not range restricted: {:?}", rule);
             }
         }
-        let mut kb = KnowledgeBase::from_facts(db, self.facts);
+        let mut kb = KnowledgeBase::from_facts(db_trie, schema, self.facts);
         loop {
             let new_kb = kb.step(&self.rules).await;
             if new_kb == kb {
@@ -100,16 +105,15 @@ mod tests {
             ],
         );
         let program = Program::new([], [query1, query2, query3]);
-        let kb = program.solve(&db).await;
+        let kb = program.solve(&db.trie, &db.schema).await;
         let q1_result = kb.query(QUERY_1);
-        dbg!(&q1_result);
         let mut answers = q1_result.into_iter().flatten().collect::<Vec<_>>();
         answers.sort();
         assert_eq!(vec![val("Alice"), val("Bob")], answers);
         let q2_result = kb.query(QUERY_2);
-        dbg!(&q2_result);
+        assert_eq!(1, q2_result.len());
         let q3_result = kb.query(QUERY_3);
-        dbg!(&q3_result);
+        assert_eq!(0, q3_result.len());
         Ok(())
     }
 }

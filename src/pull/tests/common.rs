@@ -1,10 +1,10 @@
 use crate::db::attr::Attr;
-use crate::db::{Db, Ent};
+use crate::db::Db;
+use crate::db::Ein;
 use crate::pull::pull::Pull;
 use crate::space::Space;
 use crate::QueryError;
 use serde::{Deserialize, Serialize};
-use crate::db::Eid;
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename = "basis")]
@@ -32,23 +32,14 @@ impl<'a> Pull<'a> for Basis {
         ]
     }
 
-    async fn pull<T: Space>(db: &Db<T>, eid: Eid) -> Result<Self, QueryError> {
-        let symbol = db
-            .find_val(Ent::Id(eid), Self::SYMBOL)
-            .await?
-            .expect("symbol");
-        let shares = db
-            .find_val(Ent::Id(eid), Self::SHARES)
-            .await?
-            .expect("shares");
+    async fn pull<T: Space>(db: &Db<T>, eid: Ein) -> Result<Self, QueryError> {
+        let symbol = db.find_val(eid, Self::SYMBOL).await?.expect("symbol");
+        let shares = db.find_val(eid, Self::SHARES).await?.expect("shares");
         let price_each = db
-            .find_val(Ent::Id(eid), Self::PRICE_EACH)
+            .find_val(eid, Self::PRICE_EACH)
             .await?
             .expect("price_each");
-        let direction = db
-            .find_val(Ent::Id(eid), Self::DIRECTION)
-            .await?
-            .expect("direction");
+        let direction = db.find_val(eid, Self::DIRECTION).await?.expect("direction");
         Ok(Self {
             symbol: symbol.as_str().to_string(),
             shares: shares.u32(),

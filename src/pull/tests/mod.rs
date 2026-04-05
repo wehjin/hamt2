@@ -6,7 +6,7 @@ use crate::pull::pull::Pull;
 use crate::pull::register::Register;
 use crate::space::mem::MemSpace;
 use common::Basis;
-use crate::db::Eid;
+use crate::db::Ein;
 
 pub mod common;
 
@@ -36,7 +36,7 @@ async fn pull_test() {
                 price_each: 101,
                 direction: -1,
             },
-            Basis::pull(&db, Eid(27)).await.expect("Basis::pull")
+            Basis::pull(&db, Ein(27)).await.expect("Basis::pull")
         )
     }
 }
