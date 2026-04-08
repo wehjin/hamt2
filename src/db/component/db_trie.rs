@@ -1,5 +1,7 @@
+use crate::db::attr_table::AttrTable;
 use crate::db::component::key::{KEY_AEVT, KEY_EAVT, KEY_MAX_TXID};
 use crate::db::component::val_table;
+use crate::db::db::QUERY;
 use crate::db::find::program::atom::{atom, Atom};
 use crate::db::find::program::rule::rule;
 use crate::db::find::program::term::term;
@@ -15,19 +17,18 @@ use crate::TransactError;
 use async_stream::stream;
 use futures::{pin_mut, StreamExt};
 use std::collections::HashMap;
-use crate::db::db::QUERY;
 
 pub(crate) async fn add<T: Space>(
     trie: SpaceTrie<T>,
-    attr_map: &HashMap<Attr, Ein>,
-    e: Ein,
-    a: Attr,
-    v: Val,
+    attr_map: &AttrTable,
+    ein: Ein,
+    attr: Attr,
+    val: Val,
     t: &Txid,
 ) -> Result<SpaceTrie<T>, TransactError> {
-    let eid = e.to_i32();
-    let aid = attr_map.get(&a).expect("attr should exist").to_i32();
-    let (mut trie, vid) = val_table::insert(trie, v).await?;
+    let eid = ein.to_i32();
+    let aid = attr_map[attr].ein().to_i32();
+    let (mut trie, vid) = val_table::insert(trie, val).await?;
     let tid = t.u32();
     let eavt_key = [KEY_EAVT, eid, aid, vid.to_id()];
     let aevt_key = [KEY_AEVT, aid, eid, vid.to_id()];
@@ -91,10 +92,10 @@ pub fn ev_stream<T: Space>(
 
 async fn evt_subtrie<T: Space>(
     trie: &SpaceTrie<T>,
-    a: Attr,
+    attr: Attr,
     schema: &Schema,
 ) -> Option<SpaceTrie<T>> {
-    let aid = schema[a].to_i32();
+    let aid = schema[attr].ein().to_i32();
     let keys = [KEY_AEVT, aid];
     let evt_value = trie.deep_query_value(keys).await.ok().flatten();
     if let Some(evt) = evt_value {

@@ -10,6 +10,8 @@ pub struct Ein(pub i32);
 
 impl Ein {
     pub const DB_IDENT: Self = Self(-1);
+    pub const DB_CARDINALITY: Self = Self(-2);
+    
     pub fn to_i32(&self) -> i32 {
         self.0
     }

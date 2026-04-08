@@ -15,3 +15,4 @@ pub struct Db<T: Space> {
 
 pub const QUERY: Attr = Attr("db/query");
 pub const IDENT: Attr = Attr("db/ident");
+pub const CARDINALITY: Attr = Attr("db/cardinality");
