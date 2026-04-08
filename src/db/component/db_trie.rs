@@ -6,7 +6,7 @@ use crate::db::find::program::term::term;
 use crate::db::find::program::var::var;
 use crate::db::find::program::Program;
 use crate::db::find_result::FindResult;
-use crate::db::{Attr, Txid, Val, Vid, DB_QUERY};
+use crate::db::{Attr, Txid, Val, Vid};
 use crate::db::{Ein, Schema};
 use crate::space::Space;
 use crate::trie::mem::value::MemValue;
@@ -15,6 +15,7 @@ use crate::TransactError;
 use async_stream::stream;
 use futures::{pin_mut, StreamExt};
 use std::collections::HashMap;
+use crate::db::db::QUERY;
 
 pub(crate) async fn add<T: Space>(
     trie: SpaceTrie<T>,
@@ -51,10 +52,10 @@ pub async fn find<T: Space>(
 ) -> FindResult {
     let select = select.into();
     let query_terms = select.iter().map(|s| term(var(*s))).collect::<Vec<_>>();
-    let query_rule = rule(atom(DB_QUERY, query_terms), where_.into());
+    let query_rule = rule(atom(QUERY, query_terms), where_.into());
     let program = Program::new([], [query_rule]);
     let kb = program.solve(trie, schema).await;
-    let query_result = kb.query(DB_QUERY);
+    let query_result = kb.query(QUERY);
     let mut found = FindResult::new();
     for row in query_result {
         let mut map = HashMap::new();

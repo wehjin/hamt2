@@ -76,3 +76,9 @@ impl From<&str> for Val {
         Self::String(s.to_string())
     }
 }
+
+impl From<String> for Val {
+    fn from(s: String) -> Self {
+        Self::String(s)
+    }
+}

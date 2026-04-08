@@ -4,8 +4,8 @@ use hamt2::db::{dat, ein, Db};
 use hamt2::db::{Attr, Datom};
 use hamt2::space::file::FileSpace;
 
-pub const ATTR_COUNT: Attr = Attr("counter", "count");
-pub const ATTR_GREETING: Attr = Attr("speech", "greeting");
+pub const ATTR_COUNT: Attr = Attr("counter/count");
+pub const ATTR_GREETING: Attr = Attr("speech/greeting");
 
 #[tokio::test]
 async fn file_db_works() {

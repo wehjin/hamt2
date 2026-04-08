@@ -1,20 +1,14 @@
-use crate::db::{Datom, Ent};
-use crate::pull::errors::DatomsError;
-use serde::Serialize;
-use serial::Serializer;
+use crate::db::{Attr, Datom, Db, Ein, Ent};
+use crate::space::Space;
+use crate::QueryError;
+use serde::{Deserialize, Serialize};
 
-pub mod db;
 pub mod errors;
-pub mod pull;
-pub mod register;
-pub mod serial;
-
 #[cfg(test)]
 mod tests;
 
-pub fn into_datoms<S: Serialize>(item: S, ent: Ent) -> Result<Vec<Datom>, DatomsError> {
-    let mut serializer = Serializer::new(ent);
-    let _ = item.serialize(&mut serializer)?;
-    let datoms = serializer.datoms;
-    Ok(datoms)
+pub trait Pull<'a>: Sized + Serialize + Deserialize<'a> {
+    fn attrs() -> Vec<Attr>;
+    fn into_datoms(self, ent: Ent) -> Vec<Datom>;
+    fn pull<T: Space>(db: &Db<T>, eid: Ein) -> impl Future<Output = Result<Self, QueryError>>;
 }

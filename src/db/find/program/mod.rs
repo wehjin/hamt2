@@ -57,11 +57,11 @@ mod tests {
     use crate::db::{datom, ent, val, Attr, Db};
     use crate::space::mem::MemSpace;
 
-    const ADVISOR: Attr = Attr("member", "advisor");
-    const NAME: Attr = Attr("member", "name");
-    const QUERY_1: Attr = Attr("query", "1");
-    const QUERY_2: Attr = Attr("query", "2");
-    const QUERY_3: Attr = Attr("query", "3");
+    const ADVISOR: Attr = Attr("member/advisor");
+    const NAME: Attr = Attr("member/name");
+    const QUERY_1: Attr = Attr("query/1");
+    const QUERY_2: Attr = Attr("query/2");
+    const QUERY_3: Attr = Attr("query/3");
 
     #[tokio::test]
     async fn program_test() -> anyhow::Result<()> {

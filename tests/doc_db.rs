@@ -4,7 +4,7 @@ use hamt2::space::doc::DocSpace;
 use iroh::SecretKey;
 use iroh_docs::NamespaceId;
 
-const ATTR_COUNT: Attr = Attr("counter", "count");
+const ATTR_COUNT: Attr = Attr("counter/count");
 
 #[tokio::test]
 async fn memory_doc_db_works() -> anyhow::Result<()> {

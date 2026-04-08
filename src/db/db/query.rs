@@ -36,7 +36,7 @@ mod tests {
     use futures::StreamExt;
     #[tokio::test]
     async fn ev_stream_test() -> anyhow::Result<()> {
-        const COUNT: Attr = Attr("counter", "count");
+        const COUNT: Attr = Attr("counter/count");
         let schema = vec![COUNT];
         let space = MemSpace::new();
         let mut db = Db::new(space, schema.clone()).await?;

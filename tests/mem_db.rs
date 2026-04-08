@@ -4,8 +4,8 @@ use hamt2::db::{Db, Txid};
 use hamt2::space::mem::MemSpace;
 use hamt2::LoadError;
 
-pub const ATTR_COUNT: Attr = Attr("counter", "count");
-pub const ATTR_GREETING: Attr = Attr("speech", "greeting");
+pub const ATTR_COUNT: Attr = Attr("counter/count");
+pub const ATTR_GREETING: Attr = Attr("speech/greeting");
 
 #[tokio::test]
 async fn load_works() {

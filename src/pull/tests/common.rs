@@ -1,7 +1,7 @@
 use crate::db::attr::Attr;
-use crate::db::Db;
 use crate::db::Ein;
-use crate::pull::pull::Pull;
+use crate::db::{datom, Datom, Db, Ent};
+use crate::pull::Pull;
 use crate::space::Space;
 use crate::QueryError;
 use serde::{Deserialize, Serialize};
@@ -16,10 +16,10 @@ pub struct Basis {
 }
 
 impl Basis {
-    const SYMBOL: Attr = Attr("basis", "symbol");
-    const SHARES: Attr = Attr("basis", "shares");
-    const PRICE_EACH: Attr = Attr("basis", "price_each");
-    const DIRECTION: Attr = Attr("basis", "direction");
+    const SYMBOL: Attr = Attr("basis/symbol");
+    const SHARES: Attr = Attr("basis/shares");
+    const PRICE_EACH: Attr = Attr("basis/price_each");
+    const DIRECTION: Attr = Attr("basis/direction");
 }
 
 impl<'a> Pull<'a> for Basis {
@@ -29,6 +29,15 @@ impl<'a> Pull<'a> for Basis {
             Self::SHARES,
             Self::PRICE_EACH,
             Self::DIRECTION,
+        ]
+    }
+
+    fn into_datoms(self, ent: Ent) -> Vec<Datom> {
+        vec![
+            datom(ent, Self::SYMBOL, self.symbol),
+            datom(ent, Self::SHARES, self.shares),
+            datom(ent, Self::PRICE_EACH, self.price_each),
+            datom(ent, Self::DIRECTION, self.direction),
         ]
     }
 

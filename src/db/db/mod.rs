@@ -13,4 +13,5 @@ pub struct Db<T: Space> {
     space: T,
 }
 
-pub const DB_QUERY: Attr = Attr("db", "query");
+pub const QUERY: Attr = Attr("db/query");
+pub const IDENT: Attr = Attr("db/ident");
