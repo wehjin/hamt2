@@ -19,6 +19,19 @@ impl Ent {
     }
 }
 
+impl From<Ein> for Ent {
+    fn from(eid: Ein) -> Self {
+        Ent::Id(eid)
+    }
+}
+
+impl From<Val> for Ent {
+    fn from(val: Val) -> Self {
+        let eid = Ein::from(val);
+        Ent::Id(eid)
+    }
+}
+
 impl From<i32> for Ent {
     fn from(i: i32) -> Self {
         Self::Id(Ein(i))
@@ -28,12 +41,5 @@ impl From<i32> for Ent {
 impl From<&'static str> for Ent {
     fn from(s: &'static str) -> Self {
         Self::Temp(s)
-    }
-}
-
-impl From<Val> for Ent {
-    fn from(val: Val) -> Self {
-        let eid = Ein::from(val);
-        Ent::Id(eid)
     }
 }

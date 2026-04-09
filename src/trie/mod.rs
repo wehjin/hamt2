@@ -60,7 +60,7 @@ mod tests {
             let mut trie = SpaceTrie::connect(&space).await.unwrap();
             trie = trie.insert(-1, MemValue::U32(42)).await.unwrap();
             trie = trie
-                .deep_insert([-2, 42], MemValue::U32(242))
+                .deep_insert([-2, 42], MemValue::U32(242), false)
                 .await
                 .unwrap();
             trie.commit(&mut space).await.unwrap();
@@ -91,7 +91,7 @@ mod tests {
             trie = trie.insert(-1, MemValue::U32(42)).await.unwrap();
             for a in 0..=32 {
                 trie = trie
-                    .deep_insert([3, a], MemValue::U32(a as u32))
+                    .deep_insert([3, a], MemValue::U32(a as u32), false)
                     .await
                     .unwrap();
             }
@@ -115,7 +115,7 @@ mod tests {
             for i in 0..35 {
                 let e = 5 + i;
                 trie = trie
-                    .deep_insert([e, 0], MemValue::U32(e as u32))
+                    .deep_insert([e, 0], MemValue::U32(e as u32), false)
                     .await
                     .unwrap();
             }
@@ -123,14 +123,14 @@ mod tests {
             for i in 0..35 {
                 let a = 3 + i;
                 trie = trie
-                    .deep_insert([4, a], MemValue::U32(a as u32))
+                    .deep_insert([4, a], MemValue::U32(a as u32), false)
                     .await
                     .unwrap();
             }
             // 3.x should be saturated.  So adding more should trigger at least on hybrid merge.
             for a in 32..=64 {
                 trie = trie
-                    .deep_insert([3, a], MemValue::U32(a as u32))
+                    .deep_insert([3, a], MemValue::U32(a as u32), false)
                     .await
                     .unwrap();
             }
@@ -190,7 +190,7 @@ mod tests {
         let mut trie = SpaceTrie::connect(&space).await.unwrap();
         for e in 0..=33 {
             trie = trie
-                .deep_insert([e, e], MemValue::U32(e as u32))
+                .deep_insert([e, e], MemValue::U32(e as u32), false)
                 .await
                 .unwrap();
         }

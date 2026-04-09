@@ -11,6 +11,7 @@ impl<T: Space> SpaceTrie<T> {
         self,
         key: [i32; N],
         value: MemValue,
+        replace_tail: bool,
     ) -> Result<Self, TransactError> {
         let deep_key = DeepKey::from(key);
         let last_index = N - 1;
@@ -19,11 +20,16 @@ impl<T: Space> SpaceTrie<T> {
         for i in 0..last_index {
             let key = deep_key[i].clone();
             let map_base = map_bases.get(&i).expect("map_base should exist");
-            let subtrie = match map_base.query_value(key, &self.reader).await? {
-                None => self.new_subtrie(),
-                Some(value) => self.to_subtrie_from_value(value).await?,
+            let subtrie_i = i + 1;
+            let subtrie = if replace_tail && subtrie_i == last_index {
+                self.new_subtrie()
+            } else {
+                match map_base.query_value(key, &self.reader).await? {
+                    None => self.new_subtrie(),
+                    Some(value) => self.to_subtrie_from_value(value).await?,
+                }
             };
-            map_bases.insert(i + 1, subtrie.unwrap());
+            map_bases.insert(subtrie_i, subtrie.unwrap());
         }
         let mut value = value;
         for i in (0..=last_index).rev() {
@@ -57,9 +63,7 @@ impl<T: Space> SpaceTrie<T> {
                     return Ok(None);
                 }
                 Some(value) => {
-                    if i == last_index {
-                        return Ok(Some(value));
-                    } else {
+                    if i < last_index {
                         let map_base = match value {
                             MemValue::MapBase(map_base) => map_base,
                             MemValue::U32(u32) => SpaceRoot::from_root_addr(u32, &self.reader)
@@ -67,6 +71,8 @@ impl<T: Space> SpaceTrie<T> {
                                 .into_trie_map_base(),
                         };
                         current_map_base = map_base;
+                    } else {
+                        return Ok(Some(value));
                     }
                 }
             }

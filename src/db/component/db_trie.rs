@@ -1,4 +1,5 @@
 use crate::db::attr_table::AttrTable;
+use crate::db::cardinality::Cardinality;
 use crate::db::component::key::{KEY_AEVT, KEY_EAVT, KEY_MAX_TXID};
 use crate::db::component::val_table;
 use crate::db::db::QUERY;
@@ -26,14 +27,20 @@ pub(crate) async fn add<T: Space>(
     val: Val,
     t: &Txid,
 ) -> Result<SpaceTrie<T>, TransactError> {
+    let attribute = &attr_map[attr];
     let eid = ein.to_i32();
-    let aid = attr_map[attr].ein().to_i32();
+    let aid = attribute.ein().to_i32();
     let (mut trie, vid) = val_table::insert(trie, val).await?;
     let tid = t.u32();
     let eavt_key = [KEY_EAVT, eid, aid, vid.to_id()];
     let aevt_key = [KEY_AEVT, aid, eid, vid.to_id()];
-    trie = trie.deep_insert(eavt_key, MemValue::from(tid)).await?;
-    trie = trie.deep_insert(aevt_key, MemValue::from(tid)).await?;
+    let replace_tail = attribute.cardinality() == Cardinality::One;
+    trie = trie
+        .deep_insert(eavt_key, MemValue::from(tid), replace_tail)
+        .await?;
+    trie = trie
+        .deep_insert(aevt_key, MemValue::from(tid), replace_tail)
+        .await?;
     Ok(trie)
 }
 
@@ -114,7 +121,7 @@ fn evid_stream<T: Space>(
         while let Some((eid, vt_trie)) = evt_stream.next().await {
             let vt_stream = vt_trie.u32_stream();
             pin_mut!(vt_stream);
-            if let Some((vid, _)) = vt_stream.next().await {
+            while let Some((vid, _)) = vt_stream.next().await {
                 yield (eid, vid);
             }
         }

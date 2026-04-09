@@ -1,5 +1,5 @@
-use crate::db::component::u31::{U31Builder, U31Streamer};
 use crate::db::component::key::KEY_VAL_TABLE;
+use crate::db::component::u31::{U31Builder, U31Streamer};
 use crate::db::{Val, Vid};
 use crate::space::Space;
 use crate::trie::mem::value::MemValue;
@@ -9,10 +9,10 @@ use redb::Value;
 
 #[cfg(test)]
 mod tests {
-	use super::*;
-	use crate::space::mem::MemSpace;
+    use super::*;
+    use crate::space::mem::MemSpace;
 
-	#[tokio::test]
+    #[tokio::test]
     async fn insert_and_query() {
         let space = MemSpace::new();
         let mut trie = SpaceTrie::connect(&space)
@@ -124,19 +124,21 @@ async fn insert_bytes<T: Space>(
     let stream = U31Streamer::new(bytes);
     for (key, value) in stream {
         trie = trie
-            .deep_insert([KEY_VAL_TABLE, hash, key], MemValue::U32(value))
+            .deep_insert([KEY_VAL_TABLE, hash, key], MemValue::U32(value), false)
             .await?;
     }
     trie = trie
         .deep_insert(
             [KEY_VAL_TABLE, hash, KEY_LEN],
             MemValue::U32(bytes.len() as u32),
+            false,
         )
         .await?;
     trie = trie
         .deep_insert(
             [KEY_VAL_TABLE, hash, KEY_VAL_TYPE],
             MemValue::U32(bytes_type as u32),
+            false,
         )
         .await?;
     Ok(trie)
