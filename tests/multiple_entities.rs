@@ -12,7 +12,7 @@ async fn load_works() {
     let space = Db::new(MemSpace::new(), vec![ATTR_COUNT])
         .await
         .expect("new db")
-        .transact(vec![datom(ent(1), ATTR_COUNT, dat(Val::U32(1)))])
+        .transact(vec![datom::add(ent(1), ATTR_COUNT, dat(Val::U32(1)))])
         .await
         .expect("transact")
         .close();
@@ -41,7 +41,7 @@ async fn transact_and_pull_simple() {
         .await
         .expect("new db");
     let db = db
-        .transact(vec![datom(ent(15), ATTR_COUNT, dat(Val::U32(15)))])
+        .transact(vec![datom::add(ent(15), ATTR_COUNT, dat(Val::U32(15)))])
         .await
         .expect("transact");
     let v15 = db.find_val(ein(15), ATTR_COUNT).await.expect("find_val");
@@ -54,7 +54,7 @@ async fn entities_with_attr_works_for_single_entity() {
         .await
         .expect("new db");
     let db = db
-        .transact(vec![datom(ent(15), ATTR_COUNT, dat(Val::U32(15)))])
+        .transact(vec![datom::add(ent(15), ATTR_COUNT, dat(Val::U32(15)))])
         .await
         .expect("transact");
 
@@ -72,8 +72,8 @@ async fn entities_with_attr_works_for_two_entities() {
         .expect("new db");
     let db = db
         .transact(vec![
-            datom(ent(3), ATTR_COUNT, dat(Val::U32(4))),
-            datom(ent(5), ATTR_COUNT, dat(Val::U32(6))),
+            datom::add(ent(3), ATTR_COUNT, dat(Val::U32(4))),
+            datom::add(ent(5), ATTR_COUNT, dat(Val::U32(6))),
         ])
         .await
         .expect("transact");
@@ -92,11 +92,19 @@ async fn transact_assigns_id_to_ent() {
         .await
         .expect("new db");
     db = db
-        .transact(vec![datom(ent("new_count"), ATTR_COUNT, dat(Val::U32(35)))])
+        .transact(vec![datom::add(
+            ent("new_count"),
+            ATTR_COUNT,
+            dat(Val::U32(35)),
+        )])
         .await
         .expect("transact");
     db = db
-        .transact(vec![datom(ent("new_count"), ATTR_COUNT, dat(Val::U32(35)))])
+        .transact(vec![datom::add(
+            ent("new_count"),
+            ATTR_COUNT,
+            dat(Val::U32(35)),
+        )])
         .await
         .expect("transact");
 
@@ -108,7 +116,7 @@ async fn transact_assigns_id_to_ent() {
 }
 
 #[tokio::test]
-async fn transact_and_pull_works() {
+async fn test_multiple_entities() {
     // Construct a new database.
     let db = Db::new(MemSpace::new(), vec![ATTR_COUNT])
         .await
@@ -118,8 +126,8 @@ async fn transact_and_pull_works() {
     // Add a few datoms.
     let db = db
         .transact(vec![
-            datom(ent(15), ATTR_COUNT, dat(Val::U32(15))),
-            datom(ent(5), ATTR_COUNT, dat(Val::U32(5))),
+            datom::add(ent(15), ATTR_COUNT, dat(Val::U32(15))),
+            datom::add(ent(5), ATTR_COUNT, dat(Val::U32(5))),
         ])
         .await
         .expect("transact");

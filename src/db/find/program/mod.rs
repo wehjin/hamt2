@@ -71,11 +71,11 @@ mod tests {
             let mut db = Db::new(MemSpace::new(), schema.clone()).await?;
             db = db
                 .transact([
-                    datom("a", NAME, val("Alice")),
-                    datom("b", NAME, val("Bob")),
-                    datom("c", NAME, val("Clark")),
-                    datom("a", ADVISOR, ent("c")),
-                    datom("b", ADVISOR, ent("c")),
+                    datom::add("a", NAME, val("Alice")),
+                    datom::add("b", NAME, val("Bob")),
+                    datom::add("c", NAME, val("Clark")),
+                    datom::add("a", ADVISOR, ent("c")),
+                    datom::add("b", ADVISOR, ent("c")),
                 ])
                 .await?;
             space = db.close();

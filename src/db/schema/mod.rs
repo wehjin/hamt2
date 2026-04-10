@@ -2,8 +2,8 @@ use crate::db::attr_loader::AttributeLoader;
 use crate::db::attr_table::AttrTable;
 use crate::db::component::db_trie;
 use crate::db::find::Find;
-use crate::db::Db;
 use crate::db::{Attr, Txid};
+use crate::db::{Db, Dir};
 use crate::space::Space;
 use crate::trie::SpaceTrie;
 use crate::{db, LoadError, TransactError};
@@ -44,21 +44,23 @@ impl Schema {
     ) -> Result<SpaceTrie<T>, TransactError> {
         for (_, attribute) in self.attr_table.iter() {
             let ein = attribute.ein;
-            trie = db_trie::add(
+            trie = db_trie::with_update(
                 trie,
                 &self.attr_table,
                 ein,
                 db::IDENT,
                 attribute.ident().into(),
+                Dir::In,
                 &txid,
             )
             .await?;
-            trie = db_trie::add(
+            trie = db_trie::with_update(
                 trie,
                 &self.attr_table,
                 ein,
                 db::CARDINALITY,
                 attribute.cardinality().into(),
+                Dir::In,
                 &txid,
             )
             .await?

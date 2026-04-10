@@ -42,8 +42,8 @@ mod tests {
         let mut db = Db::new(space, schema.clone()).await?;
         db = db
             .transact(vec![
-                datom(ent(10), COUNT, dat(Val::from(10))),
-                datom(ent(11), COUNT, dat(Val::from(11))),
+                datom::add(ent(10), COUNT, dat(Val::from(10))),
+                datom::add(ent(11), COUNT, dat(Val::from(11))),
             ])
             .await?;
 

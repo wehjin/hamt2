@@ -1,7 +1,7 @@
-use hamt2::db::Ent;
+use hamt2::db::Attr;
 use hamt2::db::Val;
 use hamt2::db::{dat, ein, Db};
-use hamt2::db::{Attr, Datom};
+use hamt2::db::{datom, Ent};
 use hamt2::space::file::FileSpace;
 
 pub const ATTR_COUNT: Attr = Attr("counter/count");
@@ -14,7 +14,7 @@ async fn file_db_works() {
         let space = FileSpace::new(&file).await.expect("create file space");
         let db = Db::new(space, vec![ATTR_COUNT]).await.expect("new db");
         let db = db
-            .transact(vec![Datom::Add(Ent::from(1), ATTR_COUNT, dat(Val::U32(1)))])
+            .transact(vec![datom::add(Ent::from(1), ATTR_COUNT, dat(Val::U32(1)))])
             .await
             .expect("transact");
         assert_eq!(
@@ -40,7 +40,7 @@ async fn file_db_strings_work() {
         let space = FileSpace::new(&file).await.expect("create file space");
         let db = Db::new(space, schema.clone()).await.expect("new db");
         let db = db
-            .transact(vec![Datom::Add(
+            .transact(vec![datom::add(
                 Ent::from(1),
                 ATTR_GREETING,
                 dat(Val::from("hello")),

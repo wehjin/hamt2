@@ -1,6 +1,6 @@
-use crate::db::component::MaxEid;
-use crate::db::component::ent_eid::EntEid;
 use crate::db::component::db_trie;
+use crate::db::component::ent_eid::EntEid;
+use crate::db::component::MaxEid;
 use crate::db::{val, Dat, Datom, Db, Ent};
 use crate::space::Space;
 use crate::trie::SpaceTrie;
@@ -14,6 +14,7 @@ impl<T: Space> Db<T> {
             true => Ok(self),
             false => {
                 let tx = self.max_tx().await?;
+
                 let Self {
                     schema: attr_map,
                     mut space,
@@ -21,25 +22,23 @@ impl<T: Space> Db<T> {
                 } = self;
                 let ent_eid = EntEid::new(&datoms, &mut max_eid);
                 for datom in datoms {
-                    trie = match datom {
-                        Datom::Add(ent, attr, dat) => {
+                    let eid = match datom.ent {
+                        Ent::Id(eid) => eid,
+                        Ent::Temp(name) => ent_eid[name],
+                    };
+                    let attr = datom.attr;
+                    let val = match datom.dat {
+                        Dat::Val(val) => val,
+                        Dat::Ent(ent) => {
                             let eid = match ent {
                                 Ent::Id(eid) => eid,
                                 Ent::Temp(name) => ent_eid[name],
                             };
-                            let val = match dat {
-                                Dat::Val(val) => val,
-                                Dat::Ent(ent) => {
-                                    let eid = match ent {
-                                        Ent::Id(eid) => eid,
-                                        Ent::Temp(name) => ent_eid[name],
-                                    };
-                                    val(eid)
-                                }
-                            };
-                            db_trie::add(trie, &attr_map, eid, attr, val, &tx).await?
+                            val(eid)
                         }
-                    }
+                    };
+                    let dir = datom.dir;
+                    trie = db_trie::with_update(trie, &attr_map, eid, attr, val, dir, &tx).await?;
                 }
                 trie = db_trie::set_max_tx(trie, tx + 1).await?;
                 trie = max_eid.write(trie).await?;

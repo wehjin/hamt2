@@ -1,6 +1,4 @@
-use crate::db::attr::Attr;
-use crate::db::Ein;
-use crate::db::{datom, Datom, Db, Ent};
+use crate::db::{datom, Attr, Datom, Db, Ein, Ent};
 use crate::pull::Pull;
 use crate::space::Space;
 use crate::QueryError;
@@ -34,10 +32,10 @@ impl<'a> Pull<'a> for Basis {
 
     fn into_datoms(self, ent: Ent) -> Vec<Datom> {
         vec![
-            datom(ent, Self::SYMBOL, self.symbol),
-            datom(ent, Self::SHARES, self.shares),
-            datom(ent, Self::PRICE_EACH, self.price_each),
-            datom(ent, Self::DIRECTION, self.direction),
+            datom::add(ent, Self::SYMBOL, self.symbol),
+            datom::add(ent, Self::SHARES, self.shares),
+            datom::add(ent, Self::PRICE_EACH, self.price_each),
+            datom::add(ent, Self::DIRECTION, self.direction),
         ]
     }
 

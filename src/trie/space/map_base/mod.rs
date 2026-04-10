@@ -26,7 +26,7 @@ impl SpaceMapBase {
         for slot in base.slots {
             match slot {
                 MemSlot::KeyValue(key, value) => {
-                    let u32 = value.into_u32(extend)?;
+                    let u32 = value.save(extend)?;
                     let slot_value = SpaceKeyValue::new(key, u32).into_slot_value();
                     slot_values.push(slot_value);
                 }

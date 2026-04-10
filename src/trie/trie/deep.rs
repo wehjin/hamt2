@@ -10,7 +10,7 @@ impl<T: Space> SpaceTrie<T> {
     pub async fn deep_insert<const N: usize>(
         self,
         key: [i32; N],
-        value: MemValue,
+        value: impl Into<MemValue>,
         replace_tail: bool,
     ) -> Result<Self, TransactError> {
         let deep_key = DeepKey::from(key);
@@ -31,7 +31,7 @@ impl<T: Space> SpaceTrie<T> {
             };
             map_bases.insert(subtrie_i, subtrie.unwrap());
         }
-        let mut value = value;
+        let mut value = value.into();
         for i in (0..=last_index).rev() {
             let key = deep_key[i].clone();
             let map_base = map_bases.get(&i).expect("map_base should exist");

@@ -1,4 +1,4 @@
-use crate::db::attr::Attr;
+use crate::db::Attr;
 use thiserror::Error;
 
 #[derive(Error, Debug)]

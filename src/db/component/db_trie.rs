@@ -2,6 +2,7 @@ use crate::db::attr_table::AttrTable;
 use crate::db::cardinality::Cardinality;
 use crate::db::component::key::{KEY_AEVT, KEY_EAVT, KEY_MAX_TXID};
 use crate::db::component::val_table;
+use crate::db::core::dir::Dir;
 use crate::db::db::QUERY;
 use crate::db::find::program::atom::{atom, Atom};
 use crate::db::find::program::rule::rule;
@@ -9,7 +10,7 @@ use crate::db::find::program::term::term;
 use crate::db::find::program::var::var;
 use crate::db::find::program::Program;
 use crate::db::find_result::FindResult;
-use crate::db::{Attr, Txid, Val, Vid};
+use crate::db::{txid, Attr, Txid, Val, Vid};
 use crate::db::{Ein, Schema};
 use crate::space::Space;
 use crate::trie::mem::value::MemValue;
@@ -19,28 +20,54 @@ use async_stream::stream;
 use futures::{pin_mut, StreamExt};
 use std::collections::HashMap;
 
-pub(crate) async fn add<T: Space>(
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct Value {
+    pub id: Txid,
+    pub dir: Dir,
+}
+impl Into<MemValue> for Value {
+    fn into(self) -> MemValue {
+        debug_assert!(self.id.u32() <= 0x0FFF_FFFF);
+        let id_part = 0x0FFF_FFFF & self.id.u32();
+        let dir_part = match self.dir {
+            Dir::Out => 0x0000_0000,
+            Dir::In => 0x1000_0000,
+        };
+        MemValue::U32(id_part | dir_part)
+    }
+}
+
+impl From<u32> for Value {
+    fn from(combined: u32) -> Self {
+        let id = txid(combined & 0x0FFF_FFFF);
+        let dir = if (combined & 0xF000_0000) == 0x1000_0000 {
+            Dir::In
+        } else {
+            Dir::Out
+        };
+        Value { id, dir }
+    }
+}
+
+pub(crate) async fn with_update<T: Space>(
     trie: SpaceTrie<T>,
     attr_map: &AttrTable,
     ein: Ein,
     attr: Attr,
     val: Val,
-    t: &Txid,
+    dir: Dir,
+    txid: &Txid,
 ) -> Result<SpaceTrie<T>, TransactError> {
     let attribute = &attr_map[attr];
     let eid = ein.to_i32();
     let aid = attribute.ein().to_i32();
     let (mut trie, vid) = val_table::insert(trie, val).await?;
-    let tid = t.u32();
     let eavt_key = [KEY_EAVT, eid, aid, vid.to_id()];
     let aevt_key = [KEY_AEVT, aid, eid, vid.to_id()];
     let replace_tail = attribute.cardinality() == Cardinality::One;
-    trie = trie
-        .deep_insert(eavt_key, MemValue::from(tid), replace_tail)
-        .await?;
-    trie = trie
-        .deep_insert(aevt_key, MemValue::from(tid), replace_tail)
-        .await?;
+    let tx_value = Value { id: *txid, dir };
+    trie = trie.deep_insert(eavt_key, tx_value, replace_tail).await?;
+    trie = trie.deep_insert(aevt_key, tx_value, replace_tail).await?;
     Ok(trie)
 }
 
@@ -121,8 +148,11 @@ fn evid_stream<T: Space>(
         while let Some((eid, vt_trie)) = evt_stream.next().await {
             let vt_stream = vt_trie.u32_stream();
             pin_mut!(vt_stream);
-            while let Some((vid, _)) = vt_stream.next().await {
-                yield (eid, vid);
+            while let Some((vid, tx_u32)) = vt_stream.next().await {
+                let tx_value = Value::from(tx_u32);
+                if tx_value.dir == Dir::In {
+                    yield (eid, vid);
+                }
             }
         }
     }

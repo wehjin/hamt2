@@ -1,5 +1,9 @@
 use std::ops::Add;
 
+pub fn txid(from: impl Into<Txid>) -> Txid {
+    from.into()
+}
+
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Txid(u32);
 

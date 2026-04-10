@@ -3,6 +3,7 @@ mod eid;
 pub mod find_result;
 pub mod txid;
 pub mod val;
+pub mod dir;
 
 pub use datom::attr::*;
 pub use datom::dat::*;

@@ -12,7 +12,7 @@ pub enum MemValue {
 }
 
 impl MemValue {
-    pub fn into_u32<T: Space>(self, extend: &mut space::Extend<T>) -> Result<u32, TransactError> {
+    pub fn save<T: Space>(self, extend: &mut space::Extend<T>) -> Result<u32, TransactError> {
         match self {
             MemValue::U32(v) => Ok(v),
             MemValue::MapBase(map_base) => {
