@@ -6,6 +6,7 @@ use crate::trie::core::map_base::TrieMapBase;
 use crate::trie::mem::base::MemBase;
 use crate::trie::mem::slot::MemSlot;
 use crate::trie::mem::value::MemValue;
+use crate::trie::space::key_value::SpaceKeyValue;
 use crate::trie::space::slots::SpaceSlot;
 use crate::{space, QueryError, TransactError};
 
@@ -68,7 +69,7 @@ impl SpaceMapBase {
     }
     pub fn assert(slot_value: SlotValue) -> Self {
         let space_slot = SpaceSlot::assert(slot_value);
-        let Some(map_base) = space_slot.to_map_base() else {
+        let Some(map_base) = space_slot.try_map_base() else {
             panic!(
                 "Slot value should be a map base, instead: {:?}",
                 &slot_value
@@ -86,10 +87,10 @@ impl SpaceMapBase {
     ) -> Result<Option<MemValue>, QueryError> {
         let slot = self.to_slot(key, reader).await?;
         if let Some(slot) = slot {
-            if let Some(key_value) = slot.to_key_value() {
-                let value = key_value.query_value(key, reader)?;
+            if let Some(key_value) = slot.try_key_value() {
+                let value = key_value.query_value(key);
                 return Ok(value);
-            } else if let Some(map_base) = slot.to_map_base() {
+            } else if let Some(map_base) = slot.try_map_base() {
                 let value = Box::pin(map_base.query_value(key.next(), reader)).await?;
                 return Ok(value);
             }
@@ -102,10 +103,10 @@ impl SpaceMapBase {
         let mut mem_slots = Vec::new();
         for i in 0..map.slot_count() {
             let slot = base.read_slot(reader, i).await?;
-            if let Some(key_value) = slot.to_key_value() {
+            if let Some(key_value) = slot.try_key_value() {
                 let mem_slot = key_value.to_mem_slot();
                 mem_slots.push(mem_slot);
-            } else if let Some(map_base) = slot.to_map_base() {
+            } else if let Some(map_base) = slot.try_map_base() {
                 let slot_value = map_base.into_slot_value();
                 let map_base = TrieMapBase::Space(slot_value);
                 let mem_slot = MemSlot::MapBase(map_base);
@@ -151,48 +152,6 @@ impl SpaceMapBase {
             let base = self.extract_base();
             let slot = base.read_slot(reader, base_index).await?;
             Ok(Some(slot))
-        } else {
-            Ok(None)
-        }
-    }
-}
-
-pub struct SpaceKeyValue(SlotValue);
-
-impl SpaceKeyValue {
-    pub fn new(key: i32, value: u32) -> Self {
-        let slot_value = SpaceSlot::from_key_value(key, value).into_slot_value();
-        Self(slot_value)
-    }
-    pub fn into_slot_value(self) -> SlotValue {
-        self.0
-    }
-
-    pub fn to_key(&self) -> i32 {
-        self.0.left() as i32
-    }
-    pub fn to_value(&self) -> u32 {
-        self.0.right() & 0x7fffffff
-    }
-    pub fn to_key_and_value(&self, _reader: &impl Read) -> Result<(i32, MemValue), QueryError> {
-        let key = self.to_key();
-        let value = self.to_value();
-        Ok((key, MemValue::U32(value)))
-    }
-    pub fn to_mem_slot(self) -> MemSlot {
-        let key = self.to_key();
-        let value = self.to_value();
-        let slot = MemSlot::KeyValue(key, MemValue::U32(value));
-        slot
-    }
-    pub fn query_value(
-        &self,
-        key: TrieKey,
-        _reader: &impl Read,
-    ) -> Result<Option<MemValue>, QueryError> {
-        if key.i32() == self.to_key() {
-            let value = self.to_value();
-            Ok(Some(MemValue::U32(value)))
         } else {
             Ok(None)
         }

@@ -46,12 +46,11 @@ impl QueryKeysValues for SpaceMapBase {
                     .read_slot(&current.base_addr, current.slot_offset)
                     .await?;
                 let space_slot = SpaceSlot::assert(slot);
-                if let Some(key_value) = space_slot.to_key_value() {
-                    let key = key_value.to_key();
-                    let value = key_value.to_value();
+                if let Some(key_value) = space_slot.try_key_value() {
+                    let (key, value) = key_value.to_key_and_value();
                     out.push((key, MemValue::U32(value)));
                     None
-                } else if let Some(map_base) = space_slot.to_map_base() {
+                } else if let Some(map_base) = space_slot.try_map_base() {
                     let slot_count = map_base.to_map().slot_count();
                     if slot_count > 0 {
                         Some(Job {
