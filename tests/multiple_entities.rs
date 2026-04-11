@@ -1,5 +1,5 @@
 use hamt2::db::find::{AnyAttrIgnore, Find};
-use hamt2::db::{dat, datom, ein, ent, Attr, Val};
+use hamt2::db::{datom, ein, ent, val, Attr};
 use hamt2::db::{Db, Txid};
 use hamt2::space::mem::MemSpace;
 use hamt2::LoadError;
@@ -12,13 +12,13 @@ async fn load_works() {
     let space = Db::new(MemSpace::new(), vec![ATTR_COUNT])
         .await
         .expect("new db")
-        .transact(vec![datom::add(ent(1), ATTR_COUNT, dat(Val::U32(1)))])
+        .transact([datom::add(ein(1), ATTR_COUNT, val(1))])
         .await
         .expect("transact")
         .close();
     let db = Db::load(space, vec![ATTR_COUNT]).await.expect("load db");
     assert_eq!(
-        Some(Val::U32(1)),
+        Some(val(1)),
         db.find_val(ein(1), ATTR_COUNT).await.expect("find_val")
     );
 }
@@ -41,11 +41,11 @@ async fn transact_and_pull_simple() {
         .await
         .expect("new db");
     let db = db
-        .transact(vec![datom::add(ent(15), ATTR_COUNT, dat(Val::U32(15)))])
+        .transact([datom::add(ein(15), ATTR_COUNT, val(15))])
         .await
         .expect("transact");
     let v15 = db.find_val(ein(15), ATTR_COUNT).await.expect("find_val");
-    assert_eq!(Some(Val::U32(15)), v15);
+    assert_eq!(Some(val(15)), v15);
 }
 
 #[tokio::test]
@@ -54,7 +54,7 @@ async fn entities_with_attr_works_for_single_entity() {
         .await
         .expect("new db");
     let db = db
-        .transact(vec![datom::add(ent(15), ATTR_COUNT, dat(Val::U32(15)))])
+        .transact([datom::add(ein(15), ATTR_COUNT, val(15))])
         .await
         .expect("transact");
 
@@ -71,9 +71,9 @@ async fn entities_with_attr_works_for_two_entities() {
         .await
         .expect("new db");
     let db = db
-        .transact(vec![
-            datom::add(ent(3), ATTR_COUNT, dat(Val::U32(4))),
-            datom::add(ent(5), ATTR_COUNT, dat(Val::U32(6))),
+        .transact([
+            datom::add(ein(3), ATTR_COUNT, val(4)),
+            datom::add(ein(5), ATTR_COUNT, val(6)),
         ])
         .await
         .expect("transact");
@@ -87,32 +87,17 @@ async fn entities_with_attr_works_for_two_entities() {
 }
 
 #[tokio::test]
-async fn transact_assigns_id_to_ent() {
-    let mut db = Db::new(MemSpace::new(), vec![ATTR_COUNT])
-        .await
-        .expect("new db");
-    db = db
-        .transact(vec![datom::add(
-            ent("new_count"),
-            ATTR_COUNT,
-            dat(Val::U32(35)),
-        )])
-        .await
-        .expect("transact");
-    db = db
-        .transact(vec![datom::add(
-            ent("new_count"),
-            ATTR_COUNT,
-            dat(Val::U32(35)),
-        )])
-        .await
-        .expect("transact");
-
-    let eins = AnyAttrIgnore::new(ATTR_COUNT)
-        .apply_db(&db)
-        .await
-        .expect("find");
+async fn transact_assigns_id_to_ent() -> anyhow::Result<()> {
+    let db = Db::new(MemSpace::new(), vec![ATTR_COUNT]).await?;
+    let db = db
+        .transact([datom::add(ent("new_count"), ATTR_COUNT, val(35))])
+        .await?;
+    let db = db
+        .transact([datom::add(ent("new_count"), ATTR_COUNT, val(35))])
+        .await?;
+    let eins = AnyAttrIgnore::new(ATTR_COUNT).apply_db(&db).await?;
     assert_eq!(2, eins.len());
+    Ok(())
 }
 
 #[tokio::test]
@@ -125,9 +110,9 @@ async fn test_multiple_entities() {
 
     // Add a few datoms.
     let db = db
-        .transact(vec![
-            datom::add(ent(15), ATTR_COUNT, dat(Val::U32(15))),
-            datom::add(ent(5), ATTR_COUNT, dat(Val::U32(5))),
+        .transact([
+            datom::add(ein(15), ATTR_COUNT, val(15)),
+            datom::add(ein(5), ATTR_COUNT, val(5)),
         ])
         .await
         .expect("transact");
@@ -136,10 +121,10 @@ async fn test_multiple_entities() {
     assert_eq!(Txid::FLOOR + 1, max_tx);
 
     let v15 = db.find_val(ein(15), ATTR_COUNT).await.expect("find_val");
-    assert_eq!(Some(Val::U32(15)), v15);
+    assert_eq!(Some(val(15)), v15);
 
     let v5 = db.find_val(ein(5), ATTR_COUNT).await.expect("find_val");
-    assert_eq!(Some(Val::U32(5)), v5);
+    assert_eq!(Some(val(5)), v5);
 
     // Discover the entities with an attribute.
     let mut eins = AnyAttrIgnore::new(ATTR_COUNT)
