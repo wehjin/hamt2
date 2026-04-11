@@ -9,10 +9,12 @@ pub fn ein(from: impl Into<Ein>) -> Ein {
 pub struct Ein(pub i32);
 
 impl Ein {
-    pub const DB_IDENT: Self = Self(-1);
-    pub const DB_CARDINALITY: Self = Self(-2);
-    
+    pub const DB_IDENT: Self = Self(0);
+    pub const DB_CARDINALITY: Self = Self(1);
+    pub const DB_MAX: Self = Self(2);
+
     pub fn to_i32(&self) -> i32 {
+        debug_assert!(self.0 >= 0);
         self.0
     }
 }
@@ -25,12 +27,15 @@ impl AddAssign<i32> for Ein {
 
 impl From<Val> for Ein {
     fn from(val: Val) -> Self {
-        Ein(val.u32() as i32)
+        let ein = val.u32() as i32;
+        debug_assert!(ein >= 0);
+        Ein(ein)
     }
 }
 
 impl From<i32> for Ein {
     fn from(i: i32) -> Self {
+        debug_assert!(i >= 0);
         Ein(i)
     }
 }

@@ -1,9 +1,9 @@
-mod max_eid;
-pub(crate) mod u31;
-pub(crate) mod val_table;
+pub mod db_trie;
 pub mod ent_eid;
 pub mod key;
-pub mod db_trie;
+mod max_eid;
+pub(crate) mod u32;
+pub(crate) mod val_table;
 pub mod vid;
 
 pub(crate) use max_eid::*;

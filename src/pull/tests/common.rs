@@ -51,7 +51,7 @@ impl<'a> Pull<'a> for Basis {
             symbol: symbol.as_str().to_string(),
             shares: shares.u32(),
             price_each: price_each.u32(),
-            direction: direction.u32() as i32,
+            direction: direction.i32(),
         })
     }
 }

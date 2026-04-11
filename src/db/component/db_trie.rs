@@ -33,7 +33,8 @@ impl Into<MemValue> for Value {
             Dir::Out => 0x0000_0000,
             Dir::In => 0x1000_0000,
         };
-        MemValue::U32(id_part | dir_part)
+        let combined = id_part | dir_part;
+        MemValue::U32(combined)
     }
 }
 

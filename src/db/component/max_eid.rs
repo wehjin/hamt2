@@ -11,7 +11,7 @@ pub struct MaxEid {
 }
 
 impl MaxEid {
-    pub fn new(eid: Ein) -> Self {
+    fn new(eid: Ein) -> Self {
         Self {
             start: eid,
             current: eid,
@@ -21,7 +21,7 @@ impl MaxEid {
         if let Some(MemValue::U32(value)) = trie.query_value(KEY_MAX_EID).await? {
             Ok(Self::new(Ein(value as i32)))
         } else {
-            Ok(Self::new(Ein(0)))
+            Ok(Self::new(Ein::DB_MAX))
         }
     }
     pub fn take(&mut self, count: usize) -> Vec<Ein> {

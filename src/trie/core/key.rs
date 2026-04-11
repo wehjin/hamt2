@@ -35,6 +35,7 @@ impl TrieKey {
     }
 
     pub fn new(value: i32) -> Self {
+        debug_assert!(value >= 0);
         let level = 1;
         let hash = hash_key(value as u32, level);
         let hash_index = 0;

@@ -17,11 +17,9 @@ impl SpaceSlot {
     }
 
     pub fn from_key_value(key: i32, value: u32) -> Self {
-        let left = { key as u32 };
-        let right = {
-            debug_assert_eq!(0, value & 0x8000_0000);
-            value & 0x7fff_ffff
-        };
+        let left = value;
+        debug_assert!(key >= 0);
+        let right = key as u32;
         let slot_value = SlotValue::from((left, right));
         Self(slot_value)
     }
@@ -30,8 +28,8 @@ impl SpaceSlot {
     }
     pub fn to_key_and_value(&self) -> (i32, u32) {
         debug_assert!(self.is_key_value());
-        let key = self.0.left() as i32;
-        let value = self.0.right() & 0x07fff_ffff;
+        let value = self.0.left();
+        let key = (self.0.right() & 0x07fff_ffff) as i32;
         (key, value)
     }
 
@@ -58,7 +56,7 @@ impl SpaceSlot {
     pub fn is_map_base(&self) -> bool {
         (self.0.right() & 0x80000000) == 0x80000000
     }
-    
+
     pub fn try_map_base(&self) -> Option<SpaceMapBase> {
         if self.is_map_base() {
             let map = self.0.left();

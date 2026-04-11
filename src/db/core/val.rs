@@ -12,6 +12,12 @@ pub enum Val {
 }
 
 impl Val {
+    pub fn i32(&self) -> i32 {
+        match self {
+            Val::U32(v) => *v as i32,
+            Val::String(_) => panic!("Not a i32"),
+        }
+    }
     pub fn u32(&self) -> u32 {
         match self {
             Val::U32(v) => *v,

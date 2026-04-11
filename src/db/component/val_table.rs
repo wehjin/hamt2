@@ -1,51 +1,11 @@
 use crate::db::component::key::KEY_VAL_TABLE;
-use crate::db::component::u31::{U31Builder, U31Streamer};
+use crate::db::component::u32;
 use crate::db::{Val, Vid};
 use crate::space::Space;
 use crate::trie::mem::value::MemValue;
 use crate::trie::SpaceTrie;
 use crate::{hash, QueryError, TransactError};
 use redb::Value;
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::space::mem::MemSpace;
-
-    #[tokio::test]
-    async fn insert_and_query() {
-        let space = MemSpace::new();
-        let mut trie = SpaceTrie::connect(&space)
-            .await
-            .expect("Failed to connect to MemSpace");
-        let mut vids = Vec::new();
-        let mut vals = Vec::new();
-        for i in 0..100 {
-            let val = Val::U32(i);
-            vals.push(val.clone());
-            let (new_trie, vid) = insert(trie, val).await.expect("Failed to insert");
-            trie = new_trie;
-            vids.push(vid);
-        }
-        for (vid, val) in vids.into_iter().zip(vals) {
-            let table_val = query(&trie, vid).await.expect("Failed to query");
-            assert_eq!(Some(val), table_val);
-        }
-    }
-
-    #[tokio::test]
-    async fn string_insert_and_query() {
-        let space = MemSpace::new();
-        let trie = SpaceTrie::connect(&space)
-            .await
-            .expect("Failed to connect to MemSpace");
-        let (trie, vid) = insert(trie, Val::String("hello".into()))
-            .await
-            .expect("Failed to insert");
-        let val = query(&trie, vid).await.expect("Failed to query");
-        assert_eq!(Some(Val::String("hello".into())), val);
-    }
-}
 
 pub async fn insert<T: Space>(
     trie: SpaceTrie<T>,
@@ -87,13 +47,13 @@ pub async fn query<T: Space>(trie: &SpaceTrie<T>, vid: Vid) -> Result<Option<Val
     match find_hash_trie(trie, vid.to_id()).await? {
         None => Ok(None),
         Some(val_trie) => {
-            let Some(MemValue::U32(bytes_len)) = val_trie.query_value(KEY_LEN).await? else {
+            let Some(MemValue::U32(bytes_len)) = val_trie.query_value(SUBKEY_LEN).await? else {
                 panic!("Unexpected MemValue variant")
             };
-            let Some(MemValue::U32(val_type)) = val_trie.query_value(KEY_VAL_TYPE).await? else {
+            let Some(MemValue::U32(val_type)) = val_trie.query_value(SUBKEY_VAL_TYPE).await? else {
                 panic!("Unexpected MemValue variant")
             };
-            let builder = U31Builder::new(&val_trie, bytes_len as usize);
+            let builder = u32::Read::new(&val_trie, bytes_len as usize, SUBKEY_BYTES);
             let bytes = builder.into_bytes().await;
             match val_type as u8 {
                 VAL_TYPE_U32 => {
@@ -109,10 +69,11 @@ pub async fn query<T: Space>(trie: &SpaceTrie<T>, vid: Vid) -> Result<Option<Val
         }
     }
 }
-const KEY_LEN: i32 = -1;
-const KEY_VAL_TYPE: i32 = -2;
-const VAL_TYPE_U32: u8 = 0;
 
+const SUBKEY_LEN: i32 = 0;
+const SUBKEY_VAL_TYPE: i32 = 1;
+const SUBKEY_BYTES: i32 = 100;
+const VAL_TYPE_U32: u8 = 0;
 const VAL_TYPE_STRING: u8 = 1;
 
 async fn insert_bytes<T: Space>(
@@ -121,22 +82,26 @@ async fn insert_bytes<T: Space>(
     bytes: &[u8],
     bytes_type: u8,
 ) -> Result<SpaceTrie<T>, TransactError> {
-    let stream = U31Streamer::new(bytes);
-    for (key, value) in stream {
+    let u32_stream = u32::Stream::new(bytes, SUBKEY_BYTES);
+    for (u32_subkey, u32_value) in u32_stream {
         trie = trie
-            .deep_insert([KEY_VAL_TABLE, hash, key], MemValue::U32(value), false)
+            .deep_insert(
+                [KEY_VAL_TABLE, hash, u32_subkey],
+                MemValue::U32(u32_value),
+                false,
+            )
             .await?;
     }
     trie = trie
         .deep_insert(
-            [KEY_VAL_TABLE, hash, KEY_LEN],
+            [KEY_VAL_TABLE, hash, SUBKEY_LEN],
             MemValue::U32(bytes.len() as u32),
             false,
         )
         .await?;
     trie = trie
         .deep_insert(
-            [KEY_VAL_TABLE, hash, KEY_VAL_TYPE],
+            [KEY_VAL_TABLE, hash, SUBKEY_VAL_TYPE],
             MemValue::U32(bytes_type as u32),
             false,
         )
@@ -149,30 +114,30 @@ async fn is_equal_bytes<T: Space>(
     bytes: &[u8],
     bytes_type: u8,
 ) -> Result<bool, QueryError> {
-    let Some(MemValue::U32(len)) = hash_trie.query_value(KEY_LEN).await? else {
+    let Some(MemValue::U32(len)) = hash_trie.query_value(SUBKEY_LEN).await? else {
         panic!("Unexpected MemValue variant")
     };
     if len as usize != bytes.len() {
         return Ok(false);
     }
-    let Some(MemValue::U32(val_type)) = hash_trie.query_value(KEY_VAL_TYPE).await? else {
+    let Some(MemValue::U32(val_type)) = hash_trie.query_value(SUBKEY_VAL_TYPE).await? else {
         panic!("Unexpected MemValue variant")
     };
     if val_type as u8 != bytes_type {
         return Ok(false);
     }
-    let mut stream = U31Streamer::new(bytes);
+    let mut u32_stream = u32::Stream::new(bytes, SUBKEY_BYTES);
     loop {
-        match stream.next() {
-            Some((stream_key, stream_u32)) => {
-                let saved = hash_trie.query_value(stream_key).await?;
+        match u32_stream.next() {
+            Some((u32_subkey, u32_value)) => {
+                let saved = hash_trie.query_value(u32_subkey).await?;
                 match saved {
                     None => return Ok(false),
                     Some(saved_mem_value) => {
                         let MemValue::U32(saved_u32) = saved_mem_value else {
                             panic!("Unexpected MemValue variant")
                         };
-                        if stream_u32 != saved_u32 {
+                        if u32_value != saved_u32 {
                             return Ok(false);
                         }
                         // Values match so continue to the next key.
@@ -197,5 +162,71 @@ async fn find_hash_trie<T: Space>(
             let bytes_trie = trie.to_subtrie_from_value(mem_value).await?;
             Ok(Some(bytes_trie))
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::val;
+    use crate::space::mem::MemSpace;
+
+    #[tokio::test]
+    async fn insert_and_query() {
+        let space = MemSpace::new();
+        let mut trie = SpaceTrie::connect(&space)
+            .await
+            .expect("Failed to connect to MemSpace");
+        let mut vids = Vec::new();
+        let mut vals = Vec::new();
+        for i in 0..100 {
+            let i_val = val(i);
+            vals.push(i_val.clone());
+            let (new_trie, vid) = insert(trie, i_val).await.expect("Failed to insert");
+            trie = new_trie;
+            vids.push(vid);
+        }
+        for (vid, val) in vids.into_iter().zip(vals) {
+            let table_val = query(&trie, vid).await.expect("Failed to query");
+            assert_eq!(Some(val), table_val);
+        }
+    }
+
+    #[tokio::test]
+    async fn negative_numbers() {
+        let space = MemSpace::new();
+        let trie = SpaceTrie::connect(&space)
+            .await
+            .expect("Failed to connect to MemSpace");
+        let (trie, vid) = insert(trie, val(-1)).await.expect("Failed to insert");
+        let table_val = query(&trie, vid).await.expect("Failed to query");
+        assert_eq!(Some(val(-1)), table_val);
+    }
+
+    #[tokio::test]
+    async fn same_value_inserted_twice() {
+        let space = MemSpace::new();
+        let trie = SpaceTrie::connect(&space)
+            .await
+            .expect("Failed to connect to MemSpace");
+
+        let (trie, vid) = insert(trie, val(101)).await.expect("Failed to insert");
+        let (trie, vid2) = insert(trie, val(101)).await.expect("Failed to insert");
+        assert_eq!(vid, vid2);
+        let table_val = query(&trie, vid).await.expect("Failed to query");
+        assert_eq!(Some(val(101)), table_val);
+    }
+
+    #[tokio::test]
+    async fn string_insert_and_query() {
+        let space = MemSpace::new();
+        let trie = SpaceTrie::connect(&space)
+            .await
+            .expect("Failed to connect to MemSpace");
+        let (trie, vid) = insert(trie, Val::String("hello".into()))
+            .await
+            .expect("Failed to insert");
+        let val = query(&trie, vid).await.expect("Failed to query");
+        assert_eq!(Some(Val::String("hello".into())), val);
     }
 }

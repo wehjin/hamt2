@@ -33,6 +33,36 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn max_u32_works_as_value() -> anyhow::Result<()> {
+        let mut space = MemSpace::new();
+        {
+            let mut trie = SpaceTrie::connect(&space).await?;
+            trie = trie.insert(1, MemValue::U32(u32::MAX)).await?;
+            assert_eq!(
+                vec![(1, MemValue::U32(u32::MAX))],
+                trie.query_keys_values().await?
+            );
+            trie.commit(&mut space).await?;
+        }
+        {
+            let trie = SpaceTrie::connect(&space).await?;
+            assert_eq!(
+                vec![(1, MemValue::U32(u32::MAX))],
+                trie.query_keys_values().await?
+            );
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "assertion failed: value >= 0")]
+    async fn negative_i32_does_not_work_as_key() {
+        let space = MemSpace::new();
+        let trie = SpaceTrie::connect(&space).await.expect("connect");
+        let _trie = trie.insert(-1, MemValue::U32(10)).await.expect("insert");
+    }
+
+    #[tokio::test]
     async fn query_key_values_works() {
         let space = MemSpace::new();
         let mut trie = SpaceTrie::connect(&space).await.expect("connect");
@@ -58,9 +88,9 @@ mod tests {
         // Commit once.
         {
             let mut trie = SpaceTrie::connect(&space).await.unwrap();
-            trie = trie.insert(-1, MemValue::U32(42)).await.unwrap();
+            trie = trie.insert(1, MemValue::U32(42)).await.unwrap();
             trie = trie
-                .deep_insert([-2, 42], MemValue::U32(242), false)
+                .deep_insert([2, 42], MemValue::U32(242), false)
                 .await
                 .unwrap();
             trie.commit(&mut space).await.unwrap();
@@ -68,16 +98,16 @@ mod tests {
         // Commit again.
         {
             let mut trie = SpaceTrie::connect(&space).await.unwrap();
-            trie = trie.insert(-1, MemValue::U32(84)).await.unwrap();
+            trie = trie.insert(1, MemValue::U32(84)).await.unwrap();
             trie.commit(&mut space).await.expect("commit");
         }
         // Query from both commits.
         {
             let trie = SpaceTrie::connect(&space).await.unwrap();
-            assert_eq!(Some(MemValue::U32(84)), trie.query_value(-1).await.unwrap());
+            assert_eq!(Some(MemValue::U32(84)), trie.query_value(1).await.unwrap());
             assert_eq!(
                 Some(MemValue::U32(242)),
-                trie.deep_query_value([-2, 42]).await.unwrap()
+                trie.deep_query_value([2, 42]).await.unwrap()
             );
         }
     }
@@ -88,7 +118,7 @@ mod tests {
         // Commit some values.
         {
             let mut trie = SpaceTrie::connect(&space).await.unwrap();
-            trie = trie.insert(-1, MemValue::U32(42)).await.unwrap();
+            trie = trie.insert(100, MemValue::U32(42)).await.unwrap();
             for a in 0..=32 {
                 trie = trie
                     .deep_insert([3, a], MemValue::U32(a as u32), false)
@@ -100,7 +130,10 @@ mod tests {
         // Test commited values.
         {
             let trie = SpaceTrie::connect(&space).await.unwrap();
-            assert_eq!(Some(MemValue::U32(42)), trie.query_value(-1).await.unwrap());
+            assert_eq!(
+                Some(MemValue::U32(42)),
+                trie.query_value(100).await.unwrap()
+            );
             for a in 0..=32 {
                 assert_eq!(
                     Some(MemValue::U32(a as u32)),
@@ -150,13 +183,13 @@ mod tests {
         let trie = SpaceTrie::connect(&space)
             .await
             .unwrap()
-            .insert(-1, MemValue::U32(42))
+            .insert(1, MemValue::U32(42))
             .await
             .unwrap()
-            .insert(-1, MemValue::U32(43))
+            .insert(1, MemValue::U32(43))
             .await
             .unwrap();
-        let value = trie.query_value(-1).await.unwrap();
+        let value = trie.query_value(1).await.unwrap();
         assert_eq!(Some(MemValue::U32(43)), value);
     }
 
@@ -213,11 +246,13 @@ mod tests {
             let value = trie.deep_query_value([5, 2]).await.unwrap();
             assert_eq!(None, value);
         }
-        {
-            let result = trie.deep_query_value([4, 4, -1]).await;
-            let Err(_) = result else {
-                panic!("deep_query_value should fail for invalid keys");
-            };
-        }
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "assertion failed: value >= 0")]
+    async fn deep_query_fails_for_invalid_key() {
+        let space = MemSpace::new();
+        let trie = SpaceTrie::connect(&space).await.unwrap();
+        let _result = trie.deep_query_value([4, 4, -1]).await;
     }
 }
