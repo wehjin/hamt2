@@ -1,4 +1,4 @@
-use crate::db::attr_spec::AttrSpec;
+use crate::db::attr_spec::DbSpec;
 use crate::db::component::db_trie;
 use crate::db::component::MaxEid;
 use crate::db::schema::attribute::Attribute;
@@ -9,10 +9,9 @@ use crate::trie::SpaceTrie;
 use crate::{LoadError, TransactError};
 
 impl<T: Space> Db<T> {
-    pub async fn new(
-        mut space: T,
-        attr_specs: Vec<impl Into<AttrSpec>>,
-    ) -> Result<Self, TransactError> {
+    pub async fn new(mut space: T, db_spec: impl Into<DbSpec>) -> Result<Self, TransactError> {
+        let db_spec = db_spec.into();
+        let attr_specs = db_spec.as_ref();
         let schema = {
             let mut trie = SpaceTrie::connect(&space).await?;
             let mut max_eid = MaxEid::read(&trie).await?;
@@ -22,7 +21,7 @@ impl<T: Space> Db<T> {
                 let attributes = eins
                     .into_iter()
                     .zip(attr_specs)
-                    .map(|(ein, spec)| Attribute::new(ein, spec.into()));
+                    .map(|(ein, spec)| Attribute::new(ein, spec.clone()));
                 schema.extend(attributes);
             }
             trie = schema.save(trie, Txid::SETUP).await?;
@@ -40,7 +39,8 @@ impl<T: Space> Db<T> {
         Ok(db)
     }
 
-    pub async fn load(space: T, attrs: Vec<Attr>) -> Result<Self, LoadError> {
+    pub async fn load(space: T, attrs: impl AsRef<[Attr]>) -> Result<Self, LoadError> {
+        let attrs = attrs.as_ref();
         let starter_db = Self {
             schema: Schema::starter(),
             trie: SpaceTrie::connect(&space).await?,

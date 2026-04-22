@@ -14,7 +14,7 @@ impl<T: Space> Db<T> {
         Ok(Txid::from(value))
     }
 
-    pub async fn find_val(&self, e: Ein, a: Attr) -> Result<Option<Val>, QueryError> {
+    pub async fn find_val(&self, e: impl Into<Ein>, a: Attr) -> Result<Option<Val>, QueryError> {
         let find = EinAttrAny::new(e, a);
         let vals = find.apply_db(self).await?;
         match vals.first() {

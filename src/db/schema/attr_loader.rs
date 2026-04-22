@@ -11,12 +11,12 @@ use std::collections::HashMap;
 
 pub struct AttributeLoader(HashMap<String, Attr>);
 impl AttributeLoader {
-    pub fn new(attrs: impl Into<Vec<Attr>>) -> Self {
+    pub fn new(attrs: impl AsRef<[Attr]>) -> Self {
         Self(
             attrs
-                .into()
+                .as_ref()
                 .into_iter()
-                .map(|attr| (attr.as_ident().to_string(), attr))
+                .map(|attr| (attr.as_ident().to_string(), attr.clone()))
                 .collect(),
         )
     }

@@ -12,7 +12,8 @@ pub struct EinAttrAny {
 }
 
 impl EinAttrAny {
-    pub fn new(ein: Ein, attr: Attr) -> Self {
+    pub fn new(ein: impl Into<Ein>, attr: Attr) -> Self {
+        let ein = ein.into();
         Self { ein, attr }
     }
 }

@@ -23,6 +23,16 @@ pub trait Find {
     fn where_(&self) -> Vec<Atom>;
     fn process(self, result: FindResult) -> Vec<Self::Output>;
 
+    fn apply_db<T: Space>(
+        self,
+        db: &Db<T>,
+    ) -> impl Future<Output = Result<Vec<Self::Output>, QueryError>>
+    where
+        Self: Sized,
+    {
+        self.apply(&db.trie, &db.schema)
+    }
+
     fn apply<T: Space>(
         self,
         trie: &SpaceTrie<T>,
@@ -38,15 +48,5 @@ pub trait Find {
             let final_result = self.process(result);
             Ok(final_result)
         }
-    }
-
-    fn apply_db<T: Space>(
-        self,
-        db: &Db<T>,
-    ) -> impl Future<Output = Result<Vec<Self::Output>, QueryError>>
-    where
-        Self: Sized,
-    {
-        self.apply(&db.trie, &db.schema)
     }
 }

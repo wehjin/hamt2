@@ -67,11 +67,12 @@ impl Schema {
         }
         Ok(trie)
     }
-    pub async fn load<T: Space>(attrs: Vec<Attr>, db: &Db<T>) -> Result<Self, LoadError> {
+    pub async fn load<T: Space>(attrs: impl AsRef<[Attr]>, db: &Db<T>) -> Result<Self, LoadError> {
+        let attrs = attrs.as_ref();
         let mut schema = db.schema.clone();
         {
             // Find attributes for the requested attrs in the db.
-            let loader = AttributeLoader::new(attrs.clone());
+            let loader = AttributeLoader::new(attrs);
             let attributes = loader.apply(&db.trie, &db.schema).await?;
             schema.extend(attributes);
             // Confirm we have found an attribute for every requested attr.
