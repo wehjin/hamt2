@@ -1,0 +1,23 @@
+[package]
+name = "hamt2"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+iroh.workspace = true
+iroh-blobs.workspace = true
+iroh-docs.workspace = true
+iroh-gossip.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+redb.workspace = true
+tempfile.workspace = true
+postcard.workspace = true
+lru.workspace = true
+bytes.workspace = true
+tokio-stream.workspace = true
+futures.workspace = true
+async-stream.workspace = true

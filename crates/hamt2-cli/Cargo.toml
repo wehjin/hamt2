@@ -1,0 +1,9 @@
+[package]
+name = "hamt2-cli"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+hamt2.workspace = true
+tokio.workspace = true
+anyhow.workspace = true

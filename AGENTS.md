@@ -1,11 +1,12 @@
 # AGENTS.md
 
 Datomic-like database library written in Rust (edition 2024), built on persistent
-Hash Array Mapped Tries (HAMT). Pure library crate `hamt2`; no binaries, no CI, no README.
+Hash Array Mapped Tries (HAMT). A Cargo workspace: library crate `hamt2` (in `crates/hamt2`)
+plus a demo binary `hamt2-cli` (in `crates/hamt2-cli`). No CI, no README.
 
 ## Commands
 
-- `cargo test` — runs all tests (unit `#[cfg(test)]` and `tests/` integration). No special filters or services required; everything uses in-memory or temp-file storage.
+- `cargo test` — runs all tests across the workspace (unit `#[cfg(test)]` and `tests/` integration). No special filters or services required; everything uses in-memory or temp-file storage.
 - Single test: `cargo test <name>` (standard). Tests are `#[tokio::test]` async.
 
 ## Architecture (read top-down in this order)
