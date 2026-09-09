@@ -41,8 +41,7 @@ pub fn App() -> impl IntoView {
 
 #[server]
 pub async fn get_version() -> Result<String, ServerFnError> {
-    let db_state = expect_context::<crate::state::DbState>();
-    let version = db_state.skybase_version.clone();
+    let version = expect_context::<skydb::SkyDb>().version()?;
     Ok(version)
 }
 

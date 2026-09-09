@@ -19,7 +19,7 @@ axum = { version = "0.8", optional = true }
 leptos_axum = { version = "0.8.10", optional = true }
 console_error_panic_hook = { version = "0.1", optional = true }
 wasm-bindgen = { version = "0.2", optional = true }
-hamt2 = { workspace = true, optional = true }
+skydb = { workspace = true, optional = true }
 anyhow = { workspace = true, optional = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net"], optional = true }
 
@@ -35,7 +35,7 @@ ssr = [
     "leptos_router/ssr",
     "dep:axum",
     "dep:leptos_axum",
-    "dep:hamt2",
+    "dep:skydb",
     "dep:anyhow",
     "dep:tokio",
 ]

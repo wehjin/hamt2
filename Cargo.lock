@@ -4740,13 +4740,22 @@ dependencies = [
  "axum",
  "clap",
  "console_error_panic_hook",
- "hamt2",
  "leptos",
  "leptos_axum",
  "leptos_meta",
  "leptos_router",
+ "skydb",
  "tokio",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "skydb"
+version = "0.1.0"
+dependencies = [
+ "hamt2",
+ "thiserror 2.0.20",
+ "tokio",
 ]
 
 [[package]]
