@@ -4,7 +4,19 @@
     "rust": {
       "command": [
         "rust-analyzer"
-      ]
+      ],
+      "initialization": {
+        "cargo": {
+          "features": "all",
+          "allTargets": true
+        },
+        "check": {
+          "command": "clippy"
+        },
+        "procMacro": {
+          "enable": true
+        }
+      }
     }
   },
   "permission": {
