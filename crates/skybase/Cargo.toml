@@ -7,3 +7,4 @@ edition.workspace = true
 hamt2.workspace = true
 tokio.workspace = true
 anyhow.workspace = true
+clap = { version = "4.6.6", features = ["derive"] }
