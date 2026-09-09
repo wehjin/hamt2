@@ -39,13 +39,28 @@ pub fn App() -> impl IntoView {
     }
 }
 
+#[server]
+pub async fn get_version() -> Result<String, ServerFnError> {
+    let db_state = expect_context::<crate::state::DbState>();
+    let version = db_state.skybase_version.clone();
+    Ok(version)
+}
+
 #[component]
 fn HomePage() -> impl IntoView {
     let count = RwSignal::new(0);
     let on_click = move |_| *count.write() += 1;
 
+    let version = Resource::new(
+        || (),
+        |_| async move { get_version().await.unwrap_or_default() },
+    );
+
     view! {
         <h1>"Welcome to Skybase!"</h1>
+        <Suspense fallback=|| "Loading...".into_view()>
+            <p>"version: " {move || version.get().unwrap_or_default()}</p>
+        </Suspense>
         <button on:click=on_click>"Click Me: " {count}</button>
     }
 }

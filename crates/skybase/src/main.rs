@@ -1,25 +1,24 @@
-use clap::{Parser, Subcommand};
-
-#[derive(Parser)]
-#[command(name = "skybase")]
-struct Cli {
-    #[command(subcommand)]
-    command: Command,
-}
-
-#[derive(Subcommand)]
-enum Command {
-    Init,
-    #[cfg(feature = "ssr")]
-    Serve,
-}
-
 #[cfg(feature = "ssr")]
 mod server;
 
 #[cfg(feature = "ssr")]
 #[tokio::main]
 async fn main() {
+    use clap::{Parser, Subcommand};
+
+    #[derive(Parser)]
+    #[command(name = "skybase")]
+    pub struct Cli {
+        #[command(subcommand)]
+        pub command: Command,
+    }
+
+    #[derive(Subcommand)]
+    pub enum Command {
+        Init,
+        #[cfg(feature = "ssr")]
+        Serve,
+    }
     let cli = Cli::parse();
     match cli.command {
         Command::Init => println!("init"),
@@ -29,8 +28,5 @@ async fn main() {
 
 #[cfg(not(feature = "ssr"))]
 fn main() {
-    let cli = Cli::parse();
-    match cli.command {
-        Command::Init => println!("init"),
-    }
+    panic!("ssr feature is not enabled");
 }
