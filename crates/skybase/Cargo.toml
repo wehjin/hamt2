@@ -3,8 +3,52 @@ name = "skybase"
 version.workspace = true
 edition.workspace = true
 
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "skybase"
+path = "src/main.rs"
+
 [dependencies]
-hamt2.workspace = true
-tokio.workspace = true
-anyhow.workspace = true
+leptos = "0.8.20"
+leptos_router = "0.8.15"
+leptos_meta = "0.8.6"
 clap = { version = "4.6.6", features = ["derive"] }
+axum = { version = "0.8", optional = true }
+leptos_axum = { version = "0.8.10", optional = true }
+console_error_panic_hook = { version = "0.1", optional = true }
+wasm-bindgen = { version = "0.2", optional = true }
+hamt2 = { workspace = true, optional = true }
+anyhow = { workspace = true, optional = true }
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net"], optional = true }
+
+[features]
+hydrate = [
+    "leptos/hydrate",
+    "dep:console_error_panic_hook",
+    "dep:wasm-bindgen",
+]
+ssr = [
+    "leptos/ssr",
+    "leptos_meta/ssr",
+    "leptos_router/ssr",
+    "dep:axum",
+    "dep:leptos_axum",
+    "dep:hamt2",
+    "dep:anyhow",
+    "dep:tokio",
+]
+
+[package.metadata.leptos]
+output-name = "skybase"
+site-root = "target/site"
+site-pkg-dir = "pkg"
+site-addr = "127.0.0.1:3000"
+reload-port = 3001
+env = "DEV"
+bin-features = ["ssr"]
+bin-default-features = false
+lib-features = ["hydrate"]
+lib-default-features = false
+lib-profile-release = "wasm-release"

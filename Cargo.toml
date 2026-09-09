@@ -26,3 +26,10 @@ futures = "0.3.32"
 async-stream = "0.3.6"
 
 hamt2 = { path = "crates/hamt2" }
+
+[profile.wasm-release]
+inherits = "release"
+opt-level = 'z'
+lto = true
+codegen-units = 1
+panic = "abort"
