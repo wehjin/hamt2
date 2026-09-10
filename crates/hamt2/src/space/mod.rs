@@ -5,7 +5,6 @@ use crate::error::ReadError;
 pub use core::addr::*;
 
 pub mod core;
-pub mod doc;
 pub mod file;
 pub mod mem;
 

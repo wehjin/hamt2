@@ -1,5 +1,6 @@
 use crate::error::ReadError;
 use crate::space::core::reader::{MemReader, SlotTable, SlotValue};
+use serde::{Deserialize, Serialize};
 
 use crate::TransactError;
 use crate::space::{Space, TableAddr};
@@ -7,7 +8,7 @@ use crate::space::{Space, TableAddr};
 #[cfg(test)]
 mod tests;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MemSpace {
     slots: SlotTable,
     root: Option<TableAddr>,

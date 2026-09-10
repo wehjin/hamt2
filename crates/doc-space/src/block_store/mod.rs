@@ -1,11 +1,11 @@
-use crate::space::core::block_space::store::{Block, BlockStore, Details};
-use crate::space::core::reader::SlotValue;
-use crate::space::doc::block_store::block_key::BlockKey;
-use crate::space::doc::block_store::doc_key::DocKey;
-use crate::space::doc::block_store::search_key::SearchKey;
-use crate::space::doc::client::DocsClient;
-use crate::space::TableAddr;
+use crate::block_store::block_key::BlockKey;
+use crate::block_store::doc_key::DocKey;
+use crate::block_store::search_key::SearchKey;
+use crate::client::DocsClient;
 use bytes::Bytes;
+use hamt2::space::TableAddr;
+use hamt2::space::core::block_space::store::{Block, BlockStore, Details};
+use hamt2::space::core::reader::SlotValue;
 use iroh_docs::api::Doc;
 use iroh_docs::store::{Query, SortDirection};
 use tokio_stream::StreamExt;

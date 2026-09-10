@@ -1,0 +1,19 @@
+[package]
+name = "doc-space"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+hamt2.workspace = true
+iroh.workspace = true
+iroh-blobs.workspace = true
+iroh-docs.workspace = true
+iroh-gossip.workspace = true
+bytes.workspace = true
+postcard.workspace = true
+tokio-stream.workspace = true
+tokio = { workspace = true, features = ["macros", "net"] }
+
+[dev-dependencies]
+tempfile.workspace = true

@@ -30,7 +30,7 @@ impl From<(u32, u32)> for SlotValue {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SlotTable {
     slots: Vec<SlotValue>,
 }

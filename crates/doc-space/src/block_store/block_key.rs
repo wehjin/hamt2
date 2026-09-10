@@ -1,5 +1,5 @@
-use crate::space::TableAddr;
 use bytes::{Bytes, BytesMut};
+use hamt2::space::TableAddr;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct BlockKey {

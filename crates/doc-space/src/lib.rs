@@ -1,14 +1,14 @@
-use crate::space::core::block_space::reader::BlockReader;
-use crate::space::core::block_space::BlockSpace;
-use crate::space::core::reader::SlotValue;
-use crate::space::doc::block_store::DocBlockStore;
-use crate::space::doc::client::DocsClient;
-use crate::space::{Space, TableAddr};
-use crate::{FileError, ReadError, TransactError};
-use iroh_docs::NamespaceId;
-
 pub mod block_store;
 pub mod client;
+
+use self::block_store::DocBlockStore;
+use self::client::DocsClient;
+use hamt2::space::core::block_space::reader::BlockReader;
+use hamt2::space::core::block_space::BlockSpace;
+use hamt2::space::core::reader::SlotValue;
+use hamt2::space::{Space, TableAddr};
+use hamt2::{FileError, ReadError, TransactError};
+use iroh_docs::NamespaceId;
 
 #[cfg(test)]
 mod tests;

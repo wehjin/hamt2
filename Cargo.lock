@@ -1096,6 +1096,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "doc-space"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bytes",
+ "hamt2",
+ "iroh",
+ "iroh-blobs",
+ "iroh-docs",
+ "iroh-gossip",
+ "postcard",
+ "tempfile",
+ "tokio",
+ "tokio-stream",
+]
+
+[[package]]
 name = "drain_filter_polyfill"
 version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1590,12 +1607,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-stream",
- "bytes",
  "futures",
- "iroh",
- "iroh-blobs",
- "iroh-docs",
- "iroh-gossip",
  "lru",
  "postcard",
  "redb 4.2.0",
@@ -4740,6 +4752,7 @@ dependencies = [
  "axum",
  "clap",
  "console_error_panic_hook",
+ "hamt2",
  "leptos",
  "leptos_axum",
  "leptos_meta",

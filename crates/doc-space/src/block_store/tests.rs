@@ -1,8 +1,8 @@
-use crate::space::core::block_space::store::{Block, BlockStore, Details};
-use crate::space::core::reader::SlotValue;
-use crate::space::doc::block_store::DocBlockStore;
-use crate::space::doc::client::DocsClient;
-use crate::space::TableAddr;
+use crate::block_store::DocBlockStore;
+use crate::client::DocsClient;
+use hamt2::space::TableAddr;
+use hamt2::space::core::block_space::store::{Block, BlockStore, Details};
+use hamt2::space::core::reader::SlotValue;
 use iroh::SecretKey;
 use iroh_docs::NamespaceId;
 

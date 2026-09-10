@@ -16,6 +16,10 @@ pub struct Db<T: Space> {
 }
 
 impl<T: Space + Clone> Db<T> {
+    pub fn to_space(&self) -> T {
+        self.space.clone()
+    }
+
     pub fn to_viewer(&self) -> DbViewer<T> {
         let db = Db {
             schema: self.schema.clone(),

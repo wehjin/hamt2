@@ -1,7 +1,7 @@
-use crate::space::doc::client::DocsClient;
+use crate::client::DocsClient;
 use iroh::SecretKey;
-use iroh_docs::store::Query;
 use iroh_docs::NamespaceId;
+use iroh_docs::store::Query;
 
 #[tokio::test]
 async fn docs_client_works() -> anyhow::Result<()> {

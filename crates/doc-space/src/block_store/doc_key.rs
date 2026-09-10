@@ -1,5 +1,5 @@
 use super::block_key::BlockKey;
-use crate::space::doc::block_store::search_key::SearchKey;
+use crate::block_store::search_key::SearchKey;
 use bytes::{Bytes, BytesMut};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -63,7 +63,7 @@ impl From<&[u8]> for DocKey {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::space::TableAddr;
+	use hamt2::space::TableAddr;
 	#[test]
     fn into_bytes_for_block() {
         let addr = TableAddr::from(0x01020304u32);

@@ -25,6 +25,7 @@ tokio-stream = "0.1.18"
 futures = "0.3.32"
 async-stream = "0.3.6"
 
+doc-space = { path = "crates/doc-space" }
 hamt2 = { path = "crates/hamt2" }
 skydb = { path = "crates/skydb" }
 

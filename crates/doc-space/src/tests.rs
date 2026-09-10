@@ -1,7 +1,7 @@
-use crate::space::core::reader::SlotValue;
-use crate::space::doc::client::DocsClient;
-use crate::space::doc::DocSpace;
-use crate::space::{Read, Space, TableAddr};
+use crate::client::DocsClient;
+use crate::DocSpace;
+use hamt2::space::core::reader::SlotValue;
+use hamt2::space::{Read, Space, TableAddr};
 use iroh::SecretKey;
 use iroh_docs::NamespaceId;
 
