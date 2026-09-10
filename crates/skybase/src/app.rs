@@ -1,11 +1,11 @@
-use hamt2::space::mem::MemSpace;
+use crate::api::space::get_space;
+use crate::routes::home::HomePage;
 use leptos::prelude::*;
 use leptos_meta::{MetaTags, Title, provide_meta_context};
 use leptos_router::{
     StaticSegment,
     components::{Route, Router, Routes},
 };
-use skydb::SkyViewer;
 
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
@@ -23,13 +23,6 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
             </body>
         </html>
     }
-}
-
-#[server]
-pub async fn get_space() -> Result<MemSpace, ServerFnError> {
-    let db = skydb::start_db().await?;
-    let space = db.to_space();
-    Ok(space)
 }
 
 #[component]
@@ -52,17 +45,5 @@ pub fn App() -> impl IntoView {
                 </Routes>
             </main>
         </Router>
-    }
-}
-
-#[component]
-fn HomePage(space: MemSpace) -> impl IntoView {
-    let viewer = SkyViewer::start(space);
-    let count = RwSignal::new(0);
-    let on_click = move |_| *count.write() += 1;
-    view! {
-        <h1>"Welcome to Skybase!"</h1>
-        <p>"version: " {move || viewer.get_version()}</p>
-        <button on:click=on_click>"Click Me: " {count}</button>
     }
 }
