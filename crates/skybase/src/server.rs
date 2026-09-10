@@ -4,7 +4,6 @@ use leptos::prelude::*;
 use leptos_axum::{ErrorHandler, LeptosRoutes, generate_route_list, site_pkg_dir_service};
 
 use skybase::app::{App, shell};
-use skydb::SkyDb;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -29,13 +28,9 @@ pub async fn serve() {
     };
 
     let app = Router::new()
-        .leptos_routes_with_context(
+        .leptos_routes(
             &state,
             routes,
-            {
-                let db = SkyDb::connect().expect("connect to db failed");
-                move || provide_context::<SkyDb>(db.clone())
-            },
             {
                 let state = state.clone();
                 move || shell(state.leptos_options.clone())

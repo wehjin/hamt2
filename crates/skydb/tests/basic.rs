@@ -1,9 +1,11 @@
-use skydb::SkyDb;
+use skydb::{SkyViewer, start_db};
 
 #[test]
 fn version_works() {
-    let db = SkyDb::connect().unwrap();
-    let viewer = db.to_viewer();
-    let version = viewer.version();
+    let viewer = pollster::block_on(async {
+        let db = start_db().await.unwrap();
+        SkyViewer::start(db.to_space())
+    });
+    let version = viewer.get_version();
     assert_eq!("0.1", version.as_str());
 }

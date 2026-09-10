@@ -13,6 +13,13 @@ pub trait DbQuery {
         e: impl Into<Ein>,
         a: Attr,
     ) -> impl Future<Output = Result<Option<Val>, QueryError>>;
+
+    fn get_val(&self, e: impl Into<Ein>, a: Attr) -> impl Future<Output = Val> {
+        self.find_val(e.into(), a).map(|v| {
+            v.expect("find_val should succeed")
+                .expect("value should exist")
+        })
+    }
 }
 
 impl<T: Space> Db<T> {
