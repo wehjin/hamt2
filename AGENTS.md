@@ -8,6 +8,7 @@ plus a demo binary `hamt2-cli` (in `crates/hamt2-cli`). No CI, no README.
 
 - `cargo test` — runs all tests across the workspace (unit `#[cfg(test)]` and `tests/` integration). No special filters or services required; everything uses in-memory or temp-file storage.
 - Single test: `cargo test <name>` (standard). Tests are `#[tokio::test]` async.
+- `cargo leptos build` (run from the workspace root) — builds the `skybase` Leptos web app. `crates/skybase` is the Leptos frontend/backend; `crates/skydb` is its database layer (a `DbViewer`/`Db` wrapper over `hamt2` for reading the skybase version). `cargo leptos` needs `cargo-leptos` installed; it compiles the `hydrate` feature (wasm) and `ssr` feature (native axum server) targets.
 
 ## Architecture (read top-down in this order)
 
