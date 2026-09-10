@@ -5,7 +5,7 @@ use crate::trie::mem::value::MemValue;
 use crate::trie::SpaceTrie;
 use crate::QueryError;
 use futures::Stream;
-use std::rc::Rc;
+use std::sync::Arc;
 
 impl<T: Space> SpaceTrie<T> {
     pub async fn query_value(&self, key: i32) -> Result<Option<MemValue>, QueryError> {
@@ -23,7 +23,7 @@ impl<T: Space> SpaceTrie<T> {
         filter: impl Fn((i32, MemValue)) -> Fut,
     ) -> impl Stream<Item = V> {
         use futures::stream::StreamExt;
-        let filter = Rc::new(filter);
+        let filter = Arc::new(filter);
         let stream = self.map_base.kv_stream(reader);
         stream.filter_map(move |kv| {
             let filter = filter.clone();
@@ -44,7 +44,7 @@ impl<T: Space> SpaceTrie<T> {
     }
 
     pub fn subtrie_stream(&self) -> impl Stream<Item = (i32, SpaceTrie<T>)> {
-        let clone_reader = Rc::new(|| self.reader.clone());
+        let clone_reader = Arc::new(|| self.reader.clone());
         self.filter_map(&self.reader, move |(key, value)| {
             let reader_source = clone_reader.clone();
             async move {

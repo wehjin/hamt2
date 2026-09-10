@@ -1,3 +1,6 @@
+use hamt2::db::query::DbQuery;
+use hamt2::db::viewer::DbViewer;
+use hamt2::space::mem::MemSpace;
 use leptos::prelude::*;
 use leptos_meta::{MetaTags, Title, provide_meta_context};
 use leptos_router::{
@@ -39,6 +42,13 @@ pub fn App() -> impl IntoView {
 }
 
 #[server]
+pub async fn get_space() -> Result<MemSpace, ServerFnError> {
+    let db = skydb::start_db().await?;
+    let space = db.to_space();
+    Ok(space)
+}
+
+#[server]
 pub async fn get_version() -> Result<String, ServerFnError> {
     let db = expect_context::<skydb::SkyDb>();
     let viewer = db.to_viewer();
@@ -49,10 +59,18 @@ pub async fn get_version() -> Result<String, ServerFnError> {
 fn HomePage() -> impl IntoView {
     let count = RwSignal::new(0);
     let on_click = move |_| *count.write() += 1;
-    let version = Resource::new(
-        || (),
-        |_| async move { get_version().await.unwrap_or_default() },
-    );
+    let version = LocalResource::new(|| async move {
+        let space = get_space().await.expect("getting space failed");
+        let viewer = DbViewer::load(space, [skydb::ATTR_SKYBASE_VERSION])
+            .await
+            .expect("load viewer failed");
+        let value = viewer
+            .find_val(skydb::EID_SKYBASE, skydb::ATTR_SKYBASE_VERSION)
+            .await
+            .expect("find value failed")
+            .expect("null version");
+        value.as_str().to_string()
+    });
 
     view! {
         <h1>"Welcome to Skybase!"</h1>

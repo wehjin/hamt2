@@ -8,7 +8,13 @@ use std::thread;
 use thiserror::Error;
 
 pub const ATTR_SKYBASE_VERSION: Attr = Attr("skybase/version");
-pub const ENT_SKYBASE: i32 = 1;
+pub const EID_SKYBASE: i32 = 1;
+
+pub async fn start_db() -> Result<Db<MemSpace>, TransactError> {
+    let db = Db::new(MemSpace::new(), [ATTR_SKYBASE_VERSION]).await?;
+    db.transact([datom::add(EID_SKYBASE, ATTR_SKYBASE_VERSION, val("0.1"))])
+        .await
+}
 
 #[derive(Debug, Clone)]
 pub struct SkyDb {
@@ -75,18 +81,9 @@ fn connect() -> Result<SkyDb, ConnectError> {
                 QueryError(QueryError),
                 Running(Db<MemSpace>),
             }
-            let mut state = match Db::new(MemSpace::new(), [ATTR_SKYBASE_VERSION]).await {
+            let mut state = match start_db().await {
                 Ok(db) => State::Running(db),
                 Err(err) => State::TransactError(err),
-            };
-            if let State::Running(db) = state {
-                state = match db
-                    .transact([datom::add(ENT_SKYBASE, ATTR_SKYBASE_VERSION, val("0.1"))])
-                    .await
-                {
-                    Ok(db) => State::Running(db),
-                    Err(err) => State::TransactError(err),
-                }
             };
             for conn_event in receiver.iter() {
                 match state {
@@ -126,7 +123,7 @@ fn connect() -> Result<SkyDb, ConnectError> {
 
 async fn get_version(viewer: &impl DbQuery) -> Result<String, QueryError> {
     let version = viewer
-        .find_val(ENT_SKYBASE, ATTR_SKYBASE_VERSION)
+        .find_val(EID_SKYBASE, ATTR_SKYBASE_VERSION)
         .await?
         .expect("missing version")
         .as_str()
