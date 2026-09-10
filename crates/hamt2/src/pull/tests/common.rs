@@ -1,7 +1,8 @@
-use crate::db::{datom, Attr, Datom, Db, Ein, Ent};
+use crate::QueryError;
+use crate::db::query::DbQuery;
+use crate::db::{Attr, Datom, Db, Ein, Ent, datom};
 use crate::pull::Pull;
 use crate::space::Space;
-use crate::QueryError;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]

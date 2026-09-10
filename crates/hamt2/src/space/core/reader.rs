@@ -2,7 +2,7 @@ use crate::error::ReadError;
 use crate::space::{Read, TableAddr};
 use serde::{Deserialize, Serialize};
 use std::ops::Index;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Serialize, Deserialize)]
 pub struct SlotValue(u32, u32);
@@ -74,14 +74,14 @@ impl Index<TableAddr> for SlotTable {
 
 #[derive(Debug, Clone)]
 pub struct MemReader {
-    slots: Rc<SlotTable>,
+    slots: Arc<SlotTable>,
     root: Option<TableAddr>,
 }
 
 impl MemReader {
     pub fn new(slots: SlotTable, root: Option<TableAddr>) -> Self {
         Self {
-            slots: Rc::new(slots),
+            slots: Arc::new(slots),
             root,
         }
     }

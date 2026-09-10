@@ -1,5 +1,6 @@
 use hamt2::db::Attr;
 use hamt2::db::Db;
+use hamt2::db::query::DbQuery;
 use hamt2::db::{datom, val};
 use hamt2::space::file::FileSpace;
 

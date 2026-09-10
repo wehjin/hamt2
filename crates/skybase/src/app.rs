@@ -26,13 +26,12 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
 #[component]
 pub fn App() -> impl IntoView {
     provide_meta_context();
-
     view! {
         <Title text="Skybase"/>
         <Router>
             <main>
                 <Routes fallback=|| "Page not found.".into_view()>
-                    <Route path=StaticSegment("") view=HomePage/>
+                    <Route path=StaticSegment("") view=HomePage />
                 </Routes>
             </main>
         </Router>
@@ -41,15 +40,15 @@ pub fn App() -> impl IntoView {
 
 #[server]
 pub async fn get_version() -> Result<String, ServerFnError> {
-    let version = expect_context::<skydb::SkyDb>().version()?;
-    Ok(version)
+    let db = expect_context::<skydb::SkyDb>();
+    let viewer = db.to_viewer();
+    Ok(viewer.version())
 }
 
 #[component]
 fn HomePage() -> impl IntoView {
     let count = RwSignal::new(0);
     let on_click = move |_| *count.write() += 1;
-
     let version = Resource::new(
         || (),
         |_| async move { get_version().await.unwrap_or_default() },

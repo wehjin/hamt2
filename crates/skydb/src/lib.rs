@@ -1,3 +1,5 @@
+use hamt2::db::query::DbQuery;
+use hamt2::db::viewer::DbViewer;
 use hamt2::db::{Attr, Db, datom, val};
 use hamt2::space::mem::MemSpace;
 use hamt2::{QueryError, TransactError};
@@ -10,7 +12,7 @@ pub const ENT_SKYBASE: i32 = 1;
 
 #[derive(Debug, Clone)]
 pub struct SkyDb {
-    sender: Sender<ConnEvent>,
+    sender: Sender<DbEvent>,
 }
 
 impl SkyDb {
@@ -20,14 +22,20 @@ impl SkyDb {
 
     pub fn version(&self) -> Result<String, ConnectError> {
         let (send, receive) = channel::<String>();
-        let event = ConnEvent::Version(send);
-        if let Err(_) = self.sender.send(event) {
+        let event = ViewerEvent::Version(send);
+        if let Err(_) = self.sender.send(event.into()) {
             return Err(ConnectError::Closed);
         }
         match receive.recv() {
             Ok(answer) => Ok(answer),
             Err(_) => Err(ConnectError::Closed),
         }
+    }
+    pub fn to_viewer(&self) -> SkyViewer {
+        let (send, receive) = channel::<SkyViewer>();
+        let event = DbEvent::ToViewer(send);
+        self.sender.send(event.into()).expect("send event");
+        receive.recv().expect("receive viewer")
     }
 }
 
@@ -40,12 +48,23 @@ pub enum ConnectError {
 }
 
 #[derive(Debug)]
-enum ConnEvent {
+enum DbEvent {
+    ViewerEvent(ViewerEvent),
+    ToViewer(Sender<SkyViewer>),
+}
+
+impl From<ViewerEvent> for DbEvent {
+    fn from(event: ViewerEvent) -> Self {
+        Self::ViewerEvent(event)
+    }
+}
+#[derive(Debug)]
+enum ViewerEvent {
     Version(Sender<String>),
 }
 
 fn connect() -> Result<SkyDb, ConnectError> {
-    let (sender, receiver) = channel::<ConnEvent>();
+    let (sender, receiver) = channel::<DbEvent>();
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()?;
@@ -80,13 +99,16 @@ fn connect() -> Result<SkyDb, ConnectError> {
                         break;
                     }
                     State::Running(db) => match conn_event {
-                        ConnEvent::Version(responder) => {
-                            let result = db.find_val(ENT_SKYBASE, ATTR_SKYBASE_VERSION).await;
-                            match result {
-                                Ok(option) => {
+                        DbEvent::ToViewer(responder) => {
+                            let viewer = SkyViewer::start(db.to_viewer());
+                            state = State::Running(db);
+                            let _ = responder.send(viewer);
+                        }
+                        DbEvent::ViewerEvent(ViewerEvent::Version(responder)) => {
+                            let version = get_version(&db).await;
+                            match version {
+                                Ok(version) => {
                                     state = State::Running(db);
-                                    let version =
-                                        option.expect("missing version").as_str().to_string();
                                     let _ = responder.send(version);
                                 }
                                 Err(err) => {
@@ -100,4 +122,51 @@ fn connect() -> Result<SkyDb, ConnectError> {
         })
     });
     Ok(SkyDb { sender })
+}
+
+async fn get_version(viewer: &impl DbQuery) -> Result<String, QueryError> {
+    let version = viewer
+        .find_val(ENT_SKYBASE, ATTR_SKYBASE_VERSION)
+        .await?
+        .expect("missing version")
+        .as_str()
+        .to_string();
+    Ok(version)
+}
+
+#[derive(Clone)]
+pub struct SkyViewer {
+    sender: Sender<ViewerEvent>,
+}
+
+impl SkyViewer {
+    pub fn version(&self) -> String {
+        let (send, receive) = channel::<String>();
+        let event = ViewerEvent::Version(send);
+        self.sender.send(event.into()).expect("send event");
+        let answer = receive.recv().expect("receive answer");
+        answer
+    }
+
+    fn start(viewer: DbViewer<MemSpace>) -> SkyViewer {
+        let (sender, receiver) = channel::<ViewerEvent>();
+        thread::spawn(move || {
+            let rt = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .expect("runtime");
+            rt.block_on(async move {
+                for event in receiver.iter() {
+                    match event {
+                        ViewerEvent::Version(responder) => {
+                            let version =
+                                get_version(&viewer).await.expect("version must be present");
+                            let _ = responder.send(version);
+                        }
+                    }
+                }
+            });
+        });
+        SkyViewer { sender }
+    }
 }

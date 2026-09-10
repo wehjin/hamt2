@@ -2,11 +2,10 @@ use crate::db::attr_loader::AttributeLoader;
 use crate::db::attr_table::AttrTable;
 use crate::db::component::db_trie;
 use crate::db::find::Find;
-use crate::db::{Attr, Txid};
-use crate::db::{Db, Dir};
+use crate::db::{Attr, Db, Dir, Txid};
 use crate::space::Space;
 use crate::trie::SpaceTrie;
-use crate::{db, LoadError, TransactError};
+use crate::{LoadError, TransactError, db};
 use attribute::Attribute;
 use std::ops::{Deref, DerefMut, Index};
 

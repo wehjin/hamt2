@@ -1,13 +1,13 @@
 use crate::error::ReadError;
 use crate::space::core::reader::{MemReader, SlotTable, SlotValue};
 
-use crate::space::{Space, TableAddr};
 use crate::TransactError;
+use crate::space::{Space, TableAddr};
 
 #[cfg(test)]
 mod tests;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MemSpace {
     slots: SlotTable,
     root: Option<TableAddr>,

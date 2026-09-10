@@ -1,8 +1,8 @@
 use crate::db::attr_spec::DbSpec;
-use crate::db::component::db_trie;
 use crate::db::component::MaxEid;
-use crate::db::schema::attribute::Attribute;
+use crate::db::component::db_trie;
 use crate::db::schema::Schema;
+use crate::db::schema::attribute::Attribute;
 use crate::db::{Attr, Db, Txid};
 use crate::space::Space;
 use crate::trie::SpaceTrie;
@@ -31,7 +31,7 @@ impl<T: Space> Db<T> {
             schema
         };
         let trie = SpaceTrie::connect(&space).await?;
-        let db = Self {
+        let db = Db {
             schema,
             trie,
             space,
@@ -41,16 +41,17 @@ impl<T: Space> Db<T> {
 
     pub async fn load(space: T, attrs: impl AsRef<[Attr]>) -> Result<Self, LoadError> {
         let attrs = attrs.as_ref();
-        let starter_db = Self {
+        let starter_db = Db {
             schema: Schema::starter(),
             trie: SpaceTrie::connect(&space).await?,
             space,
         };
-        Ok(Self {
+        let db = Db {
             schema: Schema::load(attrs, &starter_db).await?,
             trie: starter_db.trie,
             space: starter_db.space,
-        })
+        };
+        Ok(db)
     }
 
     pub fn close(self) -> T {

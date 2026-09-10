@@ -1,10 +1,19 @@
+use crate::QueryError;
 use crate::db::component::db_trie;
 use crate::db::component::key::KEY_MAX_TXID;
 use crate::db::find::{EinAttrAny, Find};
 use crate::db::{Attr, Db, Ein, Txid, Val};
 use crate::space::Space;
 use crate::trie::mem::value::MemValue;
-use crate::QueryError;
+use futures::FutureExt;
+
+pub trait DbQuery {
+    fn find_val(
+        &self,
+        e: impl Into<Ein>,
+        a: Attr,
+    ) -> impl Future<Output = Result<Option<Val>, QueryError>>;
+}
 
 impl<T: Space> Db<T> {
     pub async fn max_tx(&self) -> Result<Txid, QueryError> {
@@ -14,17 +23,20 @@ impl<T: Space> Db<T> {
         Ok(Txid::from(value))
     }
 
-    pub async fn find_val(&self, e: impl Into<Ein>, a: Attr) -> Result<Option<Val>, QueryError> {
-        let find = EinAttrAny::new(e, a);
-        let vals = find.apply_db(self).await?;
-        match vals.first() {
-            None => Ok(None),
-            Some(v) => Ok(Some(v.clone())),
-        }
-    }
-
     pub fn ev_stream(&self, a: Attr) -> impl futures::Stream<Item = (i32, Val)> {
         db_trie::ev_stream(&self.trie, a, &self.schema)
+    }
+}
+
+impl<T: Space> DbQuery for Db<T> {
+    fn find_val(
+        &self,
+        e: impl Into<Ein>,
+        a: Attr,
+    ) -> impl Future<Output = Result<Option<Val>, QueryError>> {
+        let find = EinAttrAny::new(e, a);
+        find.apply_db(self)
+            .map(|result| result.map(|vals| vals.first().cloned()))
     }
 }
 

@@ -1,16 +1,16 @@
-use crate::trie::SpaceTrie;
 use crate::QueryError;
+use crate::trie::SpaceTrie;
 
 mod any_attr_any;
 mod any_attr_ignore;
 mod ein_attr_any;
 pub mod program;
 
+use crate::db::Db;
 use crate::db::component::db_trie;
 use crate::db::find::program::atom::Atom;
 use crate::db::find_result::FindResult;
 use crate::db::schema::Schema;
-use crate::db::Db;
 use crate::space::Space;
 pub use any_attr_any::*;
 pub use any_attr_ignore::*;

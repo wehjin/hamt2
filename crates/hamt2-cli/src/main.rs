@@ -1,5 +1,6 @@
 use hamt2::db::find::{AnyAttrIgnore, Find};
-use hamt2::db::{datom, val, Attr, Db};
+use hamt2::db::query::DbQuery;
+use hamt2::db::{Attr, Db, datom, val};
 use hamt2::space::mem::MemSpace;
 
 const ATTR_COUNT: Attr = Attr("counter/count");

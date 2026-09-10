@@ -1,6 +1,7 @@
-use hamt2::db::{datom, val, Attr, Db};
-use hamt2::space::doc::client::DocsClient;
+use hamt2::db::query::DbQuery;
+use hamt2::db::{Attr, Db, datom, val};
 use hamt2::space::doc::DocSpace;
+use hamt2::space::doc::client::DocsClient;
 use iroh::SecretKey;
 use iroh_docs::NamespaceId;
 
