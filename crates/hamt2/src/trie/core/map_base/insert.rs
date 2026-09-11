@@ -1,9 +1,9 @@
+use crate::TransactError;
+use crate::trie::base::Base;
 use crate::trie::core::key::TrieKey;
 use crate::trie::core::map_base::TrieMapBase;
-use crate::trie::mem::base::Base;
 use crate::trie::mem::slot::{KvTest, MemSlot};
 use crate::trie::mem::value::MemValue;
-use crate::TransactError;
 
 impl TrieMapBase {
     pub async fn insert_kv(self, key: TrieKey, value: MemValue) -> Result<Self, TransactError> {

@@ -4,20 +4,9 @@ use crate::trie::mem::slot::MemSlot;
 use crate::trie::mem::value::MemValue;
 use serde::{Deserialize, Serialize};
 use std::ops::Index;
-use thiserror::Error;
-
-#[derive(Debug, Error)]
-pub enum StorageError {}
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
-pub struct BaseId(i32);
-pub trait BaseStorage {
-    // Read the next available base id.
-    fn max_id(&self) -> BaseId;
-
-    // Store a base
-    fn append(&mut self, base: &Base) -> impl Future<Output = Result<BaseId, StorageError>>;
-}
+pub struct BaseId(pub i32);
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Base {

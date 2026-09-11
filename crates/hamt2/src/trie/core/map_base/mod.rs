@@ -1,5 +1,5 @@
+use crate::trie::base::Base;
 use crate::trie::core::map::TrieMap;
-use crate::trie::mem::base::Base;
 use serde::{Deserialize, Serialize};
 
 pub mod cons;
@@ -17,10 +17,10 @@ pub struct TrieMapBase {
 mod tests {
     use crate::space::Space;
     use crate::space::mem::MemSpace;
+    use crate::trie::base::Base;
     use crate::trie::core::key::TrieKey;
     use crate::trie::core::map::TrieMap;
     use crate::trie::core::map_base::*;
-    use crate::trie::mem::base::Base;
     use crate::trie::mem::value::MemValue;
     use crate::trie::space::root::SpaceRoot;
     use tokio_stream::StreamExt;

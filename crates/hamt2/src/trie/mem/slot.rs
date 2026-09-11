@@ -1,9 +1,9 @@
+use crate::QueryError;
+use crate::trie::base::Base;
 use crate::trie::core::key::TrieKey;
 use crate::trie::core::map::TrieMap;
 use crate::trie::core::map_base::TrieMapBase;
-use crate::trie::mem::base::Base;
 use crate::trie::mem::value::MemValue;
-use crate::QueryError;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]

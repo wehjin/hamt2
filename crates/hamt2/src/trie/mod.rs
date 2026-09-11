@@ -1,7 +1,9 @@
+pub mod base_storage;
 pub mod core;
 pub mod mem;
 pub mod space;
 mod trie;
+pub mod base;
 
 pub use trie::*;
 
@@ -9,8 +11,8 @@ pub use trie::*;
 mod tests {
     use crate::space::file::FileSpace;
     use crate::space::mem::MemSpace;
-    use crate::trie::mem::value::MemValue;
     use crate::trie::SpaceTrie;
+    use crate::trie::mem::value::MemValue;
 
     #[tokio::test]
     async fn file_trie_works() -> anyhow::Result<()> {

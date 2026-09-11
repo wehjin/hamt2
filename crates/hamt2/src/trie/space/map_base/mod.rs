@@ -1,12 +1,12 @@
 use crate::space::core::reader::SlotValue;
 use crate::space::{Read, Space, TableAddr};
+use crate::trie::base::Base;
 use crate::trie::core::map::TrieMap;
 use crate::trie::core::map_base::TrieMapBase;
-use crate::trie::mem::base::Base;
 use crate::trie::mem::slot::MemSlot;
 use crate::trie::space::key_value::SpaceKeyValue;
 use crate::trie::space::slots::SpaceSlot;
-use crate::{space, QueryError, TransactError};
+use crate::{QueryError, TransactError, space};
 
 pub struct SpaceMapBase {
     map: TrieMap,
