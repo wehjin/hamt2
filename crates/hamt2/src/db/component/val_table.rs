@@ -4,7 +4,8 @@ use crate::db::{Val, Vid};
 use crate::hash;
 use crate::trie::base_storage::BaseStorageReadWrite;
 use crate::trie::mem::value::MemValue;
-use crate::trie::{Trie, TrieRef};
+use crate::trie::trie_ref::TrieRef;
+use crate::trie::{Trie, TrieQuery};
 use crate::{QueryError, TransactError};
 
 pub async fn insert<S: BaseStorageReadWrite>(

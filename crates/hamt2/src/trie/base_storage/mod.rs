@@ -20,6 +20,17 @@ pub trait BaseStorageRead {
     fn read_root(
         &self,
     ) -> impl Future<Output = Result<Option<MapBase>, BaseStorageReadError>> + Send;
+
+    /// Reads the root map base of the trie, defaulting to the empty map base if
+    /// no root has been committed.
+    fn get_root(&self) -> impl Future<Output = Result<MapBase, BaseStorageReadError>> {
+        async {
+            Ok(self
+                .read_root()
+                .await?
+                .unwrap_or_else(|| MapBase::empty()))
+        }
+    }
 }
 
 /// A trait for reading and writing Bases from storage.

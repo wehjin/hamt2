@@ -1,6 +1,7 @@
 use crate::trie::base_storage::BaseStorageRead;
 use crate::trie::mem::value::MemValue;
-use crate::trie::TrieRef;
+use crate::trie::trie_ref::TrieRef;
+use crate::trie::TrieQuery;
 
 pub struct Read<'a, S: BaseStorageRead> {
     hash_trie: TrieRef<'a, S>,

@@ -5,14 +5,17 @@ pub mod mem;
 mod trie;
 
 pub use trie::*;
-pub use trie::query::TrieRef;
+pub use trie::query::{TrieQuery};
+pub use trie::readonly::ReadTrie;
+pub use trie::trie_ref::TrieRef;
 
 #[cfg(test)]
 mod tests {
+    use crate::trie::base_storage::BaseStorageReadWrite;
     use crate::trie::base_storage::file::FileBaseStorage;
     use crate::trie::base_storage::mem::MemBaseStorage;
-    use crate::trie::Trie;
     use crate::trie::mem::value::MemValue;
+    use crate::trie::{ReadTrie, Trie, TrieQuery};
 
     #[tokio::test]
     async fn file_trie_works() -> anyhow::Result<()> {
@@ -106,6 +109,27 @@ mod tests {
                 trie.deep_query_value([2, 42]).await.unwrap()
             );
         }
+    }
+
+    #[tokio::test]
+    async fn read_trie_queries_work() -> anyhow::Result<()> {
+        let storage = {
+            let mut trie = Trie::connect(MemBaseStorage::new()).await.unwrap();
+            trie = trie.insert(1, MemValue::U32(42)).await.unwrap();
+            trie = trie
+                .deep_insert([2, 42], MemValue::U32(242), false)
+                .await
+                .unwrap();
+            trie.commit().await.unwrap().close()
+        };
+        let view_storage = storage.to_readonly();
+        let read_trie = ReadTrie::connect(view_storage).await.unwrap();
+        assert_eq!(Some(MemValue::U32(42)), read_trie.query_value(1).await.unwrap());
+        assert_eq!(
+            Some(MemValue::U32(242)),
+            read_trie.deep_query_value([2, 42]).await.unwrap()
+        );
+        Ok(())
     }
 
     #[tokio::test]

@@ -1,23 +1,24 @@
+use crate::TransactError;
 use crate::db::attr_table::AttrTable;
 use crate::db::cardinality::Cardinality;
 use crate::db::component::key::{KEY_AEVT, KEY_EAVT, KEY_MAX_TXID};
 use crate::db::component::val_table;
 use crate::db::core::dir::Dir;
 use crate::db::db::QUERY;
-use crate::db::find::program::atom::{atom, Atom};
+use crate::db::find::program::Program;
+use crate::db::find::program::atom::{Atom, atom};
 use crate::db::find::program::rule::rule;
 use crate::db::find::program::term::term;
 use crate::db::find::program::var::var;
-use crate::db::find::program::Program;
 use crate::db::find_result::FindResult;
-use crate::db::{txid, Attr, Txid, Val, Vid};
 use crate::db::{Ein, Schema};
+use crate::db::{Attr, Txid, Val, Vid, txid};
 use crate::trie::base_storage::BaseStorageReadWrite;
 use crate::trie::mem::value::MemValue;
-use crate::trie::{Trie, TrieRef};
-use crate::TransactError;
+use crate::trie::trie_ref::TrieRef;
+use crate::trie::{Trie, TrieQuery};
 use async_stream::stream;
-use futures::{pin_mut, StreamExt};
+use futures::{StreamExt, pin_mut};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

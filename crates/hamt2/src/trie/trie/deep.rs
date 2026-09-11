@@ -1,9 +1,9 @@
+use crate::trie::Trie;
 use crate::trie::base_storage::BaseStorageReadWrite;
 use crate::trie::core::deep_key::DeepKey;
 use crate::trie::core::map_base::MapBase;
 use crate::trie::mem::value::MemValue;
-use crate::trie::Trie;
-use crate::{QueryError, TransactError};
+use crate::TransactError;
 use std::collections::HashMap;
 
 impl<S: BaseStorageReadWrite> Trie<S> {
@@ -38,7 +38,10 @@ impl<S: BaseStorageReadWrite> Trie<S> {
         for i in (0..=last_index).rev() {
             let key = deep_key[i].clone();
             let map_base = map_bases.get(&i).expect("map_base should exist");
-            let post_map_base = map_base.clone().insert_kv(key, value, &mut self.storage).await?;
+            let post_map_base = map_base
+                .clone()
+                .insert_kv(key, value, &mut self.storage)
+                .await?;
             value = MemValue::MapBase(post_map_base);
         }
         let MemValue::MapBase(root) = value else {
@@ -46,36 +49,5 @@ impl<S: BaseStorageReadWrite> Trie<S> {
         };
         self.root = root;
         Ok(self)
-    }
-
-    pub async fn deep_query_value<const N: usize>(
-        &self,
-        key: [i32; N],
-    ) -> Result<Option<MemValue>, QueryError> {
-        let deep_key = DeepKey::from(key);
-        let mut current_map_base = self.root.clone();
-        let last_index = N - 1;
-        for i in 0..=last_index {
-            match current_map_base
-                .query_value(deep_key[i].clone(), &self.storage)
-                .await?
-            {
-                None => {
-                    return Ok(None);
-                }
-                Some(value) => {
-                    if i < last_index {
-                        let MemValue::MapBase(map_base) = value else {
-                            // A non-map value has no sub-trie below it.
-                            return Ok(None);
-                        };
-                        current_map_base = map_base;
-                    } else {
-                        return Ok(Some(value));
-                    }
-                }
-            }
-        }
-        unreachable!();
     }
 }

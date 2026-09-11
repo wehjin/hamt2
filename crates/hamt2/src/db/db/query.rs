@@ -5,6 +5,7 @@ use crate::db::find::{EinAttrAny, Find};
 use crate::db::{Attr, Db, Ein, Txid, Val};
 use crate::trie::base_storage::BaseStorageReadWrite;
 use crate::trie::mem::value::MemValue;
+use crate::trie::TrieQuery;
 use futures::FutureExt;
 
 pub trait DbQuery {
