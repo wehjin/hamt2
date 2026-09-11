@@ -1,13 +1,13 @@
 use crate::db::{dat, datom, Attr, Db, Ein, Ent, Val};
 use crate::pull::Pull;
-use crate::space::mem::MemSpace;
+use crate::trie::base_storage::mem::MemBaseStorage;
 use common::Basis;
 
 pub mod common;
 
 #[tokio::test]
 async fn pull_test() {
-    let space = {
+    let storage = {
         let basis = Basis {
             symbol: "ABC".to_string(),
             shares: 100,
@@ -15,7 +15,7 @@ async fn pull_test() {
             direction: -1,
         };
         let ent = Ent::from(27);
-        let mut db = Db::new(MemSpace::new(), Basis::attrs())
+        let mut db = Db::new(MemBaseStorage::new(), Basis::attrs())
             .await
             .expect("Db::new");
         let datoms = basis.into_datoms(ent);
@@ -23,7 +23,7 @@ async fn pull_test() {
         db.close()
     };
     {
-        let db = Db::load(space, Basis::attrs()).await.expect("Db::load");
+        let db = Db::load(storage, Basis::attrs()).await.expect("Db::load");
         assert_eq!(
             Basis {
                 symbol: "ABC".to_string(),

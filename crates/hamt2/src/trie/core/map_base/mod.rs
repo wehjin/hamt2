@@ -5,29 +5,25 @@ use serde::{Deserialize, Serialize};
 pub mod cons;
 pub mod insert;
 pub mod query;
-pub mod write;
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
-pub struct TrieMapBase {
+pub struct MapBase {
     pub map: TrieMap,
     pub base: BaseId,
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::space::Space;
-    use crate::space::mem::MemSpace;
     use crate::trie::base_storage::mem::MemBaseStorage;
     use crate::trie::core::key::TrieKey;
     use crate::trie::core::map_base::*;
     use crate::trie::mem::value::MemValue;
-    use crate::trie::space::root::SpaceRoot;
     use tokio_stream::StreamExt;
 
     #[tokio::test]
     async fn test_stream_kvs_empty_map() {
         let storage = MemBaseStorage::new();
-        let map_base = TrieMapBase::empty();
+        let map_base = MapBase::empty();
         let stream = map_base.kv_stream(&storage);
         let kvs = stream.collect::<Vec<_>>().await;
         assert!(kvs.is_empty());
@@ -37,7 +33,7 @@ mod tests {
         let key = TrieKey::new(0);
         let value = MemValue::from(11);
         let mut storage = MemBaseStorage::new();
-        let map_base = TrieMapBase::one_kv(key, value.clone(), &mut storage).await;
+        let map_base = MapBase::one_kv(key, value.clone(), &mut storage).await;
         let stream = map_base.kv_stream(&storage);
         let kvs = stream.collect::<Vec<_>>().await;
         assert_eq!(vec![(key.i32(), value)], kvs);
@@ -48,14 +44,12 @@ mod tests {
         let test_kvs = (0..35)
             .map(|i| (i, MemValue::from(i as u32)))
             .collect::<Vec<_>>();
-        let mut space = MemSpace::new();
         let mut storage = MemBaseStorage::new();
-        // Setup
         let map_base = {
             let mut map_base = {
                 let key = TrieKey::new(test_kvs[0].0);
                 let value = test_kvs[0].1.clone();
-                TrieMapBase::one_kv(key, value, &mut storage).await
+                MapBase::one_kv(key, value, &mut storage).await
             };
             for kv in &test_kvs[1..] {
                 let key = TrieKey::new(kv.0);
@@ -64,32 +58,10 @@ mod tests {
             }
             map_base
         };
-        // Test pre-save kev values.
-        {
-            let stream = map_base.kv_stream(&storage);
-            let mut kvs = stream.collect::<Vec<_>>().await;
-            kvs.sort_by_key(|(k, _)| *k);
-            assert_eq!(test_kvs, kvs);
-        }
-        // Write to space.
-        let root_addr = {
-            let mut extend = space.extend().await?;
-            let space_root = SpaceRoot::from_trie_map_base(map_base, &mut extend, &storage).await?;
-            let root_addr = space_root.into_root_addr(&mut extend)?;
-            extend.commit(&mut space).await?;
-            root_addr.to_u32()
-        };
-        let reader = space.read().await?;
-        let map_base = SpaceRoot::from_root_addr(root_addr, &reader)
-            .await?
-            .into_mem(&reader, &mut storage)
-            .await?;
-        {
-            let stream = map_base.kv_stream(&storage);
-            let mut kvs = stream.collect::<Vec<_>>().await;
-            kvs.sort_by_key(|(k, _)| *k);
-            assert_eq!(test_kvs, kvs);
-        }
+        let stream = map_base.kv_stream(&storage);
+        let mut kvs = stream.collect::<Vec<_>>().await;
+        kvs.sort_by_key(|(k, _)| *k);
+        assert_eq!(test_kvs, kvs);
         Ok(())
     }
 }

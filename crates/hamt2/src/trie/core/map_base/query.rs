@@ -1,6 +1,6 @@
 use crate::trie::base_storage::BaseStorageRead;
 use crate::trie::core::key::TrieKey;
-use crate::trie::core::map_base::TrieMapBase;
+use crate::trie::core::map_base::MapBase;
 use crate::trie::mem::slot::MemSlot;
 use crate::trie::mem::value::MemValue;
 use crate::QueryError;
@@ -12,13 +12,13 @@ pub struct State<'a, S: BaseStorageRead> {
     jobs: Vec<Job>,
 }
 
-impl TrieMapBase {
+impl MapBase {
     pub async fn query_value(
         &self,
         key: TrieKey,
         storage: &impl BaseStorageRead,
     ) -> Result<Option<MemValue>, QueryError> {
-        let TrieMapBase { map, base } = self;
+        let MapBase { map, base } = self;
         let value = match map.try_base_index(key) {
             Some(base_index) => {
                 let base = storage.read(*base).await.expect("read base");
@@ -71,7 +71,7 @@ impl TrieMapBase {
         &self,
         storage: &impl BaseStorageRead,
     ) -> Result<Vec<(i32, MemValue)>, QueryError> {
-        let TrieMapBase { map, base } = self;
+        let MapBase { map, base } = self;
         let mut out = Vec::new();
         let slot_count = map.slot_count();
         let base = storage.read(*base).await.expect("read base");
@@ -90,7 +90,7 @@ struct Job {
     base: crate::trie::base::BaseId,
 }
 impl Job {
-    pub fn start(map_base: &TrieMapBase) -> Option<Self> {
+    pub fn start(map_base: &MapBase) -> Option<Self> {
         let slot_count = map_base.map.slot_count();
         if slot_count == 0 {
             None

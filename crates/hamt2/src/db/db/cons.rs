@@ -4,16 +4,16 @@ use crate::db::component::db_trie;
 use crate::db::schema::Schema;
 use crate::db::schema::attribute::Attribute;
 use crate::db::{Attr, Db, Txid};
-use crate::space::Space;
-use crate::trie::SpaceTrie;
+use crate::trie::base_storage::BaseStorageReadWrite;
+use crate::trie::Trie;
 use crate::{LoadError, TransactError};
 
-impl<T: Space> Db<T> {
-    pub async fn new(mut space: T, db_spec: impl Into<DbSpec>) -> Result<Self, TransactError> {
+impl<S: BaseStorageReadWrite + Clone> Db<S> {
+    pub async fn new(storage: S, db_spec: impl Into<DbSpec>) -> Result<Self, TransactError> {
         let db_spec = db_spec.into();
         let attr_specs = db_spec.as_ref();
-        let schema = {
-            let mut trie = SpaceTrie::connect(&space).await?;
+        let (schema, trie) = {
+            let mut trie = Trie::connect(storage).await?;
             let mut max_eid = MaxEid::read(&trie).await?;
             let mut schema = Schema::starter();
             {
@@ -27,34 +27,27 @@ impl<T: Space> Db<T> {
             trie = schema.save(trie, Txid::SETUP).await?;
             trie = db_trie::set_max_tx(trie, Txid::FLOOR).await?;
             trie = max_eid.write(trie).await?;
-            trie.commit(&mut space).await?;
-            schema
+            trie = trie.commit().await?;
+            (schema, trie)
         };
-        let trie = SpaceTrie::connect(&space).await?;
-        let db = Db {
-            schema,
-            trie,
-            space,
-        };
+        let db = Db { schema, trie };
         Ok(db)
     }
 
-    pub async fn load(space: T, attrs: impl AsRef<[Attr]>) -> Result<Self, LoadError> {
+    pub async fn load(storage: S, attrs: impl AsRef<[Attr]>) -> Result<Self, LoadError> {
         let attrs = attrs.as_ref();
         let starter_db = Db {
             schema: Schema::starter(),
-            trie: SpaceTrie::connect(&space).await?,
-            space,
+            trie: Trie::connect(storage).await?,
         };
         let db = Db {
             schema: Schema::load(attrs, &starter_db).await?,
             trie: starter_db.trie,
-            space: starter_db.space,
         };
         Ok(db)
     }
 
-    pub fn close(self) -> T {
-        self.space
+    pub fn close(self) -> S {
+        self.trie.close()
     }
 }

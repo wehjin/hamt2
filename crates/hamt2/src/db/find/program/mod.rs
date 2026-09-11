@@ -1,6 +1,6 @@
 use crate::db::Schema;
-use crate::space::Space;
-use crate::trie::SpaceTrie;
+use crate::trie::base_storage::BaseStorageReadWrite;
+use crate::trie::Trie;
 use atom::Atom;
 use kb::KnowledgeBase;
 use rule::Rule;
@@ -25,11 +25,11 @@ impl Program {
         }
     }
 
-    pub async fn solve<'a, T: Space>(
+    pub async fn solve<'a, S: BaseStorageReadWrite + Clone>(
         self,
-        db_trie: &'a SpaceTrie<T>,
+        db_trie: &'a Trie<S>,
         schema: &'a Schema,
-    ) -> KnowledgeBase<'a, T> {
+    ) -> KnowledgeBase<'a, S> {
         for rule in &self.rules {
             if !rule.is_range_restricted() {
                 panic!("The program is not range restricted: {:?}", rule);
@@ -55,7 +55,7 @@ mod tests {
     use crate::db::find::program::term::term;
     use crate::db::find::program::var::var;
     use crate::db::{datom, ent, val, Attr, Db};
-    use crate::space::mem::MemSpace;
+    use crate::trie::base_storage::mem::MemBaseStorage;
 
     const ADVISOR: Attr = Attr("member/advisor");
     const NAME: Attr = Attr("member/name");
@@ -66,9 +66,9 @@ mod tests {
     #[tokio::test]
     async fn program_test() -> anyhow::Result<()> {
         let schema = vec![ADVISOR, NAME];
-        let space: MemSpace;
+        let storage: MemBaseStorage;
         {
-            let mut db = Db::new(MemSpace::new(), schema.clone()).await?;
+            let mut db = Db::new(MemBaseStorage::new(), schema.clone()).await?;
             db = db
                 .transact([
                     datom::add("a", NAME, val("Alice")),
@@ -78,9 +78,9 @@ mod tests {
                     datom::add("b", ADVISOR, ent("c")),
                 ])
                 .await?;
-            space = db.close();
+            storage = db.close();
         }
-        let db = Db::load(space, schema).await?;
+        let db = Db::load(storage, schema).await?;
         let query1 = rule(
             atom(QUERY_1, [term(var("name"))]),
             [

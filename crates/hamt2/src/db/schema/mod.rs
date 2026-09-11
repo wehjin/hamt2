@@ -3,8 +3,8 @@ use crate::db::attr_table::AttrTable;
 use crate::db::component::db_trie;
 use crate::db::find::Find;
 use crate::db::{Attr, Db, Dir, Txid};
-use crate::space::Space;
-use crate::trie::SpaceTrie;
+use crate::trie::base_storage::BaseStorageReadWrite;
+use crate::trie::Trie;
 use crate::{LoadError, TransactError, db};
 use attribute::Attribute;
 use std::ops::{Deref, DerefMut, Index};
@@ -36,11 +36,11 @@ impl Schema {
         self.attr_table.extend(attributes);
     }
 
-    pub async fn save<T: Space>(
+    pub async fn save<S: BaseStorageReadWrite + Clone>(
         &self,
-        mut trie: SpaceTrie<T>,
+        mut trie: Trie<S>,
         txid: Txid,
-    ) -> Result<SpaceTrie<T>, TransactError> {
+    ) -> Result<Trie<S>, TransactError> {
         for (_, attribute) in self.attr_table.iter() {
             let ein = attribute.ein;
             trie = db_trie::with_update(
@@ -66,7 +66,10 @@ impl Schema {
         }
         Ok(trie)
     }
-    pub async fn load<T: Space>(attrs: impl AsRef<[Attr]>, db: &Db<T>) -> Result<Self, LoadError> {
+    pub async fn load<S: BaseStorageReadWrite + Clone>(
+        attrs: impl AsRef<[Attr]>,
+        db: &Db<S>,
+    ) -> Result<Self, LoadError> {
         let attrs = attrs.as_ref();
         let mut schema = db.schema.clone();
         {

@@ -2,6 +2,7 @@ use crate::trie::base::{Base, BaseId};
 use crate::trie::base_storage::{
     BaseStorageRead, BaseStorageReadError, BaseStorageReadWrite, BaseStorageWriteError,
 };
+use crate::trie::core::map_base::MapBase;
 use std::future;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
@@ -14,6 +15,7 @@ use std::path::{Path, PathBuf};
 /// ```text
 /// <folder>/
 ///   max_id          (file holding the highest written base id)
+///   root            (file holding the committed root map base)
 ///   bases/
 ///     <level-1>/
 ///       <level-2>/
@@ -25,12 +27,14 @@ use std::path::{Path, PathBuf};
 pub struct FileBaseStorage {
     bases_dir: PathBuf,
     max_id_path: PathBuf,
+    root_path: PathBuf,
     max_id: i32,
 }
 
 impl FileBaseStorage {
     const BASES_DIR: &'static str = "bases";
     const MAX_ID_FILE: &'static str = "max_id";
+    const ROOT_FILE: &'static str = "root";
 
     /// Creates a fresh empty storage in the given folder.
     pub fn new(path: impl AsRef<Path>) -> Result<Self, std::io::Error> {
@@ -40,6 +44,7 @@ impl FileBaseStorage {
         let storage = Self {
             bases_dir,
             max_id_path: root.join(Self::MAX_ID_FILE),
+            root_path: root.join(Self::ROOT_FILE),
             max_id: 0,
         };
         storage.write_max_id()?;
@@ -62,6 +67,7 @@ impl FileBaseStorage {
         Ok(Self {
             bases_dir,
             max_id_path,
+            root_path: root.join(Self::ROOT_FILE),
             max_id,
         })
     }
@@ -104,6 +110,18 @@ impl BaseStorageRead for FileBaseStorage {
             Some(BaseId(self.max_id))
         }
     }
+
+    async fn read_root(&self) -> Result<Option<MapBase>, BaseStorageReadError> {
+        match std::fs::read(&self.root_path) {
+            Ok(bytes) => {
+                let root = postcard::from_bytes::<MapBase>(&bytes)
+                    .map_err(|e| BaseStorageReadError::Decode(BaseId(0), e))?;
+                Ok(Some(root))
+            }
+            Err(e) if e.kind() == ErrorKind::NotFound => Ok(None),
+            Err(e) => Err(BaseStorageReadError::Io(BaseId(0), e)),
+        }
+    }
 }
 
 impl BaseStorageReadWrite for FileBaseStorage {
@@ -133,6 +151,16 @@ impl BaseStorageReadWrite for FileBaseStorage {
         self.max_id = id.0;
         future::ready(Ok(id))
     }
+
+    fn write_root(
+        &mut self,
+        root: MapBase,
+    ) -> impl Future<Output = Result<(), BaseStorageWriteError>> {
+        match self.write_root_with(&root) {
+            Ok(()) => future::ready(Ok(())),
+            Err(e) => future::ready(Err(e)),
+        }
+    }
 }
 
 impl FileBaseStorage {
@@ -140,6 +168,12 @@ impl FileBaseStorage {
         let bytes = postcard::to_allocvec(&id.0)
             .map_err(|e| BaseStorageWriteError::Encode(id, e))?;
         std::fs::write(&self.max_id_path, bytes).map_err(|e| BaseStorageWriteError::Io(id, e))
+    }
+
+    fn write_root_with(&self, root: &MapBase) -> Result<(), BaseStorageWriteError> {
+        let bytes = postcard::to_allocvec(root)
+            .map_err(|e| BaseStorageWriteError::Encode(BaseId(0), e))?;
+        std::fs::write(&self.root_path, bytes).map_err(|e| BaseStorageWriteError::Io(BaseId(0), e))
     }
 }
 
@@ -183,6 +217,26 @@ mod tests {
             let id = BaseId(i as i32 + 1);
             assert_eq!(base, &storage.read(id).await.expect("read"));
         }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn root_round_trip_works() -> anyhow::Result<()> {
+        use crate::trie::core::map_base::MapBase;
+        let dir = tempfile::tempdir()?;
+        {
+            let mut storage = FileBaseStorage::new(dir.path())?;
+            assert_eq!(None, storage.read_root().await.expect("read root"));
+            storage
+                .write_root(MapBase::empty())
+                .await
+                .expect("write root");
+        }
+        let storage = FileBaseStorage::load(dir.path())?;
+        assert_eq!(
+            Some(MapBase::empty()),
+            storage.read_root().await.expect("read root")
+        );
         Ok(())
     }
 

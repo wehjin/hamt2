@@ -1,34 +1,11 @@
-use crate::space::Space;
-use crate::trie::base_storage::BaseStorageRead;
-use crate::trie::core::map_base::TrieMapBase;
-use crate::trie::space::root::SpaceRoot;
-use crate::{space, TransactError};
+use crate::trie::core::map_base::MapBase;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Formatter};
 
 #[derive(Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum MemValue {
     U32(u32),
-    MapBase(TrieMapBase),
-}
-
-impl MemValue {
-    pub async fn save<T: Space>(
-        self,
-        extend: &mut space::Extend<T>,
-        storage: &impl BaseStorageRead,
-    ) -> Result<u32, TransactError> {
-        match self {
-            MemValue::U32(v) => Ok(v),
-            MemValue::MapBase(map_base) => {
-                let space_map_base = map_base.into_space_map_base(extend, storage).await?;
-                let (map, base_addr) = space_map_base.into_map_base_addr();
-                let space_root = SpaceRoot(map, base_addr);
-                let root_addr = space_root.into_root_addr(extend)?;
-                Ok(root_addr.to_u32())
-            }
-        }
-    }
+    MapBase(MapBase),
 }
 
 impl From<u32> for MemValue {

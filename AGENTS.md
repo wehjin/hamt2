@@ -5,7 +5,7 @@ Hash Array Mapped Tries (HAMT). A Cargo workspace: library crate `hamt2` (in `cr
 
 ## Commands
 
-- `cargo test` — runs all tests across the workspace (unit `#[cfg(test)]` and `tests/` integration). No special filters or services required; everything uses in-memory or temp-file storage.
+- `cargo test` — runs all tests across the workspace (unit `#[cfg(test)]` and `tests/` integration). No special filters or services required; everything uses in-memory or temp-folder storage.
 - Single test: `cargo test <name>` (standard). Tests are `#[tokio::test]` async.
 - `cargo leptos build` (run from the workspace root) — builds the `skybase` Leptos web app. `crates/skybase` is the Leptos frontend/backend; `crates/skydb` is its database layer (a `DbViewer`/`Db` wrapper over `hamt2` for reading the skybase version). `cargo leptos` needs `cargo-leptos` installed; it compiles the `hydrate` feature (wasm) and `ssr` feature (native axum server) targets.
 
@@ -13,9 +13,9 @@ Hash Array Mapped Tries (HAMT). A Cargo workspace: library crate `hamt2` (in `cr
 
 Layered, each layer building on the one below:
 
-1. `src/space/` — storage abstraction (`Space` trait). Implementations: `mem` (in-memory) and `file` (temp/on-disk). A space stores blocks of `SlotValue`s addressed by `TableAddr`.
-2. `src/trie/` — HAMT over a `Space`. `SpaceTrie` is the persistent map. Mutations return a new `SpaceTrie`; nothing is durable until `.commit(&mut space).await?`.
-3. `src/db/` — the Datomic layer over `SpaceTrie`: `Datom` (`ent`/`attr`/`dat`/`dir`), schema, and queries (`find`/`pull`).
+1. `src/trie/base_storage/` — persistence abstraction for trie `Base`s. Traits `BaseStorageRead`/`BaseStorageReadWrite` (`read`/`max_id`/`read_root`; `next_id`/`append`/`write_root`). Implementations: `mem::MemBaseStorage` (a `Vec<Base>` seeded with the empty base at index 0) and `file::FileBaseStorage` (postcard-encoded base files in two-level subfolders under `<folder>/bases/`, with `max_id` and `root` files in the folder root).
+2. `src/trie/` — the HAMT. `TrieMapBase { map: TrieMap, base: BaseId }` is a node: the `base` field is a `BaseId` into a storage, never inline slots. `BaseId(0)` is the reserved empty base. `Trie<S: BaseStorageReadWrite + Clone>` is the persistent map: `connect(storage)` loads the persisted root, mutations consume and return a new `Trie`, `.commit()` writes the root to the storage.
+3. `src/db/` — the Datomic layer over `Trie`: `Datom` (`ent`/`attr`/`dat`/`dir`), schema, and queries (`find`/`pull`). `Db<S>` wraps `schema` + `trie: Trie<S>`.
 
 ## Skybase frontend layout
 
@@ -29,14 +29,16 @@ Within `crates/skybase/src`:
 
 ## Key gotchas
 
-- **Bit-width constraints are strict.** Trie keys are 31-bit (non-negative `i32`); negative keys panic with `assertion failed: value >= 0`. Trie values are `u32` (32-bit). `Ein` (entity id) is a non-negative `i32`. Don't break these when touching `SpaceSlot` bit packing — commit `7c28590` swapped key/value widths deliberately.
-- **`Attr` is `&'static str`** (attribute idents), not an integer. Schema attributes must be declared up front: `Db::new(space, [attrs])` / `Db::load(space, [attrs])` enumerate every `Attr` used. Loading with an undeclared attr fails with `LoadError::UnknownAttr`.
-- **`Db` is immutable-value / consumed-ownership.** `Db::transact(...)` consumes `self` and returns a new `Db`. Get the underlying space back with `db.close()` before re-`load`ing.
+- **Bit-width constraints are strict.** Trie keys are 31-bit (non-negative `i32`); negative keys panic with `assertion failed: value >= 0`. Trie values are `u32` (32-bit). `Ein` (entity id) is a non-negative `i32`, `BaseId` is a non-negative `i32`.
+- **`BaseId(0)` is the empty base.** It is never stored; every storage returns an empty `Base` for it and appends start at id 1.
+- **`Attr` is `&'static str`** (attribute idents), not an integer. Schema attributes must be declared up front: `Db::new(storage, [attrs])` / `Db::load(storage, [attrs])` enumerate every `Attr` used. Loading with an undeclared attr fails with `LoadError::UnknownAttr`.
+- **`Db` is immutable-value / consumed-ownership.** `Db::transact(...)` consumes `self` and returns a new `Db`. Get the underlying storage back with `db.close()` before re-`load`ing.
+- **Generic bounds are pervasive.** Any struct/fn mentioning `Trie<S>` or `Db<S>` needs `S: BaseStorageReadWrite + Clone`.
 - **`Ent` is either `Id(Ein)` or `Temp(&'static str)`.** Temp entities get auto-assigned `Ein`s at transact time (see `src/db/component/ent_eid.rs`). Reusing the same temp ident in a tx rewrites the same entity, whereas separate txns create separate entities.
 - `hash::universal` is the hashing primitive; everything keys off it.
 
 ## Conventions
 
 - Heavily async (`tokio`); most APIs return `impl Future` via `async fn` with `Result`.
-- Symbol-heavy internal types: `Val` (user value, `U32`/`String`), `space::core::value::Value` (`U32`/`MapBase`), `MemValue`, `SlotValue` — don't confuse them despite similar names.
+- Symbol-heavy internal types: `Val` (user value, `U32`/`String`), `MemValue` (`U32`/`MapBase(TrieMapBase)`), `Base` (a trie node's `Vec<MemSlot>`), `MemSlot` (`KeyValue`/`MapBase`) — don't confuse them despite similar names.
 - `Dat::Val` vs `Dat::Ent` and `dir` (`Dir::In`/`Dir::Out`, i.e. add/delete) drive query semantics; see `src/db/core/datom/mod.rs` (`datom::add` / `datom::del`).

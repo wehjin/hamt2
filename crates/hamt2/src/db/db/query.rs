@@ -3,7 +3,7 @@ use crate::db::component::db_trie;
 use crate::db::component::key::KEY_MAX_TXID;
 use crate::db::find::{EinAttrAny, Find};
 use crate::db::{Attr, Db, Ein, Txid, Val};
-use crate::space::Space;
+use crate::trie::base_storage::BaseStorageReadWrite;
 use crate::trie::mem::value::MemValue;
 use futures::FutureExt;
 
@@ -22,7 +22,7 @@ pub trait DbQuery {
     }
 }
 
-impl<T: Space> Db<T> {
+impl<S: BaseStorageReadWrite + Clone> Db<S> {
     pub async fn max_tx(&self) -> Result<Txid, QueryError> {
         let Some(MemValue::U32(value)) = self.trie.query_value(KEY_MAX_TXID).await? else {
             panic!("max_tx not found");
@@ -35,7 +35,7 @@ impl<T: Space> Db<T> {
     }
 }
 
-impl<T: Space> DbQuery for Db<T> {
+impl<S: BaseStorageReadWrite + Clone> DbQuery for Db<S> {
     fn find_val(
         &self,
         e: impl Into<Ein>,
@@ -51,14 +51,14 @@ impl<T: Space> DbQuery for Db<T> {
 mod tests {
     use super::*;
     use crate::db::{dat, datom, ent};
-    use crate::space::mem::MemSpace;
+    use crate::trie::base_storage::mem::MemBaseStorage;
     use futures::StreamExt;
     #[tokio::test]
     async fn ev_stream_test() -> anyhow::Result<()> {
         const COUNT: Attr = Attr("counter/count");
         let schema = vec![COUNT];
-        let space = MemSpace::new();
-        let mut db = Db::new(space, schema.clone()).await?;
+        let storage = MemBaseStorage::new();
+        let mut db = Db::new(storage, schema.clone()).await?;
         db = db
             .transact(vec![
                 datom::add(ent(10), COUNT, dat(Val::from(10))),

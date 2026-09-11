@@ -1,15 +1,18 @@
 use crate::trie::base::{Base, BaseId};
-use crate::trie::base_storage::{BaseStorageRead, BaseStorageReadError, BaseStorageReadWrite, BaseStorageWriteError};
-use std::future;
-use std::sync::{Arc, RwLock};
+use crate::trie::base_storage::{
+    BaseStorageRead, BaseStorageReadError, BaseStorageReadWrite, BaseStorageWriteError,
+};
+use crate::trie::core::map_base::MapBase;
+use serde::{Deserialize, Serialize};
 
 /// An in-memory storage for Bases backed by a `Vec<Base>`.
 ///
 /// The vec is seeded with the empty base at index 0 so that `BaseId(0)` always
 /// reads back the empty base and no storage is wasted storing it.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MemBaseStorage {
     bases: Vec<Base>,
+    root: Option<MapBase>,
 }
 
 impl MemBaseStorage {
@@ -22,6 +25,7 @@ impl Default for MemBaseStorage {
     fn default() -> Self {
         Self {
             bases: vec![Base::new()],
+            root: None,
         }
     }
 }
@@ -41,6 +45,10 @@ impl BaseStorageRead for MemBaseStorage {
             Some(BaseId((len - 1) as i32))
         }
     }
+
+    async fn read_root(&self) -> Result<Option<MapBase>, BaseStorageReadError> {
+        Ok(self.root.clone())
+    }
 }
 
 impl BaseStorageReadWrite for MemBaseStorage {
@@ -53,47 +61,9 @@ impl BaseStorageReadWrite for MemBaseStorage {
         self.bases.push(base.clone());
         Ok(id)
     }
-}
 
-/// A `MemBaseStorage` wrapped in an interior-mutable shared arena so that
-/// trie clones and sub-tries all read and append to the same bases.
-#[derive(Debug, Clone, Default)]
-pub struct SharedMemBaseStorage(Arc<RwLock<MemBaseStorage>>);
-
-impl SharedMemBaseStorage {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn from_storage(storage: MemBaseStorage) -> Self {
-        Self(Arc::new(RwLock::new(storage)))
-    }
-}
-
-impl BaseStorageRead for SharedMemBaseStorage {
-    async fn read(&self, id: BaseId) -> Result<Base, BaseStorageReadError> {
-        let storage = self.0.read().expect("storage poisoned");
-        let base = storage.bases[id.0 as usize].clone();
-        Ok(base)
-    }
-
-    fn max_id(&self) -> Option<BaseId> {
-        self.0.read().expect("storage poisoned").max_id()
-    }
-}
-
-impl BaseStorageReadWrite for SharedMemBaseStorage {
-    fn next_id(&self) -> BaseId {
-        self.0.read().expect("storage poisoned").next_id()
-    }
-
-    fn append(
-        &mut self,
-        base: &Base,
-    ) -> impl Future<Output = Result<BaseId, BaseStorageWriteError>> {
-        let mut storage = self.0.write().expect("storage poisoned");
-        let id = storage.next_id();
-        storage.bases.push(base.clone());
-        future::ready(Ok(id))
+    async fn write_root(&mut self, root: MapBase) -> Result<(), BaseStorageWriteError> {
+        self.root = Some(root);
+        Ok(())
     }
 }

@@ -1,10 +1,10 @@
-use hamt2::space::mem::MemSpace;
+use hamt2::trie::base_storage::mem::MemBaseStorage;
 use leptos::prelude::*;
 use skydb::SkyViewer;
 
 #[component]
-pub fn HomePage(space: MemSpace) -> impl IntoView {
-    let viewer = SkyViewer::start(space);
+pub fn HomePage(storage: MemBaseStorage) -> impl IntoView {
+    let viewer = SkyViewer::start(storage);
     let count = RwSignal::new(0);
     let on_click = move |_| *count.write() += 1;
     view! {

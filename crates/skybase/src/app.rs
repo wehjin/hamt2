@@ -1,4 +1,4 @@
-use crate::api::space::get_space;
+use crate::api::space::get_storage;
 use crate::routes::home::HomePage;
 use leptos::prelude::*;
 use leptos_meta::{MetaTags, Title, provide_meta_context};
@@ -28,12 +28,12 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
 #[component]
 pub fn App() -> impl IntoView {
     provide_meta_context();
-    let space =
-        LocalResource::new(|| async move { get_space().await.expect("getting space failed") });
+    let storage =
+        LocalResource::new(|| async move { get_storage().await.expect("getting storage failed") });
 
-    let home_suspense = move || match space.get() {
-        None => view! { <div>"Loading space…"</div>}.into_any(),
-        Some(space) => view! { <HomePage space=space/> }.into_any(),
+    let home_suspense = move || match storage.get() {
+        None => view! { <div>"Loading storage…"</div>}.into_any(),
+        Some(storage) => view! { <HomePage storage=storage/> }.into_any(),
     };
 
     view! {

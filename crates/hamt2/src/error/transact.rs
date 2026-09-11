@@ -1,6 +1,5 @@
-use crate::error::read;
-use crate::space::TableAddr;
 use crate::QueryError;
+use crate::trie::base_storage::{BaseStorageReadError, BaseStorageWriteError};
 
 #[derive(thiserror::Error, Debug)]
 pub enum TransactError {
@@ -13,27 +12,18 @@ pub enum TransactError {
     #[error("Query: {0}")]
     Query(#[from] QueryError),
 
+    #[error("BaseStorageRead: {0}")]
+    BaseStorageRead(#[from] BaseStorageReadError),
+
+    #[error("BaseStorageWrite: {0}")]
+    BaseStorageWrite(#[from] BaseStorageWriteError),
+
     #[error("HighBitInValue: {0}")]
     HighBitInValue(u32),
-
-    #[error("InvalidSlotType")]
-    InvalidSlotType,
-
-    #[error("SlotOccupied")]
-    SlotOccupied,
-
-    #[error("SlotUnoccupied")]
-    SlotEmpty,
 
     #[error("ExpectedMapBaseAtKey")]
     ExpectedMapBaseAtKey,
 
-    #[error("SpaceReadError: {0}")]
-    SpaceReadError(#[from] read::ReadError),
-
     #[error("NoSpaceInValueTable")]
     NoSpaceInValueTable,
-
-    #[error("Invalid start address: {0}")]
-    InvalidStartAddr(TableAddr),
 }

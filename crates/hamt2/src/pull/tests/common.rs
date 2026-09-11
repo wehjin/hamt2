@@ -2,7 +2,7 @@ use crate::QueryError;
 use crate::db::query::DbQuery;
 use crate::db::{Attr, Datom, Db, Ein, Ent, datom};
 use crate::pull::Pull;
-use crate::space::Space;
+use crate::trie::base_storage::BaseStorageReadWrite;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
@@ -40,7 +40,7 @@ impl<'a> Pull<'a> for Basis {
         ]
     }
 
-    async fn pull<T: Space>(db: &Db<T>, eid: Ein) -> Result<Self, QueryError> {
+    async fn pull<S: BaseStorageReadWrite + Clone>(db: &Db<S>, eid: Ein) -> Result<Self, QueryError> {
         let symbol = db.find_val(eid, Self::SYMBOL).await?.expect("symbol");
         let shares = db.find_val(eid, Self::SHARES).await?.expect("shares");
         let price_each = db

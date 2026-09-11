@@ -2,7 +2,7 @@ use crate::trie::base::Base;
 use crate::trie::base_storage::{BaseStorageRead, BaseStorageReadWrite};
 use crate::trie::core::key::TrieKey;
 use crate::trie::core::map::TrieMap;
-use crate::trie::core::map_base::TrieMapBase;
+use crate::trie::core::map_base::MapBase;
 use crate::trie::mem::value::MemValue;
 use crate::QueryError;
 use serde::{Deserialize, Serialize};
@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum MemSlot {
     KeyValue(i32, MemValue),
-    MapBase(TrieMapBase),
+    MapBase(MapBase),
 }
 
 impl MemSlot {
@@ -38,9 +38,9 @@ impl MemSlot {
             .await;
             let base = Base { slots: vec![slot] };
             let id = storage.append(&base).await.expect("append base");
-            MemSlot::MapBase(TrieMapBase { map, base: id })
+            MemSlot::MapBase(MapBase { map, base: id })
         } else {
-            let map_base = TrieMapBase::two_kv(a_key, a_value, b_key, b_value, storage).await;
+            let map_base = MapBase::two_kv(a_key, a_value, b_key, b_value, storage).await;
             MemSlot::MapBase(map_base)
         }
     }

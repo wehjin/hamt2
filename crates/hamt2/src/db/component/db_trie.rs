@@ -12,9 +12,9 @@ use crate::db::find::program::Program;
 use crate::db::find_result::FindResult;
 use crate::db::{txid, Attr, Txid, Val, Vid};
 use crate::db::{Ein, Schema};
-use crate::space::Space;
+use crate::trie::base_storage::BaseStorageReadWrite;
 use crate::trie::mem::value::MemValue;
-use crate::trie::SpaceTrie;
+use crate::trie::Trie;
 use crate::TransactError;
 use async_stream::stream;
 use futures::{pin_mut, StreamExt};
@@ -50,15 +50,15 @@ impl From<u32> for Value {
     }
 }
 
-pub(crate) async fn with_update<T: Space>(
-    trie: SpaceTrie<T>,
+pub(crate) async fn with_update<S: BaseStorageReadWrite + Clone>(
+    trie: Trie<S>,
     attr_map: &AttrTable,
     ein: Ein,
     attr: Attr,
     val: Val,
     dir: Dir,
     txid: &Txid,
-) -> Result<SpaceTrie<T>, TransactError> {
+) -> Result<Trie<S>, TransactError> {
     let attribute = &attr_map[attr];
     let eid = ein.to_i32();
     let aid = attribute.ein().to_i32();
@@ -72,16 +72,16 @@ pub(crate) async fn with_update<T: Space>(
     Ok(trie)
 }
 
-pub(crate) async fn set_max_tx<T: Space>(
-    trie: SpaceTrie<T>,
+pub(crate) async fn set_max_tx<S: BaseStorageReadWrite + Clone>(
+    trie: Trie<S>,
     max_tx: Txid,
-) -> Result<SpaceTrie<T>, TransactError> {
+) -> Result<Trie<S>, TransactError> {
     trie.insert(KEY_MAX_TXID, MemValue::from(max_tx.u32()))
         .await
 }
 
-pub async fn find<T: Space>(
-    trie: &SpaceTrie<T>,
+pub async fn find<S: BaseStorageReadWrite + Clone>(
+    trie: &Trie<S>,
     schema: &Schema,
     select: impl Into<Vec<&'static str>>,
     where_: impl Into<Vec<Atom>>,
@@ -108,8 +108,8 @@ pub async fn find<T: Space>(
     found
 }
 
-pub fn ev_stream<T: Space>(
-    trie: &SpaceTrie<T>,
+pub fn ev_stream<S: BaseStorageReadWrite + Clone>(
+    trie: &Trie<S>,
     a: Attr,
     schema: &Schema,
 ) -> impl futures::Stream<Item = (i32, Val)> {
@@ -125,24 +125,20 @@ pub fn ev_stream<T: Space>(
     }
 }
 
-async fn evt_subtrie<T: Space>(
-    trie: &SpaceTrie<T>,
+async fn evt_subtrie<S: BaseStorageReadWrite + Clone>(
+    trie: &Trie<S>,
     attr: Attr,
     schema: &Schema,
-) -> Option<SpaceTrie<T>> {
+) -> Option<Trie<S>> {
     let aid = schema[attr].ein().to_i32();
     let keys = [KEY_AEVT, aid];
     let evt_value = trie.deep_query_value(keys).await.ok().flatten();
-    if let Some(evt) = evt_value {
-        trie.to_subtrie_from_value(evt).await.ok()
-    } else {
-        None
-    }
+    evt_value.and_then(|evt| trie.to_subtrie_from_value(evt))
 }
 
-fn evid_stream<T: Space>(
-    evt_subtrie: SpaceTrie<T>,
-) -> impl futures::Stream<Item = (i32, i32)> + use<T> {
+fn evid_stream<S: BaseStorageReadWrite + Clone>(
+    evt_subtrie: Trie<S>,
+) -> impl futures::Stream<Item = (i32, i32)> {
     stream! {
         let evt_stream = evt_subtrie.subtrie_stream();
         pin_mut!(evt_stream);

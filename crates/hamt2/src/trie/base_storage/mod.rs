@@ -1,4 +1,5 @@
 use crate::trie::base::{Base, BaseId};
+use crate::trie::core::map_base::MapBase;
 use thiserror::Error;
 
 pub mod file;
@@ -23,6 +24,11 @@ pub trait BaseStorageRead {
 
     /// Returns the highest base id in the storage or none if empty. Base id 0 (the empty base) is not counted.
     fn max_id(&self) -> Option<BaseId>;
+
+    /// Reads the root map base of the trie or none if no root has been committed.
+    fn read_root(
+        &self,
+    ) -> impl Future<Output = Result<Option<MapBase>, BaseStorageReadError>>;
 }
 
 #[derive(Debug, Error)]
@@ -43,6 +49,12 @@ pub trait BaseStorageReadWrite: BaseStorageRead {
         &mut self,
         base: &Base,
     ) -> impl Future<Output = Result<BaseId, BaseStorageWriteError>>;
+
+    /// Persists the given root map base. The root can be read back with `BaseStorageRead::read_root`.
+    fn write_root(
+        &mut self,
+        root: MapBase,
+    ) -> impl Future<Output = Result<(), BaseStorageWriteError>>;
 }
 
 #[cfg(test)]

@@ -2,7 +2,7 @@ use hamt2::db::attr_spec::AttrSpec;
 use hamt2::db::cardinality::Cardinality;
 use hamt2::db::find::{EinAttrAny, Find};
 use hamt2::db::{datom, val, Attr, Db};
-use hamt2::space::mem::MemSpace;
+use hamt2::trie::base_storage::mem::MemBaseStorage;
 
 #[tokio::test]
 async fn test_cardinality_one() -> anyhow::Result<()> {
@@ -11,7 +11,7 @@ async fn test_cardinality_one() -> anyhow::Result<()> {
         attr: COUNT,
         cardinality: Cardinality::One,
     }];
-    let mut db = Db::new(MemSpace::new(), schema).await?;
+    let mut db = Db::new(MemBaseStorage::new(), schema).await?;
     db = db.transact([datom::add(100, COUNT, 100)]).await?;
     db = db.transact([datom::add(100, COUNT, 101)]).await?;
     db = db.transact([datom::add(100, COUNT, 102)]).await?;
@@ -31,7 +31,7 @@ async fn test_cardinality_many() -> anyhow::Result<()> {
         attr: COUNT,
         cardinality: Cardinality::Many,
     }];
-    let mut db = Db::new(MemSpace::new(), schema).await?;
+    let mut db = Db::new(MemBaseStorage::new(), schema).await?;
     db = db.transact([datom::add(100, COUNT, 100)]).await?;
     db = db.transact([datom::add(100, COUNT, 101)]).await?;
     db = db.transact([datom::add(100, COUNT, 102)]).await?;

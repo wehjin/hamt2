@@ -1,7 +1,7 @@
 use crate::db::Attr;
 use crate::db::schema::Schema;
-use crate::space::Space;
-use crate::trie::SpaceTrie;
+use crate::trie::base_storage::BaseStorageReadWrite;
+use crate::trie::Trie;
 use viewer::DbViewer;
 pub mod cons;
 pub mod query;
@@ -9,22 +9,16 @@ pub mod transact;
 pub mod viewer;
 
 #[derive(Debug)]
-pub struct Db<T: Space> {
+pub struct Db<S: BaseStorageReadWrite> {
     pub(crate) schema: Schema,
-    pub(crate) trie: SpaceTrie<T>,
-    space: T,
+    pub(crate) trie: Trie<S>,
 }
 
-impl<T: Space + Clone> Db<T> {
-    pub fn to_space(&self) -> T {
-        self.space.clone()
-    }
-
-    pub fn to_viewer(&self) -> DbViewer<T> {
+impl<S: BaseStorageReadWrite + Clone> Db<S> {
+    pub fn to_viewer(&self) -> DbViewer<S> {
         let db = Db {
             schema: self.schema.clone(),
             trie: self.trie.clone(),
-            space: self.space.clone(),
         };
         DbViewer::new(db)
     }

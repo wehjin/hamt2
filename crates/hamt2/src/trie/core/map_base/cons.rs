@@ -2,11 +2,11 @@ use crate::trie::base::{Base, BaseId};
 use crate::trie::base_storage::BaseStorageReadWrite;
 use crate::trie::core::key::TrieKey;
 use crate::trie::core::map::TrieMap;
-use crate::trie::core::map_base::TrieMapBase;
+use crate::trie::core::map_base::MapBase;
 use crate::trie::mem::slot::MemSlot;
 use crate::trie::mem::value::MemValue;
 
-impl TrieMapBase {
+impl MapBase {
     pub fn empty() -> Self {
         Self {
             map: TrieMap::empty(),
@@ -48,6 +48,6 @@ impl TrieMapBase {
             base
         };
         let id = storage.append(&base).await.expect("append base");
-        TrieMapBase { map, base: id }
+        MapBase { map, base: id }
     }
 }

@@ -1,7 +1,7 @@
 use crate::db::find::program::atom::Atom;
 use crate::db::find::program::kb::KnowledgeBase;
 use crate::db::find::program::sub::Substitution;
-use crate::space::Space;
+use crate::trie::base_storage::BaseStorageReadWrite;
 use std::collections::HashSet;
 
 pub fn rule(head: impl Into<Atom>, body: impl Into<Vec<Atom>>) -> Rule {
@@ -22,7 +22,10 @@ impl Rule {
         }
     }
 
-    pub async fn derive_facts<'a, T: Space>(&self, kb: &KnowledgeBase<'a, T>) -> Vec<Atom> {
+    pub async fn derive_facts<'a, S: BaseStorageReadWrite + Clone>(
+        &self,
+        kb: &KnowledgeBase<'a, S>,
+    ) -> Vec<Atom> {
         let mut new_facts = Vec::new();
         for body_sub in self.derive_body_subs(kb).await {
             let new_fact = self.head.ground(&body_sub);
@@ -32,7 +35,10 @@ impl Rule {
         new_facts
     }
 
-    async fn derive_body_subs<'a, T: Space>(&self, kb: &KnowledgeBase<'a, T>) -> Vec<Substitution> {
+    async fn derive_body_subs<'a, S: BaseStorageReadWrite + Clone>(
+        &self,
+        kb: &KnowledgeBase<'a, S>,
+    ) -> Vec<Substitution> {
         let mut subs = vec![Substitution::new()];
         for body_atom in self.body.iter() {
             subs = body_atom.derive_body_atom_subs(subs, kb).await;

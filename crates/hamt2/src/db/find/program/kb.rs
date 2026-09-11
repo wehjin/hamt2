@@ -4,21 +4,21 @@ use crate::db::find::program::rule::Rule;
 use crate::db::find::program::sub::Substitution;
 use crate::db::find::program::term::Term;
 use crate::db::{Attr, Schema, Val};
-use crate::space::Space;
-use crate::trie::SpaceTrie;
+use crate::trie::base_storage::BaseStorageReadWrite;
+use crate::trie::Trie;
 use async_stream::stream;
 use futures::{pin_mut, StreamExt};
 use std::collections::HashSet;
 
 #[derive(Debug, Clone)]
-pub struct KnowledgeBase<'a, T: Space> {
-    db_trie: &'a SpaceTrie<T>,
+pub struct KnowledgeBase<'a, S: BaseStorageReadWrite + Clone> {
+    db_trie: &'a Trie<S>,
     schema: &'a Schema,
     facts: HashSet<Atom>,
 }
 
-impl<'a, T: Space> KnowledgeBase<'a, T> {
-    pub fn from_facts(db_trie: &'a SpaceTrie<T>, schema: &'a Schema, facts: Vec<Atom>) -> Self {
+impl<'a, S: BaseStorageReadWrite + Clone> KnowledgeBase<'a, S> {
+    pub fn from_facts(db_trie: &'a Trie<S>, schema: &'a Schema, facts: Vec<Atom>) -> Self {
         debug_assert!(facts.iter().all(|atom| atom.is_grounded()));
         Self {
             db_trie,
@@ -60,7 +60,7 @@ impl<'a, T: Space> KnowledgeBase<'a, T> {
     fn facts_stream(&self, earth_atom: &Atom) -> impl futures::Stream<Item = Atom> {
         stream! {
             if earth_atom.terms.len() == 2 {
-                let ev_stream = db_trie::ev_stream(&self.db_trie, earth_atom.attr, &self.schema);
+                let ev_stream = db_trie::ev_stream(self.db_trie, earth_atom.attr, self.schema);
                 pin_mut!(ev_stream);
                 while let Some((e,v)) = ev_stream.next().await {
                     yield Atom::new(earth_atom.attr, [Term::from(e), Term::from(v)]);
@@ -100,10 +100,10 @@ impl<'a, T: Space> KnowledgeBase<'a, T> {
     }
 }
 
-impl<'a, T: Space> PartialEq for KnowledgeBase<'a, T> {
+impl<'a, S: BaseStorageReadWrite + Clone> PartialEq for KnowledgeBase<'a, S> {
     fn eq(&self, other: &Self) -> bool {
         self.facts == other.facts
     }
 }
 
-impl<'a, T: Space> Eq for KnowledgeBase<'a, T> {}
+impl<'a, S: BaseStorageReadWrite + Clone> Eq for KnowledgeBase<'a, S> {}

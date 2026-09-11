@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+use crate::trie::base_storage::BaseStorageReadError;
+
 #[derive(thiserror::Error, Debug)]
 pub enum QueryError {
     #[error("Anyhow: {0}")]
@@ -14,23 +16,8 @@ pub enum QueryError {
     #[error("Utf8: {0}")]
     Utf8(#[from] std::str::Utf8Error),
 
-    #[error("SpaceReadError: {0}")]
-    SpaceReadError(#[from] crate::error::ReadError),
-
-    #[error("NotAValue: {0}")]
-    NotAValue(u32),
-
-    #[error("InvalidSlotType")]
-    InvalidSlotType,
-
-    #[error("MismatchedKeys: {0} != {1}")]
-    MismatchedKeys(i32, i32),
-
-    #[error("BaseIndexOutOfBounds: {0}")]
-    BaseIndexOutOfBounds(usize),
-
-    #[error("NoRootInReader")]
-    NoRootInReader,
+    #[error("BaseStorageRead: {0}")]
+    BaseStorageRead(#[from] BaseStorageReadError),
 
     #[error("SerdeError: {0}")]
     SerdeError(String),

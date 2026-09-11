@@ -1,22 +1,24 @@
-use crate::space::Space;
+use crate::trie::base_storage::BaseStorageReadWrite;
 use crate::trie::core::deep_key::DeepKey;
 use crate::trie::mem::value::MemValue;
-use crate::trie::space::root::SpaceRoot;
-use crate::trie::SpaceTrie;
+use crate::trie::Trie;
 use crate::{QueryError, TransactError};
 use std::collections::HashMap;
 
-impl<T: Space> SpaceTrie<T> {
+impl<S: BaseStorageReadWrite> Trie<S> {
     pub async fn deep_insert<const N: usize>(
         mut self,
         key: [i32; N],
         value: impl Into<MemValue>,
         replace_tail: bool,
-    ) -> Result<Self, TransactError> {
+    ) -> Result<Self, TransactError>
+    where
+        S: Clone,
+    {
         let deep_key = DeepKey::from(key);
         let last_index = N - 1;
         let mut map_bases = HashMap::new();
-        map_bases.insert(0, self.map_base.clone());
+        map_bases.insert(0, self.root.clone());
         for i in 0..last_index {
             let key = deep_key[i].clone();
             let map_base = map_bases.get(&i).expect("map_base should exist");
@@ -26,7 +28,9 @@ impl<T: Space> SpaceTrie<T> {
             } else {
                 match map_base.query_value(key, &self.storage).await? {
                     None => self.new_subtrie(),
-                    Some(value) => self.to_subtrie_from_value(value).await?,
+                    Some(value) => self
+                        .to_subtrie_from_value(value)
+                        .ok_or(TransactError::ExpectedMapBaseAtKey)?,
                 }
             };
             map_bases.insert(subtrie_i, subtrie.unwrap());
@@ -38,10 +42,10 @@ impl<T: Space> SpaceTrie<T> {
             let post_map_base = map_base.clone().insert_kv(key, value, &mut self.storage).await?;
             value = MemValue::MapBase(post_map_base);
         }
-        let MemValue::MapBase(map_base) = value else {
+        let MemValue::MapBase(root) = value else {
             panic!("value should be map_base")
         };
-        self.map_base = map_base;
+        self.root = root;
         Ok(self)
     }
 
@@ -50,8 +54,7 @@ impl<T: Space> SpaceTrie<T> {
         key: [i32; N],
     ) -> Result<Option<MemValue>, QueryError> {
         let deep_key = DeepKey::from(key);
-        let mut storage = self.storage.clone();
-        let mut current_map_base = self.map_base.clone();
+        let mut current_map_base = self.root.clone();
         let last_index = N - 1;
         for i in 0..=last_index {
             match current_map_base
@@ -63,12 +66,9 @@ impl<T: Space> SpaceTrie<T> {
                 }
                 Some(value) => {
                     if i < last_index {
-                        let map_base = match value {
-                            MemValue::MapBase(map_base) => map_base,
-                            MemValue::U32(u32) => SpaceRoot::from_root_addr(u32, &self.reader)
-                                .await?
-                                .into_mem(&self.reader, &mut storage)
-                                .await?,
+                        let MemValue::MapBase(map_base) = value else {
+                            // A non-map value has no sub-trie below it.
+                            return Ok(None);
                         };
                         current_map_base = map_base;
                     } else {

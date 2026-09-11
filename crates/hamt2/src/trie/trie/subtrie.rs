@@ -1,41 +1,33 @@
-use crate::QueryError;
-use crate::space::Space;
-use crate::trie::SpaceTrie;
-use crate::trie::base_storage::mem::SharedMemBaseStorage;
-use crate::trie::core::map_base::TrieMapBase;
+use crate::trie::base_storage::BaseStorageReadWrite;
+use crate::trie::core::map_base::MapBase;
 use crate::trie::mem::value::MemValue;
-use crate::trie::space::root::SpaceRoot;
+use crate::trie::Trie;
 
-impl<T: Space> SpaceTrie<T> {
-    pub async fn to_subtrie_from_value(&self, value: MemValue) -> Result<Self, QueryError> {
-        Self::subtrie_from_value(value, self.reader.clone(), self.storage.clone()).await
+impl<S: BaseStorageReadWrite> Trie<S> {
+    /// Converts a map-base value into a sub-trie over the same storage.
+    pub fn to_subtrie_from_value(&self, value: MemValue) -> Option<Self>
+    where
+        S: Clone,
+    {
+        Self::subtrie_from_value(value, self.storage.clone())
     }
 
-    pub async fn subtrie_from_value(
-        value: MemValue,
-        reader: T::Reader,
-        mut storage: SharedMemBaseStorage,
-    ) -> Result<Self, QueryError> {
-        let map_base = match value {
-            MemValue::MapBase(map_base) => map_base,
-            MemValue::U32(u32) => SpaceRoot::from_root_addr(u32, &reader)
-                .await?
-                .into_mem(&reader, &mut storage)
-                .await?,
+    pub fn subtrie_from_value(value: MemValue, storage: S) -> Option<Self> {
+        let root = match value {
+            MemValue::MapBase(root) => root,
+            MemValue::U32(_) => return None,
         };
-        Ok(Self {
-            map_base,
-            storage,
-            reader,
-        })
+        Some(Self { root, storage })
     }
 
-    pub fn new_subtrie(&self) -> Self {
-        let map_base = TrieMapBase::empty();
+    pub fn new_subtrie(&self) -> Self
+    where
+        S: Clone,
+    {
+        let root = MapBase::empty();
         Self {
-            map_base,
+            root,
             storage: self.storage.clone(),
-            reader: self.reader.clone(),
         }
     }
 }

@@ -1,12 +1,11 @@
+use crate::TransactError;
+use crate::db::component::MaxEid;
 use crate::db::component::db_trie;
 use crate::db::component::ent_eid::EntEid;
-use crate::db::component::MaxEid;
-use crate::db::{val, Dat, Datom, Db, Ent};
-use crate::space::Space;
-use crate::trie::SpaceTrie;
-use crate::TransactError;
+use crate::db::{Dat, Datom, Db, Ent, val};
+use crate::trie::base_storage::BaseStorageReadWrite;
 
-impl<T: Space> Db<T> {
+impl<S: BaseStorageReadWrite + Clone> Db<S> {
     pub async fn transact(self, datoms: impl Into<Vec<Datom>>) -> Result<Self, TransactError> {
         let datoms = datoms.into();
         let mut max_eid = MaxEid::read(&self.trie).await?;
@@ -17,7 +16,6 @@ impl<T: Space> Db<T> {
 
                 let Self {
                     schema: attr_map,
-                    mut space,
                     mut trie,
                 } = self;
                 let ent_eid = EntEid::new(&datoms, &mut max_eid);
@@ -42,11 +40,10 @@ impl<T: Space> Db<T> {
                 }
                 trie = db_trie::set_max_tx(trie, tx + 1).await?;
                 trie = max_eid.write(trie).await?;
-                trie.commit(&mut space).await?;
+                trie = trie.commit().await?;
                 let db = Self {
                     schema: attr_map,
-                    trie: SpaceTrie::connect(&space).await?,
-                    space,
+                    trie,
                 };
                 Ok(db)
             }
