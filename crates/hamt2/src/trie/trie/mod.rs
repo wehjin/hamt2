@@ -1,26 +1,15 @@
 use crate::trie::base_storage::errors::{BaseStorageReadError, BaseStorageWriteError};
-use crate::trie::base_storage::
-BaseStorageReadWrite;
+use crate::trie::base_storage::BaseStorageReadWrite;
 use crate::trie::core::map_base::MapBase;
 
 pub mod deep;
 pub mod insert;
 pub mod query;
-pub mod subtrie;
 
 #[derive(Debug)]
 pub struct Trie<S: BaseStorageReadWrite> {
     root: MapBase,
     storage: S,
-}
-
-impl<S: BaseStorageReadWrite + Clone> Clone for Trie<S> {
-    fn clone(&self) -> Self {
-        Self {
-            root: self.root.clone(),
-            storage: self.storage.clone(),
-        }
-    }
 }
 
 impl<S: BaseStorageReadWrite> Trie<S> {

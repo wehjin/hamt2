@@ -55,7 +55,7 @@ impl Atom {
     }
 
     #[must_use]
-    pub async fn derive_body_atom_subs<'a, S: BaseStorageReadWrite + Clone>(
+    pub async fn derive_body_atom_subs<'a, S: BaseStorageReadWrite>(
         &self,
         subs: Vec<Substitution>,
         kb: &KnowledgeBase<'a, S>,

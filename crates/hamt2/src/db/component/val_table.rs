@@ -4,10 +4,10 @@ use crate::db::{Val, Vid};
 use crate::hash;
 use crate::trie::base_storage::BaseStorageReadWrite;
 use crate::trie::mem::value::MemValue;
-use crate::trie::Trie;
+use crate::trie::{Trie, TrieRef};
 use crate::{QueryError, TransactError};
 
-pub async fn insert<S: BaseStorageReadWrite + Clone>(
+pub async fn insert<S: BaseStorageReadWrite>(
     trie: Trie<S>,
     val: Val,
 ) -> Result<(Trie<S>, Vid), TransactError> {
@@ -43,7 +43,7 @@ pub async fn insert<S: BaseStorageReadWrite + Clone>(
     Err(TransactError::NoSpaceInValueTable)
 }
 
-pub async fn query<S: BaseStorageReadWrite + Clone>(
+pub async fn query<S: BaseStorageReadWrite>(
     trie: &Trie<S>,
     vid: Vid,
 ) -> Result<Option<Val>, QueryError> {
@@ -56,7 +56,7 @@ pub async fn query<S: BaseStorageReadWrite + Clone>(
             let Some(MemValue::U32(val_type)) = val_trie.query_value(SUBKEY_VAL_TYPE).await? else {
                 panic!("Unexpected MemValue variant")
             };
-            let builder = u32::Read::new(&val_trie, bytes_len as usize, SUBKEY_BYTES);
+            let builder = u32::Read::new(val_trie, bytes_len as usize, SUBKEY_BYTES);
             let bytes = builder.into_bytes().await;
             match val_type as u8 {
                 VAL_TYPE_U32 => {
@@ -79,7 +79,7 @@ const SUBKEY_BYTES: i32 = 100;
 const VAL_TYPE_U32: u8 = 0;
 const VAL_TYPE_STRING: u8 = 1;
 
-async fn insert_bytes<S: BaseStorageReadWrite + Clone>(
+async fn insert_bytes<S: BaseStorageReadWrite>(
     mut trie: Trie<S>,
     hash: i32,
     bytes: &[u8],
@@ -112,8 +112,8 @@ async fn insert_bytes<S: BaseStorageReadWrite + Clone>(
     Ok(trie)
 }
 
-async fn is_equal_bytes<S: BaseStorageReadWrite>(
-    hash_trie: &Trie<S>,
+async fn is_equal_bytes<'a, S: BaseStorageReadWrite>(
+    hash_trie: &TrieRef<'a, S>,
     bytes: &[u8],
     bytes_type: u8,
 ) -> Result<bool, QueryError> {
@@ -154,10 +154,10 @@ async fn is_equal_bytes<S: BaseStorageReadWrite>(
     }
 }
 
-async fn find_hash_trie<S: BaseStorageReadWrite + Clone>(
-    trie: &Trie<S>,
+async fn find_hash_trie<'a, S: BaseStorageReadWrite>(
+    trie: &'a Trie<S>,
     hash: i32,
-) -> Result<Option<Trie<S>>, QueryError> {
+) -> Result<Option<TrieRef<'a, S>>, QueryError> {
     let key = [KEY_VAL_TABLE, hash];
     match trie.deep_query_value(key).await? {
         None => Ok(None),

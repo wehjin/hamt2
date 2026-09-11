@@ -5,7 +5,7 @@ use crate::db::component::ent_eid::EntEid;
 use crate::db::{Dat, Datom, Db, Ent, val};
 use crate::trie::base_storage::BaseStorageReadWrite;
 
-impl<S: BaseStorageReadWrite + Clone> Db<S> {
+impl<S: BaseStorageReadWrite> Db<S> {
     pub async fn transact(self, datoms: impl Into<Vec<Datom>>) -> Result<Self, TransactError> {
         let datoms = datoms.into();
         let mut max_eid = MaxEid::read(&self.trie).await?;

@@ -29,13 +29,13 @@ impl MapBase {
         Ok(value)
     }
 
-    pub fn kv_stream<'a, S: BaseStorageRead + 'a>(
-        &'a self,
+    pub fn kv_stream<'a, S: BaseStorageRead>(
+        self,
         storage: &'a S,
     ) -> impl Stream<Item = (i32, MemValue)> + 'a {
         let state = State {
             storage,
-            jobs: Job::start(self).into_iter().collect::<Vec<_>>(),
+            jobs: Job::start(&self).into_iter().collect::<Vec<_>>(),
         };
         stream::unfold(state, |mut state| async move {
             while let Some(mut job) = state.jobs.pop() {

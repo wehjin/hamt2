@@ -23,7 +23,7 @@ pub trait Find {
     fn where_(&self) -> Vec<Atom>;
     fn process(self, result: FindResult) -> Vec<Self::Output>;
 
-    fn apply_db<S: BaseStorageReadWrite + Clone>(
+    fn apply_db<S: BaseStorageReadWrite>(
         self,
         db: &Db<S>,
     ) -> impl Future<Output = Result<Vec<Self::Output>, QueryError>>
@@ -33,7 +33,7 @@ pub trait Find {
         self.apply(&db.trie, &db.schema)
     }
 
-    fn apply<S: BaseStorageReadWrite + Clone>(
+    fn apply<S: BaseStorageReadWrite>(
         self,
         trie: &Trie<S>,
         schema: &Schema,

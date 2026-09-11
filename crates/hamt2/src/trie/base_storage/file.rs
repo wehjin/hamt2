@@ -1,12 +1,11 @@
 use crate::trie::base::{Base, BaseId};
+use crate::trie::base_storage::{BaseStorageRead, BaseStorageReadWrite};
 use crate::trie::base_storage::errors::{BaseStorageReadError, BaseStorageWriteError};
-use crate::trie::base_storage::{
-    BaseStorageRead, BaseStorageReadWrite,
-};
 use crate::trie::core::map_base::MapBase;
 use std::future;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, RwLock};
 
 /// A file-backed storage for Bases.
 ///
@@ -24,8 +23,17 @@ use std::path::{Path, PathBuf};
 /// ```
 ///
 /// Base id 0 is the reserved empty base and is never written to disk.
+///
+/// Clones share the same inner state (`Arc<RwLock<Inner>>`), so appends are
+/// serialized through a shared `max_id` counter and clones never assign
+/// duplicate ids or write stale state back to disk.
 #[derive(Debug, Clone)]
 pub struct FileBaseStorage {
+    inner: Arc<RwLock<Inner>>,
+}
+
+#[derive(Debug)]
+struct Inner {
     bases_dir: PathBuf,
     max_id_path: PathBuf,
     root_path: PathBuf,
@@ -40,39 +48,44 @@ impl FileBaseStorage {
     /// Creates a fresh empty storage in the given folder.
     pub fn new(path: impl AsRef<Path>) -> Result<Self, std::io::Error> {
         let root = path.as_ref();
-        let bases_dir = root.join(Self::BASES_DIR);
-        std::fs::create_dir_all(&bases_dir)?;
-        let storage = Self {
-            bases_dir,
+        let inner = Inner {
+            bases_dir: root.join(Self::BASES_DIR),
             max_id_path: root.join(Self::MAX_ID_FILE),
             root_path: root.join(Self::ROOT_FILE),
             max_id: 0,
         };
-        storage.write_max_id()?;
-        Ok(storage)
+        std::fs::create_dir_all(&inner.bases_dir)?;
+        inner.write_max_id()?;
+        Ok(Self {
+            inner: Arc::new(RwLock::new(inner)),
+        })
     }
 
     /// Opens an existing storage. A missing folder or max id file is treated
     /// as an empty storage.
     pub fn load(path: impl AsRef<Path>) -> Result<Self, std::io::Error> {
         let root = path.as_ref();
-        let bases_dir = root.join(Self::BASES_DIR);
-        std::fs::create_dir_all(&bases_dir)?;
-        let max_id_path = root.join(Self::MAX_ID_FILE);
-        let max_id = match std::fs::read(&max_id_path) {
+        let inner = Inner {
+            bases_dir: root.join(Self::BASES_DIR),
+            max_id_path: root.join(Self::MAX_ID_FILE),
+            root_path: root.join(Self::ROOT_FILE),
+            max_id: 0,
+        };
+        std::fs::create_dir_all(&inner.bases_dir)?;
+        let max_id = match std::fs::read(&inner.max_id_path) {
             Ok(bytes) => postcard::from_bytes::<i32>(&bytes)
                 .map_err(|e| std::io::Error::new(ErrorKind::InvalidData, e))?,
             Err(e) if e.kind() == ErrorKind::NotFound => 0,
             Err(e) => return Err(e),
         };
+        let inner = Inner { max_id, ..inner };
         Ok(Self {
-            bases_dir,
-            max_id_path,
-            root_path: root.join(Self::ROOT_FILE),
-            max_id,
+            inner: Arc::new(RwLock::new(inner)),
         })
     }
+}
 
+impl Inner {
     fn write_max_id(&self) -> Result<(), std::io::Error> {
         let bytes = postcard::to_allocvec(&self.max_id)
             .map_err(|e| std::io::Error::new(ErrorKind::InvalidData, e))?;
@@ -87,32 +100,14 @@ impl FileBaseStorage {
             .join(format!("{:04x}", level_2))
             .join(format!("{:08x}.postcard", id.0))
     }
-}
 
-impl BaseStorageRead for FileBaseStorage {
-    async fn read(&self, id: BaseId) -> Result<Base, BaseStorageReadError> {
-        if id.0 == 0 {
-            return Ok(Base::new());
-        }
-        if id.0 > self.max_id {
-            return Err(BaseStorageReadError::NotFound(id));
-        }
-        let path = self.base_path(id);
-        let bytes = std::fs::read(&path).map_err(|e| BaseStorageReadError::Io(id, e))?;
-        let base = postcard::from_bytes::<Base>(&bytes)
-            .map_err(|e| BaseStorageReadError::Decode(id, e))?;
-        Ok(base)
+    fn write_max_id_with(&self, id: BaseId) -> Result<(), BaseStorageWriteError> {
+        let bytes = postcard::to_allocvec(&id.0)
+            .map_err(|e| BaseStorageWriteError::Encode(id, e))?;
+        std::fs::write(&self.max_id_path, bytes).map_err(|e| BaseStorageWriteError::Io(id, e))
     }
 
-    fn max_id(&self) -> Option<BaseId> {
-        if self.max_id == 0 {
-            None
-        } else {
-            Some(BaseId(self.max_id))
-        }
-    }
-
-    async fn read_root(&self) -> Result<Option<MapBase>, BaseStorageReadError> {
+    fn read_root(&self) -> Result<Option<MapBase>, BaseStorageReadError> {
         match std::fs::read(&self.root_path) {
             Ok(bytes) => {
                 let root = postcard::from_bytes::<MapBase>(&bytes)
@@ -123,33 +118,71 @@ impl BaseStorageRead for FileBaseStorage {
             Err(e) => Err(BaseStorageReadError::Io(BaseId(0), e)),
         }
     }
+
+    fn write_root_with(&self, root: &MapBase) -> Result<(), BaseStorageWriteError> {
+        let bytes = postcard::to_allocvec(root)
+            .map_err(|e| BaseStorageWriteError::Encode(BaseId(0), e))?;
+        std::fs::write(&self.root_path, bytes).map_err(|e| BaseStorageWriteError::Io(BaseId(0), e))
+    }
+}
+
+impl BaseStorageRead for FileBaseStorage {
+    async fn read(&self, id: BaseId) -> Result<Base, BaseStorageReadError> {
+        if id.0 == 0 {
+            return Ok(Base::new());
+        }
+        let inner = self.inner.read().expect("storage poisoned");
+        if id.0 > inner.max_id {
+            return Err(BaseStorageReadError::NotFound(id));
+        }
+        let path = inner.base_path(id);
+        let bytes = std::fs::read(&path).map_err(|e| BaseStorageReadError::Io(id, e))?;
+        let base = postcard::from_bytes::<Base>(&bytes)
+            .map_err(|e| BaseStorageReadError::Decode(id, e))?;
+        Ok(base)
+    }
+
+    fn max_id(&self) -> Option<BaseId> {
+        let inner = self.inner.read().expect("storage poisoned");
+        if inner.max_id == 0 {
+            None
+        } else {
+            Some(BaseId(inner.max_id))
+        }
+    }
+
+    async fn read_root(&self) -> Result<Option<MapBase>, BaseStorageReadError> {
+        Ok(self.inner.read().expect("storage poisoned").read_root()?)
+    }
 }
 
 impl BaseStorageReadWrite for FileBaseStorage {
     fn next_id(&self) -> BaseId {
-        BaseId(self.max_id + 1)
+        let inner = self.inner.read().expect("storage poisoned");
+        BaseId(inner.max_id + 1)
     }
 
     fn append(
         &mut self,
         base: &Base,
     ) -> impl Future<Output = Result<BaseId, BaseStorageWriteError>> {
-        let id = self.next_id();
+        let mut inner = self.inner.write().expect("storage poisoned");
+        let id = BaseId(inner.max_id + 1);
         let bytes = match postcard::to_allocvec(base) {
             Ok(bytes) => bytes,
             Err(e) => return future::ready(Err(BaseStorageWriteError::Encode(id, e))),
         };
-        let path = self.base_path(id);
+        let path = inner.base_path(id);
         if let Err(e) = std::fs::create_dir_all(path.parent().expect("base path has parent")) {
             return future::ready(Err(BaseStorageWriteError::Io(id, e)));
         }
         if let Err(e) = std::fs::write(&path, bytes) {
             return future::ready(Err(BaseStorageWriteError::Io(id, e)));
         }
-        if let Err(e) = self.write_max_id_with(id) {
+        if let Err(e) = inner.write_max_id_with(id) {
             return future::ready(Err(e));
         }
-        self.max_id = id.0;
+        inner.max_id = id.0;
         future::ready(Ok(id))
     }
 
@@ -157,24 +190,15 @@ impl BaseStorageReadWrite for FileBaseStorage {
         &mut self,
         root: MapBase,
     ) -> impl Future<Output = Result<(), BaseStorageWriteError>> {
-        match self.write_root_with(&root) {
+        match self
+            .inner
+            .read()
+            .expect("storage poisoned")
+            .write_root_with(&root)
+        {
             Ok(()) => future::ready(Ok(())),
             Err(e) => future::ready(Err(e)),
         }
-    }
-}
-
-impl FileBaseStorage {
-    fn write_max_id_with(&self, id: BaseId) -> Result<(), BaseStorageWriteError> {
-        let bytes = postcard::to_allocvec(&id.0)
-            .map_err(|e| BaseStorageWriteError::Encode(id, e))?;
-        std::fs::write(&self.max_id_path, bytes).map_err(|e| BaseStorageWriteError::Io(id, e))
-    }
-
-    fn write_root_with(&self, root: &MapBase) -> Result<(), BaseStorageWriteError> {
-        let bytes = postcard::to_allocvec(root)
-            .map_err(|e| BaseStorageWriteError::Encode(BaseId(0), e))?;
-        std::fs::write(&self.root_path, bytes).map_err(|e| BaseStorageWriteError::Io(BaseId(0), e))
     }
 }
 
@@ -253,6 +277,21 @@ mod tests {
         let id = storage.append(&base).await.expect("append");
         assert_eq!(BaseId(2), id);
         assert_eq!(Some(BaseId(2)), storage.max_id());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn clones_share_the_same_id_counter() -> anyhow::Result<()> {
+        let dir = tempfile::tempdir()?;
+        let mut storage = FileBaseStorage::new(dir.path())?;
+        let mut clone = storage.clone();
+        let base = Base::new_kv(TrieKey::new(7), MemValue::U32(7));
+        let id0 = storage.append(&base).await.expect("append");
+        let id1 = clone.append(&base).await.expect("append");
+        assert_eq!(BaseId(1), id0);
+        assert_eq!(BaseId(2), id1);
+        assert_eq!(Some(BaseId(2)), storage.max_id());
+        assert_eq!(Some(BaseId(2)), clone.max_id());
         Ok(())
     }
 

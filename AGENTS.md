@@ -33,7 +33,7 @@ Within `crates/skybase/src`:
 - **`BaseId(0)` is the empty base.** It is never stored; every storage returns an empty `Base` for it and appends start at id 1.
 - **`Attr` is `&'static str`** (attribute idents), not an integer. Schema attributes must be declared up front: `Db::new(storage, [attrs])` / `Db::load(storage, [attrs])` enumerate every `Attr` used. Loading with an undeclared attr fails with `LoadError::UnknownAttr`.
 - **`Db` is immutable-value / consumed-ownership.** `Db::transact(...)` consumes `self` and returns a new `Db`. Get the underlying storage back with `db.close()` before re-`load`ing.
-- **Generic bounds are pervasive.** Any struct/fn mentioning `Trie<S>` or `Db<S>` needs `S: BaseStorageReadWrite + Clone`.
+- **Generic bounds are pervasive.** Any struct/fn mentioning `Trie<S>` or `Db<S>` needs `S: BaseStorageReadWrite`. Read-only sub-tries are borrowed views (`TrieRef<'a, S>` from `trie.view()` / `to_subtrie_from_value`); nothing requires `S: Clone`.
 - **`Ent` is either `Id(Ein)` or `Temp(&'static str)`.** Temp entities get auto-assigned `Ein`s at transact time (see `src/db/component/ent_eid.rs`). Reusing the same temp ident in a tx rewrites the same entity, whereas separate txns create separate entities.
 - `hash::universal` is the hashing primitive; everything keys off it.
 

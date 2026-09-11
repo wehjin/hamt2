@@ -5,6 +5,7 @@ pub mod mem;
 mod trie;
 
 pub use trie::*;
+pub use trie::query::TrieRef;
 
 #[cfg(test)]
 mod tests {

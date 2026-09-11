@@ -1,17 +1,17 @@
-use crate::trie::base_storage::BaseStorageReadWrite;
+use crate::trie::base_storage::BaseStorageRead;
 use crate::trie::mem::value::MemValue;
-use crate::trie::Trie;
+use crate::trie::TrieRef;
 
-pub struct Read<'a, S: BaseStorageReadWrite> {
-    hash_trie: &'a Trie<S>,
+pub struct Read<'a, S: BaseStorageRead> {
+    hash_trie: TrieRef<'a, S>,
     bytes_left: usize,
     start_key: i32,
     u32_index: i32,
     current_u32: Option<(u32, usize)>,
 }
 
-impl<'a, S: BaseStorageReadWrite> Read<'a, S> {
-    pub fn new(hash_trie: &'a Trie<S>, bytes_max: usize, start_key: i32) -> Self {
+impl<'a, S: BaseStorageRead> Read<'a, S> {
+    pub fn new(hash_trie: TrieRef<'a, S>, bytes_max: usize, start_key: i32) -> Self {
         Self {
             hash_trie,
             bytes_left: bytes_max,

@@ -8,7 +8,7 @@ use crate::trie::base_storage::BaseStorageReadWrite;
 use crate::trie::Trie;
 use crate::{LoadError, TransactError};
 
-impl<S: BaseStorageReadWrite + Clone> Db<S> {
+impl<S: BaseStorageReadWrite> Db<S> {
     pub async fn new(storage: S, db_spec: impl Into<DbSpec>) -> Result<Self, TransactError> {
         let db_spec = db_spec.into();
         let attr_specs = db_spec.as_ref();

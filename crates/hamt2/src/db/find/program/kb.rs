@@ -11,13 +11,13 @@ use futures::{pin_mut, StreamExt};
 use std::collections::HashSet;
 
 #[derive(Debug, Clone)]
-pub struct KnowledgeBase<'a, S: BaseStorageReadWrite + Clone> {
+pub struct KnowledgeBase<'a, S: BaseStorageReadWrite> {
     db_trie: &'a Trie<S>,
     schema: &'a Schema,
     facts: HashSet<Atom>,
 }
 
-impl<'a, S: BaseStorageReadWrite + Clone> KnowledgeBase<'a, S> {
+impl<'a, S: BaseStorageReadWrite> KnowledgeBase<'a, S> {
     pub fn from_facts(db_trie: &'a Trie<S>, schema: &'a Schema, facts: Vec<Atom>) -> Self {
         debug_assert!(facts.iter().all(|atom| atom.is_grounded()));
         Self {
@@ -100,10 +100,10 @@ impl<'a, S: BaseStorageReadWrite + Clone> KnowledgeBase<'a, S> {
     }
 }
 
-impl<'a, S: BaseStorageReadWrite + Clone> PartialEq for KnowledgeBase<'a, S> {
+impl<'a, S: BaseStorageReadWrite> PartialEq for KnowledgeBase<'a, S> {
     fn eq(&self, other: &Self) -> bool {
         self.facts == other.facts
     }
 }
 
-impl<'a, S: BaseStorageReadWrite + Clone> Eq for KnowledgeBase<'a, S> {}
+impl<'a, S: BaseStorageReadWrite> Eq for KnowledgeBase<'a, S> {}

@@ -22,7 +22,7 @@ pub trait DbQuery {
     }
 }
 
-impl<S: BaseStorageReadWrite + Clone> Db<S> {
+impl<S: BaseStorageReadWrite> Db<S> {
     pub async fn max_tx(&self) -> Result<Txid, QueryError> {
         let Some(MemValue::U32(value)) = self.trie.query_value(KEY_MAX_TXID).await? else {
             panic!("max_tx not found");
@@ -35,7 +35,7 @@ impl<S: BaseStorageReadWrite + Clone> Db<S> {
     }
 }
 
-impl<S: BaseStorageReadWrite + Clone> DbQuery for Db<S> {
+impl<S: BaseStorageReadWrite> DbQuery for Db<S> {
     fn find_val(
         &self,
         e: impl Into<Ein>,

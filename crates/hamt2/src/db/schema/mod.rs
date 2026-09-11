@@ -36,7 +36,7 @@ impl Schema {
         self.attr_table.extend(attributes);
     }
 
-    pub async fn save<S: BaseStorageReadWrite + Clone>(
+    pub async fn save<S: BaseStorageReadWrite>(
         &self,
         mut trie: Trie<S>,
         txid: Txid,
@@ -66,7 +66,7 @@ impl Schema {
         }
         Ok(trie)
     }
-    pub async fn load<S: BaseStorageReadWrite + Clone>(
+    pub async fn load<S: BaseStorageReadWrite>(
         attrs: impl AsRef<[Attr]>,
         db: &Db<S>,
     ) -> Result<Self, LoadError> {

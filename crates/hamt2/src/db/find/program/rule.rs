@@ -22,7 +22,7 @@ impl Rule {
         }
     }
 
-    pub async fn derive_facts<'a, S: BaseStorageReadWrite + Clone>(
+    pub async fn derive_facts<'a, S: BaseStorageReadWrite>(
         &self,
         kb: &KnowledgeBase<'a, S>,
     ) -> Vec<Atom> {
@@ -35,7 +35,7 @@ impl Rule {
         new_facts
     }
 
-    async fn derive_body_subs<'a, S: BaseStorageReadWrite + Clone>(
+    async fn derive_body_subs<'a, S: BaseStorageReadWrite>(
         &self,
         kb: &KnowledgeBase<'a, S>,
     ) -> Vec<Substitution> {

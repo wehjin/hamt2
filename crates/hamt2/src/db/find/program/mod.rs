@@ -25,7 +25,7 @@ impl Program {
         }
     }
 
-    pub async fn solve<'a, S: BaseStorageReadWrite + Clone>(
+    pub async fn solve<'a, S: BaseStorageReadWrite>(
         self,
         db_trie: &'a Trie<S>,
         schema: &'a Schema,

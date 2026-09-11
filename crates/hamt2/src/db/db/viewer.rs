@@ -10,12 +10,6 @@ pub struct DbViewer<S: BaseStorageReadWrite> {
     db: Db<S>,
 }
 
-impl<S: BaseStorageReadWrite> DbViewer<S> {
-    pub(crate) fn new(db: Db<S>) -> Self {
-        DbViewer { db }
-    }
-}
-
 impl DbViewer<MemBaseStorage> {
     pub async fn load(storage: MemBaseStorage, attrs: impl AsRef<[Attr]>) -> Result<Self, LoadError> {
         let attrs = attrs.as_ref();
@@ -32,7 +26,7 @@ impl DbViewer<MemBaseStorage> {
     }
 }
 
-impl<S: BaseStorageReadWrite + Clone> DbQuery for DbViewer<S> {
+impl<S: BaseStorageReadWrite> DbQuery for DbViewer<S> {
     fn find_val(
         &self,
         e: impl Into<Ein>,
