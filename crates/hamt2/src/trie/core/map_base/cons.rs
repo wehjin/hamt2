@@ -1,20 +1,20 @@
 use crate::trie::core::key::TrieKey;
 use crate::trie::core::map::TrieMap;
 use crate::trie::core::map_base::TrieMapBase;
-use crate::trie::mem::base::MemBase;
+use crate::trie::mem::base::Base;
 use crate::trie::mem::slot::MemSlot;
 use crate::trie::mem::value::MemValue;
 
 impl TrieMapBase {
     pub fn empty() -> Self {
         let map = TrieMap::empty();
-        let base = MemBase::new();
+        let base = Base::new();
         Self { map, base }
     }
 
     pub fn one_kv(key: TrieKey, value: MemValue) -> Self {
         let map = TrieMap::set_key_bit(key);
-        let base = MemBase::new_kv(key, value);
+        let base = Base::new_kv(key, value);
         Self { map, base }
     }
     pub fn two_kv(key: TrieKey, value: MemValue, key2: TrieKey, value2: MemValue) -> Self {
@@ -30,7 +30,7 @@ impl TrieMapBase {
                 slots.push(MemSlot::one_kv(key2, value2));
                 slots.push(MemSlot::one_kv(key, value));
             }
-            let base = MemBase { slots };
+            let base = Base { slots };
             base
         };
         TrieMapBase { map, base }

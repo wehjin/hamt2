@@ -1,7 +1,7 @@
 use crate::trie::core::key::TrieKey;
 use crate::trie::core::map::TrieMap;
 use crate::trie::core::map_base::TrieMapBase;
-use crate::trie::mem::base::MemBase;
+use crate::trie::mem::base::Base;
 use crate::trie::mem::value::MemValue;
 use crate::QueryError;
 use serde::{Deserialize, Serialize};
@@ -22,7 +22,7 @@ impl MemSlot {
         if a_map_index == b_map_index {
             let map = TrieMap::set_map_index_bit(a_map_index);
             let slot = MemSlot::two_kv(a_key.next(), a_value, b_key.next(), b_value);
-            let base = MemBase { slots: vec![slot] };
+            let base = Base { slots: vec![slot] };
             MemSlot::MapBase(TrieMapBase { map, base })
         } else {
             let map_base = TrieMapBase::two_kv(a_key, a_value, b_key, b_value);

@@ -1,5 +1,5 @@
 use crate::trie::core::map::TrieMap;
-use crate::trie::mem::base::MemBase;
+use crate::trie::mem::base::Base;
 use serde::{Deserialize, Serialize};
 
 pub mod cons;
@@ -10,7 +10,7 @@ pub mod write;
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct TrieMapBase {
     pub map: TrieMap,
-    pub base: MemBase,
+    pub base: Base,
 }
 
 #[cfg(test)]
@@ -20,7 +20,7 @@ mod tests {
     use crate::trie::core::key::TrieKey;
     use crate::trie::core::map::TrieMap;
     use crate::trie::core::map_base::*;
-    use crate::trie::mem::base::MemBase;
+    use crate::trie::mem::base::Base;
     use crate::trie::mem::value::MemValue;
     use crate::trie::space::root::SpaceRoot;
     use tokio_stream::StreamExt;
@@ -29,7 +29,7 @@ mod tests {
     async fn test_stream_kvs_empty_map() {
         let map_base = TrieMapBase {
             map: TrieMap::empty(),
-            base: MemBase::new(),
+            base: Base::new(),
         };
         let stream = map_base.kv_stream();
         let kvs = stream.collect::<Vec<_>>().await;
@@ -41,7 +41,7 @@ mod tests {
         let value = MemValue::from(11);
         let map_base = {
             let map = TrieMap::set_key_bit(key);
-            let base = MemBase::new_kv(key, value.clone());
+            let base = Base::new_kv(key, value.clone());
             TrieMapBase { map, base }
         };
         let stream = map_base.kv_stream();
@@ -61,7 +61,7 @@ mod tests {
                 let key = TrieKey::new(test_kvs[0].0);
                 let value = test_kvs[0].1.clone();
                 let map = TrieMap::set_key_bit(key);
-                let base = MemBase::new_kv(key, value.clone());
+                let base = Base::new_kv(key, value.clone());
                 TrieMapBase { map, base }
             };
             for kv in &test_kvs[1..] {

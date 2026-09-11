@@ -1,16 +1,30 @@
+use crate::TransactError;
 use crate::trie::core::key::TrieKey;
 use crate::trie::mem::slot::MemSlot;
 use crate::trie::mem::value::MemValue;
-use crate::TransactError;
 use serde::{Deserialize, Serialize};
 use std::ops::Index;
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum StorageError {}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub struct BaseId(i32);
+pub trait BaseStorage {
+    // Read the next available base id.
+    fn max_id(&self) -> BaseId;
+
+    // Store a base
+    fn append(&mut self, base: &Base) -> impl Future<Output = Result<BaseId, StorageError>>;
+}
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
-pub struct MemBase {
+pub struct Base {
     pub slots: Vec<MemSlot>,
 }
 
-impl MemBase {
+impl Base {
     pub fn new() -> Self {
         Self { slots: vec![] }
     }
@@ -21,7 +35,7 @@ impl MemBase {
     }
 }
 
-impl MemBase {
+impl Base {
     pub fn len(&self) -> usize {
         self.slots.len()
     }
@@ -31,14 +45,14 @@ impl MemBase {
         Self { slots }
     }
     pub fn replace_value(self, base_index: usize, value: MemValue) -> Self {
-        let MemBase { mut slots } = self;
+        let Base { mut slots } = self;
         let slot = slots.remove(base_index).replace_value(value);
         slots.insert(base_index, slot);
         Self { slots }
     }
 
     pub fn kick_kv(self, base_index: usize, key: TrieKey, value: MemValue) -> Self {
-        let MemBase { mut slots } = self;
+        let Base { mut slots } = self;
         let pre_slot = slots.remove(base_index);
         let slot = {
             let MemSlot::KeyValue(b_key, b_value) = pre_slot else {
@@ -58,7 +72,7 @@ impl MemBase {
         key: TrieKey,
         value: MemValue,
     ) -> Result<Self, TransactError> {
-        let MemBase { mut slots } = self;
+        let Base { mut slots } = self;
         let pre_slot = slots.remove(base_index);
         let post_slot = {
             let MemSlot::MapBase(map_base) = pre_slot else {
@@ -73,7 +87,7 @@ impl MemBase {
     }
 }
 
-impl Index<usize> for MemBase {
+impl Index<usize> for Base {
     type Output = MemSlot;
     fn index(&self, index: usize) -> &Self::Output {
         &self.slots[index]

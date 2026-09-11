@@ -2,7 +2,7 @@ use crate::space::core::reader::SlotValue;
 use crate::space::{Read, Space, TableAddr};
 use crate::trie::core::map::TrieMap;
 use crate::trie::core::map_base::TrieMapBase;
-use crate::trie::mem::base::MemBase;
+use crate::trie::mem::base::Base;
 use crate::trie::mem::slot::MemSlot;
 use crate::trie::space::key_value::SpaceKeyValue;
 use crate::trie::space::slots::SpaceSlot;
@@ -17,7 +17,7 @@ impl SpaceMapBase {
     pub fn save(
         extend: &mut space::Extend<impl Space>,
         map: TrieMap,
-        base: MemBase,
+        base: Base,
     ) -> Result<Self, TransactError> {
         let mut slot_values: Vec<SlotValue> = vec![];
         for slot in base.slots {
@@ -89,7 +89,7 @@ impl SpaceMapBase {
         }
         let mem_map_base = TrieMapBase {
             map,
-            base: MemBase { slots: mem_slots },
+            base: Base { slots: mem_slots },
         };
         Ok(mem_map_base)
     }

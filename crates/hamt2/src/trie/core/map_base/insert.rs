@@ -1,6 +1,6 @@
 use crate::trie::core::key::TrieKey;
 use crate::trie::core::map_base::TrieMapBase;
-use crate::trie::mem::base::MemBase;
+use crate::trie::mem::base::Base;
 use crate::trie::mem::slot::{KvTest, MemSlot};
 use crate::trie::mem::value::MemValue;
 use crate::TransactError;
@@ -13,14 +13,14 @@ impl TrieMapBase {
                 KvTest::SameValue => TrieMapBase { map, base },
                 KvTest::ValueConflict => TrieMapBase {
                     map,
-                    base: MemBase::replace_value(base, base_index, value),
+                    base: Base::replace_value(base, base_index, value),
                 },
                 KvTest::KeyConflict => TrieMapBase {
                     map,
-                    base: MemBase::kick_kv(base, base_index, key, value),
+                    base: Base::kick_kv(base, base_index, key, value),
                 },
                 KvTest::MapBaseConflict => {
-                    let post_base = Box::pin(MemBase::merge_kv(base, base_index, key, value)).await?;
+                    let post_base = Box::pin(Base::merge_kv(base, base_index, key, value)).await?;
                     TrieMapBase { map, base: post_base }
                 }
             },
