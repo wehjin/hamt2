@@ -1,6 +1,7 @@
 use crate::trie::base::{Base, BaseId};
+use crate::trie::base_storage::errors::{BaseStorageReadError, BaseStorageWriteError};
 use crate::trie::base_storage::{
-    BaseStorageRead, BaseStorageReadError, BaseStorageReadWrite, BaseStorageWriteError,
+    BaseStorageRead, BaseStorageReadWrite,
 };
 use crate::trie::core::map_base::MapBase;
 use std::future;

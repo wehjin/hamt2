@@ -1,5 +1,5 @@
 use crate::QueryError;
-use crate::trie::base_storage::{BaseStorageReadError, BaseStorageWriteError};
+use crate::trie::base_storage::errors::{BaseStorageReadError, BaseStorageWriteError};
 
 #[derive(thiserror::Error, Debug)]
 pub enum TransactError {

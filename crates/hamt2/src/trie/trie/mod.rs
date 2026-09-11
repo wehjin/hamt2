@@ -1,6 +1,6 @@
-use crate::trie::base_storage::{
-    BaseStorageReadError, BaseStorageReadWrite, BaseStorageWriteError,
-};
+use crate::trie::base_storage::errors::{BaseStorageReadError, BaseStorageWriteError};
+use crate::trie::base_storage::
+BaseStorageReadWrite;
 use crate::trie::core::map_base::MapBase;
 
 pub mod deep;

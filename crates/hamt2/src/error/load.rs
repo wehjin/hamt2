@@ -1,5 +1,5 @@
 use crate::db::Attr;
-use crate::trie::base_storage::BaseStorageReadError;
+use crate::trie::base_storage::errors::BaseStorageReadError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]

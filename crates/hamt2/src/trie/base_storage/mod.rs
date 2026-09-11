@@ -1,19 +1,10 @@
 use crate::trie::base::{Base, BaseId};
 use crate::trie::core::map_base::MapBase;
-use thiserror::Error;
+use errors::{BaseStorageReadError, BaseStorageWriteError};
 
+pub mod errors;
 pub mod file;
 pub mod mem;
-
-#[derive(Debug, Error)]
-pub enum BaseStorageReadError {
-    #[error("base id {0} has not been written")]
-    NotFound(BaseId),
-    #[error("failed to read base id {0} from disk: {1}")]
-    Io(BaseId, #[source] std::io::Error),
-    #[error("failed to decode base id {0}: {1}")]
-    Decode(BaseId, #[source] postcard::Error),
-}
 
 /// A trait for reading Bases from storage.
 ///
@@ -26,17 +17,7 @@ pub trait BaseStorageRead {
     fn max_id(&self) -> Option<BaseId>;
 
     /// Reads the root map base of the trie or none if no root has been committed.
-    fn read_root(
-        &self,
-    ) -> impl Future<Output = Result<Option<MapBase>, BaseStorageReadError>>;
-}
-
-#[derive(Debug, Error)]
-pub enum BaseStorageWriteError {
-    #[error("failed to write base id {0} to disk: {1}")]
-    Io(BaseId, #[source] std::io::Error),
-    #[error("failed to encode base id {0}: {1}")]
-    Encode(BaseId, #[source] postcard::Error),
+    fn read_root(&self) -> impl Future<Output = Result<Option<MapBase>, BaseStorageReadError>>;
 }
 
 /// A trait for reading and writing Bases from storage.
