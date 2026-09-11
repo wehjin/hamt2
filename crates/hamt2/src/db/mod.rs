@@ -2,6 +2,7 @@ pub mod component;
 mod core;
 mod db;
 pub mod find;
+pub mod handle;
 mod schema;
 
 pub use component::vid::*;

@@ -85,6 +85,16 @@ impl FileBaseStorage {
     }
 }
 
+/// The two-level subfolder layout of a base file under a `bases` dir.
+fn base_path(bases_dir: &Path, id: BaseId) -> PathBuf {
+    let level_1 = id.0 >> 8;
+    let level_2 = id.0 & 0xff;
+    bases_dir
+        .join(format!("{:04x}", level_1))
+        .join(format!("{:04x}", level_2))
+        .join(format!("{:08x}.postcard", id.0))
+}
+
 impl Inner {
     fn write_max_id(&self) -> Result<(), std::io::Error> {
         let bytes = postcard::to_allocvec(&self.max_id)
@@ -93,12 +103,7 @@ impl Inner {
     }
 
     fn base_path(&self, id: BaseId) -> PathBuf {
-        let level_1 = id.0 >> 8;
-        let level_2 = id.0 & 0xff;
-        self.bases_dir
-            .join(format!("{:04x}", level_1))
-            .join(format!("{:04x}", level_2))
-            .join(format!("{:08x}.postcard", id.0))
+        base_path(&self.bases_dir, id)
     }
 
     fn write_max_id_with(&self, id: BaseId) -> Result<(), BaseStorageWriteError> {
@@ -156,7 +161,57 @@ impl BaseStorageRead for FileBaseStorage {
     }
 }
 
+/// A read-only, immutable view of a [`FileBaseStorage`] taken at
+/// `BaseStorageReadWrite::to_readonly` time.
+///
+/// `max_id` and `root` are captured into memory when the view is created, so
+/// later appends or commits on the writer are invisible through it. Bases are
+/// still read from disk: they are written once and never modified, so any id
+/// at or below the captured `max_id` stays readable.
+#[derive(Debug, Clone)]
+pub struct FileReadStorage {
+    bases_dir: PathBuf,
+    max_id: i32,
+    root: Option<MapBase>,
+}
+
+impl FileReadStorage {
+    fn base_path(&self, id: BaseId) -> PathBuf {
+        base_path(&self.bases_dir, id)
+    }
+}
+
+impl BaseStorageRead for FileReadStorage {
+    async fn read(&self, id: BaseId) -> Result<Base, BaseStorageReadError> {
+        if id.0 == 0 {
+            return Ok(Base::new());
+        }
+        if id.0 > self.max_id {
+            return Err(BaseStorageReadError::NotFound(id));
+        }
+        let path = self.base_path(id);
+        let bytes = std::fs::read(&path).map_err(|e| BaseStorageReadError::Io(id, e))?;
+        let base = postcard::from_bytes::<Base>(&bytes)
+            .map_err(|e| BaseStorageReadError::Decode(id, e))?;
+        Ok(base)
+    }
+
+    fn max_id(&self) -> Option<BaseId> {
+        if self.max_id == 0 {
+            None
+        } else {
+            Some(BaseId(self.max_id))
+        }
+    }
+
+    async fn read_root(&self) -> Result<Option<MapBase>, BaseStorageReadError> {
+        Ok(self.root.clone())
+    }
+}
+
 impl BaseStorageReadWrite for FileBaseStorage {
+    type ReadOnly = FileReadStorage;
+
     fn next_id(&self) -> BaseId {
         let inner = self.inner.read().expect("storage poisoned");
         BaseId(inner.max_id + 1)
@@ -198,6 +253,15 @@ impl BaseStorageReadWrite for FileBaseStorage {
         {
             Ok(()) => future::ready(Ok(())),
             Err(e) => future::ready(Err(e)),
+        }
+    }
+
+    fn to_readonly(&self) -> Self::ReadOnly {
+        let inner = self.inner.read().expect("storage poisoned");
+        FileReadStorage {
+            bases_dir: inner.bases_dir.clone(),
+            max_id: inner.max_id,
+            root: inner.read_root().expect("read root"),
         }
     }
 }
@@ -308,6 +372,41 @@ mod tests {
         assert!(bases_dir.join("0000").join("0001").join("00000001.postcard").exists());
         // Id 256 crosses into the next level-1 folder.
         assert!(bases_dir.join("0001").join("0000").join("00000100.postcard").exists());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn readonly_snapshot_freezes_max_id_and_root() -> anyhow::Result<()> {
+        use crate::trie::base_storage::errors::BaseStorageReadError;
+        use crate::trie::core::map_base::MapBase;
+        let dir = tempfile::tempdir()?;
+        let base = Base::new_kv(TrieKey::new(7), MemValue::U32(7));
+        let mut storage = FileBaseStorage::new(dir.path())?;
+        let id = storage.append(&base).await.expect("append");
+        let root = MapBase::one_kv(TrieKey::new(7), MemValue::U32(7), &mut storage).await;
+        storage.write_root(root.clone()).await.expect("write root");
+        let view = storage.to_readonly();
+
+        // Writes after the snapshot are invisible to the view.
+        let new_id = storage.append(&base).await.expect("append");
+        let new_root = MapBase::two_kv(
+            TrieKey::new(7),
+            MemValue::U32(7),
+            TrieKey::new(8),
+            MemValue::U32(8),
+            &mut storage,
+        )
+        .await;
+        storage.write_root(new_root).await.expect("write root");
+
+        assert_eq!(Some(BaseId(4)), storage.max_id());
+        assert_eq!(Some(BaseId(2)), view.max_id());
+        assert_eq!(Some(root), view.read_root().await.expect("read root"));
+        assert_eq!(base, view.read(id).await.expect("read"));
+        assert!(matches!(
+            view.read(new_id).await,
+            Err(BaseStorageReadError::NotFound(rid)) if rid == new_id
+        ));
         Ok(())
     }
 }

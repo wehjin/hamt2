@@ -52,7 +52,29 @@ impl BaseStorageRead for MemBaseStorage {
     }
 }
 
+/// A read-only snapshot of a [`MemBaseStorage`], taken at
+/// `BaseStorageReadWrite::to_readonly` time. Owns a full copy of the data, so
+/// later appends to the writer are invisible through it.
+#[derive(Debug, Clone)]
+pub struct MemReadStorage(MemBaseStorage);
+
+impl BaseStorageRead for MemReadStorage {
+    async fn read(&self, id: BaseId) -> Result<Base, BaseStorageReadError> {
+        self.0.read(id).await
+    }
+
+    fn max_id(&self) -> Option<BaseId> {
+        self.0.max_id()
+    }
+
+    async fn read_root(&self) -> Result<Option<MapBase>, BaseStorageReadError> {
+        self.0.read_root().await
+    }
+}
+
 impl BaseStorageReadWrite for MemBaseStorage {
+    type ReadOnly = MemReadStorage;
+
     fn next_id(&self) -> BaseId {
         BaseId(self.bases.len() as i32)
     }
@@ -66,5 +88,9 @@ impl BaseStorageReadWrite for MemBaseStorage {
     async fn write_root(&mut self, root: MapBase) -> Result<(), BaseStorageWriteError> {
         self.root = Some(root);
         Ok(())
+    }
+
+    fn to_readonly(&self) -> Self::ReadOnly {
+        MemReadStorage(self.clone())
     }
 }

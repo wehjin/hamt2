@@ -11,17 +11,22 @@ pub mod mem;
 /// Base id 0 is reserved and always represents the empty base.
 pub trait BaseStorageRead {
     /// Reads a base from storage.
-    fn read(&self, id: BaseId) -> impl Future<Output = Result<Base, BaseStorageReadError>>;
+    fn read(&self, id: BaseId) -> impl Future<Output = Result<Base, BaseStorageReadError>> + Send;
 
     /// Returns the highest base id in the storage or none if empty. Base id 0 (the empty base) is not counted.
     fn max_id(&self) -> Option<BaseId>;
 
     /// Reads the root map base of the trie or none if no root has been committed.
-    fn read_root(&self) -> impl Future<Output = Result<Option<MapBase>, BaseStorageReadError>>;
+    fn read_root(
+        &self,
+    ) -> impl Future<Output = Result<Option<MapBase>, BaseStorageReadError>> + Send;
 }
 
 /// A trait for reading and writing Bases from storage.
 pub trait BaseStorageReadWrite: BaseStorageRead {
+    /// The read-only snapshot type built by [`BaseStorageReadWrite::to_readonly`].
+    type ReadOnly: BaseStorageRead + Send;
+
     /// Read the next available base id. The value is 1 in an empty storage because base id 0 is reserved for the empty base.
     fn next_id(&self) -> BaseId;
 
@@ -29,13 +34,18 @@ pub trait BaseStorageReadWrite: BaseStorageRead {
     fn append(
         &mut self,
         base: &Base,
-    ) -> impl Future<Output = Result<BaseId, BaseStorageWriteError>>;
+    ) -> impl Future<Output = Result<BaseId, BaseStorageWriteError>> + Send;
 
     /// Persists the given root map base. The root can be read back with `BaseStorageRead::read_root`.
     fn write_root(
         &mut self,
         root: MapBase,
-    ) -> impl Future<Output = Result<(), BaseStorageWriteError>>;
+    ) -> impl Future<Output = Result<(), BaseStorageWriteError>> + Send;
+
+    /// Builds an immutable read-only version of the storage. The returned
+    /// view is independent of the writer: it neither borrows it nor observes
+    /// any writes made after this call.
+    fn to_readonly(&self) -> Self::ReadOnly;
 }
 
 #[cfg(test)]
@@ -70,5 +80,17 @@ mod tests {
         assert_eq!(BaseId(3), storage.next_id());
         assert_eq!(base, storage.read(id0).await.expect("read"));
         assert_eq!(base, storage.read(id1).await.expect("read"));
+    }
+
+    #[tokio::test]
+    async fn mem_readonly_snapshot_does_not_see_new_bases() {
+        let mut storage = MemBaseStorage::new();
+        let base = Base::new_kv(TrieKey::new(7), MemValue::U32(7));
+        let id = storage.append(&base).await.expect("append");
+        let view = storage.to_readonly();
+        storage.append(&base).await.expect("append");
+        assert_eq!(Some(BaseId(2)), storage.max_id());
+        assert_eq!(Some(id), view.max_id());
+        assert_eq!(base, view.read(id).await.expect("read"));
     }
 }
