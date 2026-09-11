@@ -14,7 +14,7 @@ plus a demo binary `hamt2-cli` (in `crates/hamt2-cli`). No CI, no README.
 
 Layered, each layer building on the one below:
 
-1. `src/space/` — storage abstraction (`Space` trait). Implementations: `mem` (in-memory), `file` (temp/on-disk), and `doc` (iroh-based sync). A space stores blocks of `SlotValue`s addressed by `TableAddr`.
+1. `src/space/` — storage abstraction (`Space` trait). Implementations: `mem` (in-memory) and `file` (temp/on-disk). A space stores blocks of `SlotValue`s addressed by `TableAddr`.
 2. `src/trie/` — HAMT over a `Space`. `SpaceTrie` is the persistent map. Mutations return a new `SpaceTrie`; nothing is durable until `.commit(&mut space).await?`.
 3. `src/db/` — the Datomic layer over `SpaceTrie`: `Datom` (`ent`/`attr`/`dat`/`dir`), schema, and queries (`find`/`pull`).
 
