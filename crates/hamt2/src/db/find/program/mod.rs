@@ -1,6 +1,6 @@
 use crate::db::Schema;
-use crate::trie::base_storage::BaseStorageReadWrite;
-use crate::trie::Trie;
+use crate::trie::base_storage::BaseStorageRead;
+use crate::trie::TrieQuery;
 use atom::Atom;
 use kb::KnowledgeBase;
 use rule::Rule;
@@ -25,11 +25,15 @@ impl Program {
         }
     }
 
-    pub async fn solve<'a, S: BaseStorageReadWrite>(
+    pub async fn solve<'a, T, S>(
         self,
-        db_trie: &'a Trie<S>,
+        db_trie: &'a T,
         schema: &'a Schema,
-    ) -> KnowledgeBase<'a, S> {
+    ) -> KnowledgeBase<'a, T, S>
+    where
+        T: TrieQuery<S>,
+        S: BaseStorageRead + 'a,
+    {
         for rule in &self.rules {
             if !rule.is_range_restricted() {
                 panic!("The program is not range restricted: {:?}", rule);

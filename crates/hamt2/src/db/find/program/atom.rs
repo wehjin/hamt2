@@ -3,7 +3,8 @@ use crate::db::find::program::sub::Substitution;
 use crate::db::find::program::term::Term;
 use crate::db::find::program::var::Var;
 use crate::db::Attr;
-use crate::trie::base_storage::BaseStorageReadWrite;
+use crate::trie::base_storage::BaseStorageRead;
+use crate::trie::TrieQuery;
 
 pub fn atom(attr: impl Into<Attr>, terms: impl Into<Vec<Term>>) -> Atom {
     Atom::new(attr.into(), terms)
@@ -55,11 +56,15 @@ impl Atom {
     }
 
     #[must_use]
-    pub async fn derive_body_atom_subs<'a, S: BaseStorageReadWrite>(
+    pub async fn derive_body_atom_subs<'a, T, S>(
         &self,
         subs: Vec<Substitution>,
-        kb: &KnowledgeBase<'a, S>,
-    ) -> Vec<Substitution> {
+        kb: &KnowledgeBase<'a, T, S>,
+    ) -> Vec<Substitution>
+    where
+        T: TrieQuery<S>,
+        S: BaseStorageRead,
+    {
         let mut new_subs = Vec::new();
         for sub in subs {
             // Try improving the atom by replacing variables with values.

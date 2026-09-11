@@ -3,9 +3,9 @@ use crate::db::component::db_trie;
 use crate::db::component::key::KEY_MAX_TXID;
 use crate::db::find::{EinAttrAny, Find};
 use crate::db::{Attr, Db, Ein, Txid, Val};
+use crate::trie::TrieQuery;
 use crate::trie::base_storage::BaseStorageReadWrite;
 use crate::trie::mem::value::MemValue;
-use crate::trie::TrieQuery;
 use futures::FutureExt;
 
 pub trait DbQuery {

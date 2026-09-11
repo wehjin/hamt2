@@ -2,7 +2,7 @@ use crate::db::component::key::KEY_VAL_TABLE;
 use crate::db::component::u32;
 use crate::db::{Val, Vid};
 use crate::hash;
-use crate::trie::base_storage::BaseStorageReadWrite;
+use crate::trie::base_storage::{BaseStorageRead, BaseStorageReadWrite};
 use crate::trie::mem::value::MemValue;
 use crate::trie::trie_ref::TrieRef;
 use crate::trie::{Trie, TrieQuery};
@@ -44,10 +44,11 @@ pub async fn insert<S: BaseStorageReadWrite>(
     Err(TransactError::NoSpaceInValueTable)
 }
 
-pub async fn query<S: BaseStorageReadWrite>(
-    trie: &Trie<S>,
-    vid: Vid,
-) -> Result<Option<Val>, QueryError> {
+pub async fn query<T, S>(trie: &T, vid: Vid) -> Result<Option<Val>, QueryError>
+where
+    T: TrieQuery<S>,
+    S: BaseStorageRead,
+{
     match find_hash_trie(trie, vid.to_id()).await? {
         None => Ok(None),
         Some(val_trie) => {
@@ -155,10 +156,14 @@ async fn is_equal_bytes<'a, S: BaseStorageReadWrite>(
     }
 }
 
-async fn find_hash_trie<'a, S: BaseStorageReadWrite>(
-    trie: &'a Trie<S>,
+async fn find_hash_trie<'a, T, S>(
+    trie: &'a T,
     hash: i32,
-) -> Result<Option<TrieRef<'a, S>>, QueryError> {
+) -> Result<Option<TrieRef<'a, S>>, QueryError>
+where
+    T: TrieQuery<S>,
+    S: BaseStorageRead + 'a,
+{
     let key = [KEY_VAL_TABLE, hash];
     match trie.deep_query_value(key).await? {
         None => Ok(None),

@@ -9,7 +9,7 @@ pub mod mem;
 /// A trait for reading Bases from storage.
 ///
 /// Base id 0 is reserved and always represents the empty base.
-pub trait BaseStorageRead {
+pub trait BaseStorageRead: Sync {
     /// Reads a base from storage.
     fn read(&self, id: BaseId) -> impl Future<Output = Result<Base, BaseStorageReadError>> + Send;
 
@@ -23,7 +23,7 @@ pub trait BaseStorageRead {
 
     /// Reads the root map base of the trie, defaulting to the empty map base if
     /// no root has been committed.
-    fn get_root(&self) -> impl Future<Output = Result<MapBase, BaseStorageReadError>> {
+    fn get_root(&self) -> impl Future<Output = Result<MapBase, BaseStorageReadError>> + Send {
         async {
             Ok(self
                 .read_root()

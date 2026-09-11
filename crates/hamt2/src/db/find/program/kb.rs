@@ -4,26 +4,37 @@ use crate::db::find::program::rule::Rule;
 use crate::db::find::program::sub::Substitution;
 use crate::db::find::program::term::Term;
 use crate::db::{Attr, Schema, Val};
-use crate::trie::base_storage::BaseStorageReadWrite;
-use crate::trie::Trie;
+use crate::trie::base_storage::BaseStorageRead;
+use crate::trie::TrieQuery;
 use async_stream::stream;
 use futures::{pin_mut, StreamExt};
 use std::collections::HashSet;
+use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct KnowledgeBase<'a, S: BaseStorageReadWrite> {
-    db_trie: &'a Trie<S>,
+pub struct KnowledgeBase<'a, T, S>
+where
+    T: TrieQuery<S>,
+    S: BaseStorageRead,
+{
+    db_trie: &'a T,
     schema: &'a Schema,
     facts: HashSet<Atom>,
+    phantom: PhantomData<&'a S>,
 }
 
-impl<'a, S: BaseStorageReadWrite> KnowledgeBase<'a, S> {
-    pub fn from_facts(db_trie: &'a Trie<S>, schema: &'a Schema, facts: Vec<Atom>) -> Self {
+impl<'a, T, S> KnowledgeBase<'a, T, S>
+where
+    T: TrieQuery<S>,
+    S: BaseStorageRead,
+{
+    pub fn from_facts(db_trie: &'a T, schema: &'a Schema, facts: Vec<Atom>) -> Self {
         debug_assert!(facts.iter().all(|atom| atom.is_grounded()));
         Self {
             db_trie,
             schema,
             facts: facts.into_iter().collect(),
+            phantom: PhantomData,
         }
     }
     #[must_use]
@@ -35,6 +46,7 @@ impl<'a, S: BaseStorageReadWrite> KnowledgeBase<'a, S> {
             db_trie: self.db_trie,
             schema: self.schema,
             facts,
+            phantom: PhantomData,
         }
     }
 
@@ -100,10 +112,19 @@ impl<'a, S: BaseStorageReadWrite> KnowledgeBase<'a, S> {
     }
 }
 
-impl<'a, S: BaseStorageReadWrite> PartialEq for KnowledgeBase<'a, S> {
+impl<'a, T, S> PartialEq for KnowledgeBase<'a, T, S>
+where
+    T: TrieQuery<S>,
+    S: BaseStorageRead,
+{
     fn eq(&self, other: &Self) -> bool {
         self.facts == other.facts
     }
 }
 
-impl<'a, S: BaseStorageReadWrite> Eq for KnowledgeBase<'a, S> {}
+impl<'a, T, S> Eq for KnowledgeBase<'a, T, S>
+where
+    T: TrieQuery<S>,
+    S: BaseStorageRead,
+{
+}

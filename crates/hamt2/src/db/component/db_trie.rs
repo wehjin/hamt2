@@ -13,7 +13,7 @@ use crate::db::find::program::var::var;
 use crate::db::find_result::FindResult;
 use crate::db::{Ein, Schema};
 use crate::db::{Attr, Txid, Val, Vid, txid};
-use crate::trie::base_storage::BaseStorageReadWrite;
+use crate::trie::base_storage::{BaseStorageRead, BaseStorageReadWrite};
 use crate::trie::mem::value::MemValue;
 use crate::trie::trie_ref::TrieRef;
 use crate::trie::{Trie, TrieQuery};
@@ -81,12 +81,16 @@ pub(crate) async fn set_max_tx<S: BaseStorageReadWrite>(
         .await
 }
 
-pub async fn find<S: BaseStorageReadWrite>(
-    trie: &Trie<S>,
-    schema: &Schema,
+pub async fn find<'a, T, S>(
+    trie: &'a T,
+    schema: &'a Schema,
     select: impl Into<Vec<&'static str>>,
     where_: impl Into<Vec<Atom>>,
-) -> FindResult {
+) -> FindResult
+where
+    T: TrieQuery<S>,
+    S: BaseStorageRead,
+{
     let select = select.into();
     let query_terms = select.iter().map(|s| term(var(*s))).collect::<Vec<_>>();
     let query_rule = rule(atom(QUERY, query_terms), where_.into());
@@ -109,11 +113,15 @@ pub async fn find<S: BaseStorageReadWrite>(
     found
 }
 
-pub fn ev_stream<'a, S: BaseStorageReadWrite>(
-    trie: &'a Trie<S>,
+pub fn ev_stream<'a, T, S>(
+    trie: &'a T,
     a: Attr,
     schema: &'a Schema,
-) -> impl futures::Stream<Item = (i32, Val)> + 'a {
+) -> impl futures::Stream<Item = (i32, Val)> + 'a
+where
+    T: TrieQuery<S>,
+    S: BaseStorageRead,
+{
     stream! {
         if let Some(evt_subtrie) = evt_subtrie(trie, a, schema).await {
             let evid_stream = evid_stream(evt_subtrie);
@@ -126,18 +134,22 @@ pub fn ev_stream<'a, S: BaseStorageReadWrite>(
     }
 }
 
-async fn evt_subtrie<'a, S: BaseStorageReadWrite>(
-    trie: &'a Trie<S>,
+async fn evt_subtrie<'a, T, S>(
+    trie: &'a T,
     attr: Attr,
     schema: &Schema,
-) -> Option<TrieRef<'a, S>> {
+) -> Option<TrieRef<'a, S>>
+where
+    T: TrieQuery<S>,
+    S: BaseStorageRead + 'a,
+{
     let aid = schema[attr].ein().to_i32();
     let keys = [KEY_AEVT, aid];
     let evt_value = trie.deep_query_value(keys).await.ok().flatten();
     evt_value.and_then(|evt| trie.to_subtrie_from_value(evt))
 }
 
-fn evid_stream<'a, S: BaseStorageReadWrite>(
+fn evid_stream<'a, S: BaseStorageRead>(
     evt_subtrie: TrieRef<'a, S>,
 ) -> impl futures::Stream<Item = (i32, i32)> + 'a {
     stream! {

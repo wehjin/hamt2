@@ -1,5 +1,4 @@
 use crate::QueryError;
-use crate::trie::Trie;
 
 mod any_attr_any;
 mod any_attr_ignore;
@@ -11,7 +10,8 @@ use crate::db::component::db_trie;
 use crate::db::find::program::atom::Atom;
 use crate::db::find_result::FindResult;
 use crate::db::schema::Schema;
-use crate::trie::base_storage::BaseStorageReadWrite;
+use crate::trie::TrieQuery;
+use crate::trie::base_storage::{BaseStorageRead, BaseStorageReadWrite};
 pub use any_attr_any::*;
 pub use any_attr_ignore::*;
 pub use ein_attr_any::*;
@@ -33,13 +33,15 @@ pub trait Find {
         self.apply(&db.trie, &db.schema)
     }
 
-    fn apply<S: BaseStorageReadWrite>(
+    fn apply<T, S>(
         self,
-        trie: &Trie<S>,
+        trie: &T,
         schema: &Schema,
     ) -> impl Future<Output = Result<Vec<Self::Output>, QueryError>>
     where
         Self: Sized,
+        T: TrieQuery<S>,
+        S: BaseStorageRead,
     {
         async move {
             let select = self.select();
