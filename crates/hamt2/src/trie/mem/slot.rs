@@ -1,8 +1,6 @@
-use crate::space;
 use crate::trie::core::key::TrieKey;
 use crate::trie::core::map::TrieMap;
 use crate::trie::core::map_base::TrieMapBase;
-use crate::trie::core::query::QueryKeysValues;
 use crate::trie::mem::base::MemBase;
 use crate::trie::mem::value::MemValue;
 use crate::QueryError;
@@ -37,20 +35,13 @@ impl MemSlot {
         };
         MemSlot::KeyValue(key, value)
     }
-    pub async fn query_key_values(
-        &self,
-        reader: &impl space::Read,
-    ) -> Result<Vec<(i32, MemValue)>, QueryError> {
+    pub async fn query_key_values(&self) -> Result<Vec<(i32, MemValue)>, QueryError> {
         match self {
             MemSlot::KeyValue(key, value) => Ok(vec![(*key, value.clone())]),
-            MemSlot::MapBase(map_base) => map_base.query_keys_values(reader).await,
+            MemSlot::MapBase(map_base) => map_base.query_keys_values().await,
         }
     }
-    pub async fn query_value<'a>(
-        &self,
-        key: TrieKey,
-        reader: &impl space::Read,
-    ) -> Result<Option<MemValue>, QueryError> {
+    pub async fn query_value(&self, key: TrieKey) -> Result<Option<MemValue>, QueryError> {
         match self {
             MemSlot::KeyValue(k, v) => {
                 if *k != key.i32() {
@@ -59,10 +50,7 @@ impl MemSlot {
                     Ok(Some(v.clone()))
                 }
             }
-            MemSlot::MapBase(map_base) => {
-                let value = map_base.query_value(key.next(), reader).await?;
-                Ok(value)
-            }
+            MemSlot::MapBase(map_base) => map_base.query_value(key.next()).await,
         }
     }
     pub fn test_kv(&self, key: &TrieKey, value: &MemValue) -> KvTest {

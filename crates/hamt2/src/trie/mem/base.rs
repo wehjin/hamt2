@@ -1,4 +1,3 @@
-use crate::space;
 use crate::trie::core::key::TrieKey;
 use crate::trie::mem::slot::MemSlot;
 use crate::trie::mem::value::MemValue;
@@ -58,7 +57,6 @@ impl MemBase {
         base_index: usize,
         key: TrieKey,
         value: MemValue,
-        reader: &impl space::Read,
     ) -> Result<Self, TransactError> {
         let MemBase { mut slots } = self;
         let pre_slot = slots.remove(base_index);
@@ -66,7 +64,7 @@ impl MemBase {
             let MemSlot::MapBase(map_base) = pre_slot else {
                 unreachable!("Should be a map-base slot, not a key-value slot:")
             };
-            let post_map_base = Box::pin(map_base.insert_kv(key.next(), value, reader)).await?;
+            let post_map_base = map_base.insert_kv(key.next(), value).await?;
             MemSlot::MapBase(post_map_base)
         };
         slots.insert(base_index, post_slot);

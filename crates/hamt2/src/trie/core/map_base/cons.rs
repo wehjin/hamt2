@@ -1,17 +1,11 @@
-use crate::space::core::reader::SlotValue;
 use crate::trie::core::key::TrieKey;
 use crate::trie::core::map::TrieMap;
 use crate::trie::core::map_base::TrieMapBase;
 use crate::trie::mem::base::MemBase;
 use crate::trie::mem::slot::MemSlot;
 use crate::trie::mem::value::MemValue;
-use crate::trie::space::map_base::SpaceMapBase;
 
 impl TrieMapBase {
-    pub fn from_slot_value(slot_value: SlotValue) -> Self {
-        let space_map_base = SpaceMapBase::assert(slot_value);
-        Self::Space(space_map_base.into_slot_value())
-    }
     pub fn empty() -> Self {
         let map = TrieMap::empty();
         let base = MemBase::new();

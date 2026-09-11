@@ -24,7 +24,7 @@ impl<T: Space> SpaceTrie<T> {
             let subtrie = if replace_tail && subtrie_i == last_index {
                 self.new_subtrie()
             } else {
-                match map_base.query_value(key, &self.reader).await? {
+                match map_base.query_value(key).await? {
                     None => self.new_subtrie(),
                     Some(value) => self.to_subtrie_from_value(value).await?,
                 }
@@ -35,7 +35,7 @@ impl<T: Space> SpaceTrie<T> {
         for i in (0..=last_index).rev() {
             let key = deep_key[i].clone();
             let map_base = map_bases.get(&i).expect("map_base should exist");
-            let post_map_base = map_base.clone().insert_kv(key, value, &self.reader).await?;
+            let post_map_base = map_base.clone().insert_kv(key, value).await?;
             value = MemValue::MapBase(post_map_base);
         }
         let MemValue::MapBase(map_base) = value else {
@@ -55,10 +55,7 @@ impl<T: Space> SpaceTrie<T> {
         let mut current_map_base = self.map_base.clone();
         let last_index = N - 1;
         for i in 0..=last_index {
-            match current_map_base
-                .query_value(deep_key[i].clone(), &self.reader)
-                .await?
-            {
+            match current_map_base.query_value(deep_key[i].clone()).await? {
                 None => {
                     return Ok(None);
                 }
@@ -68,7 +65,8 @@ impl<T: Space> SpaceTrie<T> {
                             MemValue::MapBase(map_base) => map_base,
                             MemValue::U32(u32) => SpaceRoot::from_root_addr(u32, &self.reader)
                                 .await?
-                                .into_trie_map_base(),
+                                .into_mem(&self.reader)
+                                .await?,
                         };
                         current_map_base = map_base;
                     } else {

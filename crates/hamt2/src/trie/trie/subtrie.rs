@@ -18,7 +18,8 @@ impl<T: Space> SpaceTrie<T> {
             MemValue::MapBase(map_base) => map_base,
             MemValue::U32(u32) => SpaceRoot::from_root_addr(u32, &reader)
                 .await?
-                .into_trie_map_base(),
+                .into_mem(&reader)
+                .await?,
         };
         Ok(Self { map_base, reader })
     }

@@ -7,7 +7,7 @@ use crate::trie::SpaceTrie;
 impl<T: Space> SpaceTrie<T> {
     pub async fn insert(self, key: i32, value: MemValue) -> Result<Self, TransactError> {
         let key = TrieKey::new(key);
-        let map_base = self.map_base.insert_kv(key, value, &self.reader).await?;
+        let map_base = self.map_base.insert_kv(key, value).await?;
         Ok(Self {
             map_base,
             reader: self.reader,

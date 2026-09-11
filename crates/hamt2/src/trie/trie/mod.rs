@@ -29,7 +29,7 @@ impl<T: Space> SpaceTrie<T> {
             None => TrieMapBase::empty(),
             Some(root) => {
                 let space_root = SpaceRoot::from_root_addr(root.to_u32(), &reader).await?;
-                let trie_map_base = space_root.into_trie_map_base();
+                let trie_map_base = space_root.into_mem(&reader).await?;
                 trie_map_base
             }
         };

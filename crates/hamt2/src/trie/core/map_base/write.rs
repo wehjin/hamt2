@@ -8,10 +8,7 @@ impl TrieMapBase {
         self,
         extend: &mut space::Extend<T>,
     ) -> Result<SpaceMapBase, TransactError> {
-        let space_map_base = match self {
-            Self::Space(slot_value) => SpaceMapBase::assert(slot_value),
-            Self::Mem(map, base) => SpaceMapBase::save(extend, map, base)?,
-        };
-        Ok(space_map_base)
+        let TrieMapBase::Mem(map, base) = self;
+        SpaceMapBase::save(extend, map, base)
     }
 }

@@ -1,6 +1,5 @@
-use crate::space::{Read, Space};
+use crate::space::Space;
 use crate::trie::core::key::TrieKey;
-use crate::trie::core::query::QueryKeysValues;
 use crate::trie::mem::value::MemValue;
 use crate::trie::SpaceTrie;
 use crate::QueryError;
@@ -10,21 +9,20 @@ use std::sync::Arc;
 impl<T: Space> SpaceTrie<T> {
     pub async fn query_value(&self, key: i32) -> Result<Option<MemValue>, QueryError> {
         let key = TrieKey::new(key);
-        self.map_base.query_value(key, &self.reader).await
+        self.map_base.query_value(key).await
     }
 
     pub async fn query_keys_values(&self) -> Result<Vec<(i32, MemValue)>, QueryError> {
-        self.map_base.query_keys_values(&self.reader).await
+        self.map_base.query_keys_values().await
     }
 
     pub fn filter_map<V, Fut: Future<Output = Option<V>>>(
         &self,
-        reader: &impl Read,
         filter: impl Fn((i32, MemValue)) -> Fut,
     ) -> impl Stream<Item = V> {
         use futures::stream::StreamExt;
         let filter = Arc::new(filter);
-        let stream = self.map_base.kv_stream(reader);
+        let stream = self.map_base.kv_stream();
         stream.filter_map(move |kv| {
             let filter = filter.clone();
             async move {
@@ -34,7 +32,7 @@ impl<T: Space> SpaceTrie<T> {
         })
     }
     pub fn u32_stream(&self) -> impl Stream<Item = (i32, u32)> {
-        self.filter_map(&self.reader, |(key, value)| async move {
+        self.filter_map(|(key, value)| async move {
             if let MemValue::U32(val) = value {
                 Some((key, val))
             } else {
@@ -45,7 +43,7 @@ impl<T: Space> SpaceTrie<T> {
 
     pub fn subtrie_stream(&self) -> impl Stream<Item = (i32, SpaceTrie<T>)> {
         let clone_reader = Arc::new(|| self.reader.clone());
-        self.filter_map(&self.reader, move |(key, value)| {
+        self.filter_map(move |(key, value)| {
             let reader_source = clone_reader.clone();
             async move {
                 Self::subtrie_from_value(value, reader_source())

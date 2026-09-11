@@ -1,5 +1,4 @@
 use crate::space::core::reader::SlotValue;
-use crate::trie::core::key::TrieKey;
 use crate::trie::mem::slot::MemSlot;
 use crate::trie::mem::value::MemValue;
 use crate::trie::space::slots::SpaceSlot;
@@ -23,15 +22,6 @@ impl SpaceKeyValue {
         let (key, value) = self.to_key_and_value();
         let slot = MemSlot::KeyValue(key, MemValue::U32(value));
         slot
-    }
-    pub fn query_value(&self, key: TrieKey) -> Option<MemValue> {
-        let (space_key, space_value) = self.to_key_and_value();
-        if key.i32() == space_key {
-            let value = space_value;
-            Some(MemValue::U32(value))
-        } else {
-            None
-        }
     }
 }
 
