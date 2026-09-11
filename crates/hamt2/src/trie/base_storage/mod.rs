@@ -1,10 +1,18 @@
 use crate::trie::base::{Base, BaseId};
 use thiserror::Error;
 
+pub mod file;
 pub mod mem;
 
 #[derive(Debug, Error)]
-pub enum BaseStorageReadError {}
+pub enum BaseStorageReadError {
+    #[error("base id {0} has not been written")]
+    NotFound(BaseId),
+    #[error("failed to read base id {0} from disk: {1}")]
+    Io(BaseId, #[source] std::io::Error),
+    #[error("failed to decode base id {0}: {1}")]
+    Decode(BaseId, #[source] postcard::Error),
+}
 
 /// A trait for reading Bases from storage.
 ///
@@ -18,7 +26,12 @@ pub trait BaseStorageRead {
 }
 
 #[derive(Debug, Error)]
-pub enum BaseStorageWriteError {}
+pub enum BaseStorageWriteError {
+    #[error("failed to write base id {0} to disk: {1}")]
+    Io(BaseId, #[source] std::io::Error),
+    #[error("failed to encode base id {0}: {1}")]
+    Encode(BaseId, #[source] postcard::Error),
+}
 
 /// A trait for reading and writing Bases from storage.
 pub trait BaseStorageReadWrite: BaseStorageRead {

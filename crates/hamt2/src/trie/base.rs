@@ -4,10 +4,17 @@ use crate::trie::core::key::TrieKey;
 use crate::trie::mem::slot::MemSlot;
 use crate::trie::mem::value::MemValue;
 use serde::{Deserialize, Serialize};
+use std::fmt::{self, Display};
 use std::ops::Index;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct BaseId(pub i32);
+
+impl Display for BaseId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        Display::fmt(&self.0, f)
+    }
+}
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Base {
