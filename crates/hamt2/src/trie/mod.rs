@@ -232,7 +232,7 @@ mod tests {
             let Some(MemValue::MapBase(map_base)) = value else {
                 panic!("expected map_base");
             };
-            assert_eq!(1, map_base.map().slot_count());
+            assert_eq!(1, map_base.map.slot_count());
         }
         {
             let value = trie.deep_query_value([4, 4]).await.unwrap();

@@ -87,7 +87,10 @@ impl SpaceMapBase {
                 mem_slots.push(mem_slot);
             }
         }
-        let mem_map_base = TrieMapBase::Mem(map, MemBase { slots: mem_slots });
+        let mem_map_base = TrieMapBase {
+            map,
+            base: MemBase { slots: mem_slots },
+        };
         Ok(mem_map_base)
     }
 

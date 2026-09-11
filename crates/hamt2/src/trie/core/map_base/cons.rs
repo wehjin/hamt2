@@ -9,13 +9,13 @@ impl TrieMapBase {
     pub fn empty() -> Self {
         let map = TrieMap::empty();
         let base = MemBase::new();
-        Self::Mem(map, base)
+        Self { map, base }
     }
 
     pub fn one_kv(key: TrieKey, value: MemValue) -> Self {
         let map = TrieMap::set_key_bit(key);
         let base = MemBase::new_kv(key, value);
-        Self::Mem(map, base)
+        Self { map, base }
     }
     pub fn two_kv(key: TrieKey, value: MemValue, key2: TrieKey, value2: MemValue) -> Self {
         debug_assert!(key.i32() != key2.i32());
@@ -33,6 +33,6 @@ impl TrieMapBase {
             let base = MemBase { slots };
             base
         };
-        TrieMapBase::Mem(map, base)
+        TrieMapBase { map, base }
     }
 }

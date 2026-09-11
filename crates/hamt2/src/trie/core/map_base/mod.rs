@@ -8,15 +8,9 @@ pub mod query;
 pub mod write;
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
-pub enum TrieMapBase {
-    Mem(TrieMap, MemBase),
-}
-
-impl TrieMapBase {
-    pub fn map(&self) -> TrieMap {
-        let TrieMapBase::Mem(map, _) = self;
-        *map
-    }
+pub struct TrieMapBase {
+    pub map: TrieMap,
+    pub base: MemBase,
 }
 
 #[cfg(test)]
@@ -33,7 +27,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_stream_kvs_empty_map() {
-        let map_base = TrieMapBase::Mem(TrieMap::empty(), MemBase::new());
+        let map_base = TrieMapBase {
+            map: TrieMap::empty(),
+            base: MemBase::new(),
+        };
         let stream = map_base.kv_stream();
         let kvs = stream.collect::<Vec<_>>().await;
         assert!(kvs.is_empty());
@@ -45,7 +42,7 @@ mod tests {
         let map_base = {
             let map = TrieMap::set_key_bit(key);
             let base = MemBase::new_kv(key, value.clone());
-            TrieMapBase::Mem(map, base)
+            TrieMapBase { map, base }
         };
         let stream = map_base.kv_stream();
         let kvs = stream.collect::<Vec<_>>().await;
@@ -65,7 +62,7 @@ mod tests {
                 let value = test_kvs[0].1.clone();
                 let map = TrieMap::set_key_bit(key);
                 let base = MemBase::new_kv(key, value.clone());
-                TrieMapBase::Mem(map, base)
+                TrieMapBase { map, base }
             };
             for kv in &test_kvs[1..] {
                 let key = TrieKey::new(kv.0);

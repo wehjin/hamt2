@@ -23,7 +23,7 @@ impl MemSlot {
             let map = TrieMap::set_map_index_bit(a_map_index);
             let slot = MemSlot::two_kv(a_key.next(), a_value, b_key.next(), b_value);
             let base = MemBase { slots: vec![slot] };
-            MemSlot::MapBase(TrieMapBase::Mem(map, base))
+            MemSlot::MapBase(TrieMapBase { map, base })
         } else {
             let map_base = TrieMapBase::two_kv(a_key, a_value, b_key, b_value);
             MemSlot::MapBase(map_base)

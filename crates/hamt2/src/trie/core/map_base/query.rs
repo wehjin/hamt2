@@ -7,7 +7,7 @@ use futures::stream;
 
 impl TrieMapBase {
     pub async fn query_value(&self, key: TrieKey) -> Result<Option<MemValue>, QueryError> {
-        let TrieMapBase::Mem(map, base) = self;
+        let TrieMapBase { map, base } = self;
         let value = match map.try_base_index(key) {
             Some(base_index) => Box::pin(base[base_index].query_value(key)).await?,
             None => None,
@@ -21,7 +21,7 @@ impl TrieMapBase {
         };
         stream::unfold(state, |mut state| async move {
             while let Some(mut job) = state.jobs.pop() {
-                let TrieMapBase::Mem(_map, base) = &job.map_base;
+                let base = &job.map_base.base;
                 match &base[job.slot_offset] {
                     MemSlot::KeyValue(key, value) => {
                         // Found a key and value. We finish by moving the current
@@ -50,7 +50,7 @@ impl TrieMapBase {
     }
 
     pub async fn query_keys_values(&self) -> Result<Vec<(i32, MemValue)>, QueryError> {
-        let TrieMapBase::Mem(map, base) = self;
+        let TrieMapBase { map, base } = self;
         let mut out = Vec::new();
         let slot_count = map.slot_count();
         debug_assert_eq!(slot_count, base.len());
@@ -72,7 +72,7 @@ struct Job {
 }
 impl Job {
     pub fn start(map_base: &TrieMapBase) -> Option<Self> {
-        let slot_count = map_base.map().slot_count();
+        let slot_count = map_base.map.slot_count();
         if slot_count == 0 {
             None
         } else {
