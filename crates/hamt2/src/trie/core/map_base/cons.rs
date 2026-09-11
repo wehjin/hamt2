@@ -1,4 +1,5 @@
-use crate::trie::base::Base;
+use crate::trie::base::{Base, BaseId};
+use crate::trie::base_storage::BaseStorageReadWrite;
 use crate::trie::core::key::TrieKey;
 use crate::trie::core::map::TrieMap;
 use crate::trie::core::map_base::TrieMapBase;
@@ -7,17 +8,30 @@ use crate::trie::mem::value::MemValue;
 
 impl TrieMapBase {
     pub fn empty() -> Self {
-        let map = TrieMap::empty();
-        let base = Base::new();
-        Self { map, base }
+        Self {
+            map: TrieMap::empty(),
+            base: BaseId(0),
+        }
     }
 
-    pub fn one_kv(key: TrieKey, value: MemValue) -> Self {
-        let map = TrieMap::set_key_bit(key);
-        let base = Base::new_kv(key, value);
-        Self { map, base }
+    pub async fn one_kv(
+        key: TrieKey,
+        value: MemValue,
+        storage: &mut impl BaseStorageReadWrite,
+    ) -> Self {
+        let id = storage.append(&Base::new_kv(key, value)).await.expect("append base");
+        Self {
+            map: TrieMap::set_key_bit(key),
+            base: id,
+        }
     }
-    pub fn two_kv(key: TrieKey, value: MemValue, key2: TrieKey, value2: MemValue) -> Self {
+    pub async fn two_kv(
+        key: TrieKey,
+        value: MemValue,
+        key2: TrieKey,
+        value2: MemValue,
+        storage: &mut impl BaseStorageReadWrite,
+    ) -> Self {
         debug_assert!(key.i32() != key2.i32());
         debug_assert!(key.map_index() != key2.map_index());
         let map = TrieMap(key.to_map_bit() | key2.to_map_bit());
@@ -33,6 +47,7 @@ impl TrieMapBase {
             let base = Base { slots };
             base
         };
-        TrieMapBase { map, base }
+        let id = storage.append(&base).await.expect("append base");
+        TrieMapBase { map, base: id }
     }
 }

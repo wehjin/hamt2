@@ -1,28 +1,29 @@
+use crate::QueryError;
 use crate::space::Space;
+use crate::trie::SpaceTrie;
+use crate::trie::base_storage::mem::SharedMemBaseStorage;
 use crate::trie::core::key::TrieKey;
 use crate::trie::mem::value::MemValue;
-use crate::trie::SpaceTrie;
-use crate::QueryError;
 use futures::Stream;
 use std::sync::Arc;
 
 impl<T: Space> SpaceTrie<T> {
     pub async fn query_value(&self, key: i32) -> Result<Option<MemValue>, QueryError> {
         let key = TrieKey::new(key);
-        self.map_base.query_value(key).await
+        self.map_base.query_value(key, &self.storage).await
     }
 
     pub async fn query_keys_values(&self) -> Result<Vec<(i32, MemValue)>, QueryError> {
-        self.map_base.query_keys_values().await
+        self.map_base.query_keys_values(&self.storage).await
     }
 
     pub fn filter_map<V, Fut: Future<Output = Option<V>>>(
         &self,
         filter: impl Fn((i32, MemValue)) -> Fut,
     ) -> impl Stream<Item = V> {
-        use futures::stream::StreamExt;
-        let filter = Arc::new(filter);
-        let stream = self.map_base.kv_stream();
+	    use futures::stream::StreamExt;
+	    let filter = Arc::new(filter);
+        let stream = self.map_base.kv_stream(&self.storage);
         stream.filter_map(move |kv| {
             let filter = filter.clone();
             async move {
@@ -43,10 +44,12 @@ impl<T: Space> SpaceTrie<T> {
 
     pub fn subtrie_stream(&self) -> impl Stream<Item = (i32, SpaceTrie<T>)> {
         let clone_reader = Arc::new(|| self.reader.clone());
+        let clone_storage: Arc<SharedMemBaseStorage> = Arc::new(self.storage.clone());
         self.filter_map(move |(key, value)| {
             let reader_source = clone_reader.clone();
+            let storage_source = clone_storage.clone();
             async move {
-                Self::subtrie_from_value(value, reader_source())
+                Self::subtrie_from_value(value, reader_source(), (*storage_source).clone())
                     .await
                     .ok()
                     .map(|subtrie| (key, subtrie))
@@ -57,12 +60,12 @@ impl<T: Space> SpaceTrie<T> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::space::file::FileSpace;
-    use crate::space::mem::MemSpace;
-    use futures::StreamExt;
+	use super::*;
+	use crate::space::file::FileSpace;
+	use crate::space::mem::MemSpace;
+	use futures::StreamExt;
 
-    #[tokio::test]
+	#[tokio::test]
     async fn u32_stream() -> anyhow::Result<()> {
         let mut space = MemSpace::new();
         {

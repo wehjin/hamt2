@@ -8,7 +8,7 @@ use std::collections::HashMap;
 
 impl<T: Space> SpaceTrie<T> {
     pub async fn deep_insert<const N: usize>(
-        self,
+        mut self,
         key: [i32; N],
         value: impl Into<MemValue>,
         replace_tail: bool,
@@ -24,7 +24,7 @@ impl<T: Space> SpaceTrie<T> {
             let subtrie = if replace_tail && subtrie_i == last_index {
                 self.new_subtrie()
             } else {
-                match map_base.query_value(key).await? {
+                match map_base.query_value(key, &self.storage).await? {
                     None => self.new_subtrie(),
                     Some(value) => self.to_subtrie_from_value(value).await?,
                 }
@@ -35,16 +35,14 @@ impl<T: Space> SpaceTrie<T> {
         for i in (0..=last_index).rev() {
             let key = deep_key[i].clone();
             let map_base = map_bases.get(&i).expect("map_base should exist");
-            let post_map_base = map_base.clone().insert_kv(key, value).await?;
+            let post_map_base = map_base.clone().insert_kv(key, value, &mut self.storage).await?;
             value = MemValue::MapBase(post_map_base);
         }
         let MemValue::MapBase(map_base) = value else {
             panic!("value should be map_base")
         };
-        Ok(Self {
-            map_base,
-            reader: self.reader,
-        })
+        self.map_base = map_base;
+        Ok(self)
     }
 
     pub async fn deep_query_value<const N: usize>(
@@ -52,10 +50,14 @@ impl<T: Space> SpaceTrie<T> {
         key: [i32; N],
     ) -> Result<Option<MemValue>, QueryError> {
         let deep_key = DeepKey::from(key);
+        let mut storage = self.storage.clone();
         let mut current_map_base = self.map_base.clone();
         let last_index = N - 1;
         for i in 0..=last_index {
-            match current_map_base.query_value(deep_key[i].clone()).await? {
+            match current_map_base
+                .query_value(deep_key[i].clone(), &self.storage)
+                .await?
+            {
                 None => {
                     return Ok(None);
                 }
@@ -65,7 +67,7 @@ impl<T: Space> SpaceTrie<T> {
                             MemValue::MapBase(map_base) => map_base,
                             MemValue::U32(u32) => SpaceRoot::from_root_addr(u32, &self.reader)
                                 .await?
-                                .into_mem(&self.reader)
+                                .into_mem(&self.reader, &mut storage)
                                 .await?,
                         };
                         current_map_base = map_base;

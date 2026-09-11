@@ -1,4 +1,5 @@
 use crate::space::{Read, Space, TableAddr};
+use crate::trie::base_storage::{BaseStorageRead, BaseStorageReadWrite};
 use crate::trie::core::map::TrieMap;
 use crate::trie::core::map_base::TrieMapBase;
 use crate::trie::space::map_base::SpaceMapBase;
@@ -21,16 +22,21 @@ impl SpaceRoot {
         let (key, addr) = SpaceMapBase::assert(slot_value).into_map_base_addr();
         Ok(Self(key, addr))
     }
-    pub async fn into_mem(self, reader: &impl Read) -> Result<TrieMapBase, QueryError> {
+    pub async fn into_mem(
+        self,
+        reader: &impl Read,
+        storage: &mut impl BaseStorageReadWrite,
+    ) -> Result<TrieMapBase, QueryError> {
         let space_map_base = SpaceMapBase::new(self.0, self.1);
-        let trie_map_base = space_map_base.into_mem(reader).await?;
+        let trie_map_base = space_map_base.into_mem(reader, storage).await?;
         Ok(trie_map_base)
     }
-    pub fn from_trie_map_base<T: Space>(
+    pub async fn from_trie_map_base<T: Space>(
         trie_map_base: TrieMapBase,
         extend: &mut space::Extend<T>,
+        storage: &impl BaseStorageRead,
     ) -> Result<Self, TransactError> {
-        let space_map_base = trie_map_base.into_space_map_base(extend)?;
+        let space_map_base = trie_map_base.into_space_map_base(extend, storage).await?;
         let (key, addr) = space_map_base.into_map_base_addr();
         Ok(Self(key, addr))
     }

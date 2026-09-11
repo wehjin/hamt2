@@ -1,12 +1,13 @@
 use crate::space::core::reader::SlotValue;
 use crate::space::{Read, Space, TableAddr};
-use crate::trie::base::Base;
+use crate::trie::base::{Base, BaseId};
+use crate::trie::base_storage::{BaseStorageRead, BaseStorageReadWrite};
 use crate::trie::core::map::TrieMap;
 use crate::trie::core::map_base::TrieMapBase;
 use crate::trie::mem::slot::MemSlot;
 use crate::trie::space::key_value::SpaceKeyValue;
 use crate::trie::space::slots::SpaceSlot;
-use crate::{QueryError, TransactError, space};
+use crate::{space, QueryError, TransactError};
 
 pub struct SpaceMapBase {
     map: TrieMap,
@@ -14,21 +15,23 @@ pub struct SpaceMapBase {
 }
 
 impl SpaceMapBase {
-    pub fn save(
+    pub async fn save(
         extend: &mut space::Extend<impl Space>,
         map: TrieMap,
         base: Base,
+        storage: &impl BaseStorageRead,
     ) -> Result<Self, TransactError> {
         let mut slot_values: Vec<SlotValue> = vec![];
         for slot in base.slots {
             match slot {
                 MemSlot::KeyValue(key, value) => {
-                    let u32 = value.save(extend)?;
+                    let u32 = Box::pin(value.save(extend, storage)).await?;
                     let slot_value = SpaceKeyValue::new(key, u32).into_slot_value();
                     slot_values.push(slot_value);
                 }
                 MemSlot::MapBase(map_base) => {
-                    let space_map_base = map_base.into_space_map_base(extend)?;
+                    let space_map_base =
+                        Box::pin(map_base.into_space_map_base(extend, storage)).await?;
                     let slot_value = space_map_base.into_slot_value();
                     slot_values.push(slot_value);
                 }
@@ -72,7 +75,11 @@ impl SpaceMapBase {
 }
 
 impl SpaceMapBase {
-    pub async fn into_mem(self, reader: &impl Read) -> Result<TrieMapBase, QueryError> {
+    pub async fn into_mem(
+        self,
+        reader: &impl Read,
+        storage: &mut impl BaseStorageReadWrite,
+    ) -> Result<TrieMapBase, QueryError> {
         let map = self.to_map();
         let base = self.extract_base();
         let mut mem_slots = Vec::new();
@@ -82,15 +89,20 @@ impl SpaceMapBase {
                 let mem_slot = key_value.to_mem_slot();
                 mem_slots.push(mem_slot);
             } else if let Some(map_base) = slot.try_map_base() {
-                let trie_map_base = Box::pin(map_base.into_mem(reader)).await?;
+                let trie_map_base = Box::pin(map_base.into_mem(reader, storage)).await?;
                 let mem_slot = MemSlot::MapBase(trie_map_base);
                 mem_slots.push(mem_slot);
             }
         }
-        let mem_map_base = TrieMapBase {
-            map,
-            base: Base { slots: mem_slots },
+        let base_id = if mem_slots.is_empty() {
+            BaseId(0)
+        } else {
+            storage
+                .append(&Base { slots: mem_slots })
+                .await
+                .expect("append base")
         };
+        let mem_map_base = TrieMapBase { map, base: base_id };
         Ok(mem_map_base)
     }
 

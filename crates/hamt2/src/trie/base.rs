@@ -1,4 +1,5 @@
 use crate::TransactError;
+use crate::trie::base_storage::BaseStorageReadWrite;
 use crate::trie::core::key::TrieKey;
 use crate::trie::mem::slot::MemSlot;
 use crate::trie::mem::value::MemValue;
@@ -40,7 +41,13 @@ impl Base {
         Self { slots }
     }
 
-    pub fn kick_kv(self, base_index: usize, key: TrieKey, value: MemValue) -> Self {
+    pub async fn kick_kv(
+        self,
+        base_index: usize,
+        key: TrieKey,
+        value: MemValue,
+        storage: &mut impl BaseStorageReadWrite,
+    ) -> Self {
         let Base { mut slots } = self;
         let pre_slot = slots.remove(base_index);
         let slot = {
@@ -49,7 +56,7 @@ impl Base {
             };
             let b_key = key.sync(b_key);
             debug_assert!(b_key.i32() != key.i32());
-            MemSlot::two_kv(b_key.next(), b_value, key.next(), value)
+            MemSlot::two_kv(b_key.next(), b_value, key.next(), value, storage).await
         };
         slots.insert(base_index, slot);
         Self { slots }
@@ -60,6 +67,7 @@ impl Base {
         base_index: usize,
         key: TrieKey,
         value: MemValue,
+        storage: &mut impl BaseStorageReadWrite,
     ) -> Result<Self, TransactError> {
         let Base { mut slots } = self;
         let pre_slot = slots.remove(base_index);
@@ -67,7 +75,7 @@ impl Base {
             let MemSlot::MapBase(map_base) = pre_slot else {
                 unreachable!("Should be a map-base slot, not a key-value slot:")
             };
-            let post_map_base = map_base.insert_kv(key.next(), value).await?;
+            let post_map_base = map_base.insert_kv(key.next(), value, storage).await?;
             MemSlot::MapBase(post_map_base)
         };
         slots.insert(base_index, post_slot);
