@@ -1,8 +1,7 @@
 # AGENTS.md
 
 Datomic-like database library written in Rust (edition 2024), built on persistent
-Hash Array Mapped Tries (HAMT). A Cargo workspace: library crate `hamt2` (in `crates/hamt2`)
-plus a demo binary `hamt2-cli` (in `crates/hamt2-cli`). No CI, no README.
+Hash Array Mapped Tries (HAMT). A Cargo workspace: library crate `hamt2` (in `crates/hamt2`). No CI, no README.
 
 ## Commands
 
