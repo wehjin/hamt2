@@ -1,15 +1,24 @@
-use hamt2::trie::base_storage::mem::MemBaseStorage;
+use crate::api::browser::get_version;
 use leptos::prelude::*;
-use skydb::SkyViewer;
 
 #[component]
-pub fn HomePage(storage: MemBaseStorage) -> impl IntoView {
-    let viewer = SkyViewer::start(storage);
+pub fn HomePage() -> impl IntoView {
+    let version = Resource::new(
+        move || (),
+        |_| async move { get_version().await.expect("version should exist") },
+    );
     let count = RwSignal::new(0);
     let on_click = move |_| *count.write() += 1;
     view! {
         <h1>"Welcome to Skybase!"</h1>
-        <p>"version: " {move || viewer.get_version()}</p>
+        <Suspense fallback=|| "Loading...">
+            <p>"version: "
+                {
+                    let version = version.clone();
+                    move || Suspend::new(async move { version.await })
+                }
+            </p>
+        </Suspense>
         <button on:click=on_click>"Click Me: " {count}</button>
     }
 }

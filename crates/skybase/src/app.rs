@@ -1,4 +1,3 @@
-use crate::api::space::get_storage;
 use crate::routes::home::HomePage;
 use leptos::prelude::*;
 use leptos_meta::{MetaTags, Title, provide_meta_context};
@@ -28,20 +27,12 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
 #[component]
 pub fn App() -> impl IntoView {
     provide_meta_context();
-    let storage =
-        LocalResource::new(|| async move { get_storage().await.expect("getting storage failed") });
-
-    let home_suspense = move || match storage.get() {
-        None => view! { <div>"Loading storage…"</div>}.into_any(),
-        Some(storage) => view! { <HomePage storage=storage/> }.into_any(),
-    };
-
     view! {
         <Title text="Skybase"/>
         <Router>
             <main>
                 <Routes fallback=|| "Page not found.".into_view()>
-                    <Route path=StaticSegment("") view=home_suspense />
+                    <Route path=StaticSegment("") view=HomePage />
                 </Routes>
             </main>
         </Router>

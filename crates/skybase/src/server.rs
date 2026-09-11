@@ -1,13 +1,16 @@
 use axum::Router;
 use axum::extract::FromRef;
+use hamt2::db::handle::DbHandle;
+use hamt2::trie::base_storage::mem::MemBaseStorage;
 use leptos::prelude::*;
 use leptos_axum::{ErrorHandler, LeptosRoutes, generate_route_list, site_pkg_dir_service};
-
 use skybase::app::{App, shell};
+use skydb::start_db;
 
 #[derive(Clone)]
 pub struct AppState {
     pub leptos_options: LeptosOptions,
+    pub db: DbHandle<MemBaseStorage>,
 }
 
 impl FromRef<AppState> for LeptosOptions {
@@ -23,14 +26,22 @@ pub async fn serve() {
     let addr = conf.leptos_options.site_addr;
     let routes = generate_route_list(App);
 
+    let db = DbHandle::new(start_db().await.expect("start a db")).await;
     let state = AppState {
         leptos_options: conf.leptos_options,
+        db,
     };
 
     let app = Router::new()
-        .leptos_routes(
+        .leptos_routes_with_context(
             &state,
             routes,
+            {
+                let db = state.db.clone();
+                move || {
+                    provide_context(db.clone());
+                }
+            },
             {
                 let state = state.clone();
                 move || shell(state.leptos_options.clone())

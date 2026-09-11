@@ -6,7 +6,6 @@ pub mod cons;
 pub mod query;
 pub mod reader;
 pub mod transact;
-pub mod viewer;
 
 #[derive(Debug)]
 pub struct Db<S: BaseStorageReadWrite> {
