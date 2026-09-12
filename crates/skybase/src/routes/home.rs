@@ -92,18 +92,18 @@ pub fn AttrValSection(eid: i32) -> impl IntoView {
 #[component]
 pub fn ValSection(eid: i32, attr: String) -> impl IntoView {
     let (val, _set_val) = signal(Val::U32(42));
-    let val_type = {
+    let (val_type, val_string) = {
         let val = val.get();
         match val {
-            Val::U32(_) => "numeric".to_string(),
-            Val::String(_) => "string".to_string(),
+            Val::U32(v) => ("numeric".to_string(), v.to_string()),
+            Val::String(v) => ("string".to_string(), v),
         }
     };
     view! {
         <section>
             <h2>{format!("Entity\u{2011}{eid}\u{00a0}[\u{00a0}{attr}\u{00a0}]")}</h2>
+            <div>{format!("Value: {}", val_string)}</div>
             <div>{format!("Type: {val_type}")}</div>
-            <div>"Value: 42"</div>
         </section>
     }
 }
