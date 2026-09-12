@@ -30,3 +30,21 @@ pub async fn get_entity_report() -> Result<EntityReport, ServerFnError> {
     let report = EntityReport { eins };
     Ok(report)
 }
+
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+pub struct AttributesReport {
+    pub names: Vec<String>,
+}
+
+#[server]
+pub async fn get_entity_attributes_report(ein: Ein) -> Result<AttributesReport, ServerFnError> {
+    let reader = expect_context::<DbHandle<MemBaseStorage>>()
+        .to_reader()
+        .await?;
+    let entity_attributes = reader.list_entity_attributes(ein).await;
+    let attr_names = entity_attributes
+        .into_iter()
+        .map(|it| it.to_name())
+        .collect::<Vec<_>>();
+    Ok(AttributesReport { names: attr_names })
+}

@@ -4,6 +4,7 @@ mod db;
 pub mod find;
 pub mod handle;
 mod schema;
+pub mod reader;
 
 pub use component::vid::*;
 pub use core::Attr;

@@ -1,8 +1,8 @@
+use crate::LoadError;
 use crate::TransactError;
 use crate::db::reader::DbReader;
 use crate::db::{Datom, Db};
 use crate::trie::base_storage::BaseStorageReadWrite;
-use crate::LoadError;
 use log::error;
 use thiserror::Error;
 use tokio::sync::mpsc::Receiver;

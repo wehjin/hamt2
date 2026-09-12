@@ -19,6 +19,7 @@ use crate::trie::trie_ref::TrieRef;
 use crate::trie::{Trie, TrieQuery};
 use async_stream::stream;
 use futures::{StreamExt, pin_mut};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -139,7 +140,7 @@ where
     T: TrieQuery<S>,
     S: BaseStorageRead,
 {
-    if let Some(root) = evt_root(trie).await {
+    if let Some(root) = eavt_root(trie).await {
         root.query_keys_values()
             .await
             .expect("read keys and values from evt root")
@@ -151,12 +152,56 @@ where
     }
 }
 
-async fn evt_root<'a, T, S>(trie: &'a T) -> Option<TrieRef<'a, S>>
+/// An attr-ein is a Ein that refers to an attribute.
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+pub struct AttrEin(Ein);
+impl AttrEin {
+    pub fn has_ein(&self, ein: Ein) -> bool {
+        self.0 == ein
+    }
+}
+impl From<i32> for AttrEin {
+    fn from(ein: i32) -> Self {
+        AttrEin(Ein(ein))
+    }
+}
+
+pub async fn list_entity_attributes<T, S>(trie: &T, ein: Ein) -> Vec<AttrEin>
+where
+    T: TrieQuery<S>,
+    S: BaseStorageRead,
+{
+    if let Some(root) = e_avt_subtrie(trie, ein).await {
+        root.query_keys_values()
+            .await
+            .expect("read keys and values from trie")
+            .into_iter()
+            .map(|(key, _)| AttrEin::from(key))
+            .collect::<Vec<_>>()
+    } else {
+        vec![]
+    }
+}
+
+async fn eavt_root<'a, T, S>(trie: &'a T) -> Option<TrieRef<'a, S>>
 where
     T: TrieQuery<S>,
     S: BaseStorageRead + 'a,
 {
     let root_value = trie.deep_query_value([KEY_EAVT]).await.ok().flatten();
+    root_value.and_then(|value| trie.to_subtrie_from_value(value))
+}
+
+async fn e_avt_subtrie<'a, T, S>(trie: &'a T, ein: Ein) -> Option<TrieRef<'a, S>>
+where
+    T: TrieQuery<S>,
+    S: BaseStorageRead + 'a,
+{
+    let root_value = trie
+        .deep_query_value([KEY_EAVT, ein.to_i32()])
+        .await
+        .ok()
+        .flatten();
     root_value.and_then(|value| trie.to_subtrie_from_value(value))
 }
 

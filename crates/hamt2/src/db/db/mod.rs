@@ -5,7 +5,6 @@ use crate::trie::Trie;
 use crate::trie::base_storage::BaseStorageReadWrite;
 pub mod cons;
 pub mod query;
-pub mod reader;
 pub mod transact;
 
 #[derive(Debug)]

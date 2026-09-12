@@ -7,6 +7,9 @@ impl Attr {
     pub fn as_ident(&self) -> &'static str {
         self.0
     }
+    pub fn to_name(&self) -> String {
+        self.as_ident().to_string()
+    }
 }
 
 impl From<&'static str> for Attr {

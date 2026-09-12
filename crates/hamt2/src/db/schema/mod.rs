@@ -1,10 +1,11 @@
 use crate::db::attr_loader::AttributeLoader;
 use crate::db::attr_table::AttrTable;
 use crate::db::component::db_trie;
+use crate::db::component::db_trie::AttrEin;
 use crate::db::find::Find;
 use crate::db::{Attr, Db, Dir, Txid};
-use crate::trie::base_storage::BaseStorageReadWrite;
 use crate::trie::Trie;
+use crate::trie::base_storage::BaseStorageReadWrite;
 use crate::{LoadError, TransactError, db};
 use attribute::Attribute;
 use std::ops::{Deref, DerefMut, Index};
@@ -34,6 +35,9 @@ impl Schema {
     }
     pub fn extend(&mut self, attributes: impl IntoIterator<Item = Attribute>) {
         self.attr_table.extend(attributes);
+    }
+    pub fn find_attr(&self, attr_ein: AttrEin) -> Option<&Attr> {
+        self.attr_table.find_attr(attr_ein)
     }
 
     pub async fn save<S: BaseStorageReadWrite>(

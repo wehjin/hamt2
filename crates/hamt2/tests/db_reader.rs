@@ -47,3 +47,16 @@ async fn db_reader_lists_entities() {
     eins.sort();
     assert_eq!(vec![ein(0), ein(1), ein(2), ein(100)], eins);
 }
+
+#[tokio::test]
+async fn db_reader_lists_entity_attributes() {
+    let db = Db::new(MemBaseStorage::new(), [ATTR_COUNT])
+        .await
+        .unwrap()
+        .transact([datom::add(100, ATTR_COUNT, val(100))])
+        .await
+        .unwrap();
+    let reader = db.to_reader().await;
+    let attributes = reader.list_entity_attributes(100).await;
+    assert_eq!(&[&ATTR_COUNT], &attributes[..]);
+}

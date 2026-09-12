@@ -1,6 +1,7 @@
 use crate::db;
 use crate::db::attr_spec::AttrSpec;
 use crate::db::cardinality::Cardinality;
+use crate::db::component::db_trie::AttrEin;
 use crate::db::schema::attribute::Attribute;
 use crate::db::{Attr, Ein};
 use std::collections::HashMap;
@@ -16,6 +17,15 @@ impl AttrTable {
         Self {
             map: HashMap::new(),
         }
+    }
+
+    pub fn find_attr(&self, attr_ein: AttrEin) -> Option<&Attr> {
+        for (attr, attribute) in self.map.iter() {
+            if attr_ein.has_ein(attribute.ein) {
+                return Some(attr);
+            }
+        }
+        None
     }
 
     pub fn insert(&mut self, attribute: Attribute) {
