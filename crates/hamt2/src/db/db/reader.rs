@@ -1,3 +1,4 @@
+use crate::db::component::db_trie;
 use crate::db::find::{DbFinder, EinAttrAny, Find};
 use crate::db::query::DbQuery;
 use crate::db::{Attr, Db, Ein, Schema, Val};
@@ -25,6 +26,11 @@ impl<S: BaseStorageRead> DbReader<S> {
         let schema = db.schema.clone();
         let read_trie = ReadTrie::connect(db.trie.storage().to_readonly()).await?;
         Ok(DbReader { schema, read_trie })
+    }
+
+    // List the entities in the database.
+    pub async fn list_entities(&self) -> Vec<Ein> {
+        db_trie::list_entities(&self.read_trie).await
     }
 }
 

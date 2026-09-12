@@ -34,3 +34,16 @@ async fn db_reader_works() -> anyhow::Result<()> {
 
     Ok(())
 }
+
+#[tokio::test]
+async fn db_reader_lists_entities() {
+    let db = Db::new(MemBaseStorage::new(), [ATTR_COUNT])
+        .await
+        .unwrap()
+        .transact([datom::add(100, ATTR_COUNT, val(100))])
+        .await
+        .unwrap();
+    let mut eins = db.to_reader().await.list_entities().await;
+    eins.sort();
+    assert_eq!(vec![ein(0), ein(1), ein(2), ein(100)], eins);
+}

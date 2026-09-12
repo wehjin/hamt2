@@ -11,8 +11,8 @@ use crate::db::find::program::rule::rule;
 use crate::db::find::program::term::term;
 use crate::db::find::program::var::var;
 use crate::db::find_result::FindResult;
-use crate::db::{Ein, Schema};
 use crate::db::{Attr, Txid, Val, Vid, txid};
+use crate::db::{Ein, Schema};
 use crate::trie::base_storage::{BaseStorageRead, BaseStorageReadWrite};
 use crate::trie::mem::value::MemValue;
 use crate::trie::trie_ref::TrieRef;
@@ -134,11 +134,33 @@ where
     }
 }
 
-async fn evt_subtrie<'a, T, S>(
-    trie: &'a T,
-    attr: Attr,
-    schema: &Schema,
-) -> Option<TrieRef<'a, S>>
+pub async fn list_entities<T, S>(trie: &T) -> Vec<Ein>
+where
+    T: TrieQuery<S>,
+    S: BaseStorageRead,
+{
+    if let Some(root) = evt_root(trie).await {
+        root.query_keys_values()
+            .await
+            .expect("read keys and values from evt root")
+            .into_iter()
+            .map(|(key, _)| Ein::from(key))
+            .collect::<Vec<_>>()
+    } else {
+        vec![]
+    }
+}
+
+async fn evt_root<'a, T, S>(trie: &'a T) -> Option<TrieRef<'a, S>>
+where
+    T: TrieQuery<S>,
+    S: BaseStorageRead + 'a,
+{
+    let root_value = trie.deep_query_value([KEY_EAVT]).await.ok().flatten();
+    root_value.and_then(|value| trie.to_subtrie_from_value(value))
+}
+
+async fn evt_subtrie<'a, T, S>(trie: &'a T, attr: Attr, schema: &Schema) -> Option<TrieRef<'a, S>>
 where
     T: TrieQuery<S>,
     S: BaseStorageRead + 'a,
