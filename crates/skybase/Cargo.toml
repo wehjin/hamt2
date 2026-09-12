@@ -23,6 +23,7 @@ skydb = { workspace = true }
 anyhow = { workspace = true, optional = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net"], optional = true }
 hamt2.workspace = true
+serde.workspace = true
 
 [features]
 hydrate = [

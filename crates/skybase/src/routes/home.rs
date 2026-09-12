@@ -1,4 +1,4 @@
-use crate::api::browser::get_version;
+use crate::api::browser::{get_entity_report, get_version};
 use hamt2::db::Val;
 use leptos::prelude::*;
 
@@ -29,29 +29,45 @@ pub struct AttributeOptionData {
 
 #[component]
 pub fn EntAttrValSection() -> impl IntoView {
-    let (active_eid, set_active_ent) = signal(None::<i32>);
-    let (entities, _) = signal(vec![1, 2, 3]);
+    let entities_report = Resource::new(
+        || (),
+        |_| async move {
+            get_entity_report()
+                .await
+                .expect("entity_report should exist")
+        },
+    );
+    let (active_ein, set_active_ein) = signal(None::<i32>);
     view! {
         <section>
             <h1>"Browse Entities"</h1>
-            <h2>"Entities"</h2>
-            <p>"Select an entity"</p>
-            <select id="ent-select" size=10
-                on:change:target=move |ev| {
-                    let value = ev.target().value().parse::<i32>().ok();
-                    set_active_ent.set(value);
-                }>
-                <For
-                    each=move || entities.get()
-                    key=|it| it.clone()
-                    children=move |it| view! {
-                        <option value={it}>{format!("\u{2014}{it}\u{2014}")}</option>
-                    }
-                />
-            </select>
+            <Suspense fallback=|| "Loading...">
+                <h2>"Entities"</h2>
+                <p>"Select an entity"</p>
+                {move || entities_report.get().map(|report| view! {
+                    <select id="ent-select" size=10
+                        on:change:target=move |ev| {
+                            let value = ev.target().value().parse::<i32>().ok();
+                            set_active_ein.set(value);
+                        }>
+                        <For
+                            each=move || report.eins.clone()
+                            key=|it| it.clone()
+                            children=move |it| {
+                                let ein = it.to_i32();
+                                view! {
+                                    <option value={ein}>
+                                    {format!("\u{2014}\u{00a0}{ein}\u{00a0}\u{2014}")}
+                                    </option>
+                                }
+                            }
+                        />
+                    </select>
+                })}
+            </Suspense>
         </section>
-        <Show when=move || {active_eid.get().is_some()}>
-            <AttrValSection eid={active_eid.get().unwrap()}/>
+        <Show when=move || {active_ein.get().is_some()}>
+            <AttrValSection eid={active_ein.get().unwrap()}/>
         </Show>
     }
 }
