@@ -1,4 +1,5 @@
 use crate::db::Attr;
+use crate::db::reader::DbReader;
 use crate::db::schema::Schema;
 use crate::trie::Trie;
 use crate::trie::base_storage::BaseStorageReadWrite;
@@ -11,6 +12,12 @@ pub mod transact;
 pub struct Db<S: BaseStorageReadWrite> {
     pub(crate) schema: Schema,
     pub(crate) trie: Trie<S>,
+}
+
+impl<S: BaseStorageReadWrite> Db<S> {
+    pub async fn to_reader(&self) -> DbReader<S::ReadOnly> {
+        DbReader::load(self).await.expect("load reader")
+    }
 }
 
 pub const QUERY: Attr = Attr("db/query");

@@ -16,6 +16,10 @@ pub use any_attr_any::*;
 pub use any_attr_ignore::*;
 pub use ein_attr_any::*;
 
+pub trait DbFinder {
+    fn find<F: Find>(&self, find: F) -> impl Future<Output = Result<Vec<F::Output>, QueryError>>;
+}
+
 pub trait Find {
     type Output;
 
@@ -50,5 +54,24 @@ pub trait Find {
             let final_result = self.process(result);
             Ok(final_result)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::db::find::{AnyAttrAny, DbFinder};
+    use crate::db::{Attr, Db, datom, ein, val};
+    use crate::trie::base_storage::mem::MemBaseStorage;
+
+    #[tokio::test]
+    async fn find_with_reader() {
+        let attr = Attr::from("Counter/count");
+        let store = MemBaseStorage::new();
+        let db = Db::new(store, [attr]).await.unwrap();
+        let txn = [datom::add(10, attr, 42)];
+        let db = db.transact(txn).await.unwrap();
+        let reader = db.to_reader().await;
+        let found = reader.find(AnyAttrAny::new(attr)).await.unwrap();
+        assert_eq!(&[(ein(10), val(42))], found.as_slice());
     }
 }
