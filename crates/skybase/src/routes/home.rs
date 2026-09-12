@@ -9,15 +9,14 @@ pub fn HomePage() -> impl IntoView {
         |_| async move { get_version().await.expect("version should exist") },
     );
     view! {
-        <h1>"Welcome to Skybase!"</h1>
-        <Suspense fallback=|| "Loading...">
-            <p>"version: "
-                {
-                    let version = version.clone();
-                    move || Suspend::new(async move { version.await })
-                }
-            </p>
-        </Suspense>
+        <header class="header">
+            <Suspense fallback=|| "Loading...">
+                <p class="subtitle">
+                    "Skybase version: "
+                    {move || Suspend::new(async move { version.await })}
+                </p>
+            </Suspense>
+        </header>
         <EntitiesSection/>
     }
 }
@@ -39,13 +38,14 @@ pub fn EntitiesSection() -> impl IntoView {
     );
     let (active_ein, set_active_ein) = signal(None::<Ein>);
     view! {
-        <section>
-            <h1>"Browse Entities"</h1>
+        <section class="section">
+            <h1 class="title is-2">"Browse Entities"</h1>
             <Suspense fallback=|| "Loading...">
-                <h2>"Entities"</h2>
-                <p>"Select an entity"</p>
+                <h2 class="title">"Entities"</h2>
+                <label class="label" for="select_entity">"Select an entity"</label>
                 {move || entities_report.get().map(|report| view! {
-                    <select id="ent-select" size=10
+                    <div class="select is-multiple">
+                    <select id="select-entity" multiple size=8
                         on:change:target=move |ev| {
                             let value = ev.target().value().parse::<i32>().ok().map(|i| Ein(i));
                             set_active_ein.set(value);
@@ -63,6 +63,7 @@ pub fn EntitiesSection() -> impl IntoView {
                             }
                         />
                     </select>
+                    </div>
                 })}
             </Suspense>
         </section>
@@ -85,8 +86,8 @@ pub fn EntityAttributesSection(ein: Ein) -> impl IntoView {
     );
     let (active_attr, set_active_attr) = signal(None::<String>);
     view! {
-        <section>
-            <h2>{format!("Entity\u{2011}{}", ein.to_i32())}</h2>
+        <section class="section">
+            <h2 class="title">{format!("Entity\u{2011}{}", ein.to_i32())}</h2>
             <Suspense fallback=|| "Loading...">
                 <p>"Select an attribute"</p>
                 {move || Suspend::new(async move {
@@ -126,10 +127,11 @@ pub fn ValueSection(ein: Ein, attr: String) -> impl IntoView {
         }
     };
     let ein = ein.to_i32();
-    let entity_name = format!("Entity\u{2011}{ein}\u{00a0}[\u{00a0}{attr}\u{00a0}]");
+    let entity_name =
+        format!("\u{301a}\u{00a0}Entity\u{2011}{ein}\u{00a0}\u{301b} \u{2192} {attr}");
     view! {
-        <section>
-            <h2>{entity_name}</h2>
+        <section class="section">
+            <h2 class="title">{entity_name}</h2>
             <div>{format!("Value: {}", val_string)}</div>
             <div>{format!("Type: {val_type}")}</div>
         </section>
