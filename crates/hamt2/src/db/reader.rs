@@ -1,12 +1,11 @@
 use crate::db::component::db_trie;
-use crate::db::find::{DbFinder, EinAttrAny, Find};
+use crate::db::find::Find;
 use crate::db::query::DbQuery;
-use crate::db::{Attr, Db, Ein, Schema, Val};
+use crate::db::{Attr, Db, Ein, Schema};
 use crate::trie::ReadTrie;
 use crate::trie::TrieQuery;
 use crate::trie::base_storage::{BaseStorageRead, BaseStorageReadWrite};
 use crate::{LoadError, QueryError};
-use futures::FutureExt;
 
 /// A read-only snapshot of a [`Db`], for running queries only.
 #[derive(Debug)]
@@ -45,18 +44,6 @@ impl<S: BaseStorageRead> DbReader<S> {
 }
 
 impl<S: BaseStorageRead> DbQuery for DbReader<S> {
-    fn find_val(
-        &self,
-        e: impl Into<Ein>,
-        a: Attr,
-    ) -> impl Future<Output = Result<Option<Val>, QueryError>> {
-        let find = EinAttrAny::new(e, a);
-        find.apply(&self.read_trie, &self.schema)
-            .map(|result| result.map(|vals| vals.first().cloned()))
-    }
-}
-
-impl<S: BaseStorageRead> DbFinder for DbReader<S> {
     fn find<F: Find>(&self, find: F) -> impl Future<Output = Result<Vec<F::Output>, QueryError>> {
         find.apply(&self.read_trie, &self.schema)
     }

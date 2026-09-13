@@ -16,10 +16,6 @@ pub use any_attr_any::*;
 pub use any_attr_ignore::*;
 pub use ein_attr_any::*;
 
-pub trait DbFinder {
-    fn find<F: Find>(&self, find: F) -> impl Future<Output = Result<Vec<F::Output>, QueryError>>;
-}
-
 pub trait Find {
     type Output;
 
@@ -59,7 +55,8 @@ pub trait Find {
 
 #[cfg(test)]
 mod tests {
-    use crate::db::find::{AnyAttrAny, DbFinder};
+    use crate::db::find::AnyAttrAny;
+    use crate::db::query::DbQuery;
     use crate::db::{Attr, Db, datom, ein, val};
     use crate::trie::base_storage::mem::MemBaseStorage;
 

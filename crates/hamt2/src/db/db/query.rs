@@ -9,11 +9,17 @@ use crate::trie::mem::value::MemValue;
 use futures::FutureExt;
 
 pub trait DbQuery {
+    fn find<F: Find>(&self, find: F) -> impl Future<Output = Result<Vec<F::Output>, QueryError>>;
+
     fn find_val(
         &self,
         e: impl Into<Ein>,
         a: Attr,
-    ) -> impl Future<Output = Result<Option<Val>, QueryError>>;
+    ) -> impl Future<Output = Result<Option<Val>, QueryError>> {
+        let find = EinAttrAny::new(e, a);
+        self.find(find)
+            .map(|result| result.map(|vals| vals.first().cloned()))
+    }
 
     fn get_val(&self, e: impl Into<Ein>, a: Attr) -> impl Future<Output = Val> {
         self.find_val(e.into(), a).map(|v| {
@@ -37,14 +43,8 @@ impl<S: BaseStorageReadWrite> Db<S> {
 }
 
 impl<S: BaseStorageReadWrite> DbQuery for Db<S> {
-    fn find_val(
-        &self,
-        e: impl Into<Ein>,
-        a: Attr,
-    ) -> impl Future<Output = Result<Option<Val>, QueryError>> {
-        let find = EinAttrAny::new(e, a);
-        find.apply_db(self)
-            .map(|result| result.map(|vals| vals.first().cloned()))
+    fn find<F: Find>(&self, find: F) -> impl Future<Output = Result<Vec<F::Output>, QueryError>> {
+        find.apply(&self.trie, &self.schema)
     }
 }
 
