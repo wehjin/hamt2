@@ -1,7 +1,7 @@
 use crate::TrieQueryError;
 use crate::trie_storage::{ReadTrieStorage, ReadWriteTrieStorage};
 use crate::types::slot_base::SlotBase;
-use crate::types::hash_key::HashKey;
+use crate::types::HashKey;
 use crate::types::map_base::MapBase;
 use crate::types::slot_map::SlotMap;
 use crate::types::trie_value::TrieValue;

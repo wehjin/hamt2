@@ -59,7 +59,7 @@ pub trait ReadWriteTrieStorage: ReadTrieStorage {
 mod tests {
     use super::*;
     use crate::trie_storage::mem::MemTrieStorage;
-    use crate::types::hash_key::HashKey;
+    use crate::types::HashKey;
     use crate::types::trie_value::TrieValue;
 
     #[tokio::test]

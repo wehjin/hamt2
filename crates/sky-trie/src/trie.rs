@@ -7,8 +7,8 @@ use std::collections::HashMap;
 
 use crate::TrieWriteError;
 use crate::prelude::TrieValue;
-use crate::types::hash_key::HashKey;
-use crate::types::hash_key_path::HashKeyPath;
+use crate::types::DeepKey;
+use crate::types::HashKey;
 
 #[derive(Debug)]
 pub struct Trie<S: ReadWriteTrieStorage> {
@@ -69,7 +69,7 @@ impl<S: ReadWriteTrieStorage> Trie<S> {
         value: impl Into<TrieValue>,
         replace_tail: bool,
     ) -> Result<Self, TrieWriteError> {
-        let deep_key = HashKeyPath::from(key);
+        let deep_key = DeepKey::from(key);
         let last_index = N - 1;
         let mut map_bases = HashMap::new();
         map_bases.insert(0, self.root.clone());

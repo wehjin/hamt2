@@ -15,7 +15,7 @@ pub struct MapBase {
 #[cfg(test)]
 mod tests {
     use crate::trie_storage::mem::MemTrieStorage;
-    use crate::types::hash_key::HashKey;
+    use crate::types::HashKey;
     use crate::types::map_base::*;
     use crate::types::trie_value::TrieValue;
     use tokio_stream::StreamExt;

@@ -1,7 +1,7 @@
 use crate::trie_storage::ReadWriteTrieStorage;
 use crate::types::slot_base::SlotBase;
 use crate::types::slot_base_id::SlotBaseId;
-use crate::types::hash_key::HashKey;
+use crate::types::HashKey;
 use crate::types::map_base::MapBase;
 use crate::types::slot::Slot;
 use crate::types::slot_map::SlotMap;

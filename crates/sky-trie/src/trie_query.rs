@@ -1,8 +1,8 @@
 use crate::TrieQueryError;
 use crate::trie_ref::TrieRef;
 use crate::trie_storage::ReadTrieStorage;
-use crate::types::hash_key::HashKey;
-use crate::types::hash_key_path::HashKeyPath;
+use crate::types::HashKey;
+use crate::types::DeepKey;
 use crate::types::map_base::MapBase;
 use crate::types::trie_value::TrieValue;
 use futures::Stream;
@@ -38,7 +38,7 @@ pub trait TrieQuery<S: ReadTrieStorage> {
         &self,
         key: [i32; N],
     ) -> Result<Option<TrieValue>, TrieQueryError> {
-        let deep_key = HashKeyPath::from(key);
+        let deep_key = DeepKey::from(key);
         let mut current_map_base = self.root().clone();
         let last_index = N - 1;
         for i in 0..=last_index {

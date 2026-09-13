@@ -43,7 +43,7 @@ crate::trie::prelude::*` just like before the split.
      (`ExpectedMapBaseAtKey`, wraps `TrieQueryError`). Nothing in the trie produces hamt2's db-level errors.
    - `types/` — `MapBase { map: SlotMap, base: SlotBaseId }` (a node: bases are read from storage, never inline
      slots), `SlotBase { slots: Vec<Slot> }`, `Slot::KeyValue(i32, TrieValue) | MapBase(MapBase)`,
-     `TrieValue::U32(u32) | SubTrie(MapBase)`, plus `HashKey`/`HashKeyPath`. `SlotBaseId(0)` is the reserved empty
+     `TrieValue::U32(u32) | SubTrie(MapBase)`, plus `HashKey`/`DeepKey`. `SlotBaseId(0)` is the reserved empty
      base.
    - `Trie<S: ReadWriteTrieStorage>` — the persistent map: `connect(storage)` (`-> TrieStorageReadError`) loads the
      persisted root, mutations (`insert`, `deep_insert`) consume and return a new `Trie` (`-> TrieWriteError`),
@@ -165,7 +165,7 @@ Within `crates/skybase/src`:
 - Heavily async (`tokio`); most APIs return `impl Future` via `async fn` with `Result`.
 - Symbol-heavy internal types: `Val` (db user value, `U32`/`String`), `TrieValue` (`U32`/`SubTrie(MapBase)`),
   `SlotBase` (a trie node's `Vec<Slot>`), `Slot` (`KeyValue`/`MapBase`), `MapBase` (`SlotMap` + `SlotBaseId`),
-  `HashKey`/`HashKeyPath`, plus the db layer's `Dat`/`Datom`/`Ent`/`Dir`, `Attr`/`AttrName`/`AttrSpec`/`DbSpec`/`Schema`,
+  `HashKey`/`DeepKey`, plus the db layer's `Dat`/`Datom`/`Ent`/`Dir`, `Attr`/`AttrName`/`AttrSpec`/`DbSpec`/`Schema`,
   `Ein`/`Txid`/`Vid`/`MaxEid`/`EntEid`/`AttrEin` — don't confuse the similar names despite the overlap.
 - `Dat::Val` vs `Dat::Ent` and `dir` (`Dir::In`/`Dir::Out`, i.e. add/delete) drive query semantics; see
   `src/datom/mod.rs` (`datom::add` / `datom::del`).
