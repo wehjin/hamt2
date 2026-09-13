@@ -2,7 +2,7 @@ use hamt2::db::Txid;
 use hamt2::db::{Attr, Db, ein, val};
 use hamt2::find::EinsWithAttr;
 use hamt2::query::DbQuery;
-use hamt2::trie::prelude::MemTrieStorage;
+use hamt2::storage::MemDbStorage;
 use hamt2::{LoadError, datom};
 
 pub const ATTR_COUNT: Attr = Attr("counter/count");
@@ -10,7 +10,7 @@ pub const ATTR_GREETING: Attr = Attr("speech/greeting");
 
 #[tokio::test]
 async fn load_works() -> anyhow::Result<()> {
-    let storage = MemTrieStorage::new();
+    let storage = MemDbStorage::new();
     let db = Db::new(storage, [ATTR_COUNT]).await?;
     let db = db.transact([datom::add(1, ATTR_COUNT, 1)]).await?;
     let storage = db.close();
@@ -21,7 +21,7 @@ async fn load_works() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn load_fails_with_unknown_attribute() -> anyhow::Result<()> {
-    let db = Db::new(MemTrieStorage::new(), [ATTR_COUNT]).await?;
+    let db = Db::new(MemDbStorage::new(), [ATTR_COUNT]).await?;
     let storage = db.close();
     let result = Db::load(storage, [ATTR_COUNT, ATTR_GREETING]).await;
     let Err(LoadError::UnknownAttr(ATTR_GREETING)) = result else {
@@ -32,7 +32,7 @@ async fn load_fails_with_unknown_attribute() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn transact_and_pull_simple() -> anyhow::Result<()> {
-    let db = Db::new(MemTrieStorage::new(), [ATTR_COUNT]).await?;
+    let db = Db::new(MemDbStorage::new(), [ATTR_COUNT]).await?;
     let db = db.transact([datom::add(15, ATTR_COUNT, 15)]).await?;
     assert_eq!(Some(val(15)), db.find_val(15, ATTR_COUNT).await?);
     Ok(())
@@ -40,7 +40,7 @@ async fn transact_and_pull_simple() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn entities_with_attr_works_for_single_entity() -> anyhow::Result<()> {
-    let db = Db::new(MemTrieStorage::new(), [ATTR_COUNT]).await?;
+    let db = Db::new(MemDbStorage::new(), [ATTR_COUNT]).await?;
     let db = db.transact([datom::add(15, ATTR_COUNT, 15)]).await?;
     let eins = db.find(EinsWithAttr::new(ATTR_COUNT)).await?;
     assert_eq!(vec![ein(15)], eins);
@@ -49,7 +49,7 @@ async fn entities_with_attr_works_for_single_entity() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn entities_with_attr_works_for_two_entities() -> anyhow::Result<()> {
-    let db = Db::new(MemTrieStorage::new(), [ATTR_COUNT]).await?;
+    let db = Db::new(MemDbStorage::new(), [ATTR_COUNT]).await?;
     let db = db
         .transact([datom::add(3, ATTR_COUNT, 4), datom::add(5, ATTR_COUNT, 6)])
         .await?;
@@ -62,7 +62,7 @@ async fn entities_with_attr_works_for_two_entities() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn transact_assigns_id_to_temporary_ent() -> anyhow::Result<()> {
-    let db = Db::new(MemTrieStorage::new(), [ATTR_COUNT]).await?;
+    let db = Db::new(MemDbStorage::new(), [ATTR_COUNT]).await?;
     let db = db
         .transact([datom::add("new_count", ATTR_COUNT, 35)])
         .await?;
@@ -77,7 +77,7 @@ async fn transact_assigns_id_to_temporary_ent() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_multiple_entities() -> anyhow::Result<()> {
     // Construct a new database.
-    let db = Db::new(MemTrieStorage::new(), [ATTR_COUNT]).await?;
+    let db = Db::new(MemDbStorage::new(), [ATTR_COUNT]).await?;
     assert_eq!(Txid::FLOOR, db.max_tx().await?);
 
     // Add a few datoms to different entities.

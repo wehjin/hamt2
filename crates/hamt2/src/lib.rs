@@ -7,8 +7,11 @@ pub mod handle;
 pub mod pull;
 pub mod query;
 pub mod reader;
+pub mod storage;
 pub mod transact;
 pub mod types;
 
+use sky_trie as trie;
+
 pub use error::*;
-pub use sky_trie as trie;
+pub use sky_trie::error::{TrieQueryError as DbQueryError, TrieWriteError as DbWriteError};

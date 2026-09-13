@@ -2,13 +2,13 @@ use hamt2::datom;
 use hamt2::db::{Attr, Db, val};
 use hamt2::handle::DbHandle;
 use hamt2::query::DbQuery;
-use hamt2::trie::prelude::MemTrieStorage;
+use hamt2::storage::MemDbStorage;
 
 const ATTR_COUNT: Attr = Attr("counter/count");
 
 #[tokio::test]
 async fn handle_works() -> anyhow::Result<()> {
-    let db = Db::new(MemTrieStorage::new(), [ATTR_COUNT]).await?;
+    let db = Db::new(MemDbStorage::new(), [ATTR_COUNT]).await?;
     let handle = DbHandle::new(db).await;
     let handle2 = handle.clone();
     handle

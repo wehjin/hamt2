@@ -13,9 +13,9 @@ pub async fn get_value_report(ein: Ein, attr_name: AttrName) -> Result<ValueRepo
     use hamt2::handle::DbHandle;
     use hamt2::query::DbQuery;
     use hamt2::find::*;
-    use hamt2::trie::prelude::MemTrieStorage;
+    use hamt2::storage::MemDbStorage;
     use leptos::prelude::expect_context;
-    let reader = expect_context::<DbHandle<MemTrieStorage>>()
+    let reader = expect_context::<DbHandle<MemDbStorage>>()
         .to_reader()
         .await?;
 

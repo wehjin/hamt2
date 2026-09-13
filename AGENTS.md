@@ -27,11 +27,15 @@ Hash Array Mapped Tries (HAMT). A Cargo workspace: `hamt2` (the Datomic-style db
 ## Architecture (read top-down in this order)
 
 Layered, each layer building on the one below. All trie/storage code lives in the separate `sky-trie` crate; `hamt2`
-re-exports it as `pub use sky_trie as trie;` in `crates/hamt2/src/lib.rs`, so hamt2 code uses `use
-crate::trie::prelude::*` just like before the split.
+imports it privately as `use sky_trie as trie;` in `crates/hamt2/src/lib.rs`, so hamt2 code uses `use
+crate::trie::prelude::*` internally. The only trie types hamt2 re-exports publicly are the ones its APIs require
+callers to name, re-exported under db-flavored names (`as` imports in `src/storage.rs` / `src/lib.rs`): the
+`hamt2::storage` module (`MemDbStorage`, `FileDbStorage`, the `ReadDbStorage`/`ReadWriteDbStorage` traits,
+`DbStorageReadError`/`DbStorageWriteError`) and `DbQueryError`/`DbWriteError` at the crate root (they embed in
+`QueryError`/`TransactError`).
 
-1. `crates/universal-hash` — the single hashing primitive: `hash(bytes, level) -> u32`. Re-exported as
-   `hamt2::universal_hash`.
+1. `crates/universal-hash` — the single hashing primitive: `hash(bytes, level) -> u32`. A direct hamt2/sky-trie
+   dependency, referenced via the extern prelude (`universal_hash::hash`); not re-exported.
 2. `crates/sky-trie` — the HAMT.
    - `trie_storage/` — persistence abstraction. Traits `ReadTrieStorage: Sync`
      (`read`/`max_id`/`read_root`/`get_root`, errors `TrieStorageReadError`) and `ReadWriteTrieStorage`
@@ -53,8 +57,10 @@ crate::trie::prelude::*` just like before the split.
      `TrieReader<S>` (read-only, connects over `ReadTrieStorage` only, e.g. `storage.to_readonly()`). The `prelude`
      re-exports all of the above.
 3. `crates/hamt2` — the Datomic layer plus error glue. Public modules in `src/lib.rs`: `datom`, `db`, `find`,
-   `handle`, `pull`, `query`, `reader`, `transact`, `types` (plus `pub(crate) crate_services`), with
-   `pub use sky_trie as trie; pub use universal_hash; pub use error::*;`.
+   `handle`, `pull`, `query`, `reader`, `storage`, `transact`, `types` (plus `pub(crate) crate_services`), with
+   `pub use error::*;` and `pub use sky_trie::error::{TrieQueryError as DbQueryError, TrieWriteError as DbWriteError};`
+   at the root. The `src/storage.rs` module re-exports the trie surface that hamt2's public APIs name, aliased under
+   db names: `MemDbStorage`, `FileDbStorage`, `ReadDbStorage`/`ReadWriteDbStorage`, and the storage error types.
    - `src/datom/` — `Datom { ent, attr, dat, dir }` with the `add`/`del` constructors; `dat::Dat` (`Val(Val)`/`Ent(Ent)`)
      and `ent::Ent` (`Id(Ein)`/`Temp(&'static str)`).
    - `src/types/` — user-facing value types: `Attr(&'static str)` (idents), `AttrName(String)`, `Ein(pub i32)`
@@ -143,7 +149,8 @@ Within `crates/skybase/src`:
   underlying storage back with `db.close()` before re-`load`ing.
 - **Generic bounds are pervasive.** Any struct/fn mentioning `Trie<S>` or `Db<S>` needs `S: ReadWriteTrieStorage`.
   Read-only sub-tries are borrowed views (`TrieRef<'a, S>` from `trie.view()` / `to_subtrie_from_value`); nothing
-  requires `S: Clone`.
+  requires `S: Clone`. Outside hamt2, the same traits are exported as `hamt2::storage::ReadDbStorage`/
+  `ReadWriteDbStorage`.
 - **Query methods live on the `TrieQuery<S: ReadTrieStorage>` trait** (`query_value`, `query_keys_values`,
   `deep_query_value`, `u32_stream`, `subtrie_stream`, `to_subtrie_from_value`), implemented by `Trie`, `TrieRef`, and
   `TrieReader`. Only `root()` / `storage()` are required. Calling a query method needs `TrieQuery` in scope (it comes
@@ -153,11 +160,13 @@ Within `crates/skybase/src`:
   `TrieStorageReadError`/`TrieStorageWriteError`); hamt2's `QueryError`/`TransactError`/`LoadError` embed them via
   `QueryError::Trie`, `TransactError::TrieStorageRead`/`TransactError::TrieStorageWrite`/`TransactError::Trie`,
   and `LoadError::TrieStorageRead`, so `?` chains across crates work through `From` impls (`use crate::trie::prelude::*`
-  brings the trie error types in scope). `TransactError` also embeds `QueryError` as `TransactError::Query`.
+  brings the trie error types in scope). These trie error types are exported at the hamt2 root as `DbQueryError`/
+  `DbWriteError` aliases (storage ones in `hamt2::storage`). `TransactError` also embeds `QueryError` as
+  `TransactError::Query`.
 - **`Ent` is either `Id(Ein)` or `Temp(&'static str)`.** Temp entities get auto-assigned `Ein`s at transact time (see
   `src/db/types/ent_eid.rs`). Reusing the same temp ident in a tx rewrites the same entity, whereas separate txns
   create separate entities.
-- `universal_hash::hash` (crate `universal-hash`, re-exported as `hamt2::universal_hash`) is the hashing primitive;
+- `universal_hash::hash` (crate `universal-hash`, used via the extern prelude) is the hashing primitive;
   everything keys off it.
 
 ## Conventions
