@@ -2,7 +2,7 @@ use leptos::prelude::*;
 #[server]
 pub async fn get_version() -> Result<String, ServerFnError> {
     use hamt2::db::handle::DbHandle;
-    use hamt2::db::query::DbQuery;
+    use hamt2::db_query::DbQuery;
     use hamt2::find::BindsForAttr;
     use hamt2::trie::prelude::MemTrieStorage;
     use crate::db::ATTR_SKYBASE_VERSION;

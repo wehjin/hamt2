@@ -11,7 +11,7 @@ pub struct ValueReport {
 #[server]
 pub async fn get_value_report(ein: Ein, attr_name: AttrName) -> Result<ValueReport, ServerFnError> {
     use hamt2::db::handle::DbHandle;
-    use hamt2::db::query::DbQuery;
+    use hamt2::db_query::DbQuery;
     use hamt2::find::*;
     use hamt2::trie::prelude::MemTrieStorage;
     use leptos::prelude::expect_context;

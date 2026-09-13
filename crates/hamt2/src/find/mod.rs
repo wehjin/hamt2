@@ -50,9 +50,9 @@ pub trait Find {
 #[cfg(test)]
 mod tests {
     use crate::datom;
-    use crate::db::query::DbQuery;
     use crate::db::{Attr, Db, ein, val};
     use crate::find::BindsForAttr;
+    use crate::db_query::DbQuery;
     use crate::trie::prelude::*;
 
     #[tokio::test]

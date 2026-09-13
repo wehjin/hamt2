@@ -1,6 +1,6 @@
-use crate::db::query::DbQuery;
 use crate::db::{Attr, Datom, Db, Ein, Ent};
 use crate::pull::Pull;
+use crate::db_query::DbQuery;
 use crate::trie::prelude::*;
 use crate::{QueryError, datom};
 use serde::{Deserialize, Serialize};

@@ -1,6 +1,6 @@
-use crate::db::query::DbQuery;
 use crate::db::{Db, Schema};
 use crate::find::Find;
+use crate::db_query::DbQuery;
 use crate::trie::prelude::*;
 use crate::{LoadError, QueryError};
 

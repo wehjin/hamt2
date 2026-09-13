@@ -3,8 +3,6 @@ use crate::db::schema::Schema;
 use crate::db::types::Attr;
 use crate::trie::prelude::*;
 pub mod cons;
-pub mod query;
-pub mod transact;
 
 #[derive(Debug)]
 pub struct Db<S: ReadWriteTrieStorage> {

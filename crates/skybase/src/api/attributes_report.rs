@@ -11,7 +11,7 @@ pub struct AttributesReport {
 #[server]
 pub async fn get_entity_attributes_report(ein: Ein) -> Result<AttributesReport, ServerFnError> {
     use hamt2::db::handle::DbHandle;
-    use hamt2::db::query::DbQuery;
+    use hamt2::db_query::DbQuery;
     use hamt2::find::AttrsOfEin;
     use hamt2::trie::prelude::MemTrieStorage;
     use leptos::prelude::expect_context;
