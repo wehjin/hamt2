@@ -1,0 +1,4 @@
+[package]
+name = "universal-hash"
+version.workspace = true
+edition.workspace = true

@@ -84,7 +84,8 @@ Within `crates/skybase/src`:
 - **`Ent` is either `Id(Ein)` or `Temp(&'static str)`.** Temp entities get auto-assigned `Ein`s at transact time (see
   `src/db/component/ent_eid.rs`). Reusing the same temp ident in a tx rewrites the same entity, whereas separate txns
   create separate entities.
-- `hash::universal` is the hashing primitive; everything keys off it.
+- `universal_hash::hash` (crate `universal-hash`, re-exported as `hamt2::universal_hash`) is the hashing primitive;
+  everything keys off it.
 
 ## Conventions
 
