@@ -1,6 +1,5 @@
-use crate::db::component::db_trie;
 use crate::db::query::DbQuery;
-use crate::db::{Attr, Db, Ein, Schema};
+use crate::db::{Db, Schema};
 use crate::find::Find;
 use crate::trie::ReadTrie;
 use crate::trie::TrieQuery;
@@ -25,16 +24,6 @@ impl<S: BaseStorageRead> DbReader<S> {
         let schema = db.schema.clone();
         let read_trie = ReadTrie::connect(db.trie.storage().to_readonly()).await?;
         Ok(DbReader { schema, read_trie })
-    }
-
-    /// List the attributes of an entity in the database.
-    pub async fn list_entity_attributes(&self, ein: impl Into<Ein>) -> Vec<&Attr> {
-        let ein = ein.into();
-        let attr_eins = db_trie::list_entity_attributes(&self.read_trie, ein).await;
-        attr_eins
-            .into_iter()
-            .filter_map(|attr_ein| self.schema.find_attr(attr_ein))
-            .collect::<Vec<_>>()
     }
 }
 

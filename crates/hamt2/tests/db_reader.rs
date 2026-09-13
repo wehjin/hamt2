@@ -1,7 +1,7 @@
 use hamt2::db::query::DbQuery;
 use hamt2::db::reader::DbReader;
 use hamt2::db::{Attr, Db, datom, ein, val};
-use hamt2::find::{AllEins, EinsWithAttr};
+use hamt2::find::{AllEins, AttrsOfEin, EinsWithAttr};
 use hamt2::trie::base_storage::mem::MemBaseStorage;
 
 const ATTR_COUNT: Attr = Attr("counter/count");
@@ -58,6 +58,6 @@ async fn db_reader_lists_entity_attributes() {
         .await
         .unwrap();
     let reader = db.to_reader().await;
-    let attributes = reader.list_entity_attributes(100).await;
-    assert_eq!(&[&ATTR_COUNT], &attributes[..]);
+    let attrs = reader.get(AttrsOfEin::new(100)).await;
+    assert_eq!(&[ATTR_COUNT], &attrs[..]);
 }

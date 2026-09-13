@@ -25,6 +25,7 @@ pub struct EntityReport {
 pub async fn get_entity_report() -> Result<EntityReport, ServerFnError> {
     use hamt2::db::query::DbQuery;
     use hamt2::find::AllEins;
+
     let reader = expect_context::<DbHandle<MemBaseStorage>>()
         .to_reader()
         .await?;
@@ -40,13 +41,13 @@ pub struct AttributesReport {
 
 #[server]
 pub async fn get_entity_attributes_report(ein: Ein) -> Result<AttributesReport, ServerFnError> {
+    use hamt2::db::query::DbQuery;
+    use hamt2::find::AttrsOfEin;
+
     let reader = expect_context::<DbHandle<MemBaseStorage>>()
         .to_reader()
         .await?;
-    let entity_attributes = reader.list_entity_attributes(ein).await;
-    let attr_names = entity_attributes
-        .into_iter()
-        .map(|it| it.to_name())
-        .collect::<Vec<_>>();
+    let attrs = reader.find(AttrsOfEin::new(ein)).await?;
+    let attr_names = attrs.into_iter().map(|it| it.to_name()).collect::<Vec<_>>();
     Ok(AttributesReport { names: attr_names })
 }
