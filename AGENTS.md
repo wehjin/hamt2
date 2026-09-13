@@ -56,16 +56,18 @@ callers to name, re-exported under db-flavored names (`as` imports in `src/stora
      `subtrie_stream`, `to_subtrie_from_value`; `-> TrieQueryError`), implemented by `Trie`, `TrieRef<'a, S>`, and
      `TrieReader<S>` (read-only, connects over `ReadTrieStorage` only, e.g. `storage.to_readonly()`). The `prelude`
      re-exports all of the above.
-3. `crates/hamt2` — the Datomic layer plus error glue. Public modules in `src/lib.rs`: `datom`, `db`, `find`,
+3. `crates/hamt2` — the Datomic layer plus error glue. Public modules in `src/lib.rs`: `db`, `find`,
    `handle`, `pull`, `query`, `reader`, `storage`, `transact`, `types` (plus `pub(crate) crate_services`), with
    `pub use error::*;` and `pub use sky_trie::error::{TrieQueryError as DbQueryError, TrieWriteError as DbWriteError};`
    at the root. The `src/storage.rs` module re-exports the trie surface that hamt2's public APIs name, aliased under
    db names: `MemDbStorage`, `FileDbStorage`, `ReadDbStorage`/`ReadWriteDbStorage`, and the storage error types.
-   - `src/datom/` — `Datom { ent, attr, dat, dir }` with the `add`/`del` constructors; `dat::Dat` (`Val(Val)`/`Ent(Ent)`)
-     and `ent::Ent` (`Id(Ein)`/`Temp(&'static str)`).
    - `src/types/` — user-facing value types: `Attr(&'static str)` (idents), `AttrName(String)`, `Ein(pub i32)`
      (non-negative; 0–2 reserved: `DB_IDENT`, `DB_CARDINALITY`, `DB_MAX`), `Txid(u32)` (`SETUP` = 0, `FLOOR` = 1),
-     `Dir` (`In` = add / `Out` = delete), `Val` (`U32(u32)`/`String`). `src/types/schema/` — `Schema` (newtype over
+     `Dir` (`In` = add / `Out` = delete), `Val` (`U32(u32)`/`String`); the datom machinery: `dat::Dat`
+     (`Val(Val)`/`Ent(Ent)`), `ent::Ent` (`Id(Ein)`/`Temp(&'static str)`), and `datom::{add, del}` constructors
+     building `datom::Datom { ent, attr, dat, dir }` (`Datom` is re-exported at the `types` root, and from there
+     `pub use`d out of `db/mod.rs`, so `hamt2::db::Datom`/`Dat`/`Ent` all resolve; `datom::add`/`datom::del` come
+     from `hamt2::types::datom`). `src/types/schema/` — `Schema` (newtype over
      `AttrTable` via `Deref`), `AttrTable` (`HashMap<Attr, Attribute>`: `Index<Attr>`, always seeded with the
      `db/ident` and `db/cardinality` starter attributes), `Attribute { ein, spec: AttrSpec }`,
      `AttrSpec { attr, cardinality }`, `Cardinality` (`One`/`Many`), `attr_loader::AttributeLoader` (a `Find` impl
@@ -96,7 +98,8 @@ callers to name, re-exported under db-flavored names (`as` imports in `src/stora
      `TrieStorageWrite`/`Trie(TrieWriteError)`/`HighBitInValue`/`NoSpaceInValueTable`), `LoadError` (`QueryError`/
      `TrieStorageRead`/`UnknownAttr`). Re-exported at the crate root.
    - `src/find/` — the `Find` trait (`select()` + `where_() -> Vec<Atom>` + `process(FindResult)`; default `apply`
-     runs `db_trie::find`; `FindResult` = `Vec<HashMap<String, Val>>`). Impls: `all_eins`, `attr_with_name`,
+     runs `db_trie::find`; `FindResult` = `Vec<HashMap<String, Val>>`, lives at `find/types/find_result.rs`).
+     Impls: `all_eins`, `attr_with_name`,
      `attrs_of_ein`, `binds_for_attr`, `eins_with_attr`, `vals_in_slot`; each compiles to a datalog `rule` headed by
      `db/query`.
    - `src/query.rs` — `DbQuery` trait (`find`, `get`, `find_val`, `get_val`), implemented by `Db` and `DbReader`.
@@ -177,4 +180,4 @@ Within `crates/skybase/src`:
   `HashKey`/`DeepKey`, plus the db layer's `Dat`/`Datom`/`Ent`/`Dir`, `Attr`/`AttrName`/`AttrSpec`/`DbSpec`/`Schema`,
   `Ein`/`Txid`/`Vid`/`MaxEid`/`EntEid`/`AttrEin` — don't confuse the similar names despite the overlap.
 - `Dat::Val` vs `Dat::Ent` and `dir` (`Dir::In`/`Dir::Out`, i.e. add/delete) drive query semantics; see
-  `src/datom/mod.rs` (`datom::add` / `datom::del`).
+  `src/types/datom.rs` (`datom::add` / `datom::del`).
