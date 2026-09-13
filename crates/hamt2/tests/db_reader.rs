@@ -1,6 +1,7 @@
+use hamt2::datom;
 use hamt2::db::query::DbQuery;
 use hamt2::db::reader::DbReader;
-use hamt2::db::{Attr, Db, datom, ein, val};
+use hamt2::db::{Attr, Db, ein, val};
 use hamt2::find::{AllEins, AttrsOfEin, EinsWithAttr};
 use hamt2::trie::prelude::MemTrieStorage;
 

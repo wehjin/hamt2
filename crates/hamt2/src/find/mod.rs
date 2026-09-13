@@ -49,8 +49,9 @@ pub trait Find {
 
 #[cfg(test)]
 mod tests {
+    use crate::datom;
     use crate::db::query::DbQuery;
-    use crate::db::{Attr, Db, datom, ein, val};
+    use crate::db::{Attr, Db, ein, val};
     use crate::find::BindsForAttr;
     use crate::trie::prelude::*;
 

@@ -52,8 +52,10 @@ impl<S: ReadWriteTrieStorage> DbQuery for Db<S> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::{dat, datom, ent};
+    use crate::datom;
+    use crate::db::{dat, ent};
     use futures::StreamExt;
+
     #[tokio::test]
     async fn ev_stream_test() -> anyhow::Result<()> {
         const COUNT: Attr = Attr("counter/count");

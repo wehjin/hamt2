@@ -1,9 +1,9 @@
-use hamt2::LoadError;
 use hamt2::db::query::DbQuery;
-use hamt2::db::{Attr, datom, ein, val};
+use hamt2::db::{Attr, ein, val};
 use hamt2::db::{Db, Txid};
 use hamt2::find::EinsWithAttr;
 use hamt2::trie::prelude::MemTrieStorage;
+use hamt2::{LoadError, datom};
 
 pub const ATTR_COUNT: Attr = Attr("counter/count");
 pub const ATTR_GREETING: Attr = Attr("speech/greeting");

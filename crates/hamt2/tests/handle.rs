@@ -1,6 +1,7 @@
+use hamt2::datom;
 use hamt2::db::handle::DbHandle;
 use hamt2::db::query::DbQuery;
-use hamt2::db::{Attr, Db, datom, val};
+use hamt2::db::{Attr, Db, val};
 use hamt2::trie::prelude::MemTrieStorage;
 
 const ATTR_COUNT: Attr = Attr("counter/count");

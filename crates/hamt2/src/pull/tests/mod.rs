@@ -1,4 +1,5 @@
-use crate::db::{dat, datom, Attr, Db, Ein, Ent, Val};
+use crate::datom;
+use crate::db::{Attr, Db, Ein, Ent, Val, dat};
 use crate::pull::Pull;
 use crate::trie::prelude::*;
 use common::Basis;

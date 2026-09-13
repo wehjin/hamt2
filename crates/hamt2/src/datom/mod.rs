@@ -1,4 +1,4 @@
-use crate::db::types::attr::Attr;
+use crate::db::Attr;
 use crate::db::{Dat, Dir};
 use ent::Ent;
 use std::fmt::Debug;

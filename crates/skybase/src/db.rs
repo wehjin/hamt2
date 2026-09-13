@@ -1,6 +1,6 @@
-use hamt2::TransactError;
-use hamt2::db::{Attr, Db, Ent, datom, val};
+use hamt2::db::{Attr, Db, Ent, val};
 use hamt2::trie::prelude::MemTrieStorage;
+use hamt2::{TransactError, datom};
 
 pub const ATTR_SKYBASE_VERSION: Attr = Attr("skybase/version");
 pub async fn start_db() -> Result<Db<MemTrieStorage>, TransactError> {
