@@ -2,7 +2,7 @@ use crate::LoadError;
 use crate::TransactError;
 use crate::db::reader::DbReader;
 use crate::db::{Datom, Db};
-use crate::trie::trie_storage::ReadWriteTrieStorage;
+use crate::trie::prelude::*;
 use log::error;
 use thiserror::Error;
 use tokio::sync::mpsc::Receiver;

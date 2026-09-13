@@ -1,7 +1,6 @@
 use crate::db::Ein;
 use crate::db::component::key::KEY_MAX_EID;
 use crate::trie::prelude::*;
-use crate::trie::{Trie, TrieQuery};
 use crate::{QueryError, TransactError};
 
 pub struct MaxEid {

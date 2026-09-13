@@ -1,6 +1,5 @@
 use crate::db::Schema;
-use crate::trie::TrieQuery;
-use crate::trie::trie_storage::ReadTrieStorage;
+use crate::trie::prelude::*;
 use atom::Atom;
 use kb::KnowledgeBase;
 use rule::Rule;
@@ -59,7 +58,6 @@ mod tests {
 	use crate::db::datalog::term::term;
 	use crate::db::datalog::var::var;
 	use crate::db::{Attr, Db, datom, ent, val};
-	use crate::trie::trie_storage::mem::MemTrieStorage;
 
 	const ADVISOR: Attr = Attr("member/advisor");
     const NAME: Attr = Attr("member/name");

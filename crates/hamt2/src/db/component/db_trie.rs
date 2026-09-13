@@ -14,8 +14,6 @@ use crate::db::find_result::FindResult;
 use crate::db::{Attr, Txid, Val, Vid, txid};
 use crate::db::{Ein, Schema};
 use crate::trie::prelude::*;
-use crate::trie::trie_ref::TrieRef;
-use crate::trie::{Trie, TrieQuery};
 use async_stream::stream;
 use futures::{StreamExt, pin_mut};
 use serde::{Deserialize, Serialize};

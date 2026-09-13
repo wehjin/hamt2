@@ -3,9 +3,7 @@ use crate::db::component::db_trie;
 use crate::db::component::key::KEY_MAX_TXID;
 use crate::db::{Attr, Db, Ein, Txid, Val};
 use crate::find::{Find, ValsInSlot};
-use crate::trie::TrieQuery;
-use crate::trie::trie_storage::ReadWriteTrieStorage;
-use crate::trie::types::trie_value::TrieValue;
+use crate::trie::prelude::*;
 use futures::FutureExt;
 
 pub trait DbQuery {
@@ -55,7 +53,6 @@ impl<S: ReadWriteTrieStorage> DbQuery for Db<S> {
 mod tests {
     use super::*;
     use crate::db::{dat, datom, ent};
-    use crate::trie::trie_storage::mem::MemTrieStorage;
     use futures::StreamExt;
     #[tokio::test]
     async fn ev_stream_test() -> anyhow::Result<()> {

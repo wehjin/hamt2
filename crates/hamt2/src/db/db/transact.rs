@@ -3,7 +3,7 @@ use crate::db::component::MaxEid;
 use crate::db::component::db_trie;
 use crate::db::component::ent_eid::EntEid;
 use crate::db::{Dat, Datom, Db, Ent, val};
-use crate::trie::trie_storage::ReadWriteTrieStorage;
+use crate::trie::prelude::*;
 
 impl<S: ReadWriteTrieStorage> Db<S> {
     pub async fn transact(self, datoms: impl Into<Vec<Datom>>) -> Result<Self, TransactError> {

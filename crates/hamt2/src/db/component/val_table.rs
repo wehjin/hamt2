@@ -3,9 +3,6 @@ use crate::db::component::u32;
 use crate::db::{Val, Vid};
 use crate::trie::hash;
 use crate::trie::prelude::*;
-use crate::trie::trie_ref::TrieRef;
-use crate::trie::types::trie_value::TrieValue;
-use crate::trie::{Trie, TrieQuery};
 use crate::{QueryError, TransactError};
 
 pub async fn insert<S: ReadWriteTrieStorage>(
@@ -179,7 +176,6 @@ where
 mod tests {
     use super::*;
     use crate::db::val;
-    use crate::trie::trie_storage::mem::MemTrieStorage;
 
     #[tokio::test]
     async fn insert_and_query() {

@@ -3,8 +3,7 @@ use crate::db::datalog::kb::KnowledgeBase;
 use crate::db::datalog::sub::Substitution;
 use crate::db::datalog::term::Term;
 use crate::db::datalog::var::Var;
-use crate::trie::TrieQuery;
-use crate::trie::trie_storage::ReadTrieStorage;
+use crate::trie::prelude::*;
 
 pub fn atom(attr: impl Into<Attr>, terms: impl Into<Vec<Term>>) -> Atom {
     Atom::new(attr.into(), terms)

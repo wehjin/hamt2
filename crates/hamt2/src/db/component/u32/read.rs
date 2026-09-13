@@ -1,6 +1,4 @@
-use crate::trie::TrieQuery;
 use crate::trie::prelude::*;
-use crate::trie::trie_ref::TrieRef;
 
 pub struct Read<'a, S: ReadTrieStorage> {
     hash_trie: TrieRef<'a, S>,

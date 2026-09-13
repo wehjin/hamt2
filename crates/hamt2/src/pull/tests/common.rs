@@ -2,7 +2,7 @@ use crate::QueryError;
 use crate::db::query::DbQuery;
 use crate::db::{Attr, Datom, Db, Ein, Ent, datom};
 use crate::pull::Pull;
-use crate::trie::trie_storage::ReadWriteTrieStorage;
+use crate::trie::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]

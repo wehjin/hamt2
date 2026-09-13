@@ -11,8 +11,7 @@ use crate::db::Schema;
 use crate::db::component::db_trie;
 use crate::db::datalog::atom::Atom;
 use crate::db::find_result::FindResult;
-use crate::trie::TrieQuery;
-use crate::trie::trie_storage::ReadTrieStorage;
+use crate::trie::prelude::*;
 pub use all_eins::*;
 pub use attr_with_name::*;
 pub use attrs_of_ein::*;
@@ -52,7 +51,7 @@ mod tests {
     use crate::db::query::DbQuery;
     use crate::db::{Attr, Db, datom, ein, val};
     use crate::find::BindsForAttr;
-    use crate::trie::trie_storage::mem::MemTrieStorage;
+    use crate::trie::prelude::*;
 
     #[tokio::test]
     async fn find_with_reader() {

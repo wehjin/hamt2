@@ -1,5 +1,5 @@
 use crate::db::{Attr, Datom, Db, Ein, Ent};
-use crate::trie::trie_storage::ReadWriteTrieStorage;
+use crate::trie::prelude::*;
 use crate::QueryError;
 use serde::{Deserialize, Serialize};
 

@@ -1,6 +1,6 @@
 use crate::db::{dat, datom, Attr, Db, Ein, Ent, Val};
 use crate::pull::Pull;
-use crate::trie::trie_storage::mem::MemTrieStorage;
+use crate::trie::prelude::*;
 use common::Basis;
 
 pub mod common;

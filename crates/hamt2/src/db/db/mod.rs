@@ -1,8 +1,7 @@
 use crate::db::Attr;
 use crate::db::reader::DbReader;
 use crate::db::schema::Schema;
-use crate::trie::Trie;
-use crate::trie::trie_storage::ReadWriteTrieStorage;
+use crate::trie::prelude::*;
 pub mod cons;
 pub mod query;
 pub mod transact;
