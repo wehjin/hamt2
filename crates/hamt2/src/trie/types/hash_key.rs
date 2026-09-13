@@ -1,4 +1,4 @@
-use crate::trie::hash;
+use crate::universal_hash;
 use crate::trie::types::slot_map::SlotMap;
 use serde::{Deserialize, Serialize};
 
@@ -86,5 +86,5 @@ fn map_index(hash: u32, hash_index: u32) -> u8 {
 
 fn hash_key(key: u32, level: u32) -> u32 {
     let key_bytes = key.to_be_bytes() as [u8; 4];
-    hash::universal(&key_bytes, level)
+    universal_hash::hash(&key_bytes, level)
 }

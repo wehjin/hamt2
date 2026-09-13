@@ -1,4 +1,4 @@
-pub fn universal(bytes: impl AsRef<[u8]>, level: u32) -> u32 {
+pub fn hash(bytes: impl AsRef<[u8]>, level: u32) -> u32 {
     let bytes = bytes.as_ref();
     let level = level as u64;
     let mut a: u128 = 31415;

@@ -1,7 +1,7 @@
 use crate::db::component::key::KEY_VAL_TABLE;
 use crate::db::component::u32;
 use crate::db::{Val, Vid};
-use crate::trie::hash;
+use crate::universal_hash;
 use crate::trie::prelude::*;
 use crate::{QueryError, TransactError};
 
@@ -18,7 +18,7 @@ pub async fn insert<S: ReadWriteTrieStorage>(
         Val::String(_) => VAL_TYPE_STRING,
     };
 
-    let mut hash = (hash::universal(bytes, 1) & 0x7FFFFFFF) as i32;
+    let mut hash = (universal_hash::hash(bytes, 1) & 0x7FFFFFFF) as i32;
     for _ in 0..1000 {
         let hash_trie = find_hash_trie(&trie, hash).await?;
         match hash_trie {

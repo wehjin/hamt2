@@ -2,7 +2,6 @@ pub mod trie_storage;
 pub mod types;
 
 mod trie;
-pub mod hash;
 pub mod prelude;
 pub mod trie_query;
 pub mod trie_reader;
