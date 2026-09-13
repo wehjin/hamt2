@@ -1,6 +1,6 @@
-use crate::db::Attr;
 use crate::db::reader::DbReader;
 use crate::db::schema::Schema;
+use crate::db::types::Attr;
 use crate::trie::prelude::*;
 pub mod cons;
 pub mod query;

@@ -1,9 +1,8 @@
+use crate::db::types::attr::Attr;
 use crate::db::{Dat, Dir};
-use attr::Attr;
 use ent::Ent;
 use std::fmt::Debug;
 
-pub mod attr;
 pub mod dat;
 pub mod ent;
 

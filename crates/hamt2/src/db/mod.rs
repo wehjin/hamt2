@@ -1,18 +1,18 @@
 pub mod component;
-mod core;
+pub mod datalog;
 mod db;
 pub mod handle;
-mod schema;
 pub mod reader;
-pub mod datalog;
+mod schema;
+pub mod types;
 
 pub use component::vid::*;
-pub use core::Attr;
-pub use core::Ent;
-pub use core::Val;
-pub use core::datom::Datom;
-pub use core::dir::*;
-pub use core::txid::*;
-pub use core::*;
 pub use db::*;
 pub use schema::*;
+pub use types::Attr;
+pub use types::Ent;
+pub use types::Val;
+pub use types::datom::Datom;
+pub use types::dir::*;
+pub use types::txid::*;
+pub use types::*;

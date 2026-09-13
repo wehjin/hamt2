@@ -2,9 +2,9 @@ use crate::QueryError;
 use crate::db::Schema;
 use crate::db::component::db_trie;
 use crate::db::datalog::atom::Atom;
-use crate::db::find_result::FindResult;
 use crate::db::{Attr, Ein};
 use crate::find::Find;
+use crate::find::find_result::FindResult;
 use crate::trie::prelude::*;
 use std::future::Future;
 

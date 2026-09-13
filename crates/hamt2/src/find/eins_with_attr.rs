@@ -3,8 +3,8 @@ use crate::db::Ein;
 use crate::db::datalog::atom::{Atom, atom};
 use crate::db::datalog::term::term;
 use crate::db::datalog::var::var;
-use crate::db::find_result::FindResult;
 use crate::find::Find;
+use crate::find::find_result::FindResult;
 
 pub struct EinsWithAttr {
     attr: Attr,
