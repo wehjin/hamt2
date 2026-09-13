@@ -1,11 +1,12 @@
 use crate::db::Ein;
 use crate::trie::mem::value::MemValue;
+use serde::{Deserialize, Serialize};
 
 pub fn val(from: impl Into<Val>) -> Val {
     from.into()
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum Val {
     U32(u32),
     String(String),
