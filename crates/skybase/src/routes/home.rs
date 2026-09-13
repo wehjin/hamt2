@@ -1,5 +1,6 @@
 use crate::api::version::get_version;
 use crate::api::{get_entities_report, get_entity_attributes_report, get_value_report};
+use crate::components::TitleAndDelete;
 use hamt2::db::{AttrName, Ein, Val};
 use leptos::prelude::*;
 
@@ -93,7 +94,7 @@ pub fn AttributesSection(ein: Ein) -> impl IntoView {
     let title = format_ein(ein);
     view! {
         <div class="cell is-flex"><div class="box is-flex-grow-1">
-            <h2 class="title">{title}</h2>
+            <TitleAndDelete title=title/>
             <Suspense fallback=|| "Loading...">
                 <label for="attr-select" class="label">"Select an attribute"</label>
                 {move || Suspend::new(async move {
@@ -147,7 +148,7 @@ pub fn ValueSection(ein: Ein, attr_name: AttrName) -> impl IntoView {
     let title = format!("⌖\u{202F}{attr_name}");
     view! {
         <div class="cell is-flex"><div class="box is-flex-grow-1">
-            <h2 class="title">{title}</h2>
+            <TitleAndDelete title=title/>
             <Suspense fallback=|| "">
                 {move || Suspend::new(async move {
                     let value_report = value_report.await;
