@@ -159,10 +159,15 @@ pub fn ValueSection(ein: Ein, attr_name: AttrName) -> impl IntoView {
                                 Val::String(v) => ("string".to_string(), v.to_string()),
                             };
                             view! {
-                                <section class="section">
-                                    <div>{format!("value: {}", val_string)}</div>
-                                    <div>{format!("type: {val_type}")}</div>
-                                </section>
+                                <label for="value-show" class="label">"Value"</label>
+                                <div class="field has-addons">
+                                    <div class="control">
+                                        <a class="button is-static">{{val_type}}</a>
+                                    </div>
+                                    <div class="control is-expanded">
+                                        <input id="value-show" class="input" type="text" value=val_string readonly/>
+                                    </div>
+                                </div>
                             }.into_any()
                         }
                         None => {
