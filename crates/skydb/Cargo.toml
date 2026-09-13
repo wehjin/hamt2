@@ -1,8 +1,0 @@
-[package]
-name = "skydb"
-version.workspace = true
-edition.workspace = true
-
-[dependencies]
-hamt2.workspace = true
-pollster = "0.4"

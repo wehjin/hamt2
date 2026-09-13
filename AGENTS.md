@@ -2,8 +2,8 @@
 
 Datomic-like database library written in Rust (edition 2024), built on persistent
 Hash Array Mapped Tries (HAMT). A Cargo workspace: `hamt2` (the Datomic-style db, `crates/hamt2`) built on `sky-trie`
-(the HAMT, `crates/sky-trie`) and `universal-hash` (the hashing primitive, `crates/universal-hash`); plus `skydb`
-(a `DbReader` wrapper for skybase) and `skybase` (the Leptos web app). No CI, no README.
+(the HAMT, `crates/sky-trie`) and `universal-hash` (the hashing primitive, `crates/universal-hash`); plus
+`skybase` (the Leptos web app, which contains its database layer: `skybase::db`). No CI, no README.
 
 ## Scope & Boundaries
 
@@ -20,7 +20,7 @@ Hash Array Mapped Tries (HAMT). A Cargo workspace: `hamt2` (the Datomic-style db
   or services required; everything uses in-memory or temp-folder storage.
 - Single test: `cargo test <name>` (standard). Tests are `#[tokio::test]` async.
 - `cargo leptos build` (run from the workspace root) — builds the `skybase` Leptos web app. `crates/skybase` is the
-  Leptos frontend/backend; `crates/skydb` is its database layer (a `DbReader` wrapper over `hamt2` for reading the
+  Leptos frontend/backend; `skybase::db` is its database layer (a `Db` wrapper over `hamt2` for reading the
   skybase version). `cargo leptos` needs `cargo-leptos` installed; it compiles the `hydrate` feature (wasm) and `ssr`
   feature (native axum server) targets.
 
@@ -75,7 +75,7 @@ Within `crates/skybase/src`:
 - `routes/` — route-level/page components, one module per route (`routes/home.rs`). Pages own route wiring and data
   fetching (via `#[server]` calls in `api/` or resources); they are mounted in `<Route>`s in `app.rs`.
 - `components/` — reusable presentational components with no data logic; they receive everything as props. If a
-  component fetches or depends on `skydb`/`hamt2` data directly, it belongs in `routes/` (or its data should be loaded
+  component fetches or depends on `skybase::db`/`hamt2` data directly, it belongs in `routes/` (or its data should be loaded
   in a `route` and passed down).
 - `api/` — all `#[server]` functions (isomorphic: the same definition compiles to a client stub under `hydrate` and a
   server impl under `ssr`). Keep them out of components.
