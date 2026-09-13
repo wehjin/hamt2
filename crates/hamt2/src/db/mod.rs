@@ -1,8 +1,6 @@
 pub mod component;
 pub mod datalog;
 mod db;
-pub mod handle;
-pub mod reader;
 
 pub use component::vid::*;
 pub use db::*;

@@ -3,7 +3,7 @@ use hamt2::db::attr_spec::AttrSpec;
 use hamt2::db::cardinality::Cardinality;
 use hamt2::db::{Attr, Db, val};
 use hamt2::find::ValsInSlot;
-use hamt2::db_query::DbQuery;
+use hamt2::query::DbQuery;
 use hamt2::trie::prelude::MemTrieStorage;
 
 #[tokio::test]

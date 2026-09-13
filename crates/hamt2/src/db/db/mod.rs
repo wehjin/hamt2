@@ -1,4 +1,4 @@
-use crate::db::reader::DbReader;
+use crate::reader::DbReader;
 use crate::trie::prelude::*;
 use crate::types::Attr;
 use crate::types::schema::Schema;

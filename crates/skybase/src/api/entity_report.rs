@@ -10,8 +10,8 @@ pub struct EntitiesReport {
 
 #[server]
 pub async fn get_entities_report() -> Result<EntitiesReport, ServerFnError> {
-    use hamt2::db::handle::DbHandle;
-    use hamt2::db_query::DbQuery;
+    use hamt2::handle::DbHandle;
+    use hamt2::query::DbQuery;
     use hamt2::find::AllEins;
     use hamt2::trie::prelude::MemTrieStorage;
     use leptos::prelude::expect_context;

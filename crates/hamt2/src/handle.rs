@@ -1,7 +1,7 @@
 use crate::LoadError;
 use crate::TransactError;
-use crate::db::reader::DbReader;
 use crate::db::{Datom, Db};
+use crate::reader::DbReader;
 use crate::trie::prelude::*;
 use log::error;
 use thiserror::Error;
