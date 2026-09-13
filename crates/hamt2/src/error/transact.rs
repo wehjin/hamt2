@@ -1,5 +1,5 @@
 use crate::QueryError;
-use crate::trie::base_storage::errors::{BaseStorageReadError, BaseStorageWriteError};
+use crate::trie::trie_storage::errors::{TrieStorageReadError, TrieStorageWriteError};
 
 #[derive(thiserror::Error, Debug)]
 pub enum TransactError {
@@ -13,10 +13,10 @@ pub enum TransactError {
     Query(#[from] QueryError),
 
     #[error("BaseStorageRead: {0}")]
-    BaseStorageRead(#[from] BaseStorageReadError),
+    BaseStorageRead(#[from] TrieStorageReadError),
 
     #[error("BaseStorageWrite: {0}")]
-    BaseStorageWrite(#[from] BaseStorageWriteError),
+    BaseStorageWrite(#[from] TrieStorageWriteError),
 
     #[error("HighBitInValue: {0}")]
     HighBitInValue(u32),

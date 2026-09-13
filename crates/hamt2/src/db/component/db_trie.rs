@@ -13,8 +13,7 @@ use crate::db::db::QUERY;
 use crate::db::find_result::FindResult;
 use crate::db::{Attr, Txid, Val, Vid, txid};
 use crate::db::{Ein, Schema};
-use crate::trie::base_storage::{BaseStorageRead, BaseStorageReadWrite};
-use crate::trie::mem::value::MemValue;
+use crate::trie::prelude::*;
 use crate::trie::trie_ref::TrieRef;
 use crate::trie::{Trie, TrieQuery};
 use async_stream::stream;
@@ -27,8 +26,8 @@ struct Value {
     pub id: Txid,
     pub dir: Dir,
 }
-impl Into<MemValue> for Value {
-    fn into(self) -> MemValue {
+impl Into<TrieValue> for Value {
+    fn into(self) -> TrieValue {
         debug_assert!(self.id.u32() <= 0x0FFF_FFFF);
         let id_part = 0x0FFF_FFFF & self.id.u32();
         let dir_part = match self.dir {
@@ -36,7 +35,7 @@ impl Into<MemValue> for Value {
             Dir::In => 0x1000_0000,
         };
         let combined = id_part | dir_part;
-        MemValue::U32(combined)
+        TrieValue::U32(combined)
     }
 }
 
@@ -52,7 +51,7 @@ impl From<u32> for Value {
     }
 }
 
-pub(crate) async fn with_update<S: BaseStorageReadWrite>(
+pub(crate) async fn with_update<S: ReadWriteTrieStorage>(
     trie: Trie<S>,
     attr_map: &AttrTable,
     ein: Ein,
@@ -74,11 +73,11 @@ pub(crate) async fn with_update<S: BaseStorageReadWrite>(
     Ok(trie)
 }
 
-pub(crate) async fn set_max_tx<S: BaseStorageReadWrite>(
+pub(crate) async fn set_max_tx<S: ReadWriteTrieStorage>(
     trie: Trie<S>,
     max_tx: Txid,
 ) -> Result<Trie<S>, TransactError> {
-    trie.insert(KEY_MAX_TXID, MemValue::from(max_tx.u32()))
+    trie.insert(KEY_MAX_TXID, TrieValue::from(max_tx.u32()))
         .await
 }
 
@@ -90,7 +89,7 @@ pub async fn find<'a, T, S>(
 ) -> FindResult
 where
     T: TrieQuery<S>,
-    S: BaseStorageRead,
+    S: ReadTrieStorage,
 {
     let select = select.into();
     let query_terms = select.iter().map(|s| term(var(*s))).collect::<Vec<_>>();
@@ -121,7 +120,7 @@ pub fn ev_stream<'a, T, S>(
 ) -> impl futures::Stream<Item = (i32, Val)> + 'a
 where
     T: TrieQuery<S>,
-    S: BaseStorageRead,
+    S: ReadTrieStorage,
 {
     stream! {
         if let Some(evt_subtrie) = evt_subtrie(trie, a, schema).await {
@@ -138,7 +137,7 @@ where
 pub async fn list_entities<T, S>(trie: &T) -> Vec<Ein>
 where
     T: TrieQuery<S>,
-    S: BaseStorageRead,
+    S: ReadTrieStorage,
 {
     if let Some(root) = eavt_root(trie).await {
         root.query_keys_values()
@@ -169,7 +168,7 @@ impl From<i32> for AttrEin {
 pub async fn list_entity_attributes<T, S>(trie: &T, ein: Ein) -> Vec<AttrEin>
 where
     T: TrieQuery<S>,
-    S: BaseStorageRead,
+    S: ReadTrieStorage,
 {
     if let Some(root) = e_avt_subtrie(trie, ein).await {
         root.query_keys_values()
@@ -186,7 +185,7 @@ where
 async fn eavt_root<'a, T, S>(trie: &'a T) -> Option<TrieRef<'a, S>>
 where
     T: TrieQuery<S>,
-    S: BaseStorageRead + 'a,
+    S: ReadTrieStorage + 'a,
 {
     let root_value = trie.deep_query_value([KEY_EAVT]).await.ok().flatten();
     root_value.and_then(|value| trie.to_subtrie_from_value(value))
@@ -195,7 +194,7 @@ where
 async fn e_avt_subtrie<'a, T, S>(trie: &'a T, ein: Ein) -> Option<TrieRef<'a, S>>
 where
     T: TrieQuery<S>,
-    S: BaseStorageRead + 'a,
+    S: ReadTrieStorage + 'a,
 {
     let root_value = trie
         .deep_query_value([KEY_EAVT, ein.to_i32()])
@@ -208,7 +207,7 @@ where
 async fn evt_subtrie<'a, T, S>(trie: &'a T, attr: Attr, schema: &Schema) -> Option<TrieRef<'a, S>>
 where
     T: TrieQuery<S>,
-    S: BaseStorageRead + 'a,
+    S: ReadTrieStorage + 'a,
 {
     let aid = schema[attr].ein().to_i32();
     let keys = [KEY_AEVT, aid];
@@ -216,7 +215,7 @@ where
     evt_value.and_then(|evt| trie.to_subtrie_from_value(evt))
 }
 
-fn evid_stream<'a, S: BaseStorageRead>(
+fn evid_stream<'a, S: ReadTrieStorage>(
     evt_subtrie: TrieRef<'a, S>,
 ) -> impl futures::Stream<Item = (i32, i32)> + 'a {
     stream! {

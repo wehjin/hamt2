@@ -6,7 +6,7 @@ use crate::db::find_result::FindResult;
 use crate::db::{Attr, Ein};
 use crate::find::Find;
 use crate::trie::TrieQuery;
-use crate::trie::base_storage::BaseStorageRead;
+use crate::trie::trie_storage::ReadTrieStorage;
 use std::future::Future;
 
 pub struct AttrsOfEin {
@@ -43,7 +43,7 @@ impl Find for AttrsOfEin {
     where
         Self: Sized,
         T: TrieQuery<S>,
-        S: BaseStorageRead,
+        S: ReadTrieStorage,
     {
         async move {
             // For now, use custom function `list_entity_attributes`. Later maybe make a program

@@ -2,18 +2,18 @@ use crate::db::Attr;
 use crate::db::reader::DbReader;
 use crate::db::schema::Schema;
 use crate::trie::Trie;
-use crate::trie::base_storage::BaseStorageReadWrite;
+use crate::trie::trie_storage::ReadWriteTrieStorage;
 pub mod cons;
 pub mod query;
 pub mod transact;
 
 #[derive(Debug)]
-pub struct Db<S: BaseStorageReadWrite> {
+pub struct Db<S: ReadWriteTrieStorage> {
     pub(crate) schema: Schema,
     pub(crate) trie: Trie<S>,
 }
 
-impl<S: BaseStorageReadWrite> Db<S> {
+impl<S: ReadWriteTrieStorage> Db<S> {
     pub async fn to_reader(&self) -> DbReader<S::ReadOnly> {
         DbReader::load(self).await.expect("load reader")
     }

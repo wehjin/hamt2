@@ -1,13 +1,13 @@
 use hamt2::db::query::DbQuery;
 use hamt2::db::{Attr, Db, datom, val};
 use hamt2::find::EinsWithAttr;
-use hamt2::trie::base_storage::mem::MemBaseStorage;
+use hamt2::trie::prelude::MemTrieStorage;
 
 const ATTR_COUNT: Attr = Attr("counter/count");
 
 #[tokio::test]
 async fn mem_db_works() -> anyhow::Result<()> {
-    let db = Db::new(MemBaseStorage::new(), [ATTR_COUNT]).await?;
+    let db = Db::new(MemTrieStorage::new(), [ATTR_COUNT]).await?;
     let db = db
         .transact([
             datom::add(1, ATTR_COUNT, val(10)),

@@ -6,7 +6,7 @@ use crate::db::find_result::FindResult;
 use crate::db::{Attr, Schema};
 use crate::find::Find;
 use crate::trie::TrieQuery;
-use crate::trie::base_storage::BaseStorageRead;
+use crate::trie::trie_storage::ReadTrieStorage;
 use std::future::Future;
 
 pub struct AttrWithName {
@@ -42,7 +42,7 @@ impl Find for AttrWithName {
     where
         Self: Sized,
         T: TrieQuery<S>,
-        S: BaseStorageRead,
+        S: ReadTrieStorage,
     {
         async move {
             let attr = schema.find_attr_by_name(&self.attr_name);

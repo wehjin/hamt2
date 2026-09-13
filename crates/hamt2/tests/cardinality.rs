@@ -3,7 +3,7 @@ use hamt2::db::cardinality::Cardinality;
 use hamt2::db::query::DbQuery;
 use hamt2::db::{Attr, Db, datom, val};
 use hamt2::find::ValsInSlot;
-use hamt2::trie::base_storage::mem::MemBaseStorage;
+use hamt2::trie::prelude::MemTrieStorage;
 
 #[tokio::test]
 async fn test_cardinality_one() -> anyhow::Result<()> {
@@ -12,7 +12,7 @@ async fn test_cardinality_one() -> anyhow::Result<()> {
         attr: COUNT,
         cardinality: Cardinality::One,
     }];
-    let mut db = Db::new(MemBaseStorage::new(), schema).await?;
+    let mut db = Db::new(MemTrieStorage::new(), schema).await?;
     db = db.transact([datom::add(100, COUNT, 100)]).await?;
     db = db.transact([datom::add(100, COUNT, 101)]).await?;
     db = db.transact([datom::add(100, COUNT, 102)]).await?;
@@ -32,7 +32,7 @@ async fn test_cardinality_many() -> anyhow::Result<()> {
         attr: COUNT,
         cardinality: Cardinality::Many,
     }];
-    let mut db = Db::new(MemBaseStorage::new(), schema).await?;
+    let mut db = Db::new(MemTrieStorage::new(), schema).await?;
     db = db.transact([datom::add(100, COUNT, 100)]).await?;
     db = db.transact([datom::add(100, COUNT, 101)]).await?;
     db = db.transact([datom::add(100, COUNT, 102)]).await?;

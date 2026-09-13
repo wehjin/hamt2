@@ -1,7 +1,6 @@
-use crate::db::component::key::KEY_MAX_EID;
 use crate::db::Ein;
-use crate::trie::base_storage::BaseStorageReadWrite;
-use crate::trie::mem::value::MemValue;
+use crate::db::component::key::KEY_MAX_EID;
+use crate::trie::prelude::*;
 use crate::trie::{Trie, TrieQuery};
 use crate::{QueryError, TransactError};
 
@@ -17,8 +16,8 @@ impl MaxEid {
             current: eid,
         }
     }
-    pub async fn read<S: BaseStorageReadWrite>(trie: &Trie<S>) -> Result<Self, QueryError> {
-        if let Some(MemValue::U32(value)) = trie.query_value(KEY_MAX_EID).await? {
+    pub async fn read<S: ReadWriteTrieStorage>(trie: &Trie<S>) -> Result<Self, QueryError> {
+        if let Some(TrieValue::U32(value)) = trie.query_value(KEY_MAX_EID).await? {
             Ok(Self::new(Ein(value as i32)))
         } else {
             Ok(Self::new(Ein::DB_MAX))
@@ -32,9 +31,12 @@ impl MaxEid {
         }
         taken
     }
-    pub async fn write<S: BaseStorageReadWrite>(self, trie: Trie<S>) -> Result<Trie<S>, TransactError> {
+    pub async fn write<S: ReadWriteTrieStorage>(
+        self,
+        trie: Trie<S>,
+    ) -> Result<Trie<S>, TransactError> {
         let trie = if self.current > self.start {
-            trie.insert(KEY_MAX_EID, MemValue::from(self.current.to_i32() as u32))
+            trie.insert(KEY_MAX_EID, TrieValue::from(self.current.to_i32() as u32))
                 .await?
         } else {
             trie

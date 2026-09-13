@@ -4,7 +4,7 @@ use crate::db::datalog::sub::Substitution;
 use crate::db::datalog::term::Term;
 use crate::db::datalog::var::Var;
 use crate::trie::TrieQuery;
-use crate::trie::base_storage::BaseStorageRead;
+use crate::trie::trie_storage::ReadTrieStorage;
 
 pub fn atom(attr: impl Into<Attr>, terms: impl Into<Vec<Term>>) -> Atom {
     Atom::new(attr.into(), terms)
@@ -63,7 +63,7 @@ impl Atom {
     ) -> Vec<Substitution>
     where
         T: TrieQuery<S>,
-        S: BaseStorageRead,
+        S: ReadTrieStorage,
     {
         let mut new_subs = Vec::new();
         for sub in subs {

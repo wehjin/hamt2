@@ -12,7 +12,7 @@ use crate::db::component::db_trie;
 use crate::db::datalog::atom::Atom;
 use crate::db::find_result::FindResult;
 use crate::trie::TrieQuery;
-use crate::trie::base_storage::BaseStorageRead;
+use crate::trie::trie_storage::ReadTrieStorage;
 pub use all_eins::*;
 pub use attr_with_name::*;
 pub use attrs_of_ein::*;
@@ -35,7 +35,7 @@ pub trait Find {
     where
         Self: Sized,
         T: TrieQuery<S>,
-        S: BaseStorageRead,
+        S: ReadTrieStorage,
     {
         async move {
             let select = self.select();
@@ -52,12 +52,12 @@ mod tests {
     use crate::db::query::DbQuery;
     use crate::db::{Attr, Db, datom, ein, val};
     use crate::find::BindsForAttr;
-    use crate::trie::base_storage::mem::MemBaseStorage;
+    use crate::trie::trie_storage::mem::MemTrieStorage;
 
     #[tokio::test]
     async fn find_with_reader() {
         let attr = Attr::from("Counter/count");
-        let store = MemBaseStorage::new();
+        let store = MemTrieStorage::new();
         let db = Db::new(store, [attr]).await.unwrap();
         let txn = [datom::add(10, attr, 42)];
         let db = db.transact(txn).await.unwrap();

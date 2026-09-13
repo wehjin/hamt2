@@ -4,11 +4,11 @@ use crate::db::component::db_trie;
 use crate::db::schema::Schema;
 use crate::db::schema::attribute::Attribute;
 use crate::db::{Attr, Db, Txid};
-use crate::trie::base_storage::BaseStorageReadWrite;
+use crate::trie::trie_storage::ReadWriteTrieStorage;
 use crate::trie::Trie;
 use crate::{LoadError, TransactError};
 
-impl<S: BaseStorageReadWrite> Db<S> {
+impl<S: ReadWriteTrieStorage> Db<S> {
     pub async fn new(storage: S, db_spec: impl Into<DbSpec>) -> Result<Self, TransactError> {
         let db_spec = db_spec.into();
         let attr_specs = db_spec.as_ref();

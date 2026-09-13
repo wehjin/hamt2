@@ -1,7 +1,7 @@
 use axum::Router;
 use axum::extract::FromRef;
 use hamt2::db::handle::DbHandle;
-use hamt2::trie::base_storage::mem::MemBaseStorage;
+use hamt2::trie::prelude::MemTrieStorage;
 use leptos::prelude::*;
 use leptos_axum::{ErrorHandler, LeptosRoutes, generate_route_list, site_pkg_dir_service};
 use skybase::app::{App, shell};
@@ -10,7 +10,7 @@ use skydb::start_db;
 #[derive(Clone)]
 pub struct AppState {
     pub leptos_options: LeptosOptions,
-    pub db: DbHandle<MemBaseStorage>,
+    pub db: DbHandle<MemTrieStorage>,
 }
 
 impl FromRef<AppState> for LeptosOptions {

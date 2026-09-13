@@ -5,7 +5,7 @@ use crate::db::datalog::sub::Substitution;
 use crate::db::datalog::term::Term;
 use crate::db::{Attr, Schema, Val};
 use crate::trie::TrieQuery;
-use crate::trie::base_storage::BaseStorageRead;
+use crate::trie::trie_storage::ReadTrieStorage;
 use async_stream::stream;
 use futures::{StreamExt, pin_mut};
 use std::collections::HashSet;
@@ -15,7 +15,7 @@ use std::marker::PhantomData;
 pub struct KnowledgeBase<'a, T, S>
 where
     T: TrieQuery<S>,
-    S: BaseStorageRead,
+    S: ReadTrieStorage,
 {
     db_trie: &'a T,
     schema: &'a Schema,
@@ -26,7 +26,7 @@ where
 impl<'a, T, S> KnowledgeBase<'a, T, S>
 where
     T: TrieQuery<S>,
-    S: BaseStorageRead,
+    S: ReadTrieStorage,
 {
     pub fn from_facts(db_trie: &'a T, schema: &'a Schema, facts: Vec<Atom>) -> Self {
         debug_assert!(facts.iter().all(|atom| atom.is_grounded()));
@@ -115,7 +115,7 @@ where
 impl<'a, T, S> PartialEq for KnowledgeBase<'a, T, S>
 where
     T: TrieQuery<S>,
-    S: BaseStorageRead,
+    S: ReadTrieStorage,
 {
     fn eq(&self, other: &Self) -> bool {
         self.facts == other.facts
@@ -125,6 +125,6 @@ where
 impl<'a, T, S> Eq for KnowledgeBase<'a, T, S>
 where
     T: TrieQuery<S>,
-    S: BaseStorageRead,
+    S: ReadTrieStorage,
 {
 }

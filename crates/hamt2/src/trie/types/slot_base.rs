@@ -1,48 +1,38 @@
 use crate::TransactError;
-use crate::trie::base_storage::BaseStorageReadWrite;
-use crate::trie::core::key::TrieKey;
-use crate::trie::mem::slot::MemSlot;
-use crate::trie::mem::value::MemValue;
+use crate::trie::trie_storage::ReadWriteTrieStorage;
+use crate::trie::types::hash_key::HashKey;
+use crate::trie::types::slot::Slot;
+use crate::trie::types::trie_value::TrieValue;
 use serde::{Deserialize, Serialize};
-use std::fmt::{self, Display};
 use std::ops::Index;
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
-pub struct BaseId(pub i32);
-
-impl Display for BaseId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        Display::fmt(&self.0, f)
-    }
-}
-
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
-pub struct Base {
-    pub slots: Vec<MemSlot>,
+pub struct SlotBase {
+    pub slots: Vec<Slot>,
 }
 
-impl Base {
+impl SlotBase {
     pub fn new() -> Self {
         Self { slots: vec![] }
     }
-    pub fn new_kv(key: TrieKey, value: MemValue) -> Self {
-        let slot = MemSlot::one_kv(key, value);
+    pub fn new_kv(key: HashKey, value: TrieValue) -> Self {
+        let slot = Slot::one_kv(key, value);
         let slots = vec![slot];
         Self { slots }
     }
 }
 
-impl Base {
+impl SlotBase {
     pub fn len(&self) -> usize {
         self.slots.len()
     }
-    pub fn insert_slot(self, base_index: usize, slot: MemSlot) -> Self {
+    pub fn insert_slot(self, base_index: usize, slot: Slot) -> Self {
         let mut slots = self.slots;
         slots.insert(base_index, slot);
         Self { slots }
     }
-    pub fn replace_value(self, base_index: usize, value: MemValue) -> Self {
-        let Base { mut slots } = self;
+    pub fn replace_value(self, base_index: usize, value: TrieValue) -> Self {
+        let SlotBase { mut slots } = self;
         let slot = slots.remove(base_index).replace_value(value);
         slots.insert(base_index, slot);
         Self { slots }
@@ -51,19 +41,19 @@ impl Base {
     pub async fn kick_kv(
         self,
         base_index: usize,
-        key: TrieKey,
-        value: MemValue,
-        storage: &mut impl BaseStorageReadWrite,
+        key: HashKey,
+        value: TrieValue,
+        storage: &mut impl ReadWriteTrieStorage,
     ) -> Self {
-        let Base { mut slots } = self;
+        let SlotBase { mut slots } = self;
         let pre_slot = slots.remove(base_index);
         let slot = {
-            let MemSlot::KeyValue(b_key, b_value) = pre_slot else {
+            let Slot::KeyValue(b_key, b_value) = pre_slot else {
                 unreachable!("Should be a key-value slot, not a map-base slot:")
             };
             let b_key = key.sync(b_key);
             debug_assert!(b_key.i32() != key.i32());
-            MemSlot::two_kv(b_key.next(), b_value, key.next(), value, storage).await
+            Slot::two_kv(b_key.next(), b_value, key.next(), value, storage).await
         };
         slots.insert(base_index, slot);
         Self { slots }
@@ -72,18 +62,18 @@ impl Base {
     pub async fn merge_kv(
         self,
         base_index: usize,
-        key: TrieKey,
-        value: MemValue,
-        storage: &mut impl BaseStorageReadWrite,
+        key: HashKey,
+        value: TrieValue,
+        storage: &mut impl ReadWriteTrieStorage,
     ) -> Result<Self, TransactError> {
-        let Base { mut slots } = self;
+        let SlotBase { mut slots } = self;
         let pre_slot = slots.remove(base_index);
         let post_slot = {
-            let MemSlot::MapBase(map_base) = pre_slot else {
+            let Slot::MapBase(map_base) = pre_slot else {
                 unreachable!("Should be a map-base slot, not a key-value slot:")
             };
             let post_map_base = map_base.insert_kv(key.next(), value, storage).await?;
-            MemSlot::MapBase(post_map_base)
+            Slot::MapBase(post_map_base)
         };
         slots.insert(base_index, post_slot);
         let post_base = Self { slots };
@@ -91,8 +81,8 @@ impl Base {
     }
 }
 
-impl Index<usize> for Base {
-    type Output = MemSlot;
+impl Index<usize> for SlotBase {
+    type Output = Slot;
     fn index(&self, index: usize) -> &Self::Output {
         &self.slots[index]
     }

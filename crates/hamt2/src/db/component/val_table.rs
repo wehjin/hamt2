@@ -1,14 +1,14 @@
 use crate::db::component::key::KEY_VAL_TABLE;
 use crate::db::component::u32;
 use crate::db::{Val, Vid};
-use crate::hash;
-use crate::trie::base_storage::{BaseStorageRead, BaseStorageReadWrite};
-use crate::trie::mem::value::MemValue;
+use crate::trie::hash;
+use crate::trie::prelude::*;
 use crate::trie::trie_ref::TrieRef;
+use crate::trie::types::trie_value::TrieValue;
 use crate::trie::{Trie, TrieQuery};
 use crate::{QueryError, TransactError};
 
-pub async fn insert<S: BaseStorageReadWrite>(
+pub async fn insert<S: ReadWriteTrieStorage>(
     trie: Trie<S>,
     val: Val,
 ) -> Result<(Trie<S>, Vid), TransactError> {
@@ -47,15 +47,16 @@ pub async fn insert<S: BaseStorageReadWrite>(
 pub async fn query<T, S>(trie: &T, vid: Vid) -> Result<Option<Val>, QueryError>
 where
     T: TrieQuery<S>,
-    S: BaseStorageRead,
+    S: ReadTrieStorage,
 {
     match find_hash_trie(trie, vid.to_id()).await? {
         None => Ok(None),
         Some(val_trie) => {
-            let Some(MemValue::U32(bytes_len)) = val_trie.query_value(SUBKEY_LEN).await? else {
+            let Some(TrieValue::U32(bytes_len)) = val_trie.query_value(SUBKEY_LEN).await? else {
                 panic!("Unexpected MemValue variant")
             };
-            let Some(MemValue::U32(val_type)) = val_trie.query_value(SUBKEY_VAL_TYPE).await? else {
+            let Some(TrieValue::U32(val_type)) = val_trie.query_value(SUBKEY_VAL_TYPE).await?
+            else {
                 panic!("Unexpected MemValue variant")
             };
             let builder = u32::Read::new(val_trie, bytes_len as usize, SUBKEY_BYTES);
@@ -81,7 +82,7 @@ const SUBKEY_BYTES: i32 = 100;
 const VAL_TYPE_U32: u8 = 0;
 const VAL_TYPE_STRING: u8 = 1;
 
-async fn insert_bytes<S: BaseStorageReadWrite>(
+async fn insert_bytes<S: ReadWriteTrieStorage>(
     mut trie: Trie<S>,
     hash: i32,
     bytes: &[u8],
@@ -92,7 +93,7 @@ async fn insert_bytes<S: BaseStorageReadWrite>(
         trie = trie
             .deep_insert(
                 [KEY_VAL_TABLE, hash, u32_subkey],
-                MemValue::U32(u32_value),
+                TrieValue::U32(u32_value),
                 false,
             )
             .await?;
@@ -100,32 +101,32 @@ async fn insert_bytes<S: BaseStorageReadWrite>(
     trie = trie
         .deep_insert(
             [KEY_VAL_TABLE, hash, SUBKEY_LEN],
-            MemValue::U32(bytes.len() as u32),
+            TrieValue::U32(bytes.len() as u32),
             false,
         )
         .await?;
     trie = trie
         .deep_insert(
             [KEY_VAL_TABLE, hash, SUBKEY_VAL_TYPE],
-            MemValue::U32(bytes_type as u32),
+            TrieValue::U32(bytes_type as u32),
             false,
         )
         .await?;
     Ok(trie)
 }
 
-async fn is_equal_bytes<'a, S: BaseStorageReadWrite>(
+async fn is_equal_bytes<'a, S: ReadWriteTrieStorage>(
     hash_trie: &TrieRef<'a, S>,
     bytes: &[u8],
     bytes_type: u8,
 ) -> Result<bool, QueryError> {
-    let Some(MemValue::U32(len)) = hash_trie.query_value(SUBKEY_LEN).await? else {
+    let Some(TrieValue::U32(len)) = hash_trie.query_value(SUBKEY_LEN).await? else {
         panic!("Unexpected MemValue variant")
     };
     if len as usize != bytes.len() {
         return Ok(false);
     }
-    let Some(MemValue::U32(val_type)) = hash_trie.query_value(SUBKEY_VAL_TYPE).await? else {
+    let Some(TrieValue::U32(val_type)) = hash_trie.query_value(SUBKEY_VAL_TYPE).await? else {
         panic!("Unexpected MemValue variant")
     };
     if val_type as u8 != bytes_type {
@@ -139,7 +140,7 @@ async fn is_equal_bytes<'a, S: BaseStorageReadWrite>(
                 match saved {
                     None => return Ok(false),
                     Some(saved_mem_value) => {
-                        let MemValue::U32(saved_u32) = saved_mem_value else {
+                        let TrieValue::U32(saved_u32) = saved_mem_value else {
                             panic!("Unexpected MemValue variant")
                         };
                         if u32_value != saved_u32 {
@@ -162,7 +163,7 @@ async fn find_hash_trie<'a, T, S>(
 ) -> Result<Option<TrieRef<'a, S>>, QueryError>
 where
     T: TrieQuery<S>,
-    S: BaseStorageRead + 'a,
+    S: ReadTrieStorage + 'a,
 {
     let key = [KEY_VAL_TABLE, hash];
     match trie.deep_query_value(key).await? {
@@ -178,11 +179,11 @@ where
 mod tests {
     use super::*;
     use crate::db::val;
-    use crate::trie::base_storage::mem::MemBaseStorage;
+    use crate::trie::trie_storage::mem::MemTrieStorage;
 
     #[tokio::test]
     async fn insert_and_query() {
-        let mut trie = Trie::connect(MemBaseStorage::new())
+        let mut trie = Trie::connect(MemTrieStorage::new())
             .await
             .expect("Failed to connect to MemBaseStorage");
         let mut vids = Vec::new();
@@ -202,7 +203,7 @@ mod tests {
 
     #[tokio::test]
     async fn negative_numbers() {
-        let trie = Trie::connect(MemBaseStorage::new())
+        let trie = Trie::connect(MemTrieStorage::new())
             .await
             .expect("Failed to connect to MemBaseStorage");
         let (trie, vid) = insert(trie, val(-1)).await.expect("Failed to insert");
@@ -212,7 +213,7 @@ mod tests {
 
     #[tokio::test]
     async fn same_value_inserted_twice() {
-        let trie = Trie::connect(MemBaseStorage::new())
+        let trie = Trie::connect(MemTrieStorage::new())
             .await
             .expect("Failed to connect to MemBaseStorage");
 
@@ -225,7 +226,7 @@ mod tests {
 
     #[tokio::test]
     async fn string_insert_and_query() {
-        let trie = Trie::connect(MemBaseStorage::new())
+        let trie = Trie::connect(MemTrieStorage::new())
             .await
             .expect("Failed to connect to MemBaseStorage");
         let (trie, vid) = insert(trie, Val::String("hello".into()))

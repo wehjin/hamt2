@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::trie::base_storage::errors::BaseStorageReadError;
+use crate::trie::trie_storage::errors::TrieStorageReadError;
 
 #[derive(thiserror::Error, Debug)]
 pub enum QueryError {
@@ -17,7 +17,7 @@ pub enum QueryError {
     Utf8(#[from] std::str::Utf8Error),
 
     #[error("BaseStorageRead: {0}")]
-    BaseStorageRead(#[from] BaseStorageReadError),
+    BaseStorageRead(#[from] TrieStorageReadError),
 
     #[error("SerdeError: {0}")]
     SerdeError(String),

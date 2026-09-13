@@ -6,7 +6,7 @@ use crate::db::datalog::atom::Atom;
 use crate::db::find_result::FindResult;
 use crate::find::Find;
 use crate::trie::TrieQuery;
-use crate::trie::base_storage::BaseStorageRead;
+use crate::trie::trie_storage::ReadTrieStorage;
 use std::future::Future;
 
 pub struct AllEins;
@@ -40,7 +40,7 @@ impl Find for AllEins {
     where
         Self: Sized,
         T: TrieQuery<S>,
-        S: BaseStorageRead,
+        S: ReadTrieStorage,
     {
         async move {
             let eins = db_trie::list_entities(trie).await;

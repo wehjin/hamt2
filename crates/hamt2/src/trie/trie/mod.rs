@@ -1,7 +1,7 @@
 use crate::trie::TrieQuery;
-use crate::trie::base_storage::BaseStorageReadWrite;
-use crate::trie::base_storage::errors::{BaseStorageReadError, BaseStorageWriteError};
-use crate::trie::core::map_base::MapBase;
+use crate::trie::trie_storage::ReadWriteTrieStorage;
+use crate::trie::trie_storage::errors::{TrieStorageReadError, TrieStorageWriteError};
+use crate::trie::types::map_base::MapBase;
 use trie_ref::TrieRef;
 
 pub mod deep;
@@ -11,12 +11,12 @@ pub mod readonly;
 pub mod trie_ref;
 
 #[derive(Debug)]
-pub struct Trie<S: BaseStorageReadWrite> {
+pub struct Trie<S: ReadWriteTrieStorage> {
     root: MapBase,
     storage: S,
 }
 
-impl<S: BaseStorageReadWrite> TrieQuery<S> for Trie<S> {
+impl<S: ReadWriteTrieStorage> TrieQuery<S> for Trie<S> {
     fn root(&self) -> &MapBase {
         &self.root
     }
@@ -26,15 +26,15 @@ impl<S: BaseStorageReadWrite> TrieQuery<S> for Trie<S> {
     }
 }
 
-impl<S: BaseStorageReadWrite> Trie<S> {
+impl<S: ReadWriteTrieStorage> Trie<S> {
     /// Connects to the storage, loading the persisted root if there is one.
-    pub async fn connect(storage: S) -> Result<Self, BaseStorageReadError> {
+    pub async fn connect(storage: S) -> Result<Self, TrieStorageReadError> {
         let root = storage.get_root().await?;
         Ok(Self { root, storage })
     }
 
     /// Persists the current root map base to the storage.
-    pub async fn commit(mut self) -> Result<Self, BaseStorageWriteError> {
+    pub async fn commit(mut self) -> Result<Self, TrieStorageWriteError> {
         self.storage.write_root(self.root.clone()).await?;
         Ok(self)
     }

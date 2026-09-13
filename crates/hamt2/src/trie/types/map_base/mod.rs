@@ -1,5 +1,5 @@
-use crate::trie::base::BaseId;
-use crate::trie::core::map::TrieMap;
+use crate::trie::types::slot_base_id::SlotBaseId;
+use crate::trie::types::slot_map::SlotMap;
 use serde::{Deserialize, Serialize};
 
 pub mod cons;
@@ -8,21 +8,21 @@ pub mod query;
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct MapBase {
-    pub map: TrieMap,
-    pub base: BaseId,
+    pub map: SlotMap,
+    pub base: SlotBaseId,
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::trie::base_storage::mem::MemBaseStorage;
-    use crate::trie::core::key::TrieKey;
-    use crate::trie::core::map_base::*;
-    use crate::trie::mem::value::MemValue;
+    use crate::trie::trie_storage::mem::MemTrieStorage;
+    use crate::trie::types::hash_key::HashKey;
+    use crate::trie::types::map_base::*;
+    use crate::trie::types::trie_value::TrieValue;
     use tokio_stream::StreamExt;
 
     #[tokio::test]
     async fn test_stream_kvs_empty_map() {
-        let storage = MemBaseStorage::new();
+        let storage = MemTrieStorage::new();
         let map_base = MapBase::empty();
         let stream = map_base.kv_stream(&storage);
         let kvs = stream.collect::<Vec<_>>().await;
@@ -30,9 +30,9 @@ mod tests {
     }
     #[tokio::test]
     async fn test_stream_kvs_one_slot() {
-        let key = TrieKey::new(0);
-        let value = MemValue::from(11);
-        let mut storage = MemBaseStorage::new();
+        let key = HashKey::new(0);
+        let value = TrieValue::from(11);
+        let mut storage = MemTrieStorage::new();
         let map_base = MapBase::one_kv(key, value.clone(), &mut storage).await;
         let stream = map_base.kv_stream(&storage);
         let kvs = stream.collect::<Vec<_>>().await;
@@ -42,17 +42,17 @@ mod tests {
     #[tokio::test]
     async fn test_stream_kvs_many_slots() -> anyhow::Result<()> {
         let test_kvs = (0..35)
-            .map(|i| (i, MemValue::from(i as u32)))
+            .map(|i| (i, TrieValue::from(i as u32)))
             .collect::<Vec<_>>();
-        let mut storage = MemBaseStorage::new();
+        let mut storage = MemTrieStorage::new();
         let map_base = {
             let mut map_base = {
-                let key = TrieKey::new(test_kvs[0].0);
+                let key = HashKey::new(test_kvs[0].0);
                 let value = test_kvs[0].1.clone();
                 MapBase::one_kv(key, value, &mut storage).await
             };
             for kv in &test_kvs[1..] {
-                let key = TrieKey::new(kv.0);
+                let key = HashKey::new(kv.0);
                 let value = kv.1.clone();
                 map_base = map_base.insert_kv(key, value, &mut storage).await?;
             }

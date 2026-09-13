@@ -1,17 +1,17 @@
-use crate::trie::base::Base;
-use crate::trie::base_storage::BaseStorageReadWrite;
-use crate::trie::core::key::TrieKey;
-use crate::trie::core::map_base::MapBase;
-use crate::trie::mem::slot::{KvTest, MemSlot};
-use crate::trie::mem::value::MemValue;
 use crate::TransactError;
+use crate::trie::trie_storage::ReadWriteTrieStorage;
+use crate::trie::types::slot_base::SlotBase;
+use crate::trie::types::hash_key::HashKey;
+use crate::trie::types::map_base::MapBase;
+use crate::trie::types::slot::{KvTest, Slot};
+use crate::trie::types::trie_value::TrieValue;
 
 impl MapBase {
     pub async fn insert_kv(
         self,
-        key: TrieKey,
-        value: MemValue,
-        storage: &mut impl BaseStorageReadWrite,
+        key: HashKey,
+        value: TrieValue,
+        storage: &mut impl ReadWriteTrieStorage,
     ) -> Result<Self, TransactError> {
         let MapBase { map, base } = self;
         let post_map_base = match map.try_base_index(key) {
@@ -20,18 +20,18 @@ impl MapBase {
                 match read_base[base_index].test_kv(&key, &value) {
                     KvTest::SameValue => MapBase { map, base },
                     KvTest::ValueConflict => {
-                        let post_base = Base::replace_value(read_base, base_index, value);
+                        let post_base = SlotBase::replace_value(read_base, base_index, value);
                         let id = storage.append(&post_base).await.expect("append base");
                         MapBase { map, base: id }
                     }
                     KvTest::KeyConflict => {
                         let post_base =
-                            Base::kick_kv(read_base, base_index, key, value, storage).await;
+                            SlotBase::kick_kv(read_base, base_index, key, value, storage).await;
                         let id = storage.append(&post_base).await.expect("append base");
                         MapBase { map, base: id }
                     }
                     KvTest::MapBaseConflict => {
-                        let post_base = Box::pin(Base::merge_kv(
+                        let post_base = Box::pin(SlotBase::merge_kv(
                             read_base,
                             base_index,
                             key,
@@ -48,7 +48,7 @@ impl MapBase {
                 assert_eq!(false, map.is_present(key));
                 let post_base = {
                     let base = storage.read(base).await.expect("read base");
-                    let kv_slot = MemSlot::one_kv(key, value);
+                    let kv_slot = Slot::one_kv(key, value);
                     let kv_index = map.count_left(key);
                     base.insert_slot(kv_index, kv_slot)
                 };

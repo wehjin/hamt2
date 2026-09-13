@@ -1,5 +1,5 @@
 use crate::db::Ein;
-use crate::trie::mem::value::MemValue;
+use crate::trie::prelude::*;
 use serde::{Deserialize, Serialize};
 
 pub fn val(from: impl Into<Val>) -> Val {
@@ -51,11 +51,11 @@ impl Val {
     }
 }
 
-impl From<MemValue> for Val {
-    fn from(value: MemValue) -> Self {
+impl From<TrieValue> for Val {
+    fn from(value: TrieValue) -> Self {
         match value {
-            MemValue::U32(v) => Val::U32(v),
-            MemValue::MapBase(_) => unreachable!(),
+            TrieValue::U32(v) => Val::U32(v),
+            TrieValue::SubTrie(_) => unreachable!(),
         }
     }
 }

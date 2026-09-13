@@ -1,13 +1,13 @@
-use crate::trie::base_storage::BaseStorageRead;
-use crate::trie::core::key::TrieKey;
-use crate::trie::core::map_base::MapBase;
-use crate::trie::mem::slot::MemSlot;
-use crate::trie::mem::value::MemValue;
 use crate::QueryError;
-use futures::stream;
+use crate::trie::trie_storage::ReadTrieStorage;
+use crate::trie::types::hash_key::HashKey;
+use crate::trie::types::map_base::MapBase;
+use crate::trie::types::slot::Slot;
+use crate::trie::types::trie_value::TrieValue;
 use futures::Stream;
+use futures::stream;
 
-pub struct State<'a, S: BaseStorageRead> {
+pub struct State<'a, S: ReadTrieStorage> {
     storage: &'a S,
     jobs: Vec<Job>,
 }
@@ -15,9 +15,9 @@ pub struct State<'a, S: BaseStorageRead> {
 impl MapBase {
     pub async fn query_value(
         &self,
-        key: TrieKey,
-        storage: &impl BaseStorageRead,
-    ) -> Result<Option<MemValue>, QueryError> {
+        key: HashKey,
+        storage: &impl ReadTrieStorage,
+    ) -> Result<Option<TrieValue>, QueryError> {
         let MapBase { map, base } = self;
         let value = match map.try_base_index(key) {
             Some(base_index) => {
@@ -29,10 +29,10 @@ impl MapBase {
         Ok(value)
     }
 
-    pub fn kv_stream<'a, S: BaseStorageRead>(
+    pub fn kv_stream<'a, S: ReadTrieStorage>(
         self,
         storage: &'a S,
-    ) -> impl Stream<Item = (i32, MemValue)> + 'a {
+    ) -> impl Stream<Item = (i32, TrieValue)> + 'a {
         let state = State {
             storage,
             jobs: Job::start(&self).into_iter().collect::<Vec<_>>(),
@@ -41,7 +41,7 @@ impl MapBase {
             while let Some(mut job) = state.jobs.pop() {
                 let base = state.storage.read(job.base).await.expect("read base");
                 match &base[job.slot_offset] {
-                    MemSlot::KeyValue(key, value) => {
+                    Slot::KeyValue(key, value) => {
                         // Found a key and value. We finish by moving the current
                         // job forward and yielding the key-value pair.
                         let kv = (*key, value.clone());
@@ -50,7 +50,7 @@ impl MapBase {
                         }
                         return Some((kv, state));
                     }
-                    MemSlot::MapBase(lower_map_base) => {
+                    Slot::MapBase(lower_map_base) => {
                         // Found a lower map-base. We will move the current job
                         // forward and start a new job for the lower map-base.
                         let lower_job = Job::start(lower_map_base);
@@ -69,8 +69,8 @@ impl MapBase {
 
     pub async fn query_keys_values(
         &self,
-        storage: &impl BaseStorageRead,
-    ) -> Result<Vec<(i32, MemValue)>, QueryError> {
+        storage: &impl ReadTrieStorage,
+    ) -> Result<Vec<(i32, TrieValue)>, QueryError> {
         let MapBase { map, base } = self;
         let mut out = Vec::new();
         let slot_count = map.slot_count();
@@ -87,7 +87,7 @@ impl MapBase {
 struct Job {
     slot_offset: usize,
     slot_count: usize,
-    base: crate::trie::base::BaseId,
+    base: crate::trie::types::slot_base_id::SlotBaseId,
 }
 impl Job {
     pub fn start(map_base: &MapBase) -> Option<Self> {

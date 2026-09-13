@@ -1,5 +1,5 @@
 use crate::db::Attr;
-use crate::trie::base_storage::errors::BaseStorageReadError;
+use crate::trie::trie_storage::errors::TrieStorageReadError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -8,7 +8,7 @@ pub enum LoadError {
     QueryError(#[from] crate::QueryError),
 
     #[error("Base storage read error: {0}")]
-    BaseStorageRead(#[from] BaseStorageReadError),
+    BaseStorageRead(#[from] TrieStorageReadError),
 
     #[error("Unknown attribute: {0:?}")]
     UnknownAttr(Attr),

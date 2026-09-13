@@ -2,7 +2,7 @@ use crate::db::datalog::atom::Atom;
 use crate::db::datalog::kb::KnowledgeBase;
 use crate::db::datalog::sub::Substitution;
 use crate::trie::TrieQuery;
-use crate::trie::base_storage::BaseStorageRead;
+use crate::trie::trie_storage::ReadTrieStorage;
 use std::collections::HashSet;
 
 pub fn rule(head: impl Into<Atom>, body: impl Into<Vec<Atom>>) -> Rule {
@@ -29,7 +29,7 @@ impl Rule {
     ) -> Vec<Atom>
     where
         T: TrieQuery<S>,
-        S: BaseStorageRead,
+        S: ReadTrieStorage,
     {
         let mut new_facts = Vec::new();
         for body_sub in self.derive_body_subs(kb).await {
@@ -46,7 +46,7 @@ impl Rule {
     ) -> Vec<Substitution>
     where
         T: TrieQuery<S>,
-        S: BaseStorageRead,
+        S: ReadTrieStorage,
     {
         let mut subs = vec![Substitution::new()];
         for body_atom in self.body.iter() {

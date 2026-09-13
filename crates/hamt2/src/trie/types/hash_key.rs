@@ -1,9 +1,9 @@
-use crate::hash;
-use crate::trie::core::map::TrieMap;
+use crate::trie::hash;
+use crate::trie::types::slot_map::SlotMap;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Serialize, Deserialize)]
-pub struct TrieKey {
+pub struct HashKey {
     value: i32,
     level: u32,
     hash: u32,
@@ -11,7 +11,7 @@ pub struct TrieKey {
     map_index: u8,
 }
 
-impl TrieKey {
+impl HashKey {
     pub const INVALID: Self = Self {
         value: -1,
         level: 0,
@@ -75,7 +75,7 @@ impl TrieKey {
         Self::map_bit_from_map_index(self.map_index)
     }
 
-    pub fn to_base_index(&self, map: TrieMap) -> usize {
+    pub fn to_base_index(&self, map: SlotMap) -> usize {
         u32::count_ones(!(0xFFFFFFFFu32 >> self.map_index) & map.0) as usize
     }
 }

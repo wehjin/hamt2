@@ -1,30 +1,30 @@
 use crate::trie::TrieQuery;
-use crate::trie::base_storage::BaseStorageRead;
-use crate::trie::core::map_base::MapBase;
-use crate::trie::mem::value::MemValue;
+use crate::trie::trie_storage::ReadTrieStorage;
+use crate::trie::types::map_base::MapBase;
+use crate::trie::types::trie_value::TrieValue;
 
 /// A borrowed, read-only view of a trie over a storage.
 #[derive(Debug, Clone)]
-pub struct TrieRef<'a, S: BaseStorageRead> {
+pub struct TrieRef<'a, S: ReadTrieStorage> {
     root: MapBase,
     storage: &'a S,
 }
 
-impl<'a, S: BaseStorageRead> TrieRef<'a, S> {
+impl<'a, S: ReadTrieStorage> TrieRef<'a, S> {
     pub fn new(root: MapBase, storage: &'a S) -> Self {
         Self { root, storage }
     }
 
-    pub fn subtrie_from_value(value: MemValue, storage: &'a S) -> Option<Self> {
+    pub fn subtrie_from_value(value: TrieValue, storage: &'a S) -> Option<Self> {
         let root = match value {
-            MemValue::MapBase(root) => root,
-            MemValue::U32(_) => return None,
+            TrieValue::SubTrie(root) => root,
+            TrieValue::U32(_) => return None,
         };
         Some(Self { root, storage })
     }
 }
 
-impl<'a, S: BaseStorageRead> TrieQuery<S> for TrieRef<'a, S> {
+impl<'a, S: ReadTrieStorage> TrieQuery<S> for TrieRef<'a, S> {
     fn root(&self) -> &MapBase {
         &self.root
     }

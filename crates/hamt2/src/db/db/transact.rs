@@ -3,9 +3,9 @@ use crate::db::component::MaxEid;
 use crate::db::component::db_trie;
 use crate::db::component::ent_eid::EntEid;
 use crate::db::{Dat, Datom, Db, Ent, val};
-use crate::trie::base_storage::BaseStorageReadWrite;
+use crate::trie::trie_storage::ReadWriteTrieStorage;
 
-impl<S: BaseStorageReadWrite> Db<S> {
+impl<S: ReadWriteTrieStorage> Db<S> {
     pub async fn transact(self, datoms: impl Into<Vec<Datom>>) -> Result<Self, TransactError> {
         let datoms = datoms.into();
         let mut max_eid = MaxEid::read(&self.trie).await?;

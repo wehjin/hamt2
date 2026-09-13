@@ -1,19 +1,19 @@
-use crate::trie::Trie;
-use crate::trie::base_storage::BaseStorageReadWrite;
-use crate::trie::core::deep_key::DeepKey;
-use crate::trie::core::map_base::MapBase;
-use crate::trie::mem::value::MemValue;
 use crate::TransactError;
+use crate::trie::Trie;
+use crate::trie::trie_storage::ReadWriteTrieStorage;
+use crate::trie::types::hash_key_path::HashKeyPath;
+use crate::trie::types::map_base::MapBase;
+use crate::trie::types::trie_value::TrieValue;
 use std::collections::HashMap;
 
-impl<S: BaseStorageReadWrite> Trie<S> {
+impl<S: ReadWriteTrieStorage> Trie<S> {
     pub async fn deep_insert<const N: usize>(
-        mut self,
-        key: [i32; N],
-        value: impl Into<MemValue>,
-        replace_tail: bool,
+	    mut self,
+	    key: [i32; N],
+	    value: impl Into<TrieValue>,
+	    replace_tail: bool,
     ) -> Result<Self, TransactError> {
-        let deep_key = DeepKey::from(key);
+        let deep_key = HashKeyPath::from(key);
         let last_index = N - 1;
         let mut map_bases = HashMap::new();
         map_bases.insert(0, self.root.clone());
@@ -26,8 +26,8 @@ impl<S: BaseStorageReadWrite> Trie<S> {
             } else {
                 match map_base.query_value(key, &self.storage).await? {
                     None => MapBase::empty(),
-                    Some(MemValue::MapBase(map_base)) => map_base,
-                    Some(MemValue::U32(_)) => {
+                    Some(TrieValue::SubTrie(map_base)) => map_base,
+                    Some(TrieValue::U32(_)) => {
                         return Err(TransactError::ExpectedMapBaseAtKey);
                     }
                 }
@@ -42,9 +42,9 @@ impl<S: BaseStorageReadWrite> Trie<S> {
                 .clone()
                 .insert_kv(key, value, &mut self.storage)
                 .await?;
-            value = MemValue::MapBase(post_map_base);
+            value = TrieValue::SubTrie(post_map_base);
         }
-        let MemValue::MapBase(root) = value else {
+        let TrieValue::SubTrie(root) = value else {
             panic!("value should be map_base")
         };
         self.root = root;

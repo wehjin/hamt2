@@ -5,7 +5,7 @@ use crate::db::component::db_trie::AttrEin;
 use crate::db::{Attr, AttrName, Db, Dir, Txid};
 use crate::find::Find;
 use crate::trie::Trie;
-use crate::trie::base_storage::BaseStorageReadWrite;
+use crate::trie::trie_storage::ReadWriteTrieStorage;
 use crate::{LoadError, TransactError, db};
 use attribute::Attribute;
 use std::ops::{Deref, DerefMut, Index};
@@ -44,7 +44,7 @@ impl Schema {
         self.attr_table.find_attr_by_name(attr_name)
     }
 
-    pub async fn save<S: BaseStorageReadWrite>(
+    pub async fn save<S: ReadWriteTrieStorage>(
         &self,
         mut trie: Trie<S>,
         txid: Txid,
@@ -74,7 +74,7 @@ impl Schema {
         }
         Ok(trie)
     }
-    pub async fn load<S: BaseStorageReadWrite>(
+    pub async fn load<S: ReadWriteTrieStorage>(
         attrs: impl AsRef<[Attr]>,
         db: &Db<S>,
     ) -> Result<Self, LoadError> {

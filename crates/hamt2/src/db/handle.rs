@@ -2,7 +2,7 @@ use crate::LoadError;
 use crate::TransactError;
 use crate::db::reader::DbReader;
 use crate::db::{Datom, Db};
-use crate::trie::base_storage::BaseStorageReadWrite;
+use crate::trie::trie_storage::ReadWriteTrieStorage;
 use log::error;
 use thiserror::Error;
 use tokio::sync::mpsc::Receiver;
@@ -22,14 +22,14 @@ pub enum HandleError {
 
 pub struct DbHandle<S>
 where
-    S: BaseStorageReadWrite + Send + Sync,
+    S: ReadWriteTrieStorage + Send + Sync,
 {
     sender: mpsc::Sender<WorkerCommand<S>>,
 }
 
 impl<S> Clone for DbHandle<S>
 where
-    S: BaseStorageReadWrite + Send + Sync,
+    S: ReadWriteTrieStorage + Send + Sync,
 {
     fn clone(&self) -> Self {
         Self {
@@ -40,7 +40,7 @@ where
 
 impl<S> DbHandle<S>
 where
-    S: BaseStorageReadWrite + Send + Sync + 'static,
+    S: ReadWriteTrieStorage + Send + Sync + 'static,
 {
     pub async fn new(db: Db<S>) -> Self {
         let (sender, receiver) = mpsc::channel::<WorkerCommand<S>>(32);
@@ -79,19 +79,19 @@ where
 
 impl<S> std::fmt::Debug for DbHandle<S>
 where
-    S: BaseStorageReadWrite + Send + Sync,
+    S: ReadWriteTrieStorage + Send + Sync,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("DbHandle").field("sender", &self.sender).finish()
     }
 }
 
-enum WorkerCommand<S: BaseStorageReadWrite> {
+enum WorkerCommand<S: ReadWriteTrieStorage> {
     Transact(Vec<Datom>, oneshot::Sender<()>),
     Reader(oneshot::Sender<Result<DbReader<S::ReadOnly>, LoadError>>),
 }
 
-async fn run_worker<S: BaseStorageReadWrite + Send + Sync + 'static>(
+async fn run_worker<S: ReadWriteTrieStorage + Send + Sync + 'static>(
     db: Db<S>,
     mut receiver: Receiver<WorkerCommand<S>>,
 ) {

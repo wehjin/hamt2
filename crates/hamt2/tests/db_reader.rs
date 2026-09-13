@@ -2,13 +2,13 @@ use hamt2::db::query::DbQuery;
 use hamt2::db::reader::DbReader;
 use hamt2::db::{Attr, Db, datom, ein, val};
 use hamt2::find::{AllEins, AttrsOfEin, EinsWithAttr};
-use hamt2::trie::base_storage::mem::MemBaseStorage;
+use hamt2::trie::prelude::MemTrieStorage;
 
 const ATTR_COUNT: Attr = Attr("counter/count");
 
 #[tokio::test]
 async fn db_reader_works() -> anyhow::Result<()> {
-    let db = Db::new(MemBaseStorage::new(), [ATTR_COUNT]).await?;
+    let db = Db::new(MemTrieStorage::new(), [ATTR_COUNT]).await?;
     let db = db
         .transact([
             datom::add(1, ATTR_COUNT, val(10)),
@@ -37,7 +37,7 @@ async fn db_reader_works() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn db_reader_finds_entities() {
-    let db = Db::new(MemBaseStorage::new(), [ATTR_COUNT])
+    let db = Db::new(MemTrieStorage::new(), [ATTR_COUNT])
         .await
         .unwrap()
         .transact([datom::add(100, ATTR_COUNT, val(100))])
@@ -51,7 +51,7 @@ async fn db_reader_finds_entities() {
 
 #[tokio::test]
 async fn db_reader_lists_entity_attributes() {
-    let db = Db::new(MemBaseStorage::new(), [ATTR_COUNT])
+    let db = Db::new(MemTrieStorage::new(), [ATTR_COUNT])
         .await
         .unwrap()
         .transact([datom::add(100, ATTR_COUNT, val(100))])

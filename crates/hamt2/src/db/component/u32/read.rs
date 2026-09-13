@@ -1,9 +1,8 @@
-use crate::trie::base_storage::BaseStorageRead;
-use crate::trie::mem::value::MemValue;
-use crate::trie::trie_ref::TrieRef;
 use crate::trie::TrieQuery;
+use crate::trie::prelude::*;
+use crate::trie::trie_ref::TrieRef;
 
-pub struct Read<'a, S: BaseStorageRead> {
+pub struct Read<'a, S: ReadTrieStorage> {
     hash_trie: TrieRef<'a, S>,
     bytes_left: usize,
     start_key: i32,
@@ -11,7 +10,7 @@ pub struct Read<'a, S: BaseStorageRead> {
     current_u32: Option<(u32, usize)>,
 }
 
-impl<'a, S: BaseStorageRead> Read<'a, S> {
+impl<'a, S: ReadTrieStorage> Read<'a, S> {
     pub fn new(hash_trie: TrieRef<'a, S>, bytes_max: usize, start_key: i32) -> Self {
         Self {
             hash_trie,
@@ -24,7 +23,7 @@ impl<'a, S: BaseStorageRead> Read<'a, S> {
 
     async fn next_u32(&mut self) -> u32 {
         let key = self.start_key + self.u32_index;
-        let Ok(Some(MemValue::U32(u32))) = self.hash_trie.query_value(key).await else {
+        let Ok(Some(TrieValue::U32(u32))) = self.hash_trie.query_value(key).await else {
             panic!("Unexpected MemValue variant")
         };
         self.u32_index += 1;

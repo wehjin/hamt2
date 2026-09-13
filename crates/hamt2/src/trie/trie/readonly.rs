@@ -1,24 +1,24 @@
-use crate::trie::base_storage::errors::BaseStorageReadError;
-use crate::trie::base_storage::BaseStorageRead;
-use crate::trie::core::map_base::MapBase;
 use super::query::TrieQuery;
+use crate::trie::trie_storage::ReadTrieStorage;
+use crate::trie::trie_storage::errors::TrieStorageReadError;
+use crate::trie::types::map_base::MapBase;
 
 /// A read-only trie over a read-only storage, used only for queries.
 #[derive(Debug)]
-pub struct ReadTrie<S: BaseStorageRead> {
+pub struct ReadTrie<S: ReadTrieStorage> {
     root: MapBase,
     storage: S,
 }
 
-impl<S: BaseStorageRead> ReadTrie<S> {
+impl<S: ReadTrieStorage> ReadTrie<S> {
     /// Connects to the storage, loading the persisted root if there is one.
-    pub async fn connect(storage: S) -> Result<Self, BaseStorageReadError> {
+    pub async fn connect(storage: S) -> Result<Self, TrieStorageReadError> {
         let root = storage.get_root().await?;
         Ok(Self { root, storage })
     }
 }
 
-impl<S: BaseStorageRead> TrieQuery<S> for ReadTrie<S> {
+impl<S: ReadTrieStorage> TrieQuery<S> for ReadTrie<S> {
     fn root(&self) -> &MapBase {
         &self.root
     }

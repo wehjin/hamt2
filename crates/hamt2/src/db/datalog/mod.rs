@@ -1,6 +1,6 @@
 use crate::db::Schema;
 use crate::trie::TrieQuery;
-use crate::trie::base_storage::BaseStorageRead;
+use crate::trie::trie_storage::ReadTrieStorage;
 use atom::Atom;
 use kb::KnowledgeBase;
 use rule::Rule;
@@ -32,7 +32,7 @@ impl Program {
     ) -> KnowledgeBase<'a, T, S>
     where
         T: TrieQuery<S>,
-        S: BaseStorageRead + 'a,
+        S: ReadTrieStorage + 'a,
     {
         for rule in &self.rules {
             if !rule.is_range_restricted() {
@@ -59,7 +59,7 @@ mod tests {
 	use crate::db::datalog::term::term;
 	use crate::db::datalog::var::var;
 	use crate::db::{Attr, Db, datom, ent, val};
-	use crate::trie::base_storage::mem::MemBaseStorage;
+	use crate::trie::trie_storage::mem::MemTrieStorage;
 
 	const ADVISOR: Attr = Attr("member/advisor");
     const NAME: Attr = Attr("member/name");
@@ -70,9 +70,9 @@ mod tests {
     #[tokio::test]
     async fn program_test() -> anyhow::Result<()> {
         let schema = vec![ADVISOR, NAME];
-        let storage: MemBaseStorage;
+        let storage: MemTrieStorage;
         {
-            let mut db = Db::new(MemBaseStorage::new(), schema.clone()).await?;
+            let mut db = Db::new(MemTrieStorage::new(), schema.clone()).await?;
             db = db
                 .transact([
                     datom::add("a", NAME, val("Alice")),
