@@ -27,11 +27,6 @@ impl<S: BaseStorageRead> DbReader<S> {
         Ok(DbReader { schema, read_trie })
     }
 
-    /// List the entities in the database.
-    pub async fn list_entities(&self) -> Vec<Ein> {
-        db_trie::list_entities(&self.read_trie).await
-    }
-
     /// List the attributes of an entity in the database.
     pub async fn list_entity_attributes(&self, ein: impl Into<Ein>) -> Vec<&Attr> {
         let ein = ein.into();

@@ -1,5 +1,6 @@
 use crate::QueryError;
 
+mod all_eins;
 mod binds_for_attr;
 mod eins_with_attr;
 mod vals_in_slot;
@@ -10,6 +11,7 @@ use crate::db::datalog::atom::Atom;
 use crate::db::find_result::FindResult;
 use crate::trie::TrieQuery;
 use crate::trie::base_storage::BaseStorageRead;
+pub use all_eins::*;
 pub use binds_for_attr::*;
 pub use eins_with_attr::*;
 pub use vals_in_slot::*;
@@ -43,12 +45,12 @@ pub trait Find {
 
 #[cfg(test)]
 mod tests {
-	use crate::db::query::DbQuery;
-	use crate::db::{Attr, Db, datom, ein, val};
-	use crate::find::BindsForAttr;
-	use crate::trie::base_storage::mem::MemBaseStorage;
+    use crate::db::query::DbQuery;
+    use crate::db::{Attr, Db, datom, ein, val};
+    use crate::find::BindsForAttr;
+    use crate::trie::base_storage::mem::MemBaseStorage;
 
-	#[tokio::test]
+    #[tokio::test]
     async fn find_with_reader() {
         let attr = Attr::from("Counter/count");
         let store = MemBaseStorage::new();

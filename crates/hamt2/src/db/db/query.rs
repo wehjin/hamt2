@@ -11,6 +11,10 @@ use futures::FutureExt;
 pub trait DbQuery {
     fn find<F: Find>(&self, find: F) -> impl Future<Output = Result<Vec<F::Output>, QueryError>>;
 
+    fn get<F: Find>(&self, find: F) -> impl Future<Output = Vec<F::Output>> {
+        async move { self.find(find).await.expect("find should succeed") }
+    }
+
     fn find_val(
         &self,
         e: impl Into<Ein>,

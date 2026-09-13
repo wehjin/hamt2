@@ -23,10 +23,12 @@ pub struct EntityReport {
 
 #[server]
 pub async fn get_entity_report() -> Result<EntityReport, ServerFnError> {
+    use hamt2::db::query::DbQuery;
+    use hamt2::find::AllEins;
     let reader = expect_context::<DbHandle<MemBaseStorage>>()
         .to_reader()
         .await?;
-    let eins = reader.list_entities().await;
+    let eins = reader.find(AllEins).await?;
     let report = EntityReport { eins };
     Ok(report)
 }
