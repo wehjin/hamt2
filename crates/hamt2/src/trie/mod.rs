@@ -4,10 +4,13 @@ pub mod types;
 mod trie;
 pub mod hash;
 pub mod prelude;
+pub mod trie_query;
+pub mod trie_reader;
+pub mod trie_ref;
 
-pub use trie::query::TrieQuery;
-pub use trie::readonly::ReadTrie;
-pub use trie::trie_ref::TrieRef;
+pub use trie_query::TrieQuery;
+pub use trie_reader::TrieReader;
+pub use trie_ref::TrieRef;
 pub use trie::*;
 
 #[cfg(test)]
@@ -16,7 +19,7 @@ mod tests {
     use crate::trie::trie_storage::file::FileTrieStorage;
     use crate::trie::trie_storage::mem::MemTrieStorage;
     use crate::trie::types::trie_value::TrieValue;
-    use crate::trie::{ReadTrie, Trie, TrieQuery};
+    use crate::trie::{Trie, TrieQuery, TrieReader};
 
     #[tokio::test]
     async fn file_trie_works() -> anyhow::Result<()> {
@@ -124,7 +127,7 @@ mod tests {
             trie.commit().await.unwrap().close()
         };
         let view_storage = storage.to_readonly();
-        let read_trie = ReadTrie::connect(view_storage).await.unwrap();
+        let read_trie = TrieReader::connect(view_storage).await.unwrap();
         assert_eq!(
             Some(TrieValue::U32(42)),
             read_trie.query_value(1).await.unwrap()

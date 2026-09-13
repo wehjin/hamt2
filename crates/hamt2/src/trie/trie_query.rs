@@ -1,15 +1,15 @@
 use crate::QueryError;
+use crate::trie::trie_ref::TrieRef;
 use crate::trie::trie_storage::ReadTrieStorage;
-use crate::trie::trie::trie_ref::TrieRef;
-use crate::trie::types::hash_key_path::HashKeyPath;
 use crate::trie::types::hash_key::HashKey;
+use crate::trie::types::hash_key_path::HashKeyPath;
 use crate::trie::types::map_base::MapBase;
 use crate::trie::types::trie_value::TrieValue;
 use futures::Stream;
 use futures::stream::StreamExt;
 
 /// The read-only query interface shared by [`Trie`], [`TrieRef`], and
-/// [`ReadTrie`](crate::trie::ReadTrie).
+/// [`ReadTrie`](crate::trie::TrieReader).
 ///
 /// Every query method is provided by default; implementations only need to
 /// expose the root map base and the storage.

@@ -1,16 +1,14 @@
 use crate::db::query::DbQuery;
 use crate::db::{Db, Schema};
 use crate::find::Find;
-use crate::trie::ReadTrie;
-use crate::trie::TrieQuery;
-use crate::trie::trie_storage::{ReadTrieStorage, ReadWriteTrieStorage};
+use crate::trie::prelude::*;
 use crate::{LoadError, QueryError};
 
 /// A read-only snapshot of a [`Db`], for running queries only.
 #[derive(Debug)]
 pub struct DbReader<S: ReadTrieStorage> {
     schema: Schema,
-    read_trie: ReadTrie<S>,
+    read_trie: TrieReader<S>,
 }
 
 impl<S: ReadTrieStorage> DbReader<S> {
@@ -22,7 +20,7 @@ impl<S: ReadTrieStorage> DbReader<S> {
         T: ReadWriteTrieStorage<ReadOnly = S>,
     {
         let schema = db.schema.clone();
-        let read_trie = ReadTrie::connect(db.trie.storage().to_readonly()).await?;
+        let read_trie = TrieReader::connect(db.trie.storage().to_readonly()).await?;
         Ok(DbReader { schema, read_trie })
     }
 }
