@@ -1,10 +1,10 @@
 use crate::db::attr_spec::DbSpec;
 use crate::db::component::MaxEid;
 use crate::db::component::db_trie;
-use crate::db::schema::Schema;
-use crate::db::schema::attribute::Attribute;
 use crate::db::{Attr, Db, Txid};
 use crate::trie::prelude::*;
+use crate::types::schema::Schema;
+use crate::types::schema::attribute::Attribute;
 use crate::{LoadError, TransactError};
 
 impl<S: ReadWriteTrieStorage> Db<S> {

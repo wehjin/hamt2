@@ -1,7 +1,7 @@
 use crate::db::reader::DbReader;
-use crate::db::schema::Schema;
-use crate::db::types::Attr;
 use crate::trie::prelude::*;
+use crate::types::Attr;
+use crate::types::schema::Schema;
 pub mod cons;
 
 #[derive(Debug)]

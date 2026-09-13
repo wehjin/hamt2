@@ -3,6 +3,7 @@ pub mod dir;
 mod ein;
 pub mod txid;
 pub mod val;
+pub mod schema;
 
 pub use attr::*;
 

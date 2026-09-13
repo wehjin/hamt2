@@ -2,8 +2,8 @@ use crate::db;
 use crate::db::attr_spec::AttrSpec;
 use crate::db::cardinality::Cardinality;
 use crate::db::component::db_trie::AttrEin;
-use crate::db::schema::attribute::Attribute;
 use crate::db::{Attr, AttrName, Ein};
+use crate::types::schema::attribute::Attribute;
 use std::collections::HashMap;
 use std::ops::{Deref, DerefMut, Index};
 
