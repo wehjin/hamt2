@@ -17,8 +17,13 @@ pub fn HomePage() -> impl IntoView {
                     {move || Suspend::new(async move { version.await })}
                 </p>
             </Suspense>
+            <section class="section">
+                <h1 class="title is-2">"Browse Entities"</h1>
+            </section>
         </header>
-        <EntitiesSection/>
+        <div class="grid">
+            <EntitiesSection/>
+        </div>
     }
 }
 
@@ -39,10 +44,9 @@ pub fn EntitiesSection() -> impl IntoView {
     );
     let (active_ein, set_active_ein) = signal(None::<Ein>);
     view! {
-        <section class="section">
-            <h1 class="title is-2">"Browse Entities"</h1>
+        <div class="cell is-flex"><div class="box is-flex-grow-1">
             <Suspense fallback=|| "Loading...">
-                <h2 class="title">"Entities"</h2>
+                <h2 class="title">"🌐 Entities"</h2>
                 <label class="label" for="select_entity">"Select an entity"</label>
                 {move || entities_report.get().map(|report| view! {
                     <div class="select is-multiple">
@@ -67,7 +71,7 @@ pub fn EntitiesSection() -> impl IntoView {
                     </div>
                 })}
             </Suspense>
-        </section>
+        </div></div>
         <Show when=move || {active_ein.get().is_some()}>
             <AttributesSection ein={active_ein.get().unwrap()}/>
         </Show>
@@ -86,9 +90,10 @@ pub fn AttributesSection(ein: Ein) -> impl IntoView {
         },
     );
     let (active_attr, set_active_attr) = signal(None::<AttrName>);
+    let title = format!("⌗{}", ein.to_i32());
     view! {
-        <section class="section">
-            <h2 class="title">{format!("Entity\u{2011}{}", ein.to_i32())}</h2>
+        <div class="cell is-flex"><div class="box is-flex-grow-1">
+            <h2 class="title">{title}</h2>
             <Suspense fallback=|| "Loading...">
                 <p>"Select an attribute"</p>
                 {move || Suspend::new(async move {
@@ -110,7 +115,7 @@ pub fn AttributesSection(ein: Ein) -> impl IntoView {
                     }
                 })}
             </Suspense>
-        </section>
+        </div></div>
         <Show when=move || {active_attr.get().is_some()}>
             <ValueSection ein=ein attr_name={active_attr.get().unwrap()}/>
         </Show>
@@ -134,30 +139,32 @@ pub fn ValueSection(ein: Ein, attr_name: AttrName) -> impl IntoView {
         )
     };
     let ein = ein.to_i32();
-    let title = format!("\u{301a}\u{00a0}Entity\u{2011}{ein}\u{00a0}\u{301b} \u{2192} {attr_name}");
+    let title = format!("⌖\u{202F}{attr_name}");
     view! {
-        <h2 class="title">{title}</h2>
-        <Suspense fallback=|| "">
-            {move || Suspend::new(async move {
-                let value_report = value_report.await;
-                match value_report.val {
-                    Some(val) => {
-                        let (val_type, val_string) = match val {
-                            Val::U32(v) => ("numeric".to_string(), v.to_string()),
-                            Val::String(v) => ("string".to_string(), v.to_string()),
-                        };
-                        view! {
-                            <section class="section">
-                                <div>{format!("value: {}", val_string)}</div>
-                                <div>{format!("type: {val_type}")}</div>
-                            </section>
-                        }.into_any()
+        <div class="cell is-flex"><div class="box is-flex-grow-1">
+            <h2 class="title">{title}</h2>
+            <Suspense fallback=|| "">
+                {move || Suspend::new(async move {
+                    let value_report = value_report.await;
+                    match value_report.val {
+                        Some(val) => {
+                            let (val_type, val_string) = match val {
+                                Val::U32(v) => ("numeric".to_string(), v.to_string()),
+                                Val::String(v) => ("string".to_string(), v.to_string()),
+                            };
+                            view! {
+                                <section class="section">
+                                    <div>{format!("value: {}", val_string)}</div>
+                                    <div>{format!("type: {val_type}")}</div>
+                                </section>
+                            }.into_any()
+                        }
+                        None => {
+                            view! { <p>"No value found!"</p>}.into_any()
+                        }
                     }
-                    None => {
-                        view! { <p>"No value found!"</p>}.into_any()
-                    }
-                }
-            })}
-        </Suspense>
+                })}
+            </Suspense>
+        </div></div>
     }
 }
