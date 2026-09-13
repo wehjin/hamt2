@@ -1,7 +1,7 @@
 use crate::db::attr_loader::AttributeLoader;
 use crate::db::attr_table::AttrTable;
-use crate::db::component::db_trie;
-use crate::db::component::db_trie::AttrEin;
+use crate::db::db_trie;
+use crate::db::db_trie::AttrEin;
 use crate::db::{Attr, AttrName, Db, Dir, Txid};
 use crate::find::Find;
 use crate::trie::prelude::*;

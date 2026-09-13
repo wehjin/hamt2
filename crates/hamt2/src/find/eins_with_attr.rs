@@ -1,10 +1,10 @@
 use crate::db::Attr;
 use crate::db::Ein;
-use crate::db::datalog::atom::{Atom, atom};
-use crate::db::datalog::term::term;
-use crate::db::datalog::var::var;
 use crate::find::Find;
 use crate::find::find_result::FindResult;
+use crate::crate_services::datalog::atom::{Atom, atom};
+use crate::crate_services::datalog::term::term;
+use crate::crate_services::datalog::var::var;
 
 pub struct EinsWithAttr {
     attr: Attr,

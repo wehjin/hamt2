@@ -1,5 +1,5 @@
 use crate::db::Ein;
-use crate::db::component::key::KEY_MAX_EID;
+use crate::db::types::key::KEY_MAX_EID;
 use crate::trie::prelude::*;
 use crate::{QueryError, TransactError};
 

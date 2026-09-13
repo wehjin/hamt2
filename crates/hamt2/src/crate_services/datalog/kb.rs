@@ -1,9 +1,9 @@
-use crate::db::component::db_trie;
-use crate::db::datalog::atom::Atom;
-use crate::db::datalog::rule::Rule;
-use crate::db::datalog::sub::Substitution;
-use crate::db::datalog::term::Term;
+use crate::db::db_trie;
 use crate::db::{Attr, Schema, Val};
+use crate::crate_services::datalog::atom::Atom;
+use crate::crate_services::datalog::rule::Rule;
+use crate::crate_services::datalog::sub::Substitution;
+use crate::crate_services::datalog::term::Term;
 use crate::trie::prelude::*;
 use async_stream::stream;
 use futures::{StreamExt, pin_mut};

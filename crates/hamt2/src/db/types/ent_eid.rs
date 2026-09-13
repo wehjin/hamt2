@@ -1,4 +1,4 @@
-use crate::db::component::MaxEid;
+use crate::db::types::MaxEid;
 use crate::db::{Datom, Ein, Ent};
 use std::collections::HashMap;
 use std::ops::Index;

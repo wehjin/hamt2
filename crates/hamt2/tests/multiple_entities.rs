@@ -1,5 +1,5 @@
-use hamt2::db::{Attr, ein, val};
-use hamt2::db::{Db, Txid};
+use hamt2::db::Txid;
+use hamt2::db::{Attr, Db, ein, val};
 use hamt2::find::EinsWithAttr;
 use hamt2::query::DbQuery;
 use hamt2::trie::prelude::MemTrieStorage;

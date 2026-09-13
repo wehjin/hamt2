@@ -1,6 +1,6 @@
-use crate::db::datalog::atom::Atom;
-use crate::db::datalog::kb::KnowledgeBase;
-use crate::db::datalog::sub::Substitution;
+use crate::crate_services::datalog::atom::Atom;
+use crate::crate_services::datalog::kb::KnowledgeBase;
+use crate::crate_services::datalog::sub::Substitution;
 use crate::trie::prelude::*;
 use std::collections::HashSet;
 

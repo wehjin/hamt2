@@ -1,6 +1,6 @@
 use crate::QueryError;
-use crate::db::component::db_trie;
-use crate::db::component::key::KEY_MAX_TXID;
+use crate::db::types::key::KEY_MAX_TXID;
+use crate::db::db_trie;
 use crate::db::{Attr, Db, Ein, Txid, Val};
 use crate::find::{Find, ValsInSlot};
 use crate::trie::prelude::*;

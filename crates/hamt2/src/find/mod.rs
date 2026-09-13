@@ -9,8 +9,8 @@ pub mod find_result;
 mod vals_in_slot;
 
 use crate::db::Schema;
-use crate::db::component::db_trie;
-use crate::db::datalog::atom::Atom;
+use crate::db::db_trie;
+use crate::crate_services::datalog::atom::Atom;
 use crate::trie::prelude::*;
 pub use all_eins::*;
 pub use attr_with_name::*;

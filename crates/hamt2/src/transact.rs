@@ -1,7 +1,7 @@
 use crate::TransactError;
-use crate::db::component::MaxEid;
-use crate::db::component::db_trie;
-use crate::db::component::ent_eid::EntEid;
+use crate::db::types::MaxEid;
+use crate::db::types::ent_eid::EntEid;
+use crate::db::db_trie;
 use crate::db::{Dat, Datom, Db, Ent, val};
 use crate::trie::prelude::*;
 

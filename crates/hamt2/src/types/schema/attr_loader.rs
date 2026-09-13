@@ -2,11 +2,11 @@ use crate::db;
 use crate::db::Attr;
 use crate::db::attr_spec::AttrSpec;
 use crate::db::attribute::Attribute;
-use crate::db::datalog::atom::{Atom, atom};
-use crate::db::datalog::term::term;
-use crate::db::datalog::var::var;
 use crate::find::Find;
 use crate::find::find_result::FindResult;
+use crate::crate_services::datalog::atom::{Atom, atom};
+use crate::crate_services::datalog::term::term;
+use crate::crate_services::datalog::var::var;
 use std::collections::HashMap;
 
 pub struct AttributeLoader(HashMap<String, Attr>);

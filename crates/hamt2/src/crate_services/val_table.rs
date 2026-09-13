@@ -1,8 +1,8 @@
-use crate::db::component::key::KEY_VAL_TABLE;
-use crate::db::component::u32;
+use crate::db::types::key::KEY_VAL_TABLE;
 use crate::db::{Val, Vid};
-use crate::universal_hash;
+use crate::crate_services::u32;
 use crate::trie::prelude::*;
+use crate::universal_hash;
 use crate::{QueryError, TransactError};
 
 pub async fn insert<S: ReadWriteTrieStorage>(
