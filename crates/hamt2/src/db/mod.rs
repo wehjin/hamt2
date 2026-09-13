@@ -1,19 +1,15 @@
-pub mod types;
 pub mod db_trie;
+pub mod types;
 
-pub use crate::datom::Datom;
 use crate::db::attr_spec::DbSpec;
 use crate::db::attribute::Attribute;
 use crate::db::types::MaxEid;
 use crate::reader::DbReader;
-pub use crate::types::dir::*;
-pub use crate::types::schema::*;
-pub use crate::types::txid::*;
 pub use crate::types::*;
 use crate::{LoadError, TransactError};
-pub use types::vid::*;
 use sky_trie::Trie;
 use sky_trie::prelude::ReadWriteTrieStorage;
+pub use types::*;
 
 #[derive(Debug)]
 pub struct Db<S: ReadWriteTrieStorage> {

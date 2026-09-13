@@ -1,9 +1,9 @@
-use hamt2::datom;
 use hamt2::db::{Attr, Db, ein, val};
 use hamt2::find::{AllEins, AttrsOfEin, EinsWithAttr};
 use hamt2::query::DbQuery;
 use hamt2::reader::DbReader;
 use hamt2::storage::MemDbStorage;
+use hamt2::types::datom;
 
 const ATTR_COUNT: Attr = Attr("counter/count");
 

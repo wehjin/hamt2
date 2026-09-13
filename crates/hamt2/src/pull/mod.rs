@@ -1,6 +1,7 @@
 use crate::QueryError;
-use crate::db::{Attr, Datom, Db, Ein, Ent};
+use crate::db::Db;
 use crate::trie::prelude::*;
+use crate::types::*;
 use serde::{Deserialize, Serialize};
 
 pub mod errors;

@@ -1,8 +1,9 @@
 use crate::LoadError;
 use crate::TransactError;
-use crate::db::{Datom, Db};
+use crate::db::Db;
 use crate::reader::DbReader;
 use crate::trie::prelude::*;
+use crate::types::Datom;
 use log::error;
 use thiserror::Error;
 use tokio::sync::mpsc::Receiver;
@@ -70,9 +71,7 @@ where
             .send(msg)
             .await
             .map_err(|e| HandleError::TaskClosed(e.into()))?;
-        let result = rx
-            .await
-            .map_err(|e| HandleError::TaskFailed(e.into()))?;
+        let result = rx.await.map_err(|e| HandleError::TaskFailed(e.into()))?;
         result.map_err(Into::into)
     }
 }
@@ -82,7 +81,9 @@ where
     S: ReadWriteTrieStorage + Send + Sync,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("DbHandle").field("sender", &self.sender).finish()
+        f.debug_struct("DbHandle")
+            .field("sender", &self.sender)
+            .finish()
     }
 }
 

@@ -1,6 +1,6 @@
 use crate::QueryError;
-use crate::db::types::key::KEY_MAX_TXID;
 use crate::db::db_trie;
+use crate::db::types::key::KEY_MAX_TXID;
 use crate::db::{Attr, Db, Ein, Txid, Val};
 use crate::find::{Find, ValsInSlot};
 use crate::trie::prelude::*;
@@ -52,8 +52,8 @@ impl<S: ReadWriteTrieStorage> DbQuery for Db<S> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::datom;
     use crate::db::{dat, ent};
+    use crate::types::datom;
     use futures::StreamExt;
 
     #[tokio::test]

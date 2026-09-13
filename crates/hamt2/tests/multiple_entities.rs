@@ -3,7 +3,8 @@ use hamt2::db::{Attr, Db, ein, val};
 use hamt2::find::EinsWithAttr;
 use hamt2::query::DbQuery;
 use hamt2::storage::MemDbStorage;
-use hamt2::{LoadError, datom};
+use hamt2::types::datom;
+use hamt2::LoadError;
 
 pub const ATTR_COUNT: Attr = Attr("counter/count");
 pub const ATTR_GREETING: Attr = Attr("speech/greeting");

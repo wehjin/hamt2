@@ -1,5 +1,4 @@
 pub(crate) mod crate_services;
-pub mod datom;
 pub mod db;
 mod error;
 pub mod find;

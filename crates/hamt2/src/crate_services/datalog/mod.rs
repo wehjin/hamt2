@@ -52,15 +52,15 @@ impl Program {
 
 #[cfg(test)]
 mod tests {
-	use super::*;
-	use crate::datom;
-	use crate::db::{Attr, Db, ent, val};
-	use crate::crate_services::datalog::atom::atom;
-	use crate::crate_services::datalog::rule::rule;
-	use crate::crate_services::datalog::term::term;
-	use crate::crate_services::datalog::var::var;
+    use super::*;
+    use crate::crate_services::datalog::atom::atom;
+    use crate::crate_services::datalog::rule::rule;
+    use crate::crate_services::datalog::term::term;
+    use crate::crate_services::datalog::var::var;
+    use crate::db::Db;
+    use crate::types::*;
 
-	const ADVISOR: Attr = Attr("member/advisor");
+    const ADVISOR: Attr = Attr("member/advisor");
     const NAME: Attr = Attr("member/name");
     const QUERY_1: Attr = Attr("query/1");
     const QUERY_2: Attr = Attr("query/2");

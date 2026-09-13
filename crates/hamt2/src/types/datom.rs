@@ -1,10 +1,7 @@
 use crate::db::Attr;
 use crate::db::{Dat, Dir};
-use ent::Ent;
+use crate::types::ent::Ent;
 use std::fmt::Debug;
-
-pub mod dat;
-pub mod ent;
 
 pub fn add(ent: impl Into<Ent>, attr: impl Into<Attr>, dat: impl Into<Dat>) -> Datom {
     Datom {

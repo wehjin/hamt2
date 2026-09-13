@@ -2,7 +2,8 @@ use crate::TransactError;
 use crate::db::types::MaxEid;
 use crate::db::types::ent_eid::EntEid;
 use crate::db::db_trie;
-use crate::db::{Dat, Datom, Db, Ent, val};
+use crate::db::{ Db,  val};
+use crate::types::*;
 use crate::trie::prelude::*;
 
 impl<S: ReadWriteTrieStorage> Db<S> {
