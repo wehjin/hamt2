@@ -1,10 +1,10 @@
 use crate::QueryError;
+use crate::crate_services::datalog::atom::Atom;
 use crate::db::Ein;
 use crate::db::Schema;
 use crate::db::db_trie;
 use crate::find::Find;
-use crate::find::find_result::FindResult;
-use crate::crate_services::datalog::atom::Atom;
+use crate::find::types::find_result::FindResult;
 use crate::trie::prelude::*;
 use std::future::Future;
 
