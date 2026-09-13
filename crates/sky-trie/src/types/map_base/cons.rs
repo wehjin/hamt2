@@ -1,11 +1,11 @@
-use crate::trie::trie_storage::ReadWriteTrieStorage;
-use crate::trie::types::slot_base::SlotBase;
-use crate::trie::types::slot_base_id::SlotBaseId;
-use crate::trie::types::hash_key::HashKey;
-use crate::trie::types::map_base::MapBase;
-use crate::trie::types::slot::Slot;
-use crate::trie::types::slot_map::SlotMap;
-use crate::trie::types::trie_value::TrieValue;
+use crate::trie_storage::ReadWriteTrieStorage;
+use crate::types::slot_base::SlotBase;
+use crate::types::slot_base_id::SlotBaseId;
+use crate::types::hash_key::HashKey;
+use crate::types::map_base::MapBase;
+use crate::types::slot::Slot;
+use crate::types::slot_map::SlotMap;
+use crate::types::trie_value::TrieValue;
 
 impl MapBase {
     pub fn empty() -> Self {

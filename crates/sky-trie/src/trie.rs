@@ -1,14 +1,14 @@
-use crate::trie::TrieQuery;
-use crate::trie::trie_ref::TrieRef;
-use crate::trie::trie_storage::ReadWriteTrieStorage;
-use crate::trie::trie_storage::errors::{TrieStorageReadError, TrieStorageWriteError};
-use crate::trie::types::map_base::MapBase;
+use crate::TrieQuery;
+use crate::trie_ref::TrieRef;
+use crate::trie_storage::ReadWriteTrieStorage;
+use crate::trie_storage::errors::{TrieStorageReadError, TrieStorageWriteError};
+use crate::types::map_base::MapBase;
 use std::collections::HashMap;
 
-use crate::TransactError;
-use crate::trie::prelude::TrieValue;
-use crate::trie::types::hash_key::HashKey;
-use crate::trie::types::hash_key_path::HashKeyPath;
+use crate::TrieWriteError;
+use crate::prelude::TrieValue;
+use crate::types::hash_key::HashKey;
+use crate::types::hash_key_path::HashKeyPath;
 
 #[derive(Debug)]
 pub struct Trie<S: ReadWriteTrieStorage> {
@@ -56,7 +56,7 @@ impl<S: ReadWriteTrieStorage> Trie<S> {
 
 /// Trie update methods.
 impl<S: ReadWriteTrieStorage> Trie<S> {
-    pub async fn insert(mut self, key: i32, value: TrieValue) -> Result<Self, TransactError> {
+    pub async fn insert(mut self, key: i32, value: TrieValue) -> Result<Self, TrieWriteError> {
         let key = HashKey::new(key);
         let root = self.root.insert_kv(key, value, &mut self.storage).await?;
         self.root = root;
@@ -68,7 +68,7 @@ impl<S: ReadWriteTrieStorage> Trie<S> {
         key: [i32; N],
         value: impl Into<TrieValue>,
         replace_tail: bool,
-    ) -> Result<Self, TransactError> {
+    ) -> Result<Self, TrieWriteError> {
         let deep_key = HashKeyPath::from(key);
         let last_index = N - 1;
         let mut map_bases = HashMap::new();
@@ -84,7 +84,7 @@ impl<S: ReadWriteTrieStorage> Trie<S> {
                     None => MapBase::empty(),
                     Some(TrieValue::SubTrie(map_base)) => map_base,
                     Some(TrieValue::U32(_)) => {
-                        return Err(TransactError::ExpectedMapBaseAtKey);
+                        return Err(TrieWriteError::ExpectedMapBaseAtKey);
                     }
                 }
             };

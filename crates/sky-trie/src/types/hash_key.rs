@@ -1,5 +1,5 @@
-use crate::universal_hash;
-use crate::trie::types::slot_map::SlotMap;
+use universal_hash;
+use crate::types::slot_map::SlotMap;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Serialize, Deserialize)]

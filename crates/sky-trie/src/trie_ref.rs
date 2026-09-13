@@ -1,7 +1,7 @@
-use crate::trie::TrieQuery;
-use crate::trie::trie_storage::ReadTrieStorage;
-use crate::trie::types::map_base::MapBase;
-use crate::trie::types::trie_value::TrieValue;
+use crate::TrieQuery;
+use crate::trie_storage::ReadTrieStorage;
+use crate::types::map_base::MapBase;
+use crate::types::trie_value::TrieValue;
 
 /// A borrowed, read-only view of a trie over a storage.
 #[derive(Debug, Clone)]

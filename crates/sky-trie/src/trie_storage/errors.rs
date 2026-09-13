@@ -1,4 +1,4 @@
-use crate::trie::types::slot_base_id::SlotBaseId;
+use crate::types::slot_base_id::SlotBaseId;
 use thiserror::Error;
 
 #[derive(Debug, Error)]

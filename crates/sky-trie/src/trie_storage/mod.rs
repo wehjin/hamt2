@@ -1,6 +1,6 @@
-use crate::trie::types::slot_base::SlotBase;
-use crate::trie::types::slot_base_id::SlotBaseId;
-use crate::trie::types::map_base::MapBase;
+use crate::types::slot_base::SlotBase;
+use crate::types::slot_base_id::SlotBaseId;
+use crate::types::map_base::MapBase;
 use errors::{TrieStorageReadError, TrieStorageWriteError};
 
 pub mod errors;
@@ -58,9 +58,9 @@ pub trait ReadWriteTrieStorage: ReadTrieStorage {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::trie::trie_storage::mem::MemTrieStorage;
-    use crate::trie::types::hash_key::HashKey;
-    use crate::trie::types::trie_value::TrieValue;
+    use crate::trie_storage::mem::MemTrieStorage;
+    use crate::types::hash_key::HashKey;
+    use crate::types::trie_value::TrieValue;
 
     #[tokio::test]
     async fn empty_storage_has_no_ids() {

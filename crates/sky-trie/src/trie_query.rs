@@ -1,15 +1,15 @@
-use crate::QueryError;
-use crate::trie::trie_ref::TrieRef;
-use crate::trie::trie_storage::ReadTrieStorage;
-use crate::trie::types::hash_key::HashKey;
-use crate::trie::types::hash_key_path::HashKeyPath;
-use crate::trie::types::map_base::MapBase;
-use crate::trie::types::trie_value::TrieValue;
+use crate::TrieQueryError;
+use crate::trie_ref::TrieRef;
+use crate::trie_storage::ReadTrieStorage;
+use crate::types::hash_key::HashKey;
+use crate::types::hash_key_path::HashKeyPath;
+use crate::types::map_base::MapBase;
+use crate::types::trie_value::TrieValue;
 use futures::Stream;
 use futures::stream::StreamExt;
 
 /// The read-only query interface shared by [`Trie`], [`TrieRef`], and
-/// [`ReadTrie`](crate::trie::TrieReader).
+/// [`ReadTrie`](crate::TrieReader).
 ///
 /// Every query method is provided by default; implementations only need to
 /// expose the root map base and the storage.
@@ -22,14 +22,14 @@ pub trait TrieQuery<S: ReadTrieStorage> {
     fn storage(&self) -> &S;
 
     /// Returns the value stored at the given key or none if the key is absent.
-    async fn query_value(&self, key: i32) -> Result<Option<TrieValue>, QueryError> {
+    async fn query_value(&self, key: i32) -> Result<Option<TrieValue>, TrieQueryError> {
         self.root()
             .query_value(HashKey::new(key), self.storage())
             .await
     }
 
     /// Returns all keys and values in this trie.
-    async fn query_keys_values(&self) -> Result<Vec<(i32, TrieValue)>, QueryError> {
+    async fn query_keys_values(&self) -> Result<Vec<(i32, TrieValue)>, TrieQueryError> {
         self.root().query_keys_values(self.storage()).await
     }
 
@@ -37,7 +37,7 @@ pub trait TrieQuery<S: ReadTrieStorage> {
     async fn deep_query_value<const N: usize>(
         &self,
         key: [i32; N],
-    ) -> Result<Option<TrieValue>, QueryError> {
+    ) -> Result<Option<TrieValue>, TrieQueryError> {
         let deep_key = HashKeyPath::from(key);
         let mut current_map_base = self.root().clone();
         let last_index = N - 1;
@@ -101,8 +101,8 @@ pub trait TrieQuery<S: ReadTrieStorage> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::trie::Trie;
-    use crate::trie::trie_storage::mem::MemTrieStorage;
+    use crate::Trie;
+    use crate::trie_storage::mem::MemTrieStorage;
     use futures::StreamExt;
 
     #[tokio::test]

@@ -1,4 +1,4 @@
-use crate::trie::types::hash_key::HashKey;
+use crate::types::hash_key::HashKey;
 use std::ops::Index;
 
 pub struct HashKeyPath<const N: usize> {

@@ -1,10 +1,10 @@
-use crate::TransactError;
-use crate::trie::trie_storage::ReadWriteTrieStorage;
-use crate::trie::types::slot_base::SlotBase;
-use crate::trie::types::hash_key::HashKey;
-use crate::trie::types::map_base::MapBase;
-use crate::trie::types::slot::{KvTest, Slot};
-use crate::trie::types::trie_value::TrieValue;
+use crate::TrieWriteError;
+use crate::trie_storage::ReadWriteTrieStorage;
+use crate::types::slot_base::SlotBase;
+use crate::types::hash_key::HashKey;
+use crate::types::map_base::MapBase;
+use crate::types::slot::{KvTest, Slot};
+use crate::types::trie_value::TrieValue;
 
 impl MapBase {
     pub async fn insert_kv(
@@ -12,7 +12,7 @@ impl MapBase {
         key: HashKey,
         value: TrieValue,
         storage: &mut impl ReadWriteTrieStorage,
-    ) -> Result<Self, TransactError> {
+    ) -> Result<Self, TrieWriteError> {
         let MapBase { map, base } = self;
         let post_map_base = match map.try_base_index(key) {
             Some(base_index) => {

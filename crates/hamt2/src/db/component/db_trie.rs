@@ -72,11 +72,13 @@ pub(crate) async fn with_update<S: ReadWriteTrieStorage>(
 }
 
 pub(crate) async fn set_max_tx<S: ReadWriteTrieStorage>(
-    trie: Trie<S>,
+    mut trie: Trie<S>,
     max_tx: Txid,
 ) -> Result<Trie<S>, TransactError> {
-    trie.insert(KEY_MAX_TXID, TrieValue::from(max_tx.u32()))
-        .await
+    trie = trie
+        .insert(KEY_MAX_TXID, TrieValue::from(max_tx.u32()))
+        .await?;
+    Ok(trie)
 }
 
 pub async fn find<'a, T, S>(

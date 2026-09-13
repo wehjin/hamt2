@@ -1,8 +1,8 @@
-use crate::TransactError;
-use crate::trie::trie_storage::ReadWriteTrieStorage;
-use crate::trie::types::hash_key::HashKey;
-use crate::trie::types::slot::Slot;
-use crate::trie::types::trie_value::TrieValue;
+use crate::TrieWriteError;
+use crate::trie_storage::ReadWriteTrieStorage;
+use crate::types::hash_key::HashKey;
+use crate::types::slot::Slot;
+use crate::types::trie_value::TrieValue;
 use serde::{Deserialize, Serialize};
 use std::ops::Index;
 
@@ -65,7 +65,7 @@ impl SlotBase {
         key: HashKey,
         value: TrieValue,
         storage: &mut impl ReadWriteTrieStorage,
-    ) -> Result<Self, TransactError> {
+    ) -> Result<Self, TrieWriteError> {
         let SlotBase { mut slots } = self;
         let pre_slot = slots.remove(base_index);
         let post_slot = {

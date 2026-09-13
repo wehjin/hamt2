@@ -1,5 +1,5 @@
-use crate::trie::types::slot_base_id::SlotBaseId;
-use crate::trie::types::slot_map::SlotMap;
+use crate::types::slot_base_id::SlotBaseId;
+use crate::types::slot_map::SlotMap;
 use serde::{Deserialize, Serialize};
 
 pub mod cons;
@@ -14,10 +14,10 @@ pub struct MapBase {
 
 #[cfg(test)]
 mod tests {
-    use crate::trie::trie_storage::mem::MemTrieStorage;
-    use crate::trie::types::hash_key::HashKey;
-    use crate::trie::types::map_base::*;
-    use crate::trie::types::trie_value::TrieValue;
+    use crate::trie_storage::mem::MemTrieStorage;
+    use crate::types::hash_key::HashKey;
+    use crate::types::map_base::*;
+    use crate::types::trie_value::TrieValue;
     use tokio_stream::StreamExt;
 
     #[tokio::test]

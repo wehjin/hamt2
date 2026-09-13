@@ -1,8 +1,8 @@
-use crate::trie::trie_storage::errors::{TrieStorageReadError, TrieStorageWriteError};
-use crate::trie::trie_storage::{ReadTrieStorage, ReadWriteTrieStorage};
-use crate::trie::types::map_base::MapBase;
-use crate::trie::types::slot_base::SlotBase;
-use crate::trie::types::slot_base_id::SlotBaseId;
+use crate::trie_storage::errors::{TrieStorageReadError, TrieStorageWriteError};
+use crate::trie_storage::{ReadTrieStorage, ReadWriteTrieStorage};
+use crate::types::map_base::MapBase;
+use crate::types::slot_base::SlotBase;
+use crate::types::slot_base_id::SlotBaseId;
 use std::future;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
@@ -271,8 +271,8 @@ impl ReadWriteTrieStorage for FileTrieStorage {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::trie::types::hash_key::HashKey;
-    use crate::trie::types::trie_value::TrieValue;
+    use crate::types::hash_key::HashKey;
+    use crate::types::trie_value::TrieValue;
 
     #[tokio::test]
     async fn empty_storage_has_no_ids() -> anyhow::Result<()> {
@@ -316,7 +316,7 @@ mod tests {
 
     #[tokio::test]
     async fn root_round_trip_works() -> anyhow::Result<()> {
-        use crate::trie::types::map_base::MapBase;
+        use crate::types::map_base::MapBase;
         let dir = tempfile::tempdir()?;
         {
             let mut storage = FileTrieStorage::new(dir.path())?;
@@ -394,8 +394,8 @@ mod tests {
 
     #[tokio::test]
     async fn readonly_snapshot_freezes_max_id_and_root() -> anyhow::Result<()> {
-        use crate::trie::trie_storage::errors::TrieStorageReadError;
-        use crate::trie::types::map_base::MapBase;
+        use crate::trie_storage::errors::TrieStorageReadError;
+        use crate::types::map_base::MapBase;
         let dir = tempfile::tempdir()?;
         let base = SlotBase::new_kv(HashKey::new(7), TrieValue::U32(7));
         let mut storage = FileTrieStorage::new(dir.path())?;

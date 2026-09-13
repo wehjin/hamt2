@@ -12,17 +12,17 @@ pub enum TransactError {
     #[error("Query: {0}")]
     Query(#[from] QueryError),
 
-    #[error("BaseStorageRead: {0}")]
-    BaseStorageRead(#[from] TrieStorageReadError),
+    #[error("TrieStorageRead: {0}")]
+    TrieStorageRead(#[from] TrieStorageReadError),
 
-    #[error("BaseStorageWrite: {0}")]
-    BaseStorageWrite(#[from] TrieStorageWriteError),
+    #[error("TrieStorageWrite: {0}")]
+    TrieStorageWrite(#[from] TrieStorageWriteError),
+
+    #[error("Trie: {0}")]
+    Trie(#[from] TrieWriteError),
 
     #[error("HighBitInValue: {0}")]
     HighBitInValue(u32),
-
-    #[error("ExpectedMapBaseAtKey")]
-    ExpectedMapBaseAtKey,
 
     #[error("NoSpaceInValueTable")]
     NoSpaceInValueTable,

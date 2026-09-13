@@ -1,9 +1,9 @@
-use crate::QueryError;
-use crate::trie::trie_storage::ReadTrieStorage;
-use crate::trie::types::hash_key::HashKey;
-use crate::trie::types::map_base::MapBase;
-use crate::trie::types::slot::Slot;
-use crate::trie::types::trie_value::TrieValue;
+use crate::TrieQueryError;
+use crate::trie_storage::ReadTrieStorage;
+use crate::types::hash_key::HashKey;
+use crate::types::map_base::MapBase;
+use crate::types::slot::Slot;
+use crate::types::trie_value::TrieValue;
 use futures::Stream;
 use futures::stream;
 
@@ -17,7 +17,7 @@ impl MapBase {
         &self,
         key: HashKey,
         storage: &impl ReadTrieStorage,
-    ) -> Result<Option<TrieValue>, QueryError> {
+    ) -> Result<Option<TrieValue>, TrieQueryError> {
         let MapBase { map, base } = self;
         let value = match map.try_base_index(key) {
             Some(base_index) => {
@@ -70,7 +70,7 @@ impl MapBase {
     pub async fn query_keys_values(
         &self,
         storage: &impl ReadTrieStorage,
-    ) -> Result<Vec<(i32, TrieValue)>, QueryError> {
+    ) -> Result<Vec<(i32, TrieValue)>, TrieQueryError> {
         let MapBase { map, base } = self;
         let mut out = Vec::new();
         let slot_count = map.slot_count();
@@ -87,7 +87,7 @@ impl MapBase {
 struct Job {
     slot_offset: usize,
     slot_count: usize,
-    base: crate::trie::types::slot_base_id::SlotBaseId,
+    base: crate::types::slot_base_id::SlotBaseId,
 }
 impl Job {
     pub fn start(map_base: &MapBase) -> Option<Self> {

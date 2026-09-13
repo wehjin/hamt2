@@ -16,8 +16,8 @@ pub enum QueryError {
     #[error("Utf8: {0}")]
     Utf8(#[from] std::str::Utf8Error),
 
-    #[error("BaseStorageRead: {0}")]
-    BaseStorageRead(#[from] TrieStorageReadError),
+    #[error("Trie: {0}")]
+    Trie(#[from] TrieQueryError),
 
     #[error("SerdeError: {0}")]
     SerdeError(String),

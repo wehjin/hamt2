@@ -1,8 +1,8 @@
-use crate::trie::trie_storage::errors::{TrieStorageReadError, TrieStorageWriteError};
-use crate::trie::trie_storage::{ReadTrieStorage, ReadWriteTrieStorage};
-use crate::trie::types::map_base::MapBase;
-use crate::trie::types::slot_base::SlotBase;
-use crate::trie::types::slot_base_id::SlotBaseId;
+use crate::trie_storage::errors::{TrieStorageReadError, TrieStorageWriteError};
+use crate::trie_storage::{ReadTrieStorage, ReadWriteTrieStorage};
+use crate::types::map_base::MapBase;
+use crate::types::slot_base::SlotBase;
+use crate::types::slot_base_id::SlotBaseId;
 use serde::{Deserialize, Serialize};
 
 /// An in-memory storage for Bases backed by a `Vec<Base>`.

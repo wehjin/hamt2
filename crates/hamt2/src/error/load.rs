@@ -7,8 +7,8 @@ pub enum LoadError {
     #[error("Query error: {0:?}")]
     QueryError(#[from] crate::QueryError),
 
-    #[error("Base storage read error: {0}")]
-    BaseStorageRead(#[from] TrieStorageReadError),
+    #[error("Trie storage read: {0}")]
+    TrieStorageRead(#[from] TrieStorageReadError),
 
     #[error("Unknown attribute: {0:?}")]
     UnknownAttr(Attr),
