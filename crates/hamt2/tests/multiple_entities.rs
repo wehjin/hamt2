@@ -1,8 +1,8 @@
 use hamt2::LoadError;
-use hamt2::db::find::{AnyAttrIgnore, Find};
 use hamt2::db::query::DbQuery;
 use hamt2::db::{Attr, datom, ein, val};
 use hamt2::db::{Db, Txid};
+use hamt2::find::EinsWithAttr;
 use hamt2::trie::base_storage::mem::MemBaseStorage;
 
 pub const ATTR_COUNT: Attr = Attr("counter/count");
@@ -42,7 +42,7 @@ async fn transact_and_pull_simple() -> anyhow::Result<()> {
 async fn entities_with_attr_works_for_single_entity() -> anyhow::Result<()> {
     let db = Db::new(MemBaseStorage::new(), [ATTR_COUNT]).await?;
     let db = db.transact([datom::add(15, ATTR_COUNT, 15)]).await?;
-    let eins = AnyAttrIgnore::new(ATTR_COUNT).apply_db(&db).await?;
+    let eins = db.find(EinsWithAttr::new(ATTR_COUNT)).await?;
     assert_eq!(vec![ein(15)], eins);
     Ok(())
 }
@@ -54,7 +54,7 @@ async fn entities_with_attr_works_for_two_entities() -> anyhow::Result<()> {
         .transact([datom::add(3, ATTR_COUNT, 4), datom::add(5, ATTR_COUNT, 6)])
         .await?;
 
-    let mut eins = AnyAttrIgnore::new(ATTR_COUNT).apply_db(&db).await?;
+    let mut eins = db.find(EinsWithAttr::new(ATTR_COUNT)).await?;
     eins.sort();
     assert_eq!(vec![ein(3), ein(5)], eins);
     Ok(())
@@ -69,7 +69,7 @@ async fn transact_assigns_id_to_temporary_ent() -> anyhow::Result<()> {
     let db = db
         .transact([datom::add("new_count", ATTR_COUNT, 35)])
         .await?;
-    let eins = AnyAttrIgnore::new(ATTR_COUNT).apply_db(&db).await?;
+    let eins = db.find(EinsWithAttr::new(ATTR_COUNT)).await?;
     assert_eq!(2, eins.len());
     Ok(())
 }
@@ -92,7 +92,7 @@ async fn test_multiple_entities() -> anyhow::Result<()> {
     assert_eq!(Some(val(5)), db.find_val(5, ATTR_COUNT).await?);
 
     // Discover the entities with an attribute.
-    let mut eins = AnyAttrIgnore::new(ATTR_COUNT).apply_db(&db).await?;
+    let mut eins = db.find(EinsWithAttr::new(ATTR_COUNT)).await?;
     eins.sort();
     assert_eq!(vec![ein(5), ein(15)], eins);
     Ok(())

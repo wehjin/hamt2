@@ -1,24 +1,24 @@
-use crate::db::core::datom::attr::Attr;
-use crate::db::find::program::atom::{atom, Atom};
-use crate::db::find::program::term::term;
-use crate::db::find::program::var::var;
-use crate::db::find::Find;
+use crate::db::Attr;
+use crate::db::datalog::atom::{Atom, atom};
+use crate::db::datalog::term::term;
+use crate::db::datalog::var::var;
 use crate::db::find_result::FindResult;
-use crate::db::{val, Ein, Val};
+use crate::db::{Ein, Val, val};
+use crate::find::Find;
 
-pub struct EinAttrAny {
+pub struct ValsInSlot {
     ein: Ein,
     attr: Attr,
 }
 
-impl EinAttrAny {
+impl ValsInSlot {
     pub fn new(ein: impl Into<Ein>, attr: Attr) -> Self {
         let ein = ein.into();
         Self { ein, attr }
     }
 }
 
-impl Find for EinAttrAny {
+impl Find for ValsInSlot {
     type Output = Val;
 
     fn select(&self) -> Vec<&'static str> {

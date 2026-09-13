@@ -1,13 +1,13 @@
 use crate::db::component::db_trie;
-use crate::db::find::program::atom::Atom;
-use crate::db::find::program::rule::Rule;
-use crate::db::find::program::sub::Substitution;
-use crate::db::find::program::term::Term;
+use crate::db::datalog::atom::Atom;
+use crate::db::datalog::rule::Rule;
+use crate::db::datalog::sub::Substitution;
+use crate::db::datalog::term::Term;
 use crate::db::{Attr, Schema, Val};
-use crate::trie::base_storage::BaseStorageRead;
 use crate::trie::TrieQuery;
+use crate::trie::base_storage::BaseStorageRead;
 use async_stream::stream;
-use futures::{pin_mut, StreamExt};
+use futures::{StreamExt, pin_mut};
 use std::collections::HashSet;
 use std::marker::PhantomData;
 

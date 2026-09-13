@@ -1,20 +1,18 @@
 use crate::QueryError;
 
-mod any_attr_any;
-mod any_attr_ignore;
-mod ein_attr_any;
-pub mod program;
+mod binds_for_attr;
+mod eins_with_attr;
+mod vals_in_slot;
 
-use crate::db::Db;
+use crate::db::Schema;
 use crate::db::component::db_trie;
-use crate::db::find::program::atom::Atom;
+use crate::db::datalog::atom::Atom;
 use crate::db::find_result::FindResult;
-use crate::db::schema::Schema;
 use crate::trie::TrieQuery;
-use crate::trie::base_storage::{BaseStorageRead, BaseStorageReadWrite};
-pub use any_attr_any::*;
-pub use any_attr_ignore::*;
-pub use ein_attr_any::*;
+use crate::trie::base_storage::BaseStorageRead;
+pub use binds_for_attr::*;
+pub use eins_with_attr::*;
+pub use vals_in_slot::*;
 
 pub trait Find {
     type Output;
@@ -22,16 +20,6 @@ pub trait Find {
     fn select(&self) -> Vec<&'static str>;
     fn where_(&self) -> Vec<Atom>;
     fn process(self, result: FindResult) -> Vec<Self::Output>;
-
-    fn apply_db<S: BaseStorageReadWrite>(
-        self,
-        db: &Db<S>,
-    ) -> impl Future<Output = Result<Vec<Self::Output>, QueryError>>
-    where
-        Self: Sized,
-    {
-        self.apply(&db.trie, &db.schema)
-    }
 
     fn apply<T, S>(
         self,
@@ -55,12 +43,12 @@ pub trait Find {
 
 #[cfg(test)]
 mod tests {
-    use crate::db::find::AnyAttrAny;
-    use crate::db::query::DbQuery;
-    use crate::db::{Attr, Db, datom, ein, val};
-    use crate::trie::base_storage::mem::MemBaseStorage;
+	use crate::db::query::DbQuery;
+	use crate::db::{Attr, Db, datom, ein, val};
+	use crate::find::BindsForAttr;
+	use crate::trie::base_storage::mem::MemBaseStorage;
 
-    #[tokio::test]
+	#[tokio::test]
     async fn find_with_reader() {
         let attr = Attr::from("Counter/count");
         let store = MemBaseStorage::new();
@@ -68,7 +56,7 @@ mod tests {
         let txn = [datom::add(10, attr, 42)];
         let db = db.transact(txn).await.unwrap();
         let reader = db.to_reader().await;
-        let found = reader.find(AnyAttrAny::new(attr)).await.unwrap();
+        let found = reader.find(BindsForAttr::new(attr)).await.unwrap();
         assert_eq!(&[(ein(10), val(42))], found.as_slice());
     }
 }

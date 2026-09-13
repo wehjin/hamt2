@@ -1,8 +1,8 @@
 use crate::QueryError;
 use crate::db::component::db_trie;
 use crate::db::component::key::KEY_MAX_TXID;
-use crate::db::find::{EinAttrAny, Find};
 use crate::db::{Attr, Db, Ein, Txid, Val};
+use crate::find::{Find, ValsInSlot};
 use crate::trie::TrieQuery;
 use crate::trie::base_storage::BaseStorageReadWrite;
 use crate::trie::mem::value::MemValue;
@@ -16,8 +16,7 @@ pub trait DbQuery {
         e: impl Into<Ein>,
         a: Attr,
     ) -> impl Future<Output = Result<Option<Val>, QueryError>> {
-        let find = EinAttrAny::new(e, a);
-        self.find(find)
+        self.find(ValsInSlot::new(e, a))
             .map(|result| result.map(|vals| vals.first().cloned()))
     }
 

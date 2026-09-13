@@ -1,7 +1,7 @@
 use crate::db::component::db_trie;
-use crate::db::find::Find;
 use crate::db::query::DbQuery;
 use crate::db::{Attr, Db, Ein, Schema};
+use crate::find::Find;
 use crate::trie::ReadTrie;
 use crate::trie::TrieQuery;
 use crate::trie::base_storage::{BaseStorageRead, BaseStorageReadWrite};

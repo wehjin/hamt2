@@ -1,7 +1,8 @@
 use hamt2::db::attr_spec::AttrSpec;
 use hamt2::db::cardinality::Cardinality;
-use hamt2::db::find::{EinAttrAny, Find};
-use hamt2::db::{datom, val, Attr, Db};
+use hamt2::db::query::DbQuery;
+use hamt2::db::{Attr, Db, datom, val};
+use hamt2::find::ValsInSlot;
 use hamt2::trie::base_storage::mem::MemBaseStorage;
 
 #[tokio::test]
@@ -15,11 +16,11 @@ async fn test_cardinality_one() -> anyhow::Result<()> {
     db = db.transact([datom::add(100, COUNT, 100)]).await?;
     db = db.transact([datom::add(100, COUNT, 101)]).await?;
     db = db.transact([datom::add(100, COUNT, 102)]).await?;
-    let vals = EinAttrAny::new(100, COUNT).apply_db(&db).await?;
+    let vals = db.find(ValsInSlot::new(100, COUNT)).await?;
     assert_eq!(vec![val(102)], vals);
 
     db = db.transact([datom::del(100, COUNT, 102)]).await?;
-    let vals = EinAttrAny::new(100, COUNT).apply_db(&db).await?;
+    let vals = db.find(ValsInSlot::new(100, COUNT)).await?;
     assert!(vals.is_empty());
     Ok(())
 }
@@ -35,12 +36,12 @@ async fn test_cardinality_many() -> anyhow::Result<()> {
     db = db.transact([datom::add(100, COUNT, 100)]).await?;
     db = db.transact([datom::add(100, COUNT, 101)]).await?;
     db = db.transact([datom::add(100, COUNT, 102)]).await?;
-    let mut vals = EinAttrAny::new(100, COUNT).apply_db(&db).await?;
+    let mut vals = db.find(ValsInSlot::new(100, COUNT)).await?;
     vals.sort();
     assert_eq!(vec![val(100), val(101), val(102)], vals);
 
     db = db.transact([datom::del(100, COUNT, 101)]).await?;
-    let mut vals = EinAttrAny::new(100, COUNT).apply_db(&db).await?;
+    let mut vals = db.find(ValsInSlot::new(100, COUNT)).await?;
     vals.sort();
     assert_eq!(vec![val(100), val(102)], vals);
     Ok(())

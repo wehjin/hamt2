@@ -1,5 +1,5 @@
-use crate::db::find::program::var::Var;
 use crate::db::Val;
+use crate::db::datalog::var::Var;
 use std::collections::HashSet;
 
 pub struct Substitution(HashSet<(Var, Val)>);

@@ -1,10 +1,10 @@
 pub mod component;
 mod core;
 mod db;
-pub mod find;
 pub mod handle;
 mod schema;
 pub mod reader;
+pub mod datalog;
 
 pub use component::vid::*;
 pub use core::Attr;

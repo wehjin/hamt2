@@ -1,6 +1,6 @@
 use crate::db::Schema;
-use crate::trie::base_storage::BaseStorageRead;
 use crate::trie::TrieQuery;
+use crate::trie::base_storage::BaseStorageRead;
 use atom::Atom;
 use kb::KnowledgeBase;
 use rule::Rule;
@@ -53,15 +53,15 @@ impl Program {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::db::find::program::atom::atom;
-    use crate::db::find::program::rule::rule;
-    use crate::db::find::program::term::term;
-    use crate::db::find::program::var::var;
-    use crate::db::{datom, ent, val, Attr, Db};
-    use crate::trie::base_storage::mem::MemBaseStorage;
+	use super::*;
+	use crate::db::datalog::atom::atom;
+	use crate::db::datalog::rule::rule;
+	use crate::db::datalog::term::term;
+	use crate::db::datalog::var::var;
+	use crate::db::{Attr, Db, datom, ent, val};
+	use crate::trie::base_storage::mem::MemBaseStorage;
 
-    const ADVISOR: Attr = Attr("member/advisor");
+	const ADVISOR: Attr = Attr("member/advisor");
     const NAME: Attr = Attr("member/name");
     const QUERY_1: Attr = Attr("query/1");
     const QUERY_2: Attr = Attr("query/2");

@@ -1,6 +1,6 @@
-use hamt2::db::find::{AnyAttrIgnore, Find};
 use hamt2::db::query::DbQuery;
 use hamt2::db::{Attr, Db, datom, val};
+use hamt2::find::EinsWithAttr;
 use hamt2::trie::base_storage::mem::MemBaseStorage;
 
 const ATTR_COUNT: Attr = Attr("counter/count");
@@ -16,7 +16,7 @@ async fn mem_db_works() -> anyhow::Result<()> {
         ])
         .await?;
 
-    let mut eins = AnyAttrIgnore::new(ATTR_COUNT).apply_db(&db).await?;
+    let mut eins = db.find(EinsWithAttr::new(ATTR_COUNT)).await?;
     eins.sort();
 
     for ein in eins {
