@@ -49,25 +49,25 @@ pub fn EntitiesSection() -> impl IntoView {
                 <h2 class="title">"🌐 Entities"</h2>
                 <label class="label" for="select_entity">"Select an entity"</label>
                 {move || entities_report.get().map(|report| view! {
-                    <div class="select is-multiple">
-                    <select id="select-entity" multiple size=8
-                        on:change:target=move |ev| {
-                            let value = ev.target().value().parse::<i32>().ok().map(|i| Ein(i));
-                            set_active_ein.set(value);
-                        }>
-                        <For
-                            each=move || report.eins.clone()
-                            key=|it| it.clone()
-                            children=move |it| {
-                                let ein = it.to_i32();
-                                view! {
-                                    <option value={ein}>
-                                    {format!("\u{2014}\u{00a0}{ein}\u{00a0}\u{2014}")}
-                                    </option>
+                    <div class="select is-multiple is-fullwidth">
+                        <select id="select-entity" multiple size=8
+                            on:change:target=move |ev| {
+                                let value = ev.target().value().parse::<i32>().ok().map(|i| Ein(i));
+                                set_active_ein.set(value);
+                            }>
+                            <For
+                                each=move || report.eins.clone()
+                                key=|it| it.clone()
+                                children=move |ein| {
+                                    let ein_i32 = ein.to_i32();
+                                    view! {
+                                        <option value={ein_i32}>
+                                        {format_ein(ein)}
+                                        </option>
+                                    }
                                 }
-                            }
-                        />
-                    </select>
+                            />
+                        </select>
                     </div>
                 })}
             </Suspense>
@@ -90,16 +90,17 @@ pub fn AttributesSection(ein: Ein) -> impl IntoView {
         },
     );
     let (active_attr, set_active_attr) = signal(None::<AttrName>);
-    let title = format!("⌗{}", ein.to_i32());
+    let title = format_ein(ein);
     view! {
         <div class="cell is-flex"><div class="box is-flex-grow-1">
             <h2 class="title">{title}</h2>
             <Suspense fallback=|| "Loading...">
-                <p>"Select an attribute"</p>
+                <label for="attr-select" class="label">"Select an attribute"</label>
                 {move || Suspend::new(async move {
                     let report = attributes_report.await;
                     view! {
-                        <select id="attr-select" size=10
+                        <div class="select is-multiple is-fullwidth">
+                        <select id="attr-select" multiple size=8
                             on:change:target=move |ev| {
                                 let value = ev.target().value();
                                 set_active_attr.set(Some(AttrName(value)));
@@ -112,6 +113,7 @@ pub fn AttributesSection(ein: Ein) -> impl IntoView {
                                 }
                             />
                         </select>
+                        </div>
                     }
                 })}
             </Suspense>
@@ -120,6 +122,10 @@ pub fn AttributesSection(ein: Ein) -> impl IntoView {
             <ValueSection ein=ein attr_name={active_attr.get().unwrap()}/>
         </Show>
     }
+}
+
+fn format_ein(ein: Ein) -> String {
+    format!("⌗{}", ein.to_i32())
 }
 
 #[component]
@@ -138,7 +144,6 @@ pub fn ValueSection(ein: Ein, attr_name: AttrName) -> impl IntoView {
             },
         )
     };
-    let ein = ein.to_i32();
     let title = format!("⌖\u{202F}{attr_name}");
     view! {
         <div class="cell is-flex"><div class="box is-flex-grow-1">
