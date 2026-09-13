@@ -1,3 +1,4 @@
+pub(crate) mod crate_services;
 pub mod datom;
 pub mod db;
 mod error;
@@ -6,11 +7,8 @@ pub mod handle;
 pub mod pull;
 pub mod query;
 pub mod reader;
-pub(crate) mod crate_services;
 pub mod transact;
 pub mod types;
 
-pub use sky_trie as trie;
-pub use universal_hash;
-
 pub use error::*;
+pub use sky_trie as trie;
