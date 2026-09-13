@@ -1,4 +1,5 @@
-use crate::api::browser::{get_entity_attributes_report, get_entity_report, get_version};
+use crate::api::version::get_version;
+use crate::api::{get_entity_attributes_report, get_entities_report};
 use hamt2::db::{Ein, Val};
 use leptos::prelude::*;
 
@@ -31,7 +32,7 @@ pub fn EntitiesSection() -> impl IntoView {
     let entities_report = Resource::new(
         || (),
         |_| async move {
-            get_entity_report()
+            get_entities_report()
                 .await
                 .expect("entity_report should exist")
         },
