@@ -1,7 +1,7 @@
 use crate::TrieQueryError;
 use crate::trie_storage::{ReadTrieStorage, ReadWriteTrieStorage};
 use crate::types::HashKey;
-use crate::types::map_base::{MapBase, two_kv};
+use crate::types::map_base::{MapBase, query_keys_values, query_value, two_kv};
 use crate::types::slot_base::SlotBase;
 use crate::types::trie_value::TrieValue;
 use serde::{Deserialize, Serialize};
@@ -56,7 +56,7 @@ impl Slot {
     ) -> Result<Vec<(i32, TrieValue)>, TrieQueryError> {
         match self {
             Slot::KeyValue(key, value) => Ok(vec![(*key, value.clone())]),
-            Slot::MapBase(map_base) => map_base.query_keys_values(storage).await,
+            Slot::MapBase(map_base) => query_keys_values(map_base, storage).await,
         }
     }
     pub async fn query_value(
@@ -72,7 +72,7 @@ impl Slot {
                     Ok(Some(v.clone()))
                 }
             }
-            Slot::MapBase(map_base) => map_base.query_value(key.next(), storage).await,
+            Slot::MapBase(map_base) => query_value(map_base, key.next(), storage).await,
         }
     }
     pub fn test_kv(&self, key: &HashKey, value: &TrieValue) -> KvTest {

@@ -2,7 +2,7 @@ use crate::TrieQuery;
 use crate::trie_ref::TrieRef;
 use crate::trie_storage::ReadWriteTrieStorage;
 use crate::trie_storage::errors::{TrieStorageReadError, TrieStorageWriteError};
-use crate::types::map_base::MapBase;
+use crate::types::map_base::{MapBase, query_value};
 use std::collections::HashMap;
 
 use crate::TrieWriteError;
@@ -80,7 +80,7 @@ impl<S: ReadWriteTrieStorage> Trie<S> {
             let map_base_i = if replace_tail && subtrie_i == last_index {
                 MapBase::empty()
             } else {
-                match map_base.query_value(key, &self.storage).await? {
+                match query_value(map_base, key, &self.storage).await? {
                     None => MapBase::empty(),
                     Some(TrieValue::SubTrie(map_base)) => map_base,
                     Some(TrieValue::U32(_)) => {

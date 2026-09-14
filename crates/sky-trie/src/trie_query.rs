@@ -3,7 +3,7 @@ use crate::trie_ref::TrieRef;
 use crate::trie_storage::ReadTrieStorage;
 use crate::types::DeepKey;
 use crate::types::HashKey;
-use crate::types::map_base::MapBase;
+use crate::types::map_base::{MapBase, kv_stream, query_keys_values, query_value};
 use crate::types::trie_value::TrieValue;
 use futures::Stream;
 use futures::stream::StreamExt;
@@ -23,14 +23,12 @@ pub trait TrieQuery<S: ReadTrieStorage> {
 
     /// Returns the value stored at the given key or none if the key is absent.
     async fn query_value(&self, key: i32) -> Result<Option<TrieValue>, TrieQueryError> {
-        self.root()
-            .query_value(HashKey::new(key), self.storage())
-            .await
+        query_value(self.root(), HashKey::new(key), self.storage()).await
     }
 
     /// Returns all keys and values in this trie.
     async fn query_keys_values(&self) -> Result<Vec<(i32, TrieValue)>, TrieQueryError> {
-        self.root().query_keys_values(self.storage()).await
+        query_keys_values(self.root(), self.storage()).await
     }
 
     /// Returns the value stored at the given deep key.
@@ -42,10 +40,7 @@ pub trait TrieQuery<S: ReadTrieStorage> {
         let mut current_map_base = self.root().clone();
         let last_index = N - 1;
         for i in 0..=last_index {
-            match current_map_base
-                .query_value(deep_key[i].clone(), self.storage())
-                .await?
-            {
+            match query_value(&current_map_base, deep_key[i].clone(), self.storage()).await? {
                 None => {
                     return Ok(None);
                 }
@@ -70,7 +65,7 @@ pub trait TrieQuery<S: ReadTrieStorage> {
     where
         S: 'a,
     {
-        let stream = self.root().clone().kv_stream(self.storage());
+        let stream = kv_stream(self.root().clone(), self.storage());
         stream.filter_map(|(key, value)| async move {
             if let TrieValue::U32(val) = value {
                 Some((key, val))
@@ -86,7 +81,7 @@ pub trait TrieQuery<S: ReadTrieStorage> {
         S: 'a,
     {
         let storage = self.storage();
-        let stream = self.root().clone().kv_stream(self.storage());
+        let stream = kv_stream(self.root().clone(), self.storage());
         stream.filter_map(move |(key, value)| async move {
             TrieRef::subtrie_from_value(value, storage).map(|subtrie| (key, subtrie))
         })
