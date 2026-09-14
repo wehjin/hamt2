@@ -20,6 +20,7 @@ async-stream = "0.3.6"
 
 hamt2 = { path = "crates/hamt2" }
 sky-trie = { path = "crates/sky-trie" }
+sky-types = { path = "crates/sky-types" }
 universal-hash = { path = "crates/universal-hash" }
 
 [profile.wasm-release]

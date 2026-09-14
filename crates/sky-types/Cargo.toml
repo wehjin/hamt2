@@ -1,0 +1,4 @@
+[package]
+name = "sky-types"
+version.workspace = true
+edition.workspace = true
