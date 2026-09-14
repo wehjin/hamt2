@@ -30,7 +30,7 @@ pub trait Find {
     where
         Self: Sized,
         T: StorageTrieQuery<S>,
-        S: SnapshotStorage,
+        S: ReadTrieStorage,
     {
         async move {
             let select = self.select();

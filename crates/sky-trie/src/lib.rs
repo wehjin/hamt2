@@ -14,7 +14,7 @@ pub use trie_reader::TrieReader;
 
 #[cfg(test)]
 mod tests {
-    use crate::trie_storage::ReadWriteTrieStorage;
+    use crate::trie_storage::ReadTrieStorage;
     use crate::trie_storage::file::FileTrieStorage;
     use crate::trie_storage::mem::MemTrieStorage;
     use crate::types::trie_value::TrieValue;
@@ -124,7 +124,7 @@ mod tests {
                 .await?;
             trie.commit().await?.close()
         };
-        let view_storage = storage.to_readonly();
+        let view_storage = storage.snapshot();
         let read_trie = TrieReader::connect(view_storage).await?;
         assert_eq!(Some(TrieValue::U32(42)), read_trie.query_value(1).await?);
         assert_eq!(

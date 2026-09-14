@@ -11,6 +11,15 @@ pub mod mem;
 ///
 /// Base id 0 is reserved and always represents the empty base.
 pub trait ReadTrieStorage: Sync {
+    /// The storage type of an owned read-only snapshot, produced by
+    /// [`ReadTrieStorage::snapshot`]. Writer storages use their read-only
+    /// snapshot type; read-only snapshot types usually use `Self`.
+    type Snapshot: ReadTrieStorage + Send;
+
+    /// Returns an owned read-only snapshot of this storage. The snapshot does
+    /// not observe writes made after this call.
+    fn snapshot(&self) -> Self::Snapshot;
+
     /// Reads a base from storage.
     fn read(
         &self,
@@ -34,9 +43,6 @@ pub trait ReadTrieStorage: Sync {
 
 /// A trait for reading and writing Bases from storage.
 pub trait ReadWriteTrieStorage: ReadTrieStorage {
-    /// The read-only snapshot type built by [`ReadWriteTrieStorage::to_readonly`].
-    type ReadOnly: SnapshotStorage + Send;
-
     /// Read the next available base id. The value is 1 in an empty storage because base id 0 is reserved for the empty base.
     fn next_id(&self) -> SlotBaseId;
 
@@ -51,31 +57,6 @@ pub trait ReadWriteTrieStorage: ReadTrieStorage {
         &mut self,
         root: MapBase,
     ) -> impl Future<Output = Result<(), TrieStorageWriteError>> + Send;
-
-    /// Builds an immutable read-only version of the storage. The returned
-    /// view is independent of the writer: it neither borrows it nor observes
-    /// any writes made after this call.
-    fn to_readonly(&self) -> Self::ReadOnly;
-}
-
-/// A storage that can produce an owned read-only snapshot of itself.
-///
-/// Writer storages snapshot via [`ReadWriteTrieStorage::to_readonly`];
-/// read-only snapshot types just clone themselves.
-pub trait SnapshotStorage: ReadTrieStorage {
-    /// The storage type of an owned read-only snapshot.
-    type Snapshot: SnapshotStorage;
-
-    /// Returns an owned read-only snapshot of this storage.
-    fn snapshot(&self) -> Self::Snapshot;
-}
-
-impl<S: ReadWriteTrieStorage> SnapshotStorage for S {
-    type Snapshot = S::ReadOnly;
-
-    fn snapshot(&self) -> Self::Snapshot {
-        self.to_readonly()
-    }
 }
 
 #[cfg(test)]
@@ -120,7 +101,7 @@ mod tests {
         let mut storage = MemTrieStorage::new();
         let base = SlotBase::new_kv(HashKey::new(7), TrieValue::U32(7));
         let id = storage.append(&base).await.expect("append");
-        let view = storage.to_readonly();
+        let view = storage.snapshot();
         storage.append(&base).await.expect("append");
         assert_eq!(Some(SlotBaseId(2)), storage.max_id());
         assert_eq!(Some(id), view.max_id());

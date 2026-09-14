@@ -19,7 +19,7 @@ pub struct Db<S: ReadWriteTrieStorage> {
 
 /// Production methods for Db
 impl<S: ReadWriteTrieStorage> Db<S> {
-    pub async fn to_reader(&self) -> DbReader<S::ReadOnly> {
+    pub async fn to_reader(&self) -> DbReader<S::Snapshot> {
         DbReader::load(self).await.expect("load reader")
     }
 }

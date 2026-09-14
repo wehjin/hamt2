@@ -25,7 +25,7 @@ impl Rule {
     pub async fn derive_facts<'a, T, S>(&self, kb: &KnowledgeBase<'a, T, S>) -> Vec<Atom>
     where
         T: StorageTrieQuery<S>,
-        S: SnapshotStorage,
+        S: ReadTrieStorage,
     {
         let mut new_facts = Vec::new();
         for body_sub in self.derive_body_subs(kb).await {
@@ -39,7 +39,7 @@ impl Rule {
     async fn derive_body_subs<'a, T, S>(&self, kb: &KnowledgeBase<'a, T, S>) -> Vec<Substitution>
     where
         T: StorageTrieQuery<S>,
-        S: SnapshotStorage,
+        S: ReadTrieStorage,
     {
         let mut subs = vec![Substitution::new()];
         for body_atom in self.body.iter() {

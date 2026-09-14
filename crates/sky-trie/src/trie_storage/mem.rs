@@ -1,5 +1,5 @@
 use crate::trie_storage::errors::{TrieStorageReadError, TrieStorageWriteError};
-use crate::trie_storage::{ReadTrieStorage, ReadWriteTrieStorage, SnapshotStorage};
+use crate::trie_storage::{ReadTrieStorage, ReadWriteTrieStorage};
 use crate::types::slot_base::SlotBase;
 use sky_types::trie::map_base::MapBase;
 use sky_types::trie::slot_base_id::SlotBaseId;
@@ -44,6 +44,17 @@ impl Default for MemTrieStorage {
 }
 
 impl ReadTrieStorage for MemTrieStorage {
+    type Snapshot = MemReadStorage;
+
+    fn snapshot(&self) -> Self::Snapshot {
+        let inner = self.inner.read().expect("storage poisoned");
+        MemReadStorage {
+            inner: Arc::clone(&self.inner),
+            max_id: (inner.bases.len() - 1) as i32,
+            root: inner.root.clone(),
+        }
+    }
+
     async fn read(&self, id: SlotBaseId) -> Result<SlotBase, TrieStorageReadError> {
         let inner = self.inner.read().expect("storage poisoned");
         let index = id.0 as usize;
@@ -66,7 +77,7 @@ impl ReadTrieStorage for MemTrieStorage {
 }
 
 /// A read-only snapshot of a [`MemTrieStorage`], taken at
-/// `BaseStorageReadWrite::to_readonly` time. `max_id` and `root` are captured
+/// [`ReadTrieStorage::snapshot`] time. `max_id` and `root` are captured
 /// when the snapshot is created, so later appends to the writer are invisible
 /// through it; the base pool itself is shared read-only.
 #[derive(Debug, Clone)]
@@ -77,6 +88,12 @@ pub struct MemReadStorage {
 }
 
 impl ReadTrieStorage for MemReadStorage {
+    type Snapshot = MemReadStorage;
+
+    fn snapshot(&self) -> Self::Snapshot {
+        self.clone()
+    }
+
     async fn read(&self, id: SlotBaseId) -> Result<SlotBase, TrieStorageReadError> {
         if id.0 == 0 {
             return Ok(SlotBase::new());
@@ -102,17 +119,7 @@ impl ReadTrieStorage for MemReadStorage {
     }
 }
 
-impl SnapshotStorage for MemReadStorage {
-    type Snapshot = MemReadStorage;
-
-    fn snapshot(&self) -> Self::Snapshot {
-        self.clone()
-    }
-}
-
 impl ReadWriteTrieStorage for MemTrieStorage {
-    type ReadOnly = MemReadStorage;
-
     fn next_id(&self) -> SlotBaseId {
         let inner = self.inner.read().expect("storage poisoned");
         SlotBaseId(inner.bases.len() as i32)
@@ -128,14 +135,5 @@ impl ReadWriteTrieStorage for MemTrieStorage {
     async fn write_root(&mut self, root: MapBase) -> Result<(), TrieStorageWriteError> {
         self.inner.write().expect("storage poisoned").root = Some(root);
         Ok(())
-    }
-
-    fn to_readonly(&self) -> Self::ReadOnly {
-        let inner = self.inner.read().expect("storage poisoned");
-        MemReadStorage {
-            inner: Arc::clone(&self.inner),
-            max_id: (inner.bases.len() - 1) as i32,
-            root: inner.root.clone(),
-        }
     }
 }

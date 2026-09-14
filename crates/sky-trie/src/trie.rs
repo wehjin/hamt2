@@ -49,8 +49,8 @@ impl<S: ReadWriteTrieStorage> Trie<S> {
     }
 
     /// A read-only view of this trie over a snapshot of its storage.
-    pub fn view(&self) -> TrieReader<S::ReadOnly> {
-        TrieReader::new(self.root.clone(), self.storage.to_readonly())
+    pub fn view(&self) -> TrieReader<S::Snapshot> {
+        TrieReader::new(self.root.clone(), self.storage.snapshot())
     }
 }
 

@@ -1,5 +1,5 @@
 use crate::trie_storage::errors::{TrieStorageReadError, TrieStorageWriteError};
-use crate::trie_storage::{ReadTrieStorage, ReadWriteTrieStorage, SnapshotStorage};
+use crate::trie_storage::{ReadTrieStorage, ReadWriteTrieStorage};
 use crate::types::slot_base::SlotBase;
 use sky_types::trie::map_base::MapBase;
 use sky_types::trie::slot_base_id::SlotBaseId;
@@ -134,6 +134,17 @@ impl Inner {
 }
 
 impl ReadTrieStorage for FileTrieStorage {
+    type Snapshot = FileReadStorage;
+
+    fn snapshot(&self) -> Self::Snapshot {
+        let inner = self.inner.read().expect("storage poisoned");
+        FileReadStorage {
+            bases_dir: inner.bases_dir.clone(),
+            max_id: inner.max_id,
+            root: inner.read_root().expect("read root"),
+        }
+    }
+
     async fn read(&self, id: SlotBaseId) -> Result<SlotBase, TrieStorageReadError> {
         if id.0 == 0 {
             return Ok(SlotBase::new());
@@ -164,7 +175,7 @@ impl ReadTrieStorage for FileTrieStorage {
 }
 
 /// A read-only, immutable view of a [`FileTrieStorage`] taken at
-/// `BaseStorageReadWrite::to_readonly` time.
+/// [`ReadTrieStorage::snapshot`] time.
 ///
 /// `max_id` and `root` are captured into memory when the view is created, so
 /// later appends or commits on the writer are invisible through it. Bases are
@@ -184,6 +195,12 @@ impl FileReadStorage {
 }
 
 impl ReadTrieStorage for FileReadStorage {
+    type Snapshot = FileReadStorage;
+
+    fn snapshot(&self) -> Self::Snapshot {
+        self.clone()
+    }
+
     async fn read(&self, id: SlotBaseId) -> Result<SlotBase, TrieStorageReadError> {
         if id.0 == 0 {
             return Ok(SlotBase::new());
@@ -211,17 +228,7 @@ impl ReadTrieStorage for FileReadStorage {
     }
 }
 
-impl SnapshotStorage for FileReadStorage {
-    type Snapshot = FileReadStorage;
-
-    fn snapshot(&self) -> Self::Snapshot {
-        self.clone()
-    }
-}
-
 impl ReadWriteTrieStorage for FileTrieStorage {
-    type ReadOnly = FileReadStorage;
-
     fn next_id(&self) -> SlotBaseId {
         let inner = self.inner.read().expect("storage poisoned");
         SlotBaseId(inner.max_id + 1)
@@ -263,15 +270,6 @@ impl ReadWriteTrieStorage for FileTrieStorage {
         {
             Ok(()) => future::ready(Ok(())),
             Err(e) => future::ready(Err(e)),
-        }
-    }
-
-    fn to_readonly(&self) -> Self::ReadOnly {
-        let inner = self.inner.read().expect("storage poisoned");
-        FileReadStorage {
-            bases_dir: inner.bases_dir.clone(),
-            max_id: inner.max_id,
-            root: inner.read_root().expect("read root"),
         }
     }
 }
@@ -410,7 +408,7 @@ mod tests {
         let id = storage.append(&base).await.expect("append");
         let root = one_kv(HashKey::new(7), TrieValue::U32(7), &mut storage).await;
         storage.write_root(root.clone()).await.expect("write root");
-        let view = storage.to_readonly();
+        let view = storage.snapshot();
 
         // Writes after the snapshot are invisible to the view.
         let new_id = storage.append(&base).await.expect("append");

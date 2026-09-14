@@ -37,7 +37,7 @@ impl Find for AttrsOfEin {
     where
         Self: Sized,
         T: StorageTrieQuery<S>,
-        S: SnapshotStorage,
+        S: ReadTrieStorage,
     {
         async move {
             // For now, use custom function `list_entity_attributes`. Later maybe make a program

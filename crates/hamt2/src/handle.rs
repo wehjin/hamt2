@@ -64,8 +64,8 @@ where
     }
 
     /// Returns a read-only snapshot of the db's current state.
-    pub async fn to_reader(&self) -> Result<DbReader<S::ReadOnly>, HandleError> {
-        let (tx, rx) = oneshot::channel::<Result<DbReader<S::ReadOnly>, LoadError>>();
+    pub async fn to_reader(&self) -> Result<DbReader<S::Snapshot>, HandleError> {
+        let (tx, rx) = oneshot::channel::<Result<DbReader<S::Snapshot>, LoadError>>();
         let msg = WorkerCommand::Reader(tx);
         self.sender
             .send(msg)
@@ -89,7 +89,7 @@ where
 
 enum WorkerCommand<S: ReadWriteTrieStorage> {
     Transact(Vec<Datom>, oneshot::Sender<()>),
-    Reader(oneshot::Sender<Result<DbReader<S::ReadOnly>, LoadError>>),
+    Reader(oneshot::Sender<Result<DbReader<S::Snapshot>, LoadError>>),
 }
 
 async fn run_worker<S: ReadWriteTrieStorage + Send + Sync + 'static>(

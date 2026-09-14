@@ -35,7 +35,7 @@ impl Find for AttrWithName {
     where
         Self: Sized,
         T: StorageTrieQuery<S>,
-        S: SnapshotStorage,
+        S: ReadTrieStorage,
     {
         async move {
             let attr = schema.find_attr_by_name(&self.attr_name);

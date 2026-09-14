@@ -1,6 +1,6 @@
 use crate::TrieReader;
 use crate::crate_services::map_base::{kv_stream, query_keys_values, query_value};
-use crate::trie_storage::{ReadTrieStorage, SnapshotStorage};
+use crate::trie_storage::ReadTrieStorage;
 use crate::types::DeepKey;
 use crate::types::HashKey;
 use crate::types::trie_value::TrieValue;
@@ -79,7 +79,7 @@ pub trait StorageTrieQuery<S: ReadTrieStorage> {
     /// A stream of all the sub-tries in this trie.
     fn subtrie_stream<'a>(&'a self) -> impl Stream<Item = (i32, TrieReader<S::Snapshot>)> + 'a
     where
-        S: SnapshotStorage + 'a,
+        S: 'a,
     {
         let storage = self.storage();
         let stream = kv_stream(self.root().clone(), self.storage());
@@ -89,10 +89,7 @@ pub trait StorageTrieQuery<S: ReadTrieStorage> {
     }
 
     /// Converts a map-base value into a sub-trie over a snapshot of the storage.
-    fn to_subtrie_from_value(&self, value: TrieValue) -> Option<TrieReader<S::Snapshot>>
-    where
-        S: SnapshotStorage,
-    {
+    fn to_subtrie_from_value(&self, value: TrieValue) -> Option<TrieReader<S::Snapshot>> {
         TrieReader::subtrie_from_value(value, self.storage().snapshot())
     }
 }
