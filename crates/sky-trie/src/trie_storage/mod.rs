@@ -14,7 +14,7 @@ pub trait ReadTrieStorage: Sync {
     /// The storage type of an owned read-only snapshot, produced by
     /// [`ReadTrieStorage::snapshot`]. Writer storages use their read-only
     /// snapshot type; read-only snapshot types usually use `Self`.
-    type Snapshot: ReadTrieStorage + Send;
+    type Snapshot: ReadTrieStorage + Send + Clone;
 
     /// Returns an owned read-only snapshot of this storage. The snapshot does
     /// not observe writes made after this call.

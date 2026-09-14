@@ -7,8 +7,8 @@ use futures::stream;
 use sky_types::trie::error::TrieQueryError;
 use sky_types::trie::map_base::MapBase;
 
-pub struct State<'a, S: ReadTrieStorage> {
-    storage: &'a S,
+pub struct State<S: ReadTrieStorage> {
+    storage: S,
     jobs: Vec<Job>,
 }
 
@@ -28,10 +28,10 @@ pub async fn query_value(
     Ok(value)
 }
 
-pub fn kv_stream<'a, S: ReadTrieStorage>(
+pub fn kv_stream<S: ReadTrieStorage>(
     map_base: MapBase,
-    storage: &'a S,
-) -> impl Stream<Item = (i32, TrieValue)> + 'a {
+    storage: S,
+) -> impl Stream<Item = (i32, TrieValue)> {
     let state = State {
         storage,
         jobs: Job::start(&map_base).into_iter().collect::<Vec<_>>(),

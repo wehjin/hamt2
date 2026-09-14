@@ -20,7 +20,7 @@ mod tests {
     async fn test_stream_kvs_empty_map() {
         let storage = MemTrieStorage::new();
         let map_base = MapBase::empty();
-        let stream = kv_stream(map_base, &storage);
+        let stream = kv_stream(map_base, storage);
         let kvs = stream.collect::<Vec<_>>().await;
         assert!(kvs.is_empty());
     }
@@ -30,7 +30,7 @@ mod tests {
         let value = TrieValue::from(11);
         let mut storage = MemTrieStorage::new();
         let map_base = one_kv(key, value.clone(), &mut storage).await;
-        let stream = kv_stream(map_base, &storage);
+        let stream = kv_stream(map_base, storage);
         let kvs = stream.collect::<Vec<_>>().await;
         assert_eq!(vec![(key.i32(), value)], kvs);
     }
@@ -54,7 +54,7 @@ mod tests {
             }
             map_base
         };
-        let stream = kv_stream(map_base, &storage);
+        let stream = kv_stream(map_base, storage);
         let mut kvs = stream.collect::<Vec<_>>().await;
         kvs.sort_by_key(|(k, _)| *k);
         assert_eq!(test_kvs, kvs);

@@ -62,11 +62,8 @@ pub trait StorageTrieQuery<S: ReadTrieStorage> {
     }
 
     /// A stream of all `U32` values in this trie, skipping map-base values.
-    fn u32_stream<'a>(&'a self) -> impl Stream<Item = (i32, u32)> + 'a
-    where
-        S: 'a,
-    {
-        let stream = kv_stream(self.root().clone(), self.storage());
+    fn u32_stream(&self) -> impl Stream<Item = (i32, u32)> {
+        let stream = kv_stream(self.root().clone(), self.storage().snapshot());
         stream.filter_map(|(key, value)| async move {
             if let TrieValue::U32(val) = value {
                 Some((key, val))
@@ -77,14 +74,15 @@ pub trait StorageTrieQuery<S: ReadTrieStorage> {
     }
 
     /// A stream of all the sub-tries in this trie.
-    fn subtrie_stream<'a>(&'a self) -> impl Stream<Item = (i32, TrieReader<S::Snapshot>)> + 'a
-    where
-        S: 'a,
-    {
-        let storage = self.storage();
-        let stream = kv_stream(self.root().clone(), self.storage());
-        stream.filter_map(move |(key, value)| async move {
-            TrieReader::subtrie_from_value(value, storage.snapshot()).map(|subtrie| (key, subtrie))
+    fn subtrie_stream(&self) -> impl Stream<Item = (i32, TrieReader<S::Snapshot>)> {
+        let storage = self.storage().snapshot();
+        let stream = kv_stream(self.root().clone(), storage.clone());
+        stream.filter_map(move |(key, value)| {
+            let storage = storage.clone();
+            async move {
+                TrieReader::subtrie_from_value(value, storage)
+                    .map(|subtrie| (key, subtrie))
+            }
         })
     }
 
