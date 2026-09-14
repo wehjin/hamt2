@@ -10,7 +10,7 @@ pub mod types;
 
 pub use error::*;
 pub use trie::*;
-pub use trie_query::TrieQuery;
+pub use trie_query::StorageTrieQuery;
 pub use trie_reader::TrieReader;
 pub use trie_ref::TrieRef;
 
@@ -20,7 +20,7 @@ mod tests {
     use crate::trie_storage::file::FileTrieStorage;
     use crate::trie_storage::mem::MemTrieStorage;
     use crate::types::trie_value::TrieValue;
-    use crate::{Trie, TrieQuery, TrieReader};
+    use crate::{Trie, StorageTrieQuery, TrieReader};
 
     #[tokio::test]
     async fn file_trie_works() -> anyhow::Result<()> {

@@ -15,7 +15,7 @@ use sky_types::trie::map_base::MapBase;
 /// Every query method is provided by default; implementations only need to
 /// expose the root map base and the storage.
 #[allow(async_fn_in_trait)]
-pub trait TrieQuery<S: ReadTrieStorage> {
+pub trait StorageTrieQuery<S: ReadTrieStorage> {
     /// The root map base of this trie.
     fn root(&self) -> &MapBase;
 

@@ -1,4 +1,4 @@
-use crate::TrieQuery;
+use crate::StorageTrieQuery;
 use crate::TrieWriteError;
 use crate::crate_services::map_base::{self, query_value};
 use crate::prelude::TrieValue;
@@ -16,7 +16,7 @@ pub struct Trie<S: ReadWriteTrieStorage> {
     storage: S,
 }
 
-impl<S: ReadWriteTrieStorage> TrieQuery<S> for Trie<S> {
+impl<S: ReadWriteTrieStorage> StorageTrieQuery<S> for Trie<S> {
     fn root(&self) -> &MapBase {
         &self.root
     }

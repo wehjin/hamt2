@@ -1,4 +1,4 @@
-use crate::trie_query::TrieQuery;
+use crate::trie_query::StorageTrieQuery;
 use crate::trie_storage::ReadTrieStorage;
 use crate::trie_storage::errors::TrieStorageReadError;
 use sky_types::trie::map_base::MapBase;
@@ -18,7 +18,7 @@ impl<S: ReadTrieStorage> TrieReader<S> {
     }
 }
 
-impl<S: ReadTrieStorage> TrieQuery<S> for TrieReader<S> {
+impl<S: ReadTrieStorage> StorageTrieQuery<S> for TrieReader<S> {
     fn root(&self) -> &MapBase {
         &self.root
     }
