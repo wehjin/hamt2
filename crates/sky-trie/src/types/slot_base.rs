@@ -1,6 +1,7 @@
 use crate::TrieWriteError;
 use crate::trie_storage::ReadWriteTrieStorage;
 use crate::types::HashKey;
+use crate::types::map_base;
 use crate::types::slot::Slot;
 use crate::types::trie_value::TrieValue;
 use serde::{Deserialize, Serialize};
@@ -69,10 +70,11 @@ impl SlotBase {
         let SlotBase { mut slots } = self;
         let pre_slot = slots.remove(base_index);
         let post_slot = {
-            let Slot::MapBase(map_base) = pre_slot else {
+            let Slot::MapBase(pre_map_base) = pre_slot else {
                 unreachable!("Should be a map-base slot, not a key-value slot:")
             };
-            let post_map_base = map_base.insert_kv(key.next(), value, storage).await?;
+            let post_map_base =
+                map_base::insert_kv(pre_map_base, key.next(), value, storage).await?;
             Slot::MapBase(post_map_base)
         };
         slots.insert(base_index, post_slot);

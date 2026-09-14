@@ -2,7 +2,7 @@ use crate::TrieQuery;
 use crate::trie_ref::TrieRef;
 use crate::trie_storage::ReadWriteTrieStorage;
 use crate::trie_storage::errors::{TrieStorageReadError, TrieStorageWriteError};
-use crate::types::map_base::{MapBase, query_value};
+use crate::types::map_base::{self, MapBase, query_value};
 use std::collections::HashMap;
 
 use crate::TrieWriteError;
@@ -58,7 +58,7 @@ impl<S: ReadWriteTrieStorage> Trie<S> {
 impl<S: ReadWriteTrieStorage> Trie<S> {
     pub async fn insert(mut self, key: i32, value: TrieValue) -> Result<Self, TrieWriteError> {
         let key = HashKey::new(key);
-        let root = self.root.insert_kv(key, value, &mut self.storage).await?;
+        let root = map_base::insert_kv(self.root, key, value, &mut self.storage).await?;
         self.root = root;
         Ok(self)
     }
@@ -93,11 +93,9 @@ impl<S: ReadWriteTrieStorage> Trie<S> {
         let mut value = value.into();
         for i in (0..=last_index).rev() {
             let key = deep_key[i].clone();
-            let map_base = map_bases.get(&i).expect("map_base should exist");
-            let post_map_base = map_base
-                .clone()
-                .insert_kv(key, value, &mut self.storage)
-                .await?;
+            let pre_map_base = map_bases.get(&i).expect("map_base should exist");
+            let post_map_base =
+                map_base::insert_kv(pre_map_base.clone(), key, value, &mut self.storage).await?;
             value = TrieValue::SubTrie(post_map_base);
         }
         let TrieValue::SubTrie(root) = value else {

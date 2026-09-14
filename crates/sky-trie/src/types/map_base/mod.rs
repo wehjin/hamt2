@@ -7,6 +7,7 @@ pub mod insert;
 pub mod query;
 
 pub use cons::*;
+pub use insert::insert_kv;
 pub use query::{kv_stream, query_keys_values, query_value};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
@@ -19,6 +20,7 @@ pub struct MapBase {
 mod tests {
     use crate::trie_storage::mem::MemTrieStorage;
     use crate::types::HashKey;
+    use crate::types::map_base;
     use crate::types::map_base::*;
     use crate::types::trie_value::TrieValue;
     use tokio_stream::StreamExt;
@@ -57,7 +59,7 @@ mod tests {
             for kv in &test_kvs[1..] {
                 let key = HashKey::new(kv.0);
                 let value = kv.1.clone();
-                map_base = map_base.insert_kv(key, value, &mut storage).await?;
+                map_base = map_base::insert_kv(map_base, key, value, &mut storage).await?;
             }
             map_base
         };
