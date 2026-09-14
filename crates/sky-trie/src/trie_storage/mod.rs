@@ -1,6 +1,6 @@
+use crate::types::map_base::MapBase;
 use crate::types::slot_base::SlotBase;
 use crate::types::slot_base_id::SlotBaseId;
-use crate::types::map_base::MapBase;
 use errors::{TrieStorageReadError, TrieStorageWriteError};
 
 pub mod errors;
@@ -12,7 +12,10 @@ pub mod mem;
 /// Base id 0 is reserved and always represents the empty base.
 pub trait ReadTrieStorage: Sync {
     /// Reads a base from storage.
-    fn read(&self, id: SlotBaseId) -> impl Future<Output = Result<SlotBase, TrieStorageReadError>> + Send;
+    fn read(
+        &self,
+        id: SlotBaseId,
+    ) -> impl Future<Output = Result<SlotBase, TrieStorageReadError>> + Send;
 
     /// Returns the highest base id in the storage or none if empty. Base id 0 (the empty base) is not counted.
     fn max_id(&self) -> Option<SlotBaseId>;
@@ -72,7 +75,10 @@ mod tests {
     #[tokio::test]
     async fn base_id_zero_is_the_empty_base() {
         let storage = MemTrieStorage::new();
-        assert_eq!(SlotBase::new(), storage.read(SlotBaseId(0)).await.expect("read"));
+        assert_eq!(
+            SlotBase::new(),
+            storage.read(SlotBaseId(0)).await.expect("read")
+        );
     }
 
     #[tokio::test]

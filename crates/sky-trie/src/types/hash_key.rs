@@ -1,6 +1,6 @@
-use universal_hash;
 use crate::types::slot_map::SlotMap;
 use serde::{Deserialize, Serialize};
+use universal_hash;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Serialize, Deserialize)]
 pub struct HashKey {

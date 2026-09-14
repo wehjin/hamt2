@@ -1,9 +1,9 @@
 use crate::TrieWriteError;
 use crate::trie_storage::ReadWriteTrieStorage;
-use crate::types::slot_base::SlotBase;
 use crate::types::HashKey;
 use crate::types::map_base::MapBase;
 use crate::types::slot::{KvTest, Slot};
+use crate::types::slot_base::SlotBase;
 use crate::types::trie_value::TrieValue;
 
 impl MapBase {
@@ -32,11 +32,7 @@ impl MapBase {
                     }
                     KvTest::MapBaseConflict => {
                         let post_base = Box::pin(SlotBase::merge_kv(
-                            read_base,
-                            base_index,
-                            key,
-                            value,
-                            storage,
+                            read_base, base_index, key, value, storage,
                         ))
                         .await?;
                         let id = storage.append(&post_base).await.expect("append base");

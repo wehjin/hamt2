@@ -9,10 +9,10 @@ pub mod trie_reader;
 pub mod trie_ref;
 
 pub use error::*;
+pub use trie::*;
 pub use trie_query::TrieQuery;
 pub use trie_reader::TrieReader;
 pub use trie_ref::TrieRef;
-pub use trie::*;
 
 #[cfg(test)]
 mod tests {

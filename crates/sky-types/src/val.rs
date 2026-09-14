@@ -1,5 +1,4 @@
-use crate::db::Ein;
-use crate::trie::prelude::*;
+use crate::Ein;
 use serde::{Deserialize, Serialize};
 
 pub fn val(from: impl Into<Val>) -> Val {
@@ -47,15 +46,6 @@ impl Val {
         match self {
             Val::U32(_) => None,
             Val::String(s) => Some(s.clone()),
-        }
-    }
-}
-
-impl From<TrieValue> for Val {
-    fn from(value: TrieValue) -> Self {
-        match value {
-            TrieValue::U32(v) => Val::U32(v),
-            TrieValue::SubTrie(_) => unreachable!(),
         }
     }
 }

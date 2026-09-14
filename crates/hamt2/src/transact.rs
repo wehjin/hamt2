@@ -1,10 +1,10 @@
 use crate::TransactError;
+use crate::db::db_trie;
 use crate::db::types::MaxEid;
 use crate::db::types::ent_eid::EntEid;
-use crate::db::db_trie;
-use crate::db::{ Db,  val};
-use crate::types::*;
+use crate::db::{Db, val};
 use crate::trie::prelude::*;
+use crate::types::*;
 
 impl<S: ReadWriteTrieStorage> Db<S> {
     pub async fn transact(self, datoms: impl Into<Vec<Datom>>) -> Result<Self, TransactError> {

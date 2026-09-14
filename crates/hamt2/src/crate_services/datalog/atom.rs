@@ -1,8 +1,8 @@
-use crate::db::Attr;
 use crate::crate_services::datalog::kb::KnowledgeBase;
 use crate::crate_services::datalog::sub::Substitution;
 use crate::crate_services::datalog::term::Term;
 use crate::crate_services::datalog::var::Var;
+use crate::db::Attr;
 use crate::trie::prelude::*;
 
 pub fn atom(attr: impl Into<Attr>, terms: impl Into<Vec<Term>>) -> Atom {

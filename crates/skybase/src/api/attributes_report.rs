@@ -10,9 +10,9 @@ pub struct AttributesReport {
 
 #[server]
 pub async fn get_entity_attributes_report(ein: Ein) -> Result<AttributesReport, ServerFnError> {
+    use hamt2::find::AttrsOfEin;
     use hamt2::handle::DbHandle;
     use hamt2::query::DbQuery;
-    use hamt2::find::AttrsOfEin;
     use hamt2::storage::MemDbStorage;
     use leptos::prelude::expect_context;
 

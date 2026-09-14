@@ -1,8 +1,8 @@
 use crate::TrieQueryError;
 use crate::trie_ref::TrieRef;
 use crate::trie_storage::ReadTrieStorage;
-use crate::types::HashKey;
 use crate::types::DeepKey;
+use crate::types::HashKey;
 use crate::types::map_base::MapBase;
 use crate::types::trie_value::TrieValue;
 use futures::Stream;

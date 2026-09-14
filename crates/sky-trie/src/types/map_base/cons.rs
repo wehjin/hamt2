@@ -1,9 +1,9 @@
 use crate::trie_storage::ReadWriteTrieStorage;
-use crate::types::slot_base::SlotBase;
-use crate::types::slot_base_id::SlotBaseId;
 use crate::types::HashKey;
 use crate::types::map_base::MapBase;
 use crate::types::slot::Slot;
+use crate::types::slot_base::SlotBase;
+use crate::types::slot_base_id::SlotBaseId;
 use crate::types::slot_map::SlotMap;
 use crate::types::trie_value::TrieValue;
 
@@ -20,7 +20,10 @@ impl MapBase {
         value: TrieValue,
         storage: &mut impl ReadWriteTrieStorage,
     ) -> Self {
-        let id = storage.append(&SlotBase::new_kv(key, value)).await.expect("append base");
+        let id = storage
+            .append(&SlotBase::new_kv(key, value))
+            .await
+            .expect("append base");
         Self {
             map: SlotMap::set_key_bit(key),
             base: id,
