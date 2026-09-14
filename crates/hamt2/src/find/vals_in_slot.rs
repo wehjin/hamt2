@@ -3,8 +3,8 @@ use crate::crate_services::datalog::term::term;
 use crate::crate_services::datalog::var::var;
 use crate::db::{Ein, Val, val};
 use crate::find::Find;
-use crate::find::types::find_result::FindResult;
 use crate::types::Attr;
+use sky_types::FindResult;
 
 pub struct ValsInSlot {
     ein: Ein,

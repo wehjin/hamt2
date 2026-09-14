@@ -12,13 +12,13 @@ use crate::db::types::key::{KEY_AEVT, KEY_EAVT, KEY_MAX_TXID};
 use crate::db::vid::Vid;
 use crate::db::{Ein, Schema};
 use crate::db::{Txid, Val, txid};
-use crate::find::types::find_result::FindResult;
 use crate::trie::prelude::*;
 use crate::types::Attr;
 use crate::types::dir::Dir;
 use async_stream::stream;
 use futures::{StreamExt, pin_mut};
 use serde::{Deserialize, Serialize};
+use sky_types::FindResult;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

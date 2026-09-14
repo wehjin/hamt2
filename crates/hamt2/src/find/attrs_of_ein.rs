@@ -4,8 +4,8 @@ use crate::db::Schema;
 use crate::db::db_trie;
 use crate::db::{Attr, Ein};
 use crate::find::Find;
-use crate::find::types::find_result::FindResult;
 use crate::trie::prelude::*;
+use sky_types::FindResult;
 use std::future::Future;
 
 pub struct AttrsOfEin {

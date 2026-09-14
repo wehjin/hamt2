@@ -6,7 +6,7 @@ use crate::db::Attr;
 use crate::db::attr_spec::AttrSpec;
 use crate::db::attribute::Attribute;
 use crate::find::Find;
-use crate::find::types::find_result::FindResult;
+use sky_types::FindResult;
 use std::collections::HashMap;
 
 pub struct AttributeLoader(HashMap<String, Attr>);

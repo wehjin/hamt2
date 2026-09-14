@@ -4,7 +4,7 @@ use crate::crate_services::datalog::var::var;
 use crate::db::Attr;
 use crate::db::{Ein, Val};
 use crate::find::Find;
-use crate::find::types::find_result::FindResult;
+use sky_types::FindResult;
 
 pub struct BindsForAttr {
     attr: Attr,

@@ -4,8 +4,8 @@ use crate::crate_services::datalog::atom::Atom;
 use crate::db::AttrName;
 use crate::db::{Attr, Schema};
 use crate::find::Find;
-use crate::find::types::find_result::FindResult;
 use crate::trie::prelude::*;
+use sky_types::FindResult;
 use std::future::Future;
 
 pub struct AttrWithName {

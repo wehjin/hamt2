@@ -18,7 +18,7 @@ pub use attr_with_name::*;
 pub use attrs_of_ein::*;
 pub use binds_for_attr::*;
 pub use eins_with_attr::*;
-use types::find_result::FindResult;
+use sky_types::FindResult;
 pub use vals_in_slot::*;
 
 pub trait Find {
