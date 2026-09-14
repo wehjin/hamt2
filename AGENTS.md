@@ -23,6 +23,10 @@ Hash Array Mapped Tries (HAMT). A Cargo workspace: `hamt2` (the Datomic-style db
   Leptos frontend/backend; `skybase::db` is its database layer (a `Db` wrapper over `hamt2` for reading the
   skybase version). `cargo leptos` needs `cargo-leptos` installed; it compiles the `hydrate` feature (wasm) and `ssr`
   feature (native axum server) targets.
+- `rust-analyzer` (CLI) — available for occasional read-only semantic checks: `rust-analyzer analysis-stats
+  crates/sky-trie` (full semantic analysis + stats, independent of `cargo check`) and `rust-analyzer diagnostics .`
+  (LSP-style diagnostic dump). Not an interactive query tool — no per-position hover/types; subcommand flags are
+  unstable, so prefer `cargo check` for day-to-day diagnostics and use this to cross-check or reproduce LSP behavior.
 
 ## Architecture (read top-down in this order)
 
