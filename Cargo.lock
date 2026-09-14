@@ -2084,6 +2084,7 @@ dependencies = [
  "futures",
  "postcard",
  "serde",
+ "sky-types",
  "tempfile",
  "thiserror 2.0.20",
  "tokio",

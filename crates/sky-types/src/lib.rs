@@ -7,6 +7,7 @@ pub mod dir;
 pub mod ein;
 pub mod ent;
 pub mod find_result;
+pub mod trie;
 pub mod val;
 
 pub use attr::*;

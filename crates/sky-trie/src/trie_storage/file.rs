@@ -2,7 +2,7 @@ use crate::trie_storage::errors::{TrieStorageReadError, TrieStorageWriteError};
 use crate::trie_storage::{ReadTrieStorage, ReadWriteTrieStorage};
 use crate::types::map_base::MapBase;
 use crate::types::slot_base::SlotBase;
-use crate::types::slot_base_id::SlotBaseId;
+use sky_types::trie::slot_base_id::SlotBaseId;
 use std::future;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};

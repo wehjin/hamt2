@@ -1,6 +1,6 @@
-use crate::types::slot_base_id::SlotBaseId;
 use crate::types::slot_map::SlotMap;
 use serde::{Deserialize, Serialize};
+use sky_types::trie::slot_base_id::SlotBaseId;
 
 pub mod cons;
 pub mod insert;

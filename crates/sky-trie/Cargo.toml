@@ -9,6 +9,7 @@ serde.workspace = true
 thiserror.workspace = true
 postcard = { workspace = true, features = ["alloc"] }
 futures.workspace = true
+sky-types.workspace = true
 
 [dev-dependencies]
 anyhow.workspace = true

@@ -2,8 +2,8 @@ use crate::trie_storage::errors::{TrieStorageReadError, TrieStorageWriteError};
 use crate::trie_storage::{ReadTrieStorage, ReadWriteTrieStorage};
 use crate::types::map_base::MapBase;
 use crate::types::slot_base::SlotBase;
-use crate::types::slot_base_id::SlotBaseId;
 use serde::{Deserialize, Serialize};
+use sky_types::trie::slot_base_id::SlotBaseId;
 
 /// An in-memory storage for Bases backed by a `Vec<Base>`.
 ///

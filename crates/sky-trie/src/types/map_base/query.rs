@@ -87,7 +87,7 @@ impl MapBase {
 struct Job {
     slot_offset: usize,
     slot_count: usize,
-    base: crate::types::slot_base_id::SlotBaseId,
+    base: sky_types::trie::slot_base_id::SlotBaseId,
 }
 impl Job {
     pub fn start(map_base: &MapBase) -> Option<Self> {

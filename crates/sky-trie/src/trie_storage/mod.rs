@@ -1,7 +1,7 @@
 use crate::types::map_base::MapBase;
 use crate::types::slot_base::SlotBase;
-use crate::types::slot_base_id::SlotBaseId;
 use errors::{TrieStorageReadError, TrieStorageWriteError};
+use sky_types::trie::SlotBaseId;
 
 pub mod errors;
 pub mod file;
