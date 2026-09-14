@@ -1,5 +1,3 @@
-use crate::QueryError;
-
 use crate::crate_services::datalog::atom::Atom;
 use crate::db::AttrName;
 use crate::db::{Attr, Schema};
@@ -33,11 +31,7 @@ impl Find for AttrWithName {
         unreachable!()
     }
 
-    fn apply<T, S>(
-        self,
-        _trie: &T,
-        schema: &Schema,
-    ) -> impl Future<Output = Result<Vec<Self::Output>, QueryError>>
+    fn apply<T, S>(self, _trie: &T, schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
     where
         Self: Sized,
         T: TrieQuery<S>,
@@ -45,8 +39,7 @@ impl Find for AttrWithName {
     {
         async move {
             let attr = schema.find_attr_by_name(&self.attr_name);
-            let vec = attr.into_iter().cloned().collect::<Vec<_>>();
-            Ok(vec)
+            attr.into_iter().cloned().collect::<Vec<_>>()
         }
     }
 }

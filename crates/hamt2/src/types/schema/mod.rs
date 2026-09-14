@@ -82,7 +82,7 @@ impl Schema {
         {
             // Find attributes for the requested attrs in the db.
             let loader = AttributeLoader::new(attrs);
-            let attributes = loader.apply(&db.trie, &db.schema).await?;
+            let attributes = loader.apply(&db.trie, &db.schema).await;
             schema.extend(attributes);
             // Confirm we have found an attribute for every requested attr.
             for attr in attrs.iter() {

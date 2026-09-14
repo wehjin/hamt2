@@ -17,7 +17,7 @@ async fn mem_db_works() -> anyhow::Result<()> {
         ])
         .await?;
 
-    let mut eins = db.find(EinsWithAttr::new(ATTR_COUNT)).await?;
+    let mut eins = db.find(EinsWithAttr::new(ATTR_COUNT)).await;
     eins.sort();
 
     for ein in eins {

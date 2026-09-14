@@ -1,5 +1,3 @@
-use crate::QueryError;
-
 mod all_eins;
 mod attr_with_name;
 mod attrs_of_ein;
@@ -28,11 +26,7 @@ pub trait Find {
     fn where_(&self) -> Vec<Atom>;
     fn process(self, result: FindResult) -> Vec<Self::Output>;
 
-    fn apply<T, S>(
-        self,
-        trie: &T,
-        schema: &Schema,
-    ) -> impl Future<Output = Result<Vec<Self::Output>, QueryError>>
+    fn apply<T, S>(self, trie: &T, schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
     where
         Self: Sized,
         T: TrieQuery<S>,
@@ -42,8 +36,7 @@ pub trait Find {
             let select = self.select();
             let where_ = self.where_();
             let result = db_trie::find(trie, schema, select, where_).await;
-            let final_result = self.process(result);
-            Ok(final_result)
+            self.process(result)
         }
     }
 }
@@ -64,7 +57,7 @@ mod tests {
         let txn = [datom::add(10, attr, 42)];
         let db = db.transact(txn).await.unwrap();
         let reader = db.to_reader().await;
-        let found = reader.find(BindsForAttr::new(attr)).await.unwrap();
+        let found = reader.find(BindsForAttr::new(attr)).await;
         assert_eq!(&[(ein(10), val(42))], found.as_slice());
     }
 }

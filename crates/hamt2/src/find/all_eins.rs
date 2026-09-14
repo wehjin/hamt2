@@ -1,4 +1,3 @@
-use crate::QueryError;
 use crate::crate_services::datalog::atom::Atom;
 use crate::db::Ein;
 use crate::db::Schema;
@@ -31,19 +30,12 @@ impl Find for AllEins {
         unreachable!()
     }
 
-    fn apply<T, S>(
-        self,
-        trie: &T,
-        _schema: &Schema,
-    ) -> impl Future<Output = Result<Vec<Self::Output>, QueryError>>
+    fn apply<T, S>(self, trie: &T, _schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
     where
         Self: Sized,
         T: TrieQuery<S>,
         S: ReadTrieStorage,
     {
-        async move {
-            let eins = db_trie::list_entities(trie).await;
-            Ok(eins)
-        }
+        db_trie::list_entities(trie)
     }
 }

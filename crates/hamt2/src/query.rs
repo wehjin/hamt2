@@ -7,19 +7,17 @@ use crate::trie::prelude::*;
 use futures::FutureExt;
 
 pub trait DbQuery {
-    fn find<F: Find>(&self, find: F) -> impl Future<Output = Result<Vec<F::Output>, QueryError>>;
-
-    fn get<F: Find>(&self, find: F) -> impl Future<Output = Vec<F::Output>> {
-        async move { self.find(find).await.expect("find should succeed") }
-    }
+    fn find<F: Find>(&self, find: F) -> impl Future<Output = Vec<F::Output>>;
 
     fn find_val(
         &self,
         e: impl Into<Ein>,
         a: Attr,
     ) -> impl Future<Output = Result<Option<Val>, QueryError>> {
-        self.find(ValsInSlot::new(e, a))
-            .map(|result| result.map(|vals| vals.first().cloned()))
+        async move {
+            let find = self.find(ValsInSlot::new(e, a)).await;
+            Ok(find.first().cloned())
+        }
     }
 
     fn get_val(&self, e: impl Into<Ein>, a: Attr) -> impl Future<Output = Val> {
@@ -44,7 +42,7 @@ impl<S: ReadWriteTrieStorage> Db<S> {
 }
 
 impl<S: ReadWriteTrieStorage> DbQuery for Db<S> {
-    fn find<F: Find>(&self, find: F) -> impl Future<Output = Result<Vec<F::Output>, QueryError>> {
+    fn find<F: Find>(&self, find: F) -> impl Future<Output = Vec<F::Output>> {
         find.apply(&self.trie, &self.schema)
     }
 }

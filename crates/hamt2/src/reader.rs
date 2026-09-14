@@ -1,8 +1,8 @@
+use crate::LoadError;
 use crate::db::{Db, Schema};
 use crate::find::Find;
 use crate::query::DbQuery;
 use crate::trie::prelude::*;
-use crate::{LoadError, QueryError};
 
 /// A read-only snapshot of a [`Db`], for running queries only.
 #[derive(Debug)]
@@ -26,7 +26,7 @@ impl<S: ReadTrieStorage> DbReader<S> {
 }
 
 impl<S: ReadTrieStorage> DbQuery for DbReader<S> {
-    fn find<F: Find>(&self, find: F) -> impl Future<Output = Result<Vec<F::Output>, QueryError>> {
+    fn find<F: Find>(&self, find: F) -> impl Future<Output = Vec<F::Output>> {
         find.apply(&self.read_trie, &self.schema)
     }
 }

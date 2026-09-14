@@ -18,7 +18,7 @@ async fn db_reader_works() -> anyhow::Result<()> {
         ])
         .await?;
 
-    let mut eins = db.find(EinsWithAttr::new(ATTR_COUNT)).await?;
+    let mut eins = db.find(EinsWithAttr::new(ATTR_COUNT)).await;
     eins.sort();
     assert_eq!(vec![ein(1), ein(2), ein(3)], eins);
 
@@ -45,7 +45,8 @@ async fn db_reader_finds_entities() {
         .await
         .unwrap();
 
-    let mut eins = db.to_reader().await.get(AllEins).await;
+    let self1 = &db.to_reader().await;
+    let mut eins = (async move { self1.find(AllEins).await }).await;
     eins.sort();
     assert_eq!(vec![ein(0), ein(1), ein(2), ein(100)], eins);
 }
@@ -59,6 +60,7 @@ async fn db_reader_lists_entity_attributes() {
         .await
         .unwrap();
     let reader = db.to_reader().await;
-    let attrs = reader.get(AttrsOfEin::new(100)).await;
+    let find = AttrsOfEin::new(100);
+    let attrs = (async move { reader.find(find).await }).await;
     assert_eq!(&[ATTR_COUNT], &attrs[..]);
 }

@@ -1,4 +1,3 @@
-use crate::QueryError;
 use crate::crate_services::datalog::atom::Atom;
 use crate::db::Schema;
 use crate::db::db_trie;
@@ -34,11 +33,7 @@ impl Find for AttrsOfEin {
         unreachable!()
     }
 
-    fn apply<T, S>(
-        self,
-        trie: &T,
-        schema: &Schema,
-    ) -> impl Future<Output = Result<Vec<Self::Output>, QueryError>>
+    fn apply<T, S>(self, trie: &T, schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
     where
         Self: Sized,
         T: TrieQuery<S>,
@@ -52,7 +47,7 @@ impl Find for AttrsOfEin {
                 .into_iter()
                 .filter_map(|attr_ein| schema.find_attr(attr_ein).copied())
                 .collect::<Vec<_>>();
-            Ok(attrs)
+            attrs
         }
     }
 }
