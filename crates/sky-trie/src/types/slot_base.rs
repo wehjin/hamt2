@@ -1,7 +1,7 @@
 use crate::TrieWriteError;
+use crate::crate_services::map_base;
 use crate::trie_storage::ReadWriteTrieStorage;
 use crate::types::HashKey;
-use crate::types::map_base;
 use crate::types::slot::Slot;
 use crate::types::trie_value::TrieValue;
 use serde::{Deserialize, Serialize};

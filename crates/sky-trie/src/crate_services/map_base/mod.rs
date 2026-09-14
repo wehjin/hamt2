@@ -8,10 +8,10 @@ pub use query::*;
 
 #[cfg(test)]
 mod tests {
+    use crate::crate_services::map_base;
+    use crate::crate_services::map_base::*;
     use crate::trie_storage::mem::MemTrieStorage;
     use crate::types::HashKey;
-    use crate::types::map_base;
-    use crate::types::map_base::*;
     use crate::types::trie_value::TrieValue;
     use sky_types::trie::map_base::MapBase;
     use tokio_stream::StreamExt;

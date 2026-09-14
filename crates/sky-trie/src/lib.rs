@@ -1,12 +1,12 @@
+pub(crate) mod crate_services;
 pub mod error;
 pub mod prelude;
-pub mod trie_storage;
-pub mod types;
-
 mod trie;
 pub mod trie_query;
 pub mod trie_reader;
 pub mod trie_ref;
+pub mod trie_storage;
+pub mod types;
 
 pub use error::*;
 pub use trie::*;
@@ -119,23 +119,19 @@ mod tests {
     #[tokio::test]
     async fn read_trie_queries_work() -> anyhow::Result<()> {
         let storage = {
-            let mut trie = Trie::connect(MemTrieStorage::new()).await.unwrap();
-            trie = trie.insert(1, TrieValue::U32(42)).await.unwrap();
+            let mut trie = Trie::connect(MemTrieStorage::new()).await?;
+            trie = trie.insert(1, TrieValue::U32(42)).await?;
             trie = trie
                 .deep_insert([2, 42], TrieValue::U32(242), false)
-                .await
-                .unwrap();
-            trie.commit().await.unwrap().close()
+                .await?;
+            trie.commit().await?.close()
         };
         let view_storage = storage.to_readonly();
-        let read_trie = TrieReader::connect(view_storage).await.unwrap();
-        assert_eq!(
-            Some(TrieValue::U32(42)),
-            read_trie.query_value(1).await.unwrap()
-        );
+        let read_trie = TrieReader::connect(view_storage).await?;
+        assert_eq!(Some(TrieValue::U32(42)), read_trie.query_value(1).await?);
         assert_eq!(
             Some(TrieValue::U32(242)),
-            read_trie.deep_query_value([2, 42]).await.unwrap()
+            read_trie.deep_query_value([2, 42]).await?
         );
         Ok(())
     }

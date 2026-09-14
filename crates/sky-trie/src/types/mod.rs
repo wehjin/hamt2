@@ -1,5 +1,4 @@
 mod deep_key;
-pub mod map_base;
 pub mod slot;
 pub mod slot_base;
 pub mod trie_value;

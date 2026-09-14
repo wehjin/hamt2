@@ -271,8 +271,8 @@ impl ReadWriteTrieStorage for FileTrieStorage {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::crate_services::map_base::{one_kv, two_kv};
     use crate::types::HashKey;
-    use crate::types::map_base::{one_kv, two_kv};
     use crate::types::trie_value::TrieValue;
 
     #[tokio::test]

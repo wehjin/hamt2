@@ -19,12 +19,12 @@ pub async fn get_value_report(ein: Ein, attr_name: AttrName) -> Result<ValueRepo
         .to_reader()
         .await?;
 
-    let attr = reader.find(AttrWithName::new(attr_name)).await?;
+    let attr = reader.find(AttrWithName::new(attr_name)).await;
     let Some(attr) = attr.first() else {
         return Ok(ValueReport { val: None });
     };
 
-    let value = reader.find(ValsInSlot::new(ein, *attr)).await?;
+    let value = reader.find(ValsInSlot::new(ein, *attr)).await;
     let Some(val) = value.first() else {
         return Ok(ValueReport { val: None });
     };

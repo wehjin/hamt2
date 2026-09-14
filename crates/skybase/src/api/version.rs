@@ -8,7 +8,7 @@ pub async fn get_version() -> Result<String, ServerFnError> {
     use hamt2::storage::MemDbStorage;
     let db = expect_context::<DbHandle<MemDbStorage>>();
     let reader = db.to_reader().await?;
-    let binds = reader.find(BindsForAttr::new(ATTR_SKYBASE_VERSION)).await?;
+    let binds = reader.find(BindsForAttr::new(ATTR_SKYBASE_VERSION)).await;
     let (_ein, val) = binds.first().unwrap();
     let val = val.as_str();
     Ok(val.to_string())

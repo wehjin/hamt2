@@ -19,7 +19,7 @@ pub async fn get_entity_attributes_report(ein: Ein) -> Result<AttributesReport, 
     let reader = expect_context::<DbHandle<MemDbStorage>>()
         .to_reader()
         .await?;
-    let attrs = reader.find(AttrsOfEin::new(ein)).await?;
+    let attrs = reader.find(AttrsOfEin::new(ein)).await;
     let attr_names = attrs.into_iter().map(|it| it.to_name()).collect::<Vec<_>>();
     Ok(AttributesReport { names: attr_names })
 }
