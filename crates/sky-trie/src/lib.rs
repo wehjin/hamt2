@@ -2,14 +2,14 @@ pub(crate) mod crate_services;
 pub mod error;
 pub mod prelude;
 mod trie;
-pub mod trie_query;
+pub mod storage_trie_query;
 pub mod trie_reader;
 pub mod trie_storage;
 pub mod types;
 
 pub use error::*;
 pub use trie::*;
-pub use trie_query::StorageTrieQuery;
+pub use storage_trie_query::StorageTrieQuery;
 pub use trie_reader::TrieReader;
 
 #[cfg(test)]

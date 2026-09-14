@@ -1,4 +1,4 @@
-use crate::trie_query::StorageTrieQuery;
+use crate::storage_trie_query::StorageTrieQuery;
 use crate::trie_storage::ReadTrieStorage;
 use crate::trie_storage::errors::TrieStorageReadError;
 use crate::types::trie_value::TrieValue;
