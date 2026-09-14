@@ -1,7 +1,7 @@
 use crate::trie_query::TrieQuery;
 use crate::trie_storage::ReadTrieStorage;
 use crate::trie_storage::errors::TrieStorageReadError;
-use crate::types::map_base::MapBase;
+use sky_types::trie::map_base::MapBase;
 
 /// A read-only trie over a read-only storage, used only for queries.
 #[derive(Debug)]

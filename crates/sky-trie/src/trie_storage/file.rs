@@ -1,7 +1,7 @@
 use crate::trie_storage::errors::{TrieStorageReadError, TrieStorageWriteError};
 use crate::trie_storage::{ReadTrieStorage, ReadWriteTrieStorage};
-use crate::types::map_base::MapBase;
 use crate::types::slot_base::SlotBase;
+use sky_types::trie::map_base::MapBase;
 use sky_types::trie::slot_base_id::SlotBaseId;
 use std::future;
 use std::io::ErrorKind;
@@ -317,7 +317,7 @@ mod tests {
 
     #[tokio::test]
     async fn root_round_trip_works() -> anyhow::Result<()> {
-        use crate::types::map_base::MapBase;
+        use sky_types::trie::map_base::MapBase;
         let dir = tempfile::tempdir()?;
         {
             let mut storage = FileTrieStorage::new(dir.path())?;

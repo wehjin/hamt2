@@ -1,20 +1,10 @@
 use crate::trie_storage::ReadWriteTrieStorage;
 use crate::types::HashKey;
-use crate::types::map_base::MapBase;
 use crate::types::slot::Slot;
 use crate::types::slot_base::SlotBase;
 use crate::types::trie_value::TrieValue;
-use sky_types::trie::slot_base_id::SlotBaseId;
+use sky_types::trie::map_base::MapBase;
 use sky_types::trie::slot_map::SlotMap;
-
-impl MapBase {
-    pub fn empty() -> Self {
-        Self {
-            map: SlotMap::empty(),
-            base: SlotBaseId(0),
-        }
-    }
-}
 
 pub async fn one_kv(
     key: HashKey,

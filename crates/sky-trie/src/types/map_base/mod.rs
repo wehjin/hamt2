@@ -1,20 +1,10 @@
-use serde::{Deserialize, Serialize};
-use sky_types::trie::slot_base_id::SlotBaseId;
-use sky_types::trie::slot_map::SlotMap;
-
 pub mod cons;
 pub mod insert;
 pub mod query;
 
 pub use cons::*;
-pub use insert::insert_kv;
-pub use query::{kv_stream, query_keys_values, query_value};
-
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
-pub struct MapBase {
-    pub map: SlotMap,
-    pub base: SlotBaseId,
-}
+pub use insert::*;
+pub use query::*;
 
 #[cfg(test)]
 mod tests {
@@ -23,6 +13,7 @@ mod tests {
     use crate::types::map_base;
     use crate::types::map_base::*;
     use crate::types::trie_value::TrieValue;
+    use sky_types::trie::map_base::MapBase;
     use tokio_stream::StreamExt;
 
     #[tokio::test]

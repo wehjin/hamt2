@@ -1,5 +1,5 @@
-use crate::types::map_base::MapBase;
 use serde::{Deserialize, Serialize};
+use sky_types::trie::map_base::MapBase;
 use std::fmt::{Debug, Formatter};
 
 #[derive(Clone, Eq, PartialEq, Serialize, Deserialize)]

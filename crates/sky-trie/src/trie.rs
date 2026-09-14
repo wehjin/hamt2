@@ -1,14 +1,14 @@
 use crate::TrieQuery;
+use crate::TrieWriteError;
+use crate::prelude::TrieValue;
 use crate::trie_ref::TrieRef;
 use crate::trie_storage::ReadWriteTrieStorage;
 use crate::trie_storage::errors::{TrieStorageReadError, TrieStorageWriteError};
-use crate::types::map_base::{self, MapBase, query_value};
-use std::collections::HashMap;
-
-use crate::TrieWriteError;
-use crate::prelude::TrieValue;
 use crate::types::DeepKey;
 use crate::types::HashKey;
+use crate::types::map_base::{self, query_value};
+use sky_types::trie::map_base::MapBase;
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Trie<S: ReadWriteTrieStorage> {

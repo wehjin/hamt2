@@ -1,11 +1,11 @@
 use crate::TrieQueryError;
 use crate::trie_storage::ReadTrieStorage;
 use crate::types::HashKey;
-use crate::types::map_base::MapBase;
 use crate::types::slot::Slot;
 use crate::types::trie_value::TrieValue;
 use futures::Stream;
 use futures::stream;
+use sky_types::trie::map_base::MapBase;
 
 pub struct State<'a, S: ReadTrieStorage> {
     storage: &'a S,
