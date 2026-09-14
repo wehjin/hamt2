@@ -61,7 +61,7 @@ impl Atom {
         kb: &KnowledgeBase<'a, T, S>,
     ) -> Vec<Substitution>
     where
-        T: StorageTrieQuery<S>,
+        T: TrieQuery<S>,
         S: ReadTrieStorage,
     {
         let mut new_subs = Vec::new();

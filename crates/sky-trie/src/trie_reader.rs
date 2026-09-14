@@ -7,7 +7,7 @@ use sky_types::trie::map_base::MapBase;
 /// A read-only trie over an owned read-only storage, used only for queries.
 #[derive(Debug)]
 pub struct TrieReader<S: ReadTrieStorage> {
-    root: MapBase,
+    pub(crate) root: MapBase,
     storage: S,
 }
 
@@ -33,10 +33,6 @@ impl<S: ReadTrieStorage> TrieReader<S> {
 }
 
 impl<S: ReadTrieStorage> StorageTrieQuery<S> for TrieReader<S> {
-    fn root(&self) -> &MapBase {
-        &self.root
-    }
-
     fn storage(&self) -> &S {
         &self.storage
     }

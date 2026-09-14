@@ -12,15 +12,11 @@ use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Trie<S: ReadWriteTrieStorage> {
-    root: MapBase,
+    pub(crate) root: MapBase,
     storage: S,
 }
 
 impl<S: ReadWriteTrieStorage> StorageTrieQuery<S> for Trie<S> {
-    fn root(&self) -> &MapBase {
-        &self.root
-    }
-
     fn storage(&self) -> &S {
         &self.storage
     }

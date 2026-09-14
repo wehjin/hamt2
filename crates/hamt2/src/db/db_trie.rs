@@ -90,7 +90,7 @@ pub async fn find<'a, T, S>(
     where_: impl Into<Vec<Atom>>,
 ) -> FindResult
 where
-    T: StorageTrieQuery<S>,
+    T: TrieQuery<S>,
     S: ReadTrieStorage,
 {
     let select = select.into();
@@ -121,7 +121,7 @@ pub fn ev_stream<'a, T, S>(
     schema: &'a Schema,
 ) -> impl futures::Stream<Item = (i32, Val)> + 'a
 where
-    T: StorageTrieQuery<S>,
+    T: TrieQuery<S>,
     S: ReadTrieStorage + 'a,
 {
     stream! {
@@ -138,7 +138,7 @@ where
 
 pub async fn list_entities<T, S>(trie: &T) -> Vec<Ein>
 where
-    T: StorageTrieQuery<S>,
+    T: TrieQuery<S>,
     S: ReadTrieStorage,
 {
     if let Some(root) = eavt_root(trie).await {
@@ -169,7 +169,7 @@ impl From<i32> for AttrEin {
 
 pub async fn list_entity_attributes<T, S>(trie: &T, ein: Ein) -> Vec<AttrEin>
 where
-    T: StorageTrieQuery<S>,
+    T: TrieQuery<S>,
     S: ReadTrieStorage,
 {
     if let Some(root) = e_avt_subtrie(trie, ein).await {
@@ -186,7 +186,7 @@ where
 
 async fn eavt_root<T, S>(trie: &T) -> Option<TrieReader<S::Snapshot>>
 where
-    T: StorageTrieQuery<S>,
+    T: TrieQuery<S>,
     S: ReadTrieStorage,
 {
     let root_value = trie.deep_query_value([KEY_EAVT]).await.ok().flatten();
@@ -195,7 +195,7 @@ where
 
 async fn e_avt_subtrie<T, S>(trie: &T, ein: Ein) -> Option<TrieReader<S::Snapshot>>
 where
-    T: StorageTrieQuery<S>,
+    T: TrieQuery<S>,
     S: ReadTrieStorage,
 {
     let root_value = trie
@@ -208,7 +208,7 @@ where
 
 async fn evt_subtrie<T, S>(trie: &T, attr: Attr, schema: &Schema) -> Option<TrieReader<S::Snapshot>>
 where
-    T: StorageTrieQuery<S>,
+    T: TrieQuery<S>,
     S: ReadTrieStorage,
 {
     let aid = schema[attr].ein().to_i32();

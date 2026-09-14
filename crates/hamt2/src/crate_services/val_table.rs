@@ -43,7 +43,7 @@ pub async fn insert<S: ReadWriteTrieStorage>(
 
 pub async fn query<T, S>(trie: &T, vid: Vid) -> Result<Option<Val>, QueryError>
 where
-    T: StorageTrieQuery<S>,
+    T: TrieQuery<S>,
     S: ReadTrieStorage,
 {
     match find_hash_trie(trie, vid.to_id()).await? {
@@ -159,7 +159,7 @@ async fn find_hash_trie<T, S>(
     hash: i32,
 ) -> Result<Option<TrieReader<S::Snapshot>>, QueryError>
 where
-    T: StorageTrieQuery<S>,
+    T: TrieQuery<S>,
     S: ReadTrieStorage,
 {
     let key = [KEY_VAL_TABLE, hash];

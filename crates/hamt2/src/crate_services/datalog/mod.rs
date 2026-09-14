@@ -30,7 +30,7 @@ impl Program {
         schema: &'a Schema,
     ) -> KnowledgeBase<'a, T, S>
     where
-        T: StorageTrieQuery<S>,
+        T: TrieQuery<S>,
         S: ReadTrieStorage + 'a,
     {
         for rule in &self.rules {

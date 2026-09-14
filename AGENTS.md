@@ -55,12 +55,13 @@ callers to name, re-exported under db-flavored names (`as` imports in `src/stora
      persisted root, mutations (`insert`, `deep_insert`) consume and return a new `Trie` (`-> TrieWriteError`),
      `.commit()` (`-> TrieStorageWriteError`) writes the root, `.view()` gives a `TrieReader<S::Snapshot>` snapshot.
      Queries live on
-     the `StorageTrieQuery<S: ReadTrieStorage>` trait (`query_value`, `query_keys_values`, `deep_query_value`,
+     the `TrieQuery<S: ReadTrieStorage>` trait (`root`, `query_value`, `query_keys_values`, `deep_query_value`,
      `u32_stream`,
-     `subtrie_stream`, `to_subtrie_from_value`; `-> TrieQueryError`), implemented by `Trie` and `TrieReader<S>` (owned,
-     read-only, connects over `ReadTrieStorage` only, e.g. `storage.snapshot()`). `subtrie_stream()` and
-     `to_subtrie_from_value()` yield `TrieReader<S::Snapshot>`. The `prelude`
-     re-exports all of the above.
+     `subtrie_stream`, `to_subtrie_from_value`; `-> TrieQueryError`) — all methods required, no defaults. Its
+     supertrait `StorageTrieQuery<S>` adds `storage()`; `Trie` and `TrieReader<S>` implement both (root + all query
+     methods come from the direct `TrieQuery` impls in `storage_trie_query.rs`, which delegate to the free fns in
+     `crate_services/map_base`). `subtrie_stream()` and `to_subtrie_from_value()` yield `TrieReader<S::Snapshot>`.
+     The `prelude` re-exports all of the above.
 3. `crates/hamt2` — the Datomic layer plus error glue. Public modules in `src/lib.rs`: `db`, `find`,
    `handle`, `pull`, `query`, `reader`, `storage`, `transact`, `types` (plus `pub(crate) crate_services`), with
    `pub use error::*;` and `pub use sky_trie::error::{TrieQueryError as DbQueryError, TrieWriteError as DbWriteError};`
@@ -119,8 +120,8 @@ callers to name, re-exported under db-flavored names (`as` imports in `src/stora
    - `src/pull/` — `Pull` trait (`Serialize + Deserialize`; `attrs()` / `into_datoms()` / `pull(&Db, eid)`),
      `errors::RegisterError::DuplicateAttr`, tests in `pull/tests/`.
    - The read-only query machinery (`find`, datalog, `ev_stream`, `val_table::query`) is generic over
-     `T: StorageTrieQuery<S>`, so it works for `Trie` and `TrieReader` alike; plain queries need only
-     `S: ReadTrieStorage`, while helpers that yield sub-tries return owned
+     `T: TrieQuery<S>` (plus storage generic params), so it works for `Trie` and `TrieReader` alike; it never needs
+     `storage()`. Helpers that yield sub-tries return owned
      `TrieReader<S::Snapshot>`. Unit tests are `#[cfg(test)]` beside the code (e.g. in
      `query.rs`, `find/mod.rs`, `crate_services/datalog/mod.rs`, `crate_services/val_table.rs`); integration tests in
      `crates/hamt2/tests/` (cardinality, db_reader, file_db, handle, mem_db, multiple_entities).
@@ -161,10 +162,11 @@ Within `crates/skybase/src`:
   every `ReadTrieStorage` provides `Snapshot`/`snapshot()`, which makes snapshots cheap: mem readers Arc-share the
   base pool and only capture `max_id`/`root`, file readers copy a `PathBuf`/`max_id`/`root`. Outside hamt2, the same
   traits are exported as `hamt2::storage::ReadDbStorage`/`ReadWriteDbStorage`.
-- **Query methods live on the `StorageTrieQuery<S: ReadTrieStorage>` trait** (`query_value`,
-  `query_keys_values`, `deep_query_value`, `u32_stream`, `subtrie_stream`, `to_subtrie_from_value`), implemented by
-  `Trie` and `TrieReader` (owned snapshots). Only `root()` / `storage()` are required. Calling a query method needs
-  `StorageTrieQuery` in scope (it comes with `use crate::trie::prelude::*`); mutation methods (`insert`,
+- **Query methods live on the `TrieQuery<S: ReadTrieStorage>` trait** (`root`, `query_value`,
+  `query_keys_values`, `deep_query_value`, `u32_stream`, `subtrie_stream`, `to_subtrie_from_value`) — all required,
+  no default bodies. Its supertrait `StorageTrieQuery<S>` adds `storage()` only (implementors provide `root()` via
+  `TrieQuery` and `storage()` via `StorageTrieQuery`). Calling a query method needs
+  `TrieQuery` in scope (it comes with `use crate::trie::prelude::*`); mutation methods (`insert`,
   `deep_insert`, `commit`) stay inherent on `Trie`. `subtrie_stream`/`to_subtrie_from_value` yield
   `TrieReader<S::Snapshot>`. `TrieReader` connects to a `ReadTrieStorage` only (e.g. `storage.snapshot()`).
 - **Errors are layered.** The trie crate only produces `TrieQueryError` / `TrieWriteError` (plus

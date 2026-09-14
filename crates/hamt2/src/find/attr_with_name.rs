@@ -34,7 +34,7 @@ impl Find for AttrWithName {
     fn apply<T, S>(self, _trie: &T, schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
     where
         Self: Sized,
-        T: StorageTrieQuery<S>,
+        T: TrieQuery<S>,
         S: ReadTrieStorage,
     {
         async move {

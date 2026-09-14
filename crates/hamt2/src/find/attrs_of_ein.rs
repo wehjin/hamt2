@@ -36,7 +36,7 @@ impl Find for AttrsOfEin {
     fn apply<T, S>(self, trie: &T, schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
     where
         Self: Sized,
-        T: StorageTrieQuery<S>,
+        T: TrieQuery<S>,
         S: ReadTrieStorage,
     {
         async move {

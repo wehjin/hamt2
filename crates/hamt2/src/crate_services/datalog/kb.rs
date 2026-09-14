@@ -13,7 +13,7 @@ use std::marker::PhantomData;
 #[derive(Debug, Clone)]
 pub struct KnowledgeBase<'a, T, S>
 where
-    T: StorageTrieQuery<S>,
+    T: TrieQuery<S>,
     S: ReadTrieStorage,
 {
     db_trie: &'a T,
@@ -24,7 +24,7 @@ where
 
 impl<'a, T, S> KnowledgeBase<'a, T, S>
 where
-    T: StorageTrieQuery<S>,
+    T: TrieQuery<S>,
     S: ReadTrieStorage,
 {
     pub fn from_facts(db_trie: &'a T, schema: &'a Schema, facts: Vec<Atom>) -> Self {
@@ -113,7 +113,7 @@ where
 
 impl<'a, T, S> PartialEq for KnowledgeBase<'a, T, S>
 where
-    T: StorageTrieQuery<S>,
+    T: TrieQuery<S>,
     S: ReadTrieStorage,
 {
     fn eq(&self, other: &Self) -> bool {
@@ -123,7 +123,7 @@ where
 
 impl<'a, T, S> Eq for KnowledgeBase<'a, T, S>
 where
-    T: StorageTrieQuery<S>,
+    T: TrieQuery<S>,
     S: ReadTrieStorage,
 {
 }
