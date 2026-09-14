@@ -1,9 +1,9 @@
-use crate::types::trie_value::TrieValue;
+use crate::trie::error::TrieQueryError;
+use crate::trie::map_base::MapBase;
+use crate::trie::TrieValue;
 use futures::Stream;
-use sky_types::trie::error::TrieQueryError;
-use sky_types::trie::map_base::MapBase;
 
-/// The query interface shared by [`Trie`] and [`TrieReader`](crate::TrieReader).
+/// The read-only query interface shared by every storage-backed trie.
 ///
 /// All methods are required; the storage-backed types implement this directly.
 /// `Subtrie` is the type of a queryable view over a sub-trie, so callers of

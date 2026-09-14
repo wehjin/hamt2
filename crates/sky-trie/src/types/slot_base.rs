@@ -3,7 +3,8 @@ use crate::crate_services::map_base;
 use crate::trie_storage::ReadWriteTrieStorage;
 use crate::types::HashKey;
 use crate::types::slot::Slot;
-use crate::types::trie_value::TrieValue;
+use sky_types::trie::TrieValue
+;
 use serde::{Deserialize, Serialize};
 use std::ops::Index;
 

@@ -59,7 +59,8 @@ callers to name, re-exported under db-flavored names (`as` imports in `src/stora
      persisted root, mutations (`insert`, `deep_insert`) consume and return a new `Trie` (`-> TrieWriteError`),
      `.commit()` (`-> TrieStorageWriteError`) writes the root, `.view()` gives a `TrieReader<S::Snapshot>` snapshot.
      Queries live on
-     the parameterless `TrieQuery` trait (`root`, `query_value`, `query_keys_values`, `deep_query_value`,
+     the parameterless `TrieQuery` trait (defined in `sky-types` under `sky_types::trie`, alongside `TrieValue`;
+     re-exported by the prelude; `root`, `query_value`, `query_keys_values`, `deep_query_value`,
      `u32_stream`,
      `subtrie_stream`, `to_subtrie_from_value`, plus `type Subtrie: TrieQuery`; `-> TrieQueryError`) — all methods
      required, no defaults, no storage types mentioned. `StorageTrieQuery<S: ReadTrieStorage>` supertrait adds
@@ -166,7 +167,7 @@ Within `crates/skybase/src`:
   every `ReadTrieStorage` provides `Snapshot`/`snapshot()`, which makes snapshots cheap: mem readers Arc-share the
   base pool and only capture `max_id`/`root`, file readers copy a `PathBuf`/`max_id`/`root`. Outside hamt2, the same
   traits are exported as `hamt2::storage::ReadDbStorage`/`ReadWriteDbStorage`.
-- **Query methods live on the parameterless `TrieQuery` trait** (`root`, `query_value`,
+- **Query methods live on the parameterless `TrieQuery` trait** (in `sky_types::trie`; `root`, `query_value`,
   `query_keys_values`, `deep_query_value`, `u32_stream`, `subtrie_stream`, `to_subtrie_from_value`, plus
   `type Subtrie: TrieQuery`) — all required,
   no default bodies. Its supertrait `StorageTrieQuery<S>` adds `storage()` only (implementors provide `root()` via

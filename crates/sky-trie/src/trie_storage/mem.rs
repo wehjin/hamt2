@@ -1,8 +1,10 @@
 use crate::trie_storage::errors::{TrieStorageReadError, TrieStorageWriteError};
 use crate::trie_storage::{ReadTrieStorage, ReadWriteTrieStorage};
 use crate::types::slot_base::SlotBase;
-use sky_types::trie::map_base::MapBase;
-use sky_types::trie::slot_base_id::SlotBaseId;
+use sky_types::trie::MapBase
+;
+use sky_types::trie::SlotBaseId
+;
 use std::sync::{Arc, RwLock};
 
 /// An in-memory storage for Bases backed by a `Vec<Base>`.

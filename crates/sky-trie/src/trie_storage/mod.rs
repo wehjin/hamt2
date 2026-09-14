@@ -1,7 +1,8 @@
 use crate::types::slot_base::SlotBase;
 use errors::{TrieStorageReadError, TrieStorageWriteError};
 use sky_types::trie::SlotBaseId;
-use sky_types::trie::map_base::MapBase;
+use sky_types::trie::MapBase
+;
 
 pub mod errors;
 pub mod file;
@@ -64,7 +65,8 @@ mod tests {
     use super::*;
     use crate::trie_storage::mem::MemTrieStorage;
     use crate::types::HashKey;
-    use crate::types::trie_value::TrieValue;
+    use sky_types::trie::TrieValue
+;
 
     #[tokio::test]
     async fn empty_storage_has_no_ids() {

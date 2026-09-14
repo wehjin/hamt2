@@ -1,10 +1,10 @@
 use crate::trie_storage::ReadWriteTrieStorage;
-use crate::types::HashKey;
 use crate::types::slot::Slot;
 use crate::types::slot_base::SlotBase;
-use crate::types::trie_value::TrieValue;
-use sky_types::trie::map_base::MapBase;
-use sky_types::trie::slot_map::SlotMap;
+use sky_types::trie::HashKey;
+use sky_types::trie::MapBase;
+use sky_types::trie::SlotMap;
+use sky_types::trie::TrieValue;
 
 #[allow(dead_code)]
 pub async fn one_kv(

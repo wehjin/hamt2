@@ -1,11 +1,11 @@
 use crate::trie_storage::ReadTrieStorage;
 use crate::types::HashKey;
+use crate::types::TrieValue;
 use crate::types::slot::Slot;
-use crate::types::trie_value::TrieValue;
 use futures::Stream;
 use futures::stream;
 use sky_types::trie::error::TrieQueryError;
-use sky_types::trie::map_base::MapBase;
+use sky_types::trie::{MapBase, SlotBaseId};
 
 pub struct State<S: ReadTrieStorage> {
     storage: S,
@@ -85,7 +85,7 @@ pub async fn query_keys_values(
 struct Job {
     slot_offset: usize,
     slot_count: usize,
-    base: sky_types::trie::slot_base_id::SlotBaseId,
+    base: SlotBaseId,
 }
 impl Job {
     pub fn start(map_base: &MapBase) -> Option<Self> {

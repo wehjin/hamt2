@@ -1,10 +1,10 @@
 use crate::TrieWriteError;
 use crate::trie_storage::ReadWriteTrieStorage;
 use crate::types::HashKey;
+use crate::types::TrieValue;
 use crate::types::slot::{KvTest, Slot};
 use crate::types::slot_base::SlotBase;
-use crate::types::trie_value::TrieValue;
-use sky_types::trie::map_base::MapBase;
+use sky_types::trie::MapBase;
 
 pub async fn insert_kv(
     map_base: MapBase,

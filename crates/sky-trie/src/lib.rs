@@ -3,15 +3,14 @@ pub mod error;
 pub mod prelude;
 pub mod storage_trie_query;
 mod trie;
-pub mod trie_query;
 pub mod trie_reader;
 pub mod trie_storage;
 pub mod types;
 
 pub use error::*;
+pub use sky_types::trie::TrieQuery;
 pub use storage_trie_query::StorageTrieQuery;
 pub use trie::*;
-pub use trie_query::TrieQuery;
 pub use trie_reader::TrieReader;
 
 #[cfg(test)]
@@ -19,7 +18,8 @@ mod tests {
     use crate::trie_storage::ReadTrieStorage;
     use crate::trie_storage::file::FileTrieStorage;
     use crate::trie_storage::mem::MemTrieStorage;
-    use crate::types::trie_value::TrieValue;
+    use sky_types::trie::TrieValue
+;
     use crate::{Trie, TrieQuery, TrieReader};
 
     #[tokio::test]
