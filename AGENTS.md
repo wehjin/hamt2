@@ -51,10 +51,14 @@ callers to name, re-exported under db-flavored names (`as` imports in `src/stora
      base.
    - `Trie<S: ReadWriteTrieStorage>` — the persistent map: `connect(storage)` (`-> TrieStorageReadError`) loads the
      persisted root, mutations (`insert`, `deep_insert`) consume and return a new `Trie` (`-> TrieWriteError`),
-     `.commit()` (`-> TrieStorageWriteError`) writes the root, `.view()` gives a borrowed `TrieRef`. Queries live on
-     the `TrieQuery<S: ReadTrieStorage>` trait (`query_value`, `query_keys_values`, `deep_query_value`, `u32_stream`,
-     `subtrie_stream`, `to_subtrie_from_value`; `-> TrieQueryError`), implemented by `Trie`, `TrieRef<'a, S>`, and
-     `TrieReader<S>` (read-only, connects over `ReadTrieStorage` only, e.g. `storage.to_readonly()`). The `prelude`
+     `.commit()` (`-> TrieStorageWriteError`) writes the root, `.view()` gives a `TrieReader<S::ReadOnly>` snapshot.
+     Queries live on
+     the `StorageTrieQuery<S: ReadTrieStorage>` trait (`query_value`, `query_keys_values`, `deep_query_value`,
+     `u32_stream`,
+     `subtrie_stream`, `to_subtrie_from_value`; `-> TrieQueryError`), implemented by `Trie` and `TrieReader<S>` (owned,
+     read-only, connects over `ReadTrieStorage` only, e.g. `storage.to_readonly()`). `subtrie_stream()` and
+     `to_subtrie_from_value()` yield `TrieReader<S::Snapshot>` and require `S: SnapshotStorage` (writer storages
+     snapshot via `to_readonly()`; read-only snapshot types via `Clone`). The `prelude`
      re-exports all of the above.
 3. `crates/hamt2` — the Datomic layer plus error glue. Public modules in `src/lib.rs`: `db`, `find`,
    `handle`, `pull`, `query`, `reader`, `storage`, `transact`, `types` (plus `pub(crate) crate_services`), with
@@ -114,8 +118,9 @@ callers to name, re-exported under db-flavored names (`as` imports in `src/stora
    - `src/pull/` — `Pull` trait (`Serialize + Deserialize`; `attrs()` / `into_datoms()` / `pull(&Db, eid)`),
      `errors::RegisterError::DuplicateAttr`, tests in `pull/tests/`.
    - The read-only query machinery (`find`, datalog, `ev_stream`, `val_table::query`) is generic over
-     `T: TrieQuery<S>, S: ReadTrieStorage`, so it works for `Trie`, `TrieRef`, and `TrieReader` alike; transitive
-     helpers returning `TrieRef<'a, S>` need `S: 'a`. Unit tests are `#[cfg(test)]` beside the code (e.g. in
+     `T: StorageTrieQuery<S>`, so it works for `Trie` and `TrieReader` alike; plain queries need only
+     `S: ReadTrieStorage`, while helpers that yield sub-tries require `S: SnapshotStorage` and return owned
+     `TrieReader<S::Snapshot>`. Unit tests are `#[cfg(test)]` beside the code (e.g. in
      `query.rs`, `find/mod.rs`, `crate_services/datalog/mod.rs`, `crate_services/val_table.rs`); integration tests in
      `crates/hamt2/tests/` (cardinality, db_reader, file_db, handle, mem_db, multiple_entities).
 
@@ -151,14 +156,16 @@ Within `crates/skybase/src`:
 - **`Db` is immutable-value / consumed-ownership.** `Db::transact(...)` consumes `self` and returns a new `Db`. Get the
   underlying storage back with `db.close()` before re-`load`ing.
 - **Generic bounds are pervasive.** Any struct/fn mentioning `Trie<S>` or `Db<S>` needs `S: ReadWriteTrieStorage`.
-  Read-only sub-tries are borrowed views (`TrieRef<'a, S>` from `trie.view()` / `to_subtrie_from_value`); nothing
-  requires `S: Clone`. Outside hamt2, the same traits are exported as `hamt2::storage::ReadDbStorage`/
-  `ReadWriteDbStorage`.
-- **Query methods live on the `TrieQuery<S: ReadTrieStorage>` trait** (`query_value`, `query_keys_values`,
-  `deep_query_value`, `u32_stream`, `subtrie_stream`, `to_subtrie_from_value`), implemented by `Trie`, `TrieRef`, and
-  `TrieReader`. Only `root()` / `storage()` are required. Calling a query method needs `TrieQuery` in scope (it comes
-  with `use crate::trie::prelude::*`); mutation methods (`insert`, `deep_insert`, `commit`) stay inherent on `Trie`.
-  `TrieReader` connects to a `ReadTrieStorage` only (e.g. `storage.to_readonly()`).
+  Read-only sub-tries are owned `TrieReader` snapshots (`trie.view()`, `to_subtrie_from_value()`, `subtrie_stream()`);
+  `SnapshotStorage` makes them cheap: mem readers Arc-share the base pool and only capture `max_id`/`root`, file
+  readers copy a `PathBuf`/`max_id`/`root`. Outside hamt2, the same traits are exported as
+  `hamt2::storage::ReadDbStorage`/`ReadWriteDbStorage`.
+- **Query methods live on the `StorageTrieQuery<S: ReadTrieStorage>` trait** (`query_value`,
+  `query_keys_values`, `deep_query_value`, `u32_stream`, `subtrie_stream`, `to_subtrie_from_value`), implemented by
+  `Trie` and `TrieReader` (owned snapshots). Only `root()` / `storage()` are required. Calling a query method needs
+  `StorageTrieQuery` in scope (it comes with `use crate::trie::prelude::*`); mutation methods (`insert`,
+  `deep_insert`, `commit`) stay inherent on `Trie`. `subtrie_stream`/`to_subtrie_from_value` add a
+  `S: SnapshotStorage` bound. `TrieReader` connects to a `ReadTrieStorage` only (e.g. `storage.to_readonly()`).
 - **Errors are layered.** The trie crate only produces `TrieQueryError` / `TrieWriteError` (plus
   `TrieStorageReadError`/`TrieStorageWriteError`); hamt2's `QueryError`/`TransactError`/`LoadError` embed them via
   `QueryError::Trie`, `TransactError::TrieStorageRead`/`TransactError::TrieStorageWrite`/`TransactError::Trie`,

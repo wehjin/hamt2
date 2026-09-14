@@ -35,7 +35,7 @@ pub trait ReadTrieStorage: Sync {
 /// A trait for reading and writing Bases from storage.
 pub trait ReadWriteTrieStorage: ReadTrieStorage {
     /// The read-only snapshot type built by [`ReadWriteTrieStorage::to_readonly`].
-    type ReadOnly: ReadTrieStorage + Send;
+    type ReadOnly: SnapshotStorage + Send;
 
     /// Read the next available base id. The value is 1 in an empty storage because base id 0 is reserved for the empty base.
     fn next_id(&self) -> SlotBaseId;
@@ -56,6 +56,26 @@ pub trait ReadWriteTrieStorage: ReadTrieStorage {
     /// view is independent of the writer: it neither borrows it nor observes
     /// any writes made after this call.
     fn to_readonly(&self) -> Self::ReadOnly;
+}
+
+/// A storage that can produce an owned read-only snapshot of itself.
+///
+/// Writer storages snapshot via [`ReadWriteTrieStorage::to_readonly`];
+/// read-only snapshot types just clone themselves.
+pub trait SnapshotStorage: ReadTrieStorage {
+    /// The storage type of an owned read-only snapshot.
+    type Snapshot: SnapshotStorage;
+
+    /// Returns an owned read-only snapshot of this storage.
+    fn snapshot(&self) -> Self::Snapshot;
+}
+
+impl<S: ReadWriteTrieStorage> SnapshotStorage for S {
+    type Snapshot = S::ReadOnly;
+
+    fn snapshot(&self) -> Self::Snapshot {
+        self.to_readonly()
+    }
 }
 
 #[cfg(test)]

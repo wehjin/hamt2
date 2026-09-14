@@ -31,7 +31,7 @@ impl Program {
     ) -> KnowledgeBase<'a, T, S>
     where
         T: StorageTrieQuery<S>,
-        S: ReadTrieStorage + 'a,
+        S: SnapshotStorage + 'a,
     {
         for rule in &self.rules {
             if !rule.is_range_restricted() {

@@ -1,6 +1,6 @@
+use crate::TrieReader;
 use crate::crate_services::map_base::{kv_stream, query_keys_values, query_value};
-use crate::trie_ref::TrieRef;
-use crate::trie_storage::ReadTrieStorage;
+use crate::trie_storage::{ReadTrieStorage, SnapshotStorage};
 use crate::types::DeepKey;
 use crate::types::HashKey;
 use crate::types::trie_value::TrieValue;
@@ -9,8 +9,8 @@ use futures::stream::StreamExt;
 use sky_types::trie::error::TrieQueryError;
 use sky_types::trie::map_base::MapBase;
 
-/// The read-only query interface shared by [`Trie`], [`TrieRef`], and
-/// [`ReadTrie`](crate::TrieReader).
+/// The read-only query interface shared by [`Trie`] and
+/// [`TrieReader`](crate::TrieReader).
 ///
 /// Every query method is provided by default; implementations only need to
 /// expose the root map base and the storage.
@@ -77,20 +77,23 @@ pub trait StorageTrieQuery<S: ReadTrieStorage> {
     }
 
     /// A stream of all the sub-tries in this trie.
-    fn subtrie_stream<'a>(&'a self) -> impl Stream<Item = (i32, TrieRef<'a, S>)> + 'a
+    fn subtrie_stream<'a>(&'a self) -> impl Stream<Item = (i32, TrieReader<S::Snapshot>)> + 'a
     where
-        S: 'a,
+        S: SnapshotStorage + 'a,
     {
         let storage = self.storage();
         let stream = kv_stream(self.root().clone(), self.storage());
         stream.filter_map(move |(key, value)| async move {
-            TrieRef::subtrie_from_value(value, storage).map(|subtrie| (key, subtrie))
+            TrieReader::subtrie_from_value(value, storage.snapshot()).map(|subtrie| (key, subtrie))
         })
     }
 
-    /// Converts a map-base value into a borrowed sub-trie over the same storage.
-    fn to_subtrie_from_value(&self, value: TrieValue) -> Option<TrieRef<'_, S>> {
-        TrieRef::subtrie_from_value(value, self.storage())
+    /// Converts a map-base value into a sub-trie over a snapshot of the storage.
+    fn to_subtrie_from_value(&self, value: TrieValue) -> Option<TrieReader<S::Snapshot>>
+    where
+        S: SnapshotStorage,
+    {
+        TrieReader::subtrie_from_value(value, self.storage().snapshot())
     }
 }
 

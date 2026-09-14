@@ -44,7 +44,7 @@ pub async fn insert<S: ReadWriteTrieStorage>(
 pub async fn query<T, S>(trie: &T, vid: Vid) -> Result<Option<Val>, QueryError>
 where
     T: StorageTrieQuery<S>,
-    S: ReadTrieStorage,
+    S: SnapshotStorage,
 {
     match find_hash_trie(trie, vid.to_id()).await? {
         None => Ok(None),
@@ -112,8 +112,8 @@ async fn insert_bytes<S: ReadWriteTrieStorage>(
     Ok(trie)
 }
 
-async fn is_equal_bytes<'a, S: ReadWriteTrieStorage>(
-    hash_trie: &TrieRef<'a, S>,
+async fn is_equal_bytes<S: SnapshotStorage>(
+    hash_trie: &TrieReader<S>,
     bytes: &[u8],
     bytes_type: u8,
 ) -> Result<bool, QueryError> {
@@ -154,13 +154,13 @@ async fn is_equal_bytes<'a, S: ReadWriteTrieStorage>(
     }
 }
 
-async fn find_hash_trie<'a, T, S>(
-    trie: &'a T,
+async fn find_hash_trie<T, S>(
+    trie: &T,
     hash: i32,
-) -> Result<Option<TrieRef<'a, S>>, QueryError>
+) -> Result<Option<TrieReader<S::Snapshot>>, QueryError>
 where
     T: StorageTrieQuery<S>,
-    S: ReadTrieStorage + 'a,
+    S: SnapshotStorage,
 {
     let key = [KEY_VAL_TABLE, hash];
     match trie.deep_query_value(key).await? {

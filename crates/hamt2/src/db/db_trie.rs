@@ -91,7 +91,7 @@ pub async fn find<'a, T, S>(
 ) -> FindResult
 where
     T: StorageTrieQuery<S>,
-    S: ReadTrieStorage,
+    S: SnapshotStorage,
 {
     let select = select.into();
     let query_terms = select.iter().map(|s| term(var(*s))).collect::<Vec<_>>();
@@ -122,7 +122,7 @@ pub fn ev_stream<'a, T, S>(
 ) -> impl futures::Stream<Item = (i32, Val)> + 'a
 where
     T: StorageTrieQuery<S>,
-    S: ReadTrieStorage,
+    S: SnapshotStorage + 'a,
 {
     stream! {
         if let Some(evt_subtrie) = evt_subtrie(trie, a, schema).await {
@@ -139,7 +139,7 @@ where
 pub async fn list_entities<T, S>(trie: &T) -> Vec<Ein>
 where
     T: StorageTrieQuery<S>,
-    S: ReadTrieStorage,
+    S: SnapshotStorage,
 {
     if let Some(root) = eavt_root(trie).await {
         root.query_keys_values()
@@ -170,7 +170,7 @@ impl From<i32> for AttrEin {
 pub async fn list_entity_attributes<T, S>(trie: &T, ein: Ein) -> Vec<AttrEin>
 where
     T: StorageTrieQuery<S>,
-    S: ReadTrieStorage,
+    S: SnapshotStorage,
 {
     if let Some(root) = e_avt_subtrie(trie, ein).await {
         root.query_keys_values()
@@ -184,19 +184,19 @@ where
     }
 }
 
-async fn eavt_root<'a, T, S>(trie: &'a T) -> Option<TrieRef<'a, S>>
+async fn eavt_root<T, S>(trie: &T) -> Option<TrieReader<S::Snapshot>>
 where
     T: StorageTrieQuery<S>,
-    S: ReadTrieStorage + 'a,
+    S: SnapshotStorage,
 {
     let root_value = trie.deep_query_value([KEY_EAVT]).await.ok().flatten();
     root_value.and_then(|value| trie.to_subtrie_from_value(value))
 }
 
-async fn e_avt_subtrie<'a, T, S>(trie: &'a T, ein: Ein) -> Option<TrieRef<'a, S>>
+async fn e_avt_subtrie<T, S>(trie: &T, ein: Ein) -> Option<TrieReader<S::Snapshot>>
 where
     T: StorageTrieQuery<S>,
-    S: ReadTrieStorage + 'a,
+    S: SnapshotStorage,
 {
     let root_value = trie
         .deep_query_value([KEY_EAVT, ein.to_i32()])
@@ -206,10 +206,10 @@ where
     root_value.and_then(|value| trie.to_subtrie_from_value(value))
 }
 
-async fn evt_subtrie<'a, T, S>(trie: &'a T, attr: Attr, schema: &Schema) -> Option<TrieRef<'a, S>>
+async fn evt_subtrie<T, S>(trie: &T, attr: Attr, schema: &Schema) -> Option<TrieReader<S::Snapshot>>
 where
     T: StorageTrieQuery<S>,
-    S: ReadTrieStorage + 'a,
+    S: SnapshotStorage,
 {
     let aid = schema[attr].ein().to_i32();
     let keys = [KEY_AEVT, aid];
@@ -217,9 +217,9 @@ where
     evt_value.and_then(|evt| trie.to_subtrie_from_value(evt))
 }
 
-fn evid_stream<'a, S: ReadTrieStorage>(
-    evt_subtrie: TrieRef<'a, S>,
-) -> impl futures::Stream<Item = (i32, i32)> + 'a {
+fn evid_stream<S: SnapshotStorage>(
+    evt_subtrie: TrieReader<S>,
+) -> impl futures::Stream<Item = (i32, i32)> {
     stream! {
         let evt_stream = evt_subtrie.subtrie_stream();
         pin_mut!(evt_stream);

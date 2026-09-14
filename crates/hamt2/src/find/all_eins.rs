@@ -34,7 +34,7 @@ impl Find for AllEins {
     where
         Self: Sized,
         T: StorageTrieQuery<S>,
-        S: ReadTrieStorage,
+        S: SnapshotStorage,
     {
         db_trie::list_entities(trie)
     }

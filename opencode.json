@@ -5,6 +5,9 @@
       "command": [
         "rust-analyzer"
       ],
+      "env": {
+        "RUST_LOG": "info"
+      },
       "initialization": {
         "cargo": {
           "features": "all",

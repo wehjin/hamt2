@@ -1,5 +1,5 @@
 use crate::trie_storage::errors::{TrieStorageReadError, TrieStorageWriteError};
-use crate::trie_storage::{ReadTrieStorage, ReadWriteTrieStorage};
+use crate::trie_storage::{ReadTrieStorage, ReadWriteTrieStorage, SnapshotStorage};
 use crate::types::slot_base::SlotBase;
 use sky_types::trie::map_base::MapBase;
 use sky_types::trie::slot_base_id::SlotBaseId;
@@ -208,6 +208,14 @@ impl ReadTrieStorage for FileReadStorage {
 
     async fn read_root(&self) -> Result<Option<MapBase>, TrieStorageReadError> {
         Ok(self.root.clone())
+    }
+}
+
+impl SnapshotStorage for FileReadStorage {
+    type Snapshot = FileReadStorage;
+
+    fn snapshot(&self) -> Self::Snapshot {
+        self.clone()
     }
 }
 

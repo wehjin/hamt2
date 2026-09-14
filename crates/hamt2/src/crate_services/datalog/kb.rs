@@ -14,7 +14,7 @@ use std::marker::PhantomData;
 pub struct KnowledgeBase<'a, T, S>
 where
     T: StorageTrieQuery<S>,
-    S: ReadTrieStorage,
+    S: SnapshotStorage,
 {
     db_trie: &'a T,
     schema: &'a Schema,
@@ -25,7 +25,7 @@ where
 impl<'a, T, S> KnowledgeBase<'a, T, S>
 where
     T: StorageTrieQuery<S>,
-    S: ReadTrieStorage,
+    S: SnapshotStorage,
 {
     pub fn from_facts(db_trie: &'a T, schema: &'a Schema, facts: Vec<Atom>) -> Self {
         debug_assert!(facts.iter().all(|atom| atom.is_grounded()));
@@ -114,7 +114,7 @@ where
 impl<'a, T, S> PartialEq for KnowledgeBase<'a, T, S>
 where
     T: StorageTrieQuery<S>,
-    S: ReadTrieStorage,
+    S: SnapshotStorage,
 {
     fn eq(&self, other: &Self) -> bool {
         self.facts == other.facts
@@ -124,6 +124,6 @@ where
 impl<'a, T, S> Eq for KnowledgeBase<'a, T, S>
 where
     T: StorageTrieQuery<S>,
-    S: ReadTrieStorage,
+    S: SnapshotStorage,
 {
 }

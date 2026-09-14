@@ -62,7 +62,7 @@ impl Atom {
     ) -> Vec<Substitution>
     where
         T: StorageTrieQuery<S>,
-        S: ReadTrieStorage,
+        S: SnapshotStorage,
     {
         let mut new_subs = Vec::new();
         for sub in subs {

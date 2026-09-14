@@ -1,9 +1,10 @@
 use crate::trie_query::StorageTrieQuery;
 use crate::trie_storage::ReadTrieStorage;
 use crate::trie_storage::errors::TrieStorageReadError;
+use crate::types::trie_value::TrieValue;
 use sky_types::trie::map_base::MapBase;
 
-/// A read-only trie over a read-only storage, used only for queries.
+/// A read-only trie over an owned read-only storage, used only for queries.
 #[derive(Debug)]
 pub struct TrieReader<S: ReadTrieStorage> {
     root: MapBase,
@@ -11,10 +12,23 @@ pub struct TrieReader<S: ReadTrieStorage> {
 }
 
 impl<S: ReadTrieStorage> TrieReader<S> {
+    /// Builds a reader over the given storage with the given root.
+    pub fn new(root: MapBase, storage: S) -> Self {
+        Self { root, storage }
+    }
+
     /// Connects to the storage, loading the persisted root if there is one.
     pub async fn connect(storage: S) -> Result<Self, TrieStorageReadError> {
         let root = storage.get_root().await?;
         Ok(Self { root, storage })
+    }
+
+    pub fn subtrie_from_value(value: TrieValue, storage: S) -> Option<Self> {
+        let root = match value {
+            TrieValue::SubTrie(root) => root,
+            TrieValue::U32(_) => return None,
+        };
+        Some(Self { root, storage })
     }
 }
 

@@ -1,8 +1,8 @@
 use crate::StorageTrieQuery;
+use crate::TrieReader;
 use crate::TrieWriteError;
 use crate::crate_services::map_base::{self, query_value};
 use crate::prelude::TrieValue;
-use crate::trie_ref::TrieRef;
 use crate::trie_storage::ReadWriteTrieStorage;
 use crate::trie_storage::errors::{TrieStorageReadError, TrieStorageWriteError};
 use crate::types::DeepKey;
@@ -48,9 +48,9 @@ impl<S: ReadWriteTrieStorage> Trie<S> {
         self.storage
     }
 
-    /// A borrowed read-only view of this trie.
-    pub fn view(&self) -> TrieRef<'_, S> {
-        TrieRef::new(self.root.clone(), &self.storage)
+    /// A read-only view of this trie over a snapshot of its storage.
+    pub fn view(&self) -> TrieReader<S::ReadOnly> {
+        TrieReader::new(self.root.clone(), self.storage.to_readonly())
     }
 }
 
