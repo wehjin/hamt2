@@ -3,9 +3,9 @@ use crate::trie_storage::{ReadTrieStorage, ReadWriteTrieStorage};
 use crate::types::HashKey;
 use crate::types::map_base::MapBase;
 use crate::types::slot_base::SlotBase;
-use crate::types::slot_map::SlotMap;
 use crate::types::trie_value::TrieValue;
 use serde::{Deserialize, Serialize};
+use sky_types::trie::slot_map::SlotMap;
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Slot {

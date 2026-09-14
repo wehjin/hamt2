@@ -2089,7 +2089,6 @@ dependencies = [
  "thiserror 2.0.20",
  "tokio",
  "tokio-stream",
- "universal-hash",
 ]
 
 [[package]]
@@ -2097,6 +2096,7 @@ name = "sky-types"
 version = "0.1.0"
 dependencies = [
  "serde",
+ "universal-hash",
 ]
 
 [[package]]

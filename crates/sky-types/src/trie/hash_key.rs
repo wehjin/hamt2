@@ -1,4 +1,4 @@
-use crate::types::slot_map::SlotMap;
+use crate::trie::SlotMap;
 use serde::{Deserialize, Serialize};
 use universal_hash;
 

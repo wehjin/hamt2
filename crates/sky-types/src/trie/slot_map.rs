@@ -1,4 +1,4 @@
-use crate::types::HashKey;
+use crate::trie::HashKey;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fmt::Formatter;

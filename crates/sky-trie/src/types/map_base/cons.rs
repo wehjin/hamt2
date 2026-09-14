@@ -3,9 +3,9 @@ use crate::types::HashKey;
 use crate::types::map_base::MapBase;
 use crate::types::slot::Slot;
 use crate::types::slot_base::SlotBase;
-use crate::types::slot_map::SlotMap;
 use crate::types::trie_value::TrieValue;
 use sky_types::trie::slot_base_id::SlotBaseId;
+use sky_types::trie::slot_map::SlotMap;
 
 impl MapBase {
     pub fn empty() -> Self {
