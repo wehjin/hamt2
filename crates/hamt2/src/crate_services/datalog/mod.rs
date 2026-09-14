@@ -24,14 +24,9 @@ impl Program {
         }
     }
 
-    pub async fn solve<'a, T, S>(
-        self,
-        db_trie: &'a T,
-        schema: &'a Schema,
-    ) -> KnowledgeBase<'a, T, S>
+    pub async fn solve<'a, T>(self, db_trie: &'a T, schema: &'a Schema) -> KnowledgeBase<'a, T>
     where
-        T: TrieQuery<S>,
-        S: ReadTrieStorage + 'a,
+        T: TrieQuery,
     {
         for rule in &self.rules {
             if !rule.is_range_restricted() {

@@ -1,15 +1,15 @@
 use crate::trie::prelude::*;
 
-pub struct Read<S: ReadTrieStorage> {
-    hash_trie: TrieReader<S>,
+pub struct Read<T: TrieQuery> {
+    hash_trie: T,
     bytes_left: usize,
     start_key: i32,
     u32_index: i32,
     current_u32: Option<(u32, usize)>,
 }
 
-impl<S: ReadTrieStorage> Read<S> {
-    pub fn new(hash_trie: TrieReader<S>, bytes_max: usize, start_key: i32) -> Self {
+impl<T: TrieQuery> Read<T> {
+    pub fn new(hash_trie: T, bytes_max: usize, start_key: i32) -> Self {
         Self {
             hash_trie,
             bytes_left: bytes_max,

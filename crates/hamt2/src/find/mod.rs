@@ -26,11 +26,10 @@ pub trait Find {
     fn where_(&self) -> Vec<Atom>;
     fn process(self, result: FindResult) -> Vec<Self::Output>;
 
-    fn apply<T, S>(self, trie: &T, schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
+    fn apply<T>(self, trie: &T, schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
     where
         Self: Sized,
-        T: TrieQuery<S>,
-        S: ReadTrieStorage,
+        T: TrieQuery,
     {
         async move {
             let select = self.select();

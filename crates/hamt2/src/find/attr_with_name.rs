@@ -31,11 +31,10 @@ impl Find for AttrWithName {
         unreachable!()
     }
 
-    fn apply<T, S>(self, _trie: &T, schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
+    fn apply<T>(self, _trie: &T, schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
     where
         Self: Sized,
-        T: TrieQuery<S>,
-        S: ReadTrieStorage,
+        T: TrieQuery,
     {
         async move {
             let attr = schema.find_attr_by_name(&self.attr_name);

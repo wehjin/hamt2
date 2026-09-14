@@ -8,24 +8,20 @@ use crate::trie::prelude::*;
 use async_stream::stream;
 use futures::{StreamExt, pin_mut};
 use std::collections::HashSet;
-use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
-pub struct KnowledgeBase<'a, T, S>
+pub struct KnowledgeBase<'a, T>
 where
-    T: TrieQuery<S>,
-    S: ReadTrieStorage,
+    T: TrieQuery,
 {
     db_trie: &'a T,
     schema: &'a Schema,
     facts: HashSet<Atom>,
-    phantom: PhantomData<&'a S>,
 }
 
-impl<'a, T, S> KnowledgeBase<'a, T, S>
+impl<'a, T> KnowledgeBase<'a, T>
 where
-    T: TrieQuery<S>,
-    S: ReadTrieStorage,
+    T: TrieQuery,
 {
     pub fn from_facts(db_trie: &'a T, schema: &'a Schema, facts: Vec<Atom>) -> Self {
         debug_assert!(facts.iter().all(|atom| atom.is_grounded()));
@@ -33,7 +29,6 @@ where
             db_trie,
             schema,
             facts: facts.into_iter().collect(),
-            phantom: PhantomData,
         }
     }
     #[must_use]
@@ -45,7 +40,6 @@ where
             db_trie: self.db_trie,
             schema: self.schema,
             facts,
-            phantom: PhantomData,
         }
     }
 
@@ -111,19 +105,13 @@ where
     }
 }
 
-impl<'a, T, S> PartialEq for KnowledgeBase<'a, T, S>
+impl<'a, T> PartialEq for KnowledgeBase<'a, T>
 where
-    T: TrieQuery<S>,
-    S: ReadTrieStorage,
+    T: TrieQuery,
 {
     fn eq(&self, other: &Self) -> bool {
         self.facts == other.facts
     }
 }
 
-impl<'a, T, S> Eq for KnowledgeBase<'a, T, S>
-where
-    T: TrieQuery<S>,
-    S: ReadTrieStorage,
-{
-}
+impl<'a, T> Eq for KnowledgeBase<'a, T> where T: TrieQuery {}

@@ -55,14 +55,13 @@ impl Atom {
     }
 
     #[must_use]
-    pub async fn derive_body_atom_subs<'a, T, S>(
+    pub async fn derive_body_atom_subs<'a, T>(
         &self,
         subs: Vec<Substitution>,
-        kb: &KnowledgeBase<'a, T, S>,
+        kb: &KnowledgeBase<'a, T>,
     ) -> Vec<Substitution>
     where
-        T: TrieQuery<S>,
-        S: ReadTrieStorage,
+        T: TrieQuery,
     {
         let mut new_subs = Vec::new();
         for sub in subs {

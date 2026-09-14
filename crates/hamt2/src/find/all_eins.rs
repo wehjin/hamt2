@@ -30,11 +30,10 @@ impl Find for AllEins {
         unreachable!()
     }
 
-    fn apply<T, S>(self, trie: &T, _schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
+    fn apply<T>(self, trie: &T, _schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
     where
         Self: Sized,
-        T: TrieQuery<S>,
-        S: ReadTrieStorage,
+        T: TrieQuery,
     {
         db_trie::list_entities(trie)
     }

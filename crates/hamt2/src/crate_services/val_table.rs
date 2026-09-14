@@ -41,10 +41,9 @@ pub async fn insert<S: ReadWriteTrieStorage>(
     Err(TransactError::NoSpaceInValueTable)
 }
 
-pub async fn query<T, S>(trie: &T, vid: Vid) -> Result<Option<Val>, QueryError>
+pub async fn query<T>(trie: &T, vid: Vid) -> Result<Option<Val>, QueryError>
 where
-    T: TrieQuery<S>,
-    S: ReadTrieStorage,
+    T: TrieQuery,
 {
     match find_hash_trie(trie, vid.to_id()).await? {
         None => Ok(None),
@@ -112,8 +111,8 @@ async fn insert_bytes<S: ReadWriteTrieStorage>(
     Ok(trie)
 }
 
-async fn is_equal_bytes<S: ReadTrieStorage>(
-    hash_trie: &TrieReader<S>,
+async fn is_equal_bytes<T: TrieQuery>(
+    hash_trie: &T,
     bytes: &[u8],
     bytes_type: u8,
 ) -> Result<bool, QueryError> {
@@ -154,14 +153,10 @@ async fn is_equal_bytes<S: ReadTrieStorage>(
     }
 }
 
-async fn find_hash_trie<T, S>(
+async fn find_hash_trie<T: TrieQuery>(
     trie: &T,
     hash: i32,
-) -> Result<Option<TrieReader<S::Snapshot>>, QueryError>
-where
-    T: TrieQuery<S>,
-    S: ReadTrieStorage,
-{
+) -> Result<Option<T::Subtrie>, QueryError> {
     let key = [KEY_VAL_TABLE, hash];
     match trie.deep_query_value(key).await? {
         None => Ok(None),

@@ -15,12 +15,14 @@ use sky_types::trie::map_base::MapBase;
 ///
 /// Implementations only need to expose the storage; the root and every
 /// [`TrieQuery`] method are provided by the direct implementations below.
-pub trait StorageTrieQuery<S: ReadTrieStorage>: TrieQuery<S> {
+pub trait StorageTrieQuery<S: ReadTrieStorage>: TrieQuery {
     /// The storage this trie reads bases from.
     fn storage(&self) -> &S;
 }
 
-impl<S: ReadWriteTrieStorage> TrieQuery<S> for crate::Trie<S> {
+impl<S: ReadWriteTrieStorage> TrieQuery for crate::Trie<S> {
+    type Subtrie = TrieReader<S::Snapshot>;
+
     fn root(&self) -> &MapBase {
         &self.root
     }
@@ -53,7 +55,9 @@ impl<S: ReadWriteTrieStorage> TrieQuery<S> for crate::Trie<S> {
     }
 }
 
-impl<S: ReadTrieStorage> TrieQuery<S> for TrieReader<S> {
+impl<S: ReadTrieStorage> TrieQuery for TrieReader<S> {
+    type Subtrie = TrieReader<S::Snapshot>;
+
     fn root(&self) -> &MapBase {
         &self.root
     }
