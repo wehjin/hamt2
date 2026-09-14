@@ -272,6 +272,7 @@ impl ReadWriteTrieStorage for FileTrieStorage {
 mod tests {
     use super::*;
     use crate::types::HashKey;
+    use crate::types::map_base::{one_kv, two_kv};
     use crate::types::trie_value::TrieValue;
 
     #[tokio::test]
@@ -395,18 +396,17 @@ mod tests {
     #[tokio::test]
     async fn readonly_snapshot_freezes_max_id_and_root() -> anyhow::Result<()> {
         use crate::trie_storage::errors::TrieStorageReadError;
-        use crate::types::map_base::MapBase;
         let dir = tempfile::tempdir()?;
         let base = SlotBase::new_kv(HashKey::new(7), TrieValue::U32(7));
         let mut storage = FileTrieStorage::new(dir.path())?;
         let id = storage.append(&base).await.expect("append");
-        let root = MapBase::one_kv(HashKey::new(7), TrieValue::U32(7), &mut storage).await;
+        let root = one_kv(HashKey::new(7), TrieValue::U32(7), &mut storage).await;
         storage.write_root(root.clone()).await.expect("write root");
         let view = storage.to_readonly();
 
         // Writes after the snapshot are invisible to the view.
         let new_id = storage.append(&base).await.expect("append");
-        let new_root = MapBase::two_kv(
+        let new_root = two_kv(
             HashKey::new(7),
             TrieValue::U32(7),
             HashKey::new(8),

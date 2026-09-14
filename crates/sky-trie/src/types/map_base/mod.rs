@@ -6,6 +6,8 @@ pub mod cons;
 pub mod insert;
 pub mod query;
 
+pub use cons::*;
+
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct MapBase {
     pub map: SlotMap,
@@ -33,7 +35,7 @@ mod tests {
         let key = HashKey::new(0);
         let value = TrieValue::from(11);
         let mut storage = MemTrieStorage::new();
-        let map_base = MapBase::one_kv(key, value.clone(), &mut storage).await;
+        let map_base = one_kv(key, value.clone(), &mut storage).await;
         let stream = map_base.kv_stream(&storage);
         let kvs = stream.collect::<Vec<_>>().await;
         assert_eq!(vec![(key.i32(), value)], kvs);
@@ -49,7 +51,7 @@ mod tests {
             let mut map_base = {
                 let key = HashKey::new(test_kvs[0].0);
                 let value = test_kvs[0].1.clone();
-                MapBase::one_kv(key, value, &mut storage).await
+                one_kv(key, value, &mut storage).await
             };
             for kv in &test_kvs[1..] {
                 let key = HashKey::new(kv.0);

@@ -1,7 +1,7 @@
 use crate::TrieQueryError;
 use crate::trie_storage::{ReadTrieStorage, ReadWriteTrieStorage};
 use crate::types::HashKey;
-use crate::types::map_base::MapBase;
+use crate::types::map_base::{MapBase, two_kv};
 use crate::types::slot_base::SlotBase;
 use crate::types::trie_value::TrieValue;
 use serde::{Deserialize, Serialize};
@@ -40,7 +40,7 @@ impl Slot {
             let id = storage.append(&base).await.expect("append base");
             Slot::MapBase(MapBase { map, base: id })
         } else {
-            let map_base = MapBase::two_kv(a_key, a_value, b_key, b_value, storage).await;
+            let map_base = two_kv(a_key, a_value, b_key, b_value, storage).await;
             Slot::MapBase(map_base)
         }
     }
