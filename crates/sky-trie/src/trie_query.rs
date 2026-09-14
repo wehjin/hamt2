@@ -1,4 +1,3 @@
-use crate::TrieQueryError;
 use crate::crate_services::map_base::{kv_stream, query_keys_values, query_value};
 use crate::trie_ref::TrieRef;
 use crate::trie_storage::ReadTrieStorage;
@@ -7,6 +6,7 @@ use crate::types::HashKey;
 use crate::types::trie_value::TrieValue;
 use futures::Stream;
 use futures::stream::StreamExt;
+use sky_types::trie::error::TrieQueryError;
 use sky_types::trie::map_base::MapBase;
 
 /// The read-only query interface shared by [`Trie`], [`TrieRef`], and

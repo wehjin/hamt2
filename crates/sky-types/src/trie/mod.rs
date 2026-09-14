@@ -1,3 +1,4 @@
+pub mod error;
 pub mod hash_key;
 pub mod map_base;
 pub mod slot_base_id;

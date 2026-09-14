@@ -1,6 +1,5 @@
+use sky_types::trie::error::TrieQueryError;
 use std::fmt::Display;
-
-use crate::trie::prelude::*;
 
 #[derive(thiserror::Error, Debug)]
 pub enum QueryError {

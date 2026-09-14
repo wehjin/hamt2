@@ -6,6 +6,7 @@ use crate::types::trie_value::TrieValue;
 use sky_types::trie::map_base::MapBase;
 use sky_types::trie::slot_map::SlotMap;
 
+#[allow(dead_code)]
 pub async fn one_kv(
     key: HashKey,
     value: TrieValue,
