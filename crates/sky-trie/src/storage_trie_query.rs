@@ -1,7 +1,7 @@
 use crate::TrieQuery;
 use crate::TrieReader;
 use crate::crate_services::map_base::{kv_stream, query_keys_values, query_value};
-use crate::trie_storage::{ReadTrieStorage, ReadWriteTrieStorage};
+use crate::storage::{ReadTrieStorage, ReadWriteTrieStorage};
 use crate::types::DeepKey;
 use crate::types::HashKey;
 use futures::Stream;
@@ -148,7 +148,7 @@ fn subtrie_stream<'a, S: ReadTrieStorage>(
 mod tests {
     use super::*;
     use crate::Trie;
-    use crate::trie_storage::mem::MemTrieStorage;
+    use crate::storage::mem::MemTrieStorage;
     use futures::StreamExt;
 
     #[tokio::test]

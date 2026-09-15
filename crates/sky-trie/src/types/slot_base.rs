@@ -1,5 +1,5 @@
 use crate::crate_services::map_base;
-use crate::trie_storage::ReadWriteTrieStorage;
+use crate::storage::ReadWriteTrieStorage;
 use crate::types::HashKey;
 use crate::types::slot::Slot;
 use serde::{Deserialize, Serialize};

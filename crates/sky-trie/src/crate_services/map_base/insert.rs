@@ -1,4 +1,4 @@
-use crate::trie_storage::ReadWriteTrieStorage;
+use crate::storage::ReadWriteTrieStorage;
 use crate::types::HashKey;
 use crate::types::TrieValue;
 use crate::types::slot::{KvTest, Slot};

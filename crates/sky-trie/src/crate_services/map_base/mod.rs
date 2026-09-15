@@ -10,7 +10,7 @@ pub use query::*;
 mod tests {
     use crate::crate_services::map_base;
     use crate::crate_services::map_base::*;
-    use crate::trie_storage::mem::MemTrieStorage;
+    use crate::storage::mem::MemTrieStorage;
     use crate::types::HashKey;
     use sky_types::trie::TrieValue
 ;

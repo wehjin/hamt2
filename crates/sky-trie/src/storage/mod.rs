@@ -1,8 +1,7 @@
 use crate::types::slot_base::SlotBase;
 use errors::{StorageReadError, StorageWriteError};
+use sky_types::trie::MapBase;
 use sky_types::trie::SlotBaseId;
-use sky_types::trie::MapBase
-;
 
 pub mod errors;
 pub mod file;
@@ -31,9 +30,7 @@ pub trait ReadTrieStorage: Sync {
     fn max_id(&self) -> Option<SlotBaseId>;
 
     /// Reads the root map base of the trie or none if no root has been committed.
-    fn read_root(
-        &self,
-    ) -> impl Future<Output = Result<Option<MapBase>, StorageReadError>> + Send;
+    fn read_root(&self) -> impl Future<Output = Result<Option<MapBase>, StorageReadError>> + Send;
 
     /// Reads the root map base of the trie, defaulting to the empty map base if
     /// no root has been committed.
@@ -63,10 +60,9 @@ pub trait ReadWriteTrieStorage: ReadTrieStorage {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::trie_storage::mem::MemTrieStorage;
+    use crate::storage::mem::MemTrieStorage;
     use crate::types::HashKey;
-    use sky_types::trie::TrieValue
-;
+    use sky_types::trie::TrieValue;
 
     #[tokio::test]
     async fn empty_storage_has_no_ids() {

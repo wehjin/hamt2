@@ -1,4 +1,4 @@
-use crate::trie_storage::ReadWriteTrieStorage;
+use crate::storage::ReadWriteTrieStorage;
 use crate::types::slot::Slot;
 use crate::types::slot_base::SlotBase;
 use sky_types::trie::HashKey;

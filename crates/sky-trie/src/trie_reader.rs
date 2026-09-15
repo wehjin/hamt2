@@ -1,6 +1,6 @@
 use crate::storage_trie_query::StorageTrieQuery;
-use crate::trie_storage::ReadTrieStorage;
-use crate::trie_storage::errors::StorageReadError;
+use crate::storage::ReadTrieStorage;
+use crate::storage::errors::StorageReadError;
 use sky_types::trie::MapBase;
 use sky_types::trie::TrieValue;
 
