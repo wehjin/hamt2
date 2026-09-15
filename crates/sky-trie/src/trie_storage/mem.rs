@@ -1,4 +1,4 @@
-use crate::trie_storage::errors::{TrieStorageReadError, TrieStorageWriteError};
+use crate::trie_storage::errors::{StorageReadError, StorageWriteError};
 use crate::trie_storage::{ReadTrieStorage, ReadWriteTrieStorage};
 use crate::types::slot_base::SlotBase;
 use sky_types::trie::MapBase
@@ -57,7 +57,7 @@ impl ReadTrieStorage for MemTrieStorage {
         }
     }
 
-    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, TrieStorageReadError> {
+    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, StorageReadError> {
         let inner = self.inner.read().expect("storage poisoned");
         let index = id.0 as usize;
         Ok(inner.bases[index].clone())
@@ -73,7 +73,7 @@ impl ReadTrieStorage for MemTrieStorage {
         }
     }
 
-    async fn read_root(&self) -> Result<Option<MapBase>, TrieStorageReadError> {
+    async fn read_root(&self) -> Result<Option<MapBase>, StorageReadError> {
         Ok(self.inner.read().expect("storage poisoned").root.clone())
     }
 }
@@ -96,12 +96,12 @@ impl ReadTrieStorage for MemReadStorage {
         self.clone()
     }
 
-    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, TrieStorageReadError> {
+    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, StorageReadError> {
         if id.0 == 0 {
             return Ok(SlotBase::new());
         }
         if id.0 > self.max_id {
-            return Err(TrieStorageReadError::NotFound(id));
+            return Err(StorageReadError::NotFound(id));
         }
         let inner = self.inner.read().expect("storage poisoned");
         let index = id.0 as usize;
@@ -116,7 +116,7 @@ impl ReadTrieStorage for MemReadStorage {
         }
     }
 
-    async fn read_root(&self) -> Result<Option<MapBase>, TrieStorageReadError> {
+    async fn read_root(&self) -> Result<Option<MapBase>, StorageReadError> {
         Ok(self.root.clone())
     }
 }
@@ -127,14 +127,14 @@ impl ReadWriteTrieStorage for MemTrieStorage {
         SlotBaseId(inner.bases.len() as i32)
     }
 
-    async fn append(&mut self, base: &SlotBase) -> Result<SlotBaseId, TrieStorageWriteError> {
+    async fn append(&mut self, base: &SlotBase) -> Result<SlotBaseId, StorageWriteError> {
         let mut inner = self.inner.write().expect("storage poisoned");
         let id = inner.bases.len() as i32;
         inner.bases.push(base.clone());
         Ok(SlotBaseId(id))
     }
 
-    async fn write_root(&mut self, root: MapBase) -> Result<(), TrieStorageWriteError> {
+    async fn write_root(&mut self, root: MapBase) -> Result<(), StorageWriteError> {
         self.inner.write().expect("storage poisoned").root = Some(root);
         Ok(())
     }

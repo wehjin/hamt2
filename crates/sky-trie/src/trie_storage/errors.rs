@@ -1,9 +1,8 @@
-use sky_types::trie::SlotBaseId
-;
+use sky_types::trie::SlotBaseId;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum TrieStorageReadError {
+pub enum StorageReadError {
     #[error("base id {0} has not been written")]
     NotFound(SlotBaseId),
     #[error("failed to read base id {0} from disk: {1}")]
@@ -13,7 +12,7 @@ pub enum TrieStorageReadError {
 }
 
 #[derive(Debug, Error)]
-pub enum TrieStorageWriteError {
+pub enum StorageWriteError {
     #[error("failed to write base id {0} to disk: {1}")]
     Io(SlotBaseId, #[source] std::io::Error),
     #[error("failed to encode base id {0}: {1}")]

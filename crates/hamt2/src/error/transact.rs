@@ -3,18 +3,18 @@ use crate::trie::prelude::*;
 
 #[derive(thiserror::Error, Debug)]
 pub enum TransactError {
-    #[error("Query: {0}")]
-    Query(#[from] QueryError),
+    #[error("QueryError: {0}")]
+    QueryError(#[from] QueryError),
 
-    #[error("TrieStorageRead: {0}")]
-    TrieStorageRead(#[from] TrieStorageReadError),
+    #[error("StorageReadError: {0}")]
+    StorageReadError(#[from] StorageReadError),
 
-    #[error("TrieStorageWrite: {0}")]
-    TrieStorageWrite(#[from] TrieStorageWriteError),
+    #[error("StorageWriteError: {0}")]
+    StorageWriteError(#[from] StorageWriteError),
 
-    #[error("Trie: {0}")]
-    Trie(#[from] TrieWriteError),
+    #[error("TrieWriteError: {0}")]
+    TrieWriteError(#[from] TrieWriteError),
 
-    #[error("NoSpaceInValueTable")]
+    #[error("No space in value table")]
     NoSpaceInValueTable,
 }

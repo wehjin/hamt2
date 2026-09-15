@@ -4,7 +4,7 @@ use crate::TrieWriteError;
 use crate::crate_services::map_base::{self, query_value};
 use crate::prelude::TrieValue;
 use crate::trie_storage::ReadWriteTrieStorage;
-use crate::trie_storage::errors::{TrieStorageReadError, TrieStorageWriteError};
+use crate::trie_storage::errors::{StorageReadError, StorageWriteError};
 use crate::types::DeepKey;
 use crate::types::HashKey;
 use sky_types::trie::MapBase
@@ -26,13 +26,13 @@ impl<S: ReadWriteTrieStorage> StorageTrieQuery<S> for Trie<S> {
 /// Trie construction methods.
 impl<S: ReadWriteTrieStorage> Trie<S> {
     /// Connects to the storage, loading the persisted root if there is one.
-    pub async fn connect(storage: S) -> Result<Self, TrieStorageReadError> {
+    pub async fn connect(storage: S) -> Result<Self, StorageReadError> {
         let root = storage.get_root().await?;
         Ok(Self { root, storage })
     }
 
     /// Persists the current root map base to the storage.
-    pub async fn commit(mut self) -> Result<Self, TrieStorageWriteError> {
+    pub async fn commit(mut self) -> Result<Self, StorageWriteError> {
         self.storage.write_root(self.root.clone()).await?;
         Ok(self)
     }

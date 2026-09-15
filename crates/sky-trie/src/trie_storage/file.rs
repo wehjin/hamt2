@@ -1,4 +1,4 @@
-use crate::trie_storage::errors::{TrieStorageReadError, TrieStorageWriteError};
+use crate::trie_storage::errors::{StorageReadError, StorageWriteError};
 use crate::trie_storage::{ReadTrieStorage, ReadWriteTrieStorage};
 use crate::types::slot_base::SlotBase;
 use sky_types::trie::MapBase
@@ -109,29 +109,29 @@ impl Inner {
         base_path(&self.bases_dir, id)
     }
 
-    fn write_max_id_with(&self, id: SlotBaseId) -> Result<(), TrieStorageWriteError> {
+    fn write_max_id_with(&self, id: SlotBaseId) -> Result<(), StorageWriteError> {
         let bytes =
-            postcard::to_allocvec(&id.0).map_err(|e| TrieStorageWriteError::Encode(id, e))?;
-        std::fs::write(&self.max_id_path, bytes).map_err(|e| TrieStorageWriteError::Io(id, e))
+            postcard::to_allocvec(&id.0).map_err(|e| StorageWriteError::Encode(id, e))?;
+        std::fs::write(&self.max_id_path, bytes).map_err(|e| StorageWriteError::Io(id, e))
     }
 
-    fn read_root(&self) -> Result<Option<MapBase>, TrieStorageReadError> {
+    fn read_root(&self) -> Result<Option<MapBase>, StorageReadError> {
         match std::fs::read(&self.root_path) {
             Ok(bytes) => {
                 let root = postcard::from_bytes::<MapBase>(&bytes)
-                    .map_err(|e| TrieStorageReadError::Decode(SlotBaseId(0), e))?;
+                    .map_err(|e| StorageReadError::Decode(SlotBaseId(0), e))?;
                 Ok(Some(root))
             }
             Err(e) if e.kind() == ErrorKind::NotFound => Ok(None),
-            Err(e) => Err(TrieStorageReadError::Io(SlotBaseId(0), e)),
+            Err(e) => Err(StorageReadError::Io(SlotBaseId(0), e)),
         }
     }
 
-    fn write_root_with(&self, root: &MapBase) -> Result<(), TrieStorageWriteError> {
+    fn write_root_with(&self, root: &MapBase) -> Result<(), StorageWriteError> {
         let bytes = postcard::to_allocvec(root)
-            .map_err(|e| TrieStorageWriteError::Encode(SlotBaseId(0), e))?;
+            .map_err(|e| StorageWriteError::Encode(SlotBaseId(0), e))?;
         std::fs::write(&self.root_path, bytes)
-            .map_err(|e| TrieStorageWriteError::Io(SlotBaseId(0), e))
+            .map_err(|e| StorageWriteError::Io(SlotBaseId(0), e))
     }
 }
 
@@ -147,18 +147,18 @@ impl ReadTrieStorage for FileTrieStorage {
         }
     }
 
-    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, TrieStorageReadError> {
+    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, StorageReadError> {
         if id.0 == 0 {
             return Ok(SlotBase::new());
         }
         let inner = self.inner.read().expect("storage poisoned");
         if id.0 > inner.max_id {
-            return Err(TrieStorageReadError::NotFound(id));
+            return Err(StorageReadError::NotFound(id));
         }
         let path = inner.base_path(id);
-        let bytes = std::fs::read(&path).map_err(|e| TrieStorageReadError::Io(id, e))?;
+        let bytes = std::fs::read(&path).map_err(|e| StorageReadError::Io(id, e))?;
         let base = postcard::from_bytes::<SlotBase>(&bytes)
-            .map_err(|e| TrieStorageReadError::Decode(id, e))?;
+            .map_err(|e| StorageReadError::Decode(id, e))?;
         Ok(base)
     }
 
@@ -171,7 +171,7 @@ impl ReadTrieStorage for FileTrieStorage {
         }
     }
 
-    async fn read_root(&self) -> Result<Option<MapBase>, TrieStorageReadError> {
+    async fn read_root(&self) -> Result<Option<MapBase>, StorageReadError> {
         Ok(self.inner.read().expect("storage poisoned").read_root()?)
     }
 }
@@ -203,17 +203,17 @@ impl ReadTrieStorage for FileReadStorage {
         self.clone()
     }
 
-    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, TrieStorageReadError> {
+    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, StorageReadError> {
         if id.0 == 0 {
             return Ok(SlotBase::new());
         }
         if id.0 > self.max_id {
-            return Err(TrieStorageReadError::NotFound(id));
+            return Err(StorageReadError::NotFound(id));
         }
         let path = self.base_path(id);
-        let bytes = std::fs::read(&path).map_err(|e| TrieStorageReadError::Io(id, e))?;
+        let bytes = std::fs::read(&path).map_err(|e| StorageReadError::Io(id, e))?;
         let base = postcard::from_bytes::<SlotBase>(&bytes)
-            .map_err(|e| TrieStorageReadError::Decode(id, e))?;
+            .map_err(|e| StorageReadError::Decode(id, e))?;
         Ok(base)
     }
 
@@ -225,7 +225,7 @@ impl ReadTrieStorage for FileReadStorage {
         }
     }
 
-    async fn read_root(&self) -> Result<Option<MapBase>, TrieStorageReadError> {
+    async fn read_root(&self) -> Result<Option<MapBase>, StorageReadError> {
         Ok(self.root.clone())
     }
 }
@@ -239,19 +239,19 @@ impl ReadWriteTrieStorage for FileTrieStorage {
     fn append(
         &mut self,
         base: &SlotBase,
-    ) -> impl Future<Output = Result<SlotBaseId, TrieStorageWriteError>> {
+    ) -> impl Future<Output = Result<SlotBaseId, StorageWriteError>> {
         let mut inner = self.inner.write().expect("storage poisoned");
         let id = SlotBaseId(inner.max_id + 1);
         let bytes = match postcard::to_allocvec(base) {
             Ok(bytes) => bytes,
-            Err(e) => return future::ready(Err(TrieStorageWriteError::Encode(id, e))),
+            Err(e) => return future::ready(Err(StorageWriteError::Encode(id, e))),
         };
         let path = inner.base_path(id);
         if let Err(e) = std::fs::create_dir_all(path.parent().expect("base path has parent")) {
-            return future::ready(Err(TrieStorageWriteError::Io(id, e)));
+            return future::ready(Err(StorageWriteError::Io(id, e)));
         }
         if let Err(e) = std::fs::write(&path, bytes) {
-            return future::ready(Err(TrieStorageWriteError::Io(id, e)));
+            return future::ready(Err(StorageWriteError::Io(id, e)));
         }
         if let Err(e) = inner.write_max_id_with(id) {
             return future::ready(Err(e));
@@ -263,7 +263,7 @@ impl ReadWriteTrieStorage for FileTrieStorage {
     fn write_root(
         &mut self,
         root: MapBase,
-    ) -> impl Future<Output = Result<(), TrieStorageWriteError>> {
+    ) -> impl Future<Output = Result<(), StorageWriteError>> {
         match self
             .inner
             .read()
@@ -405,7 +405,7 @@ mod tests {
 
     #[tokio::test]
     async fn readonly_snapshot_freezes_max_id_and_root() -> anyhow::Result<()> {
-        use crate::trie_storage::errors::TrieStorageReadError;
+        use crate::trie_storage::errors::StorageReadError;
         let dir = tempfile::tempdir()?;
         let base = SlotBase::new_kv(HashKey::new(7), TrieValue::U32(7));
         let mut storage = FileTrieStorage::new(dir.path())?;
@@ -432,7 +432,7 @@ mod tests {
         assert_eq!(base, view.read(id).await.expect("read"));
         assert!(matches!(
             view.read(new_id).await,
-            Err(TrieStorageReadError::NotFound(rid)) if rid == new_id
+            Err(StorageReadError::NotFound(rid)) if rid == new_id
         ));
         Ok(())
     }

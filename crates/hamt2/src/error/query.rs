@@ -4,7 +4,7 @@ use std::fmt::Display;
 #[derive(thiserror::Error, Debug)]
 pub enum QueryError {
     #[error("Trie: {0}")]
-    Trie(#[from] TrieQueryError),
+    TrieQueryError(#[from] TrieQueryError),
 
     #[error("SerdeError: {0}")]
     SerdeError(String),

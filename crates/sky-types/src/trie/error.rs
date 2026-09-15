@@ -4,5 +4,5 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum TrieQueryError {
     #[error("An unexpected error occurred: {0}")]
-    Other(#[from] Box<dyn std::error::Error + Send + Sync>),
+    SystemError(#[from] Box<dyn std::error::Error + Send + Sync>),
 }

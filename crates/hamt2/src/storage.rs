@@ -5,7 +5,7 @@
 //! are the only storage types that public hamt2 APIs require callers to name.
 
 pub use sky_trie::trie_storage::errors::{
-    TrieStorageReadError as DbStorageReadError, TrieStorageWriteError as DbStorageWriteError,
+	StorageReadError as DbStorageReadError, StorageWriteError as DbStorageWriteError,
 };
 pub use sky_trie::trie_storage::file::FileTrieStorage as FileDbStorage;
 pub use sky_trie::trie_storage::mem::MemTrieStorage as MemDbStorage;

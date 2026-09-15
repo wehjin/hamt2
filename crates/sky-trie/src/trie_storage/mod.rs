@@ -1,5 +1,5 @@
 use crate::types::slot_base::SlotBase;
-use errors::{TrieStorageReadError, TrieStorageWriteError};
+use errors::{StorageReadError, StorageWriteError};
 use sky_types::trie::SlotBaseId;
 use sky_types::trie::MapBase
 ;
@@ -25,7 +25,7 @@ pub trait ReadTrieStorage: Sync {
     fn read(
         &self,
         id: SlotBaseId,
-    ) -> impl Future<Output = Result<SlotBase, TrieStorageReadError>> + Send;
+    ) -> impl Future<Output = Result<SlotBase, StorageReadError>> + Send;
 
     /// Returns the highest base id in the storage or none if empty. Base id 0 (the empty base) is not counted.
     fn max_id(&self) -> Option<SlotBaseId>;
@@ -33,11 +33,11 @@ pub trait ReadTrieStorage: Sync {
     /// Reads the root map base of the trie or none if no root has been committed.
     fn read_root(
         &self,
-    ) -> impl Future<Output = Result<Option<MapBase>, TrieStorageReadError>> + Send;
+    ) -> impl Future<Output = Result<Option<MapBase>, StorageReadError>> + Send;
 
     /// Reads the root map base of the trie, defaulting to the empty map base if
     /// no root has been committed.
-    fn get_root(&self) -> impl Future<Output = Result<MapBase, TrieStorageReadError>> + Send {
+    fn get_root(&self) -> impl Future<Output = Result<MapBase, StorageReadError>> + Send {
         async { Ok(self.read_root().await?.unwrap_or_else(|| MapBase::empty())) }
     }
 }
@@ -51,13 +51,13 @@ pub trait ReadWriteTrieStorage: ReadTrieStorage {
     fn append(
         &mut self,
         base: &SlotBase,
-    ) -> impl Future<Output = Result<SlotBaseId, TrieStorageWriteError>> + Send;
+    ) -> impl Future<Output = Result<SlotBaseId, StorageWriteError>> + Send;
 
     /// Persists the given root map base. The root can be read back with `BaseStorageRead::read_root`.
     fn write_root(
         &mut self,
         root: MapBase,
-    ) -> impl Future<Output = Result<(), TrieStorageWriteError>> + Send;
+    ) -> impl Future<Output = Result<(), StorageWriteError>> + Send;
 }
 
 #[cfg(test)]
