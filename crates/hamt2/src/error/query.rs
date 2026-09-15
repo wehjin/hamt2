@@ -3,18 +3,6 @@ use std::fmt::Display;
 
 #[derive(thiserror::Error, Debug)]
 pub enum QueryError {
-    #[error("Anyhow: {0}")]
-    Anyhow(#[from] anyhow::Error),
-
-    #[error("SerdeJson: {0}")]
-    SerdeJson(#[from] serde_json::Error),
-
-    #[error("Io: {0}")]
-    Io(#[from] std::io::Error),
-
-    #[error("Utf8: {0}")]
-    Utf8(#[from] std::str::Utf8Error),
-
     #[error("Trie: {0}")]
     Trie(#[from] TrieQueryError),
 

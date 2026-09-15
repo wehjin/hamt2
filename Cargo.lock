@@ -789,7 +789,6 @@ dependencies = [
  "futures",
  "log",
  "serde",
- "serde_json",
  "sky-trie",
  "sky-types",
  "tempfile",
