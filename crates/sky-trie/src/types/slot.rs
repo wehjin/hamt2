@@ -5,8 +5,8 @@ use crate::types::slot_base::SlotBase;
 use serde::{Deserialize, Serialize};
 use sky_types::trie::MapBase;
 use sky_types::trie::SlotMap;
+use sky_types::trie::TrieQueryError;
 use sky_types::trie::TrieValue;
-use sky_types::trie::error::TrieQueryError;
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Slot {

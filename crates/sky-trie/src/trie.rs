@@ -1,5 +1,4 @@
 use crate::StorageTrieQuery;
-use crate::TrieInsertError;
 use crate::TrieReader;
 use crate::crate_services::map_base::{self, query_value};
 use crate::prelude::TrieValue;
@@ -8,6 +7,7 @@ use crate::trie_storage::errors::{StorageReadError, StorageWriteError};
 use crate::types::DeepKey;
 use crate::types::HashKey;
 use sky_types::trie::MapBase;
+use sky_types::trie::TrieInsertError;
 use std::collections::HashMap;
 
 #[derive(Debug)]

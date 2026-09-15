@@ -3,7 +3,7 @@ use hamt2::db::Db;
 use hamt2::db::val;
 use hamt2::query::DbQuery;
 use hamt2::storage::FileDbStorage;
-use hamt2::types::datom;
+use sky_types::db::types::datom;
 
 pub const ATTR_COUNT: Attr = Attr("counter/count");
 pub const ATTR_GREETING: Attr = Attr("speech/greeting");

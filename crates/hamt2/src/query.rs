@@ -51,8 +51,8 @@ impl<S: ReadWriteTrieStorage> DbQuery for Db<S> {
 mod tests {
     use super::*;
     use crate::db::{dat, ent};
-    use crate::types::datom;
     use futures::StreamExt;
+    use sky_types::db::types::datom;
 
     #[tokio::test]
     async fn ev_stream_test() -> anyhow::Result<()> {

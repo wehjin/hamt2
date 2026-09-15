@@ -4,7 +4,7 @@ use crate::types::TrieValue;
 use crate::types::slot::Slot;
 use futures::Stream;
 use futures::stream;
-use sky_types::trie::error::TrieQueryError;
+use sky_types::trie::TrieQueryError;
 use sky_types::trie::{MapBase, SlotBaseId};
 
 pub struct State<S: ReadTrieStorage> {

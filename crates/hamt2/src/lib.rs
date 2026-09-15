@@ -13,5 +13,3 @@ pub mod types;
 use sky_trie as trie;
 
 pub use error::*;
-pub use sky_trie::error::TrieInsertError as DbWriteError;
-pub use sky_types::trie::error::TrieQueryError as DbQueryError;

@@ -1,5 +1,6 @@
 use crate::QueryError;
 use crate::trie::prelude::*;
+use sky_types::trie::TrieInsertError;
 
 #[derive(thiserror::Error, Debug)]
 pub enum TransactError {

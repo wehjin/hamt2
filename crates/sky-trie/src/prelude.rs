@@ -1,4 +1,3 @@
-pub use super::error::*;
 pub use super::storage_trie_query::*;
 pub use super::trie::*;
 pub use super::trie_reader::*;

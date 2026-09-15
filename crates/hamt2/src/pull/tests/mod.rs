@@ -1,8 +1,8 @@
 use crate::db::{Attr, Db, Ein, Ent, Val, dat};
 use crate::pull::Pull;
 use crate::trie::prelude::*;
-use crate::types::datom;
 use common::Basis;
+use sky_types::db::types::datom;
 
 pub mod common;
 

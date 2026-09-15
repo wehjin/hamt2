@@ -3,7 +3,7 @@ use hamt2::find::{AllEins, AttrsOfEin, EinsWithAttr};
 use hamt2::query::DbQuery;
 use hamt2::reader::DbReader;
 use hamt2::storage::MemDbStorage;
-use hamt2::types::datom;
+use sky_types::db::types::datom;
 
 const ATTR_COUNT: Attr = Attr("counter/count");
 

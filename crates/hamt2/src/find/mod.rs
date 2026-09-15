@@ -46,7 +46,7 @@ mod tests {
     use crate::find::BindsForAttr;
     use crate::query::DbQuery;
     use crate::trie::prelude::*;
-    use crate::types::datom;
+    use sky_types::db::types::datom;
 
     #[tokio::test]
     async fn find_with_reader() {

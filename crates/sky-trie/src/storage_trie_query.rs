@@ -6,7 +6,7 @@ use crate::types::DeepKey;
 use crate::types::HashKey;
 use futures::Stream;
 use futures::stream::StreamExt;
-use sky_types::trie::error::TrieQueryError;
+use sky_types::trie::TrieQueryError;
 use sky_types::trie::{MapBase, TrieValue};
 
 /// The storage-backed query interface shared by [`Trie`] and

@@ -1,4 +1,4 @@
-use sky_types::trie::error::TrieQueryError;
+use sky_types::trie::TrieQueryError;
 use std::fmt::Display;
 
 #[derive(thiserror::Error, Debug)]

@@ -1,5 +1,4 @@
 pub(crate) mod crate_services;
-pub mod error;
 pub mod prelude;
 pub mod storage_trie_query;
 mod trie;
@@ -7,7 +6,6 @@ pub mod trie_reader;
 pub mod trie_storage;
 pub mod types;
 
-pub use error::*;
 pub use sky_types::trie::TrieQuery;
 pub use storage_trie_query::StorageTrieQuery;
 pub use trie::*;
@@ -18,9 +16,8 @@ mod tests {
     use crate::trie_storage::ReadTrieStorage;
     use crate::trie_storage::file::FileTrieStorage;
     use crate::trie_storage::mem::MemTrieStorage;
-    use sky_types::trie::TrieValue
-;
     use crate::{Trie, TrieQuery, TrieReader};
+    use sky_types::trie::TrieValue;
 
     #[tokio::test]
     async fn file_trie_works() -> anyhow::Result<()> {

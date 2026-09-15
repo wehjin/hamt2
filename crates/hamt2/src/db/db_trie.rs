@@ -14,11 +14,11 @@ use crate::db::{Ein, Schema};
 use crate::db::{Txid, Val, txid};
 use crate::trie::prelude::*;
 use crate::types::Attr;
-use crate::types::dir::Dir;
 use async_stream::stream;
 use futures::{StreamExt, pin_mut};
 use serde::{Deserialize, Serialize};
 use sky_types::FindResult;
+use sky_types::db::types::dir::Dir;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -1,8 +1,8 @@
 use crate::db::Schema;
-use crate::trie::prelude::*;
 use atom::Atom;
 use kb::KnowledgeBase;
 use rule::Rule;
+use sky_trie::prelude::*;
 
 pub mod atom;
 pub mod kb;
@@ -54,6 +54,7 @@ mod tests {
     use crate::crate_services::datalog::var::var;
     use crate::db::Db;
     use crate::types::*;
+    use sky_types::db::types::datom;
 
     const ADVISOR: Attr = Attr("member/advisor");
     const NAME: Attr = Attr("member/name");

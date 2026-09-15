@@ -4,7 +4,7 @@ use hamt2::db::{Attr, Db, val};
 use hamt2::find::ValsInSlot;
 use hamt2::query::DbQuery;
 use hamt2::storage::MemDbStorage;
-use hamt2::types::datom;
+use sky_types::db::types::datom;
 
 #[tokio::test]
 async fn test_cardinality_one() -> anyhow::Result<()> {

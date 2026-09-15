@@ -1,11 +1,10 @@
-use crate::TrieInsertError;
 use crate::crate_services::map_base;
 use crate::trie_storage::ReadWriteTrieStorage;
 use crate::types::HashKey;
 use crate::types::slot::Slot;
-use sky_types::trie::TrieValue
-;
 use serde::{Deserialize, Serialize};
+use sky_types::trie::TrieInsertError;
+use sky_types::trie::TrieValue;
 use std::ops::Index;
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
