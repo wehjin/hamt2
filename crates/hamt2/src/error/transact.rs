@@ -1,5 +1,5 @@
 use crate::QueryError;
-use crate::trie::prelude::*;
+use sky_types::storage::errors::{StorageReadError, StorageWriteError};
 use sky_types::trie::TrieInsertError;
 
 #[derive(thiserror::Error, Debug)]

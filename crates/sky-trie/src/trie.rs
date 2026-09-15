@@ -3,7 +3,7 @@ use crate::TrieReader;
 use crate::crate_services::map_base::{self, query_value};
 use crate::prelude::TrieValue;
 use crate::storage::ReadWriteTrieStorage;
-use crate::storage::errors::{StorageReadError, StorageWriteError};
+use sky_types::storage::errors::{StorageReadError, StorageWriteError};
 use crate::types::DeepKey;
 use crate::types::HashKey;
 use sky_types::trie::MapBase;

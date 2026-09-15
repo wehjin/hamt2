@@ -1,5 +1,5 @@
 use crate::{QueryError, TransactError};
-use sky_trie::prelude::{StorageReadError, StorageWriteError};
+use sky_types::storage::errors::{StorageReadError, StorageWriteError};
 
 #[derive(thiserror::Error, Debug)]
 pub enum ConnectError {

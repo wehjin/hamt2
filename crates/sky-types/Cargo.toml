@@ -8,3 +8,4 @@ serde.workspace = true
 universal-hash.workspace = true
 thiserror.workspace = true
 futures.workspace = true
+postcard = { workspace = true, features = ["alloc"] }

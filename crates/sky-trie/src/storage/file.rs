@@ -1,4 +1,4 @@
-use crate::storage::errors::{StorageReadError, StorageWriteError};
+use sky_types::storage::errors::{StorageReadError, StorageWriteError};
 use crate::storage::{ReadTrieStorage, ReadWriteTrieStorage};
 use crate::types::slot_base::SlotBase;
 use sky_types::trie::MapBase;
@@ -396,7 +396,7 @@ mod tests {
 
     #[tokio::test]
     async fn readonly_snapshot_freezes_max_id_and_root() -> anyhow::Result<()> {
-        use crate::storage::errors::StorageReadError;
+        use sky_types::storage::errors::StorageReadError;
         let dir = tempfile::tempdir()?;
         let base = SlotBase::new_kv(HashKey::new(7), TrieValue::U32(7));
         let mut storage = FileTrieStorage::new(dir.path())?;

@@ -4,7 +4,7 @@
 //! hamt2 imports the rest of `sky_trie` privately (as `crate::trie`); these
 //! are the only storage types that public hamt2 APIs require callers to name.
 
-pub use sky_trie::storage::errors::{
+pub use sky_types::storage::errors::{
 	StorageReadError as DbStorageReadError, StorageWriteError as DbStorageWriteError,
 };
 pub use sky_trie::storage::file::FileTrieStorage as FileDbStorage;

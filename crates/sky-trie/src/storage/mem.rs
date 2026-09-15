@@ -1,6 +1,6 @@
-use crate::storage::errors::{StorageReadError, StorageWriteError};
 use crate::storage::{ReadTrieStorage, ReadWriteTrieStorage};
 use crate::types::slot_base::SlotBase;
+use sky_types::storage::errors::{StorageReadError, StorageWriteError};
 use sky_types::trie::MapBase;
 use sky_types::trie::SlotBaseId;
 use std::sync::{Arc, RwLock};
