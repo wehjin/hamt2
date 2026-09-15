@@ -1,4 +1,4 @@
-use crate::Val;
+use crate::db::Val;
 use serde::{Deserialize, Serialize};
 use std::ops::AddAssign;
 

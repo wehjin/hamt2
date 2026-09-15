@@ -1,5 +1,5 @@
-use crate::db::Attr;
 use crate::trie::prelude::*;
+use sky_types::db::Attr;
 use thiserror::Error;
 
 #[derive(Error, Debug)]

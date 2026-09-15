@@ -1,4 +1,4 @@
-use crate::Ein;
+use crate::db::Ein;
 use serde::{Deserialize, Serialize};
 
 pub fn val(from: impl Into<Val>) -> Val {

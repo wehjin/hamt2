@@ -1,10 +1,10 @@
+use hamt2::db::Db;
 use hamt2::db::attr_spec::AttrSpec;
 use hamt2::db::cardinality::Cardinality;
-use hamt2::db::{Attr, Db, val};
 use hamt2::find::ValsInSlot;
 use hamt2::query::DbQuery;
 use hamt2::storage::MemDbStorage;
-use sky_types::db::types::datom;
+use sky_types::db::{Attr, datom, val};
 
 #[tokio::test]
 async fn test_cardinality_one() -> anyhow::Result<()> {

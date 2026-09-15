@@ -1,4 +1,4 @@
-use crate::db::Attr;
+use sky_types::db::Attr;
 use thiserror::Error;
 
 #[derive(Error, Debug)]

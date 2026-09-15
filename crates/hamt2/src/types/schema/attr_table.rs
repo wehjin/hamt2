@@ -1,9 +1,10 @@
 use crate::db;
+use crate::db::AttrName;
 use crate::db::attr_spec::AttrSpec;
 use crate::db::cardinality::Cardinality;
 use crate::db::db_trie::AttrEin;
-use crate::db::{Attr, AttrName, Ein};
 use crate::types::schema::attribute::Attribute;
+use sky_types::db::{Attr, Ein};
 use std::collections::HashMap;
 use std::ops::{Deref, DerefMut, Index};
 

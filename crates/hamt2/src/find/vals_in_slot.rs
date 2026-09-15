@@ -1,10 +1,10 @@
 use crate::crate_services::datalog::atom::{Atom, atom};
 use crate::crate_services::datalog::term::term;
 use crate::crate_services::datalog::var::var;
-use crate::db::{Ein, Val, val};
 use crate::find::Find;
-use crate::types::Attr;
-use sky_types::FindResult;
+use sky_types::db::Attr;
+use sky_types::db::FindResult;
+use sky_types::db::{Ein, Val, val};
 
 pub struct ValsInSlot {
     ein: Ein,

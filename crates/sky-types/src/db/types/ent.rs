@@ -1,4 +1,4 @@
-use crate::{Ein, Val};
+use crate::db::{Ein, Val};
 
 pub fn ent(ent: impl Into<Ent>) -> Ent {
     ent.into()

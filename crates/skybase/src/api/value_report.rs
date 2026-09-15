@@ -1,7 +1,8 @@
-use hamt2::db::{AttrName, Ein, Val};
+use hamt2::db::AttrName;
 use leptos::prelude::ServerFnError;
 use leptos::server;
 use serde::{Deserialize, Serialize};
+use sky_types::db::{Ein, Val};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ValueReport {

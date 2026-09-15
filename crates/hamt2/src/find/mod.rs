@@ -16,7 +16,7 @@ pub use attr_with_name::*;
 pub use attrs_of_ein::*;
 pub use binds_for_attr::*;
 pub use eins_with_attr::*;
-use sky_types::FindResult;
+use sky_types::db::FindResult;
 pub use vals_in_slot::*;
 
 pub trait Find {
@@ -42,11 +42,11 @@ pub trait Find {
 
 #[cfg(test)]
 mod tests {
-    use crate::db::{Attr, Db, ein, val};
+    use crate::db::Db;
     use crate::find::BindsForAttr;
     use crate::query::DbQuery;
     use crate::trie::prelude::*;
-    use sky_types::db::types::datom;
+    use sky_types::db::{Attr, datom, ein, val};
 
     #[tokio::test]
     async fn find_with_reader() {

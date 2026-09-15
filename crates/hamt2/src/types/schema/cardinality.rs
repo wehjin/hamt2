@@ -1,4 +1,4 @@
-use crate::db::Val;
+use sky_types::db::Val;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Cardinality {

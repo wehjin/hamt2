@@ -6,19 +6,17 @@ use crate::crate_services::datalog::term::term;
 use crate::crate_services::datalog::var::var;
 use crate::crate_services::val_table;
 use crate::db::QUERY;
+use crate::db::Schema;
 use crate::db::attr_table::AttrTable;
 use crate::db::cardinality::Cardinality;
 use crate::db::types::key::{KEY_AEVT, KEY_EAVT, KEY_MAX_TXID};
 use crate::db::vid::Vid;
-use crate::db::{Ein, Schema};
-use crate::db::{Txid, Val, txid};
+use crate::db::{Txid, txid};
 use crate::trie::prelude::*;
-use crate::types::Attr;
 use async_stream::stream;
 use futures::{StreamExt, pin_mut};
 use serde::{Deserialize, Serialize};
-use sky_types::FindResult;
-use sky_types::db::types::dir::Dir;
+use sky_types::db::*;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -150,7 +148,7 @@ where
     }
 }
 
-/// An attr-ein is a Ein that refers to an attribute.
+/// An attr-ein is an Ein that refers to an attribute.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub struct AttrEin(Ein);
 impl AttrEin {

@@ -1,4 +1,4 @@
-use crate::{Attr, Dat, Dir, Ent};
+use crate::db::{Attr, Dat, Dir, Ent};
 use std::fmt::Debug;
 
 pub fn add(ent: impl Into<Ent>, attr: impl Into<Attr>, dat: impl Into<Dat>) -> Datom {

@@ -1,4 +1,4 @@
-use hamt2::db::Ein;
+use sky_types::db::Ein;
 use leptos::prelude::ServerFnError;
 use leptos::server;
 use serde::{Deserialize, Serialize};

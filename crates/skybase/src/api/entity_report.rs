@@ -1,7 +1,7 @@
-use hamt2::db::Ein;
 use leptos::prelude::ServerFnError;
 use leptos::server;
 use serde::{Deserialize, Serialize};
+use sky_types::db::Ein;
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct EntitiesReport {

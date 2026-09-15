@@ -1,9 +1,9 @@
-use hamt2::db::{Attr, Db, ein, val};
+use hamt2::db::Db;
 use hamt2::find::{AllEins, AttrsOfEin, EinsWithAttr};
 use hamt2::query::DbQuery;
 use hamt2::reader::DbReader;
 use hamt2::storage::MemDbStorage;
-use sky_types::db::types::datom;
+use sky_types::db::{Attr, datom, ein, val};
 
 const ATTR_COUNT: Attr = Attr("counter/count");
 

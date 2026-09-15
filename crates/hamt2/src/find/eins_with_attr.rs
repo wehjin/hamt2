@@ -1,10 +1,8 @@
 use crate::crate_services::datalog::atom::{Atom, atom};
 use crate::crate_services::datalog::term::term;
 use crate::crate_services::datalog::var::var;
-use crate::db::Attr;
-use crate::db::Ein;
 use crate::find::Find;
-use sky_types::FindResult;
+use sky_types::db::{Attr, Ein, FindResult};
 
 pub struct EinsWithAttr {
     attr: Attr,

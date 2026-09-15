@@ -2,11 +2,12 @@ use crate::crate_services::datalog::atom::Atom;
 use crate::crate_services::datalog::rule::Rule;
 use crate::crate_services::datalog::sub::Substitution;
 use crate::crate_services::datalog::term::Term;
+use crate::db::Schema;
 use crate::db::db_trie;
-use crate::db::{Attr, Schema, Val};
 use crate::trie::prelude::*;
 use async_stream::stream;
 use futures::{StreamExt, pin_mut};
+use sky_types::db::{Attr, Val};
 use std::collections::HashSet;
 
 #[derive(Debug, Clone)]

@@ -1,6 +1,6 @@
 use crate::db::attr_spec::AttrSpec;
 use crate::db::cardinality::Cardinality;
-use crate::db::{Attr, Ein};
+use sky_types::db::{Attr, Ein};
 
 #[derive(Debug, Clone)]
 pub struct Attribute {

@@ -1,10 +1,10 @@
 use crate::crate_services::datalog::atom::Atom;
-use crate::db::Ein;
 use crate::db::Schema;
 use crate::db::db_trie;
 use crate::find::Find;
 use crate::trie::prelude::*;
-use sky_types::FindResult;
+use sky_types::db::Ein;
+use sky_types::db::FindResult;
 use std::future::Future;
 
 pub struct AllEins;

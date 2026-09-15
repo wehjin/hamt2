@@ -1,10 +1,11 @@
 use crate::QueryError;
 use crate::db::db_trie;
 use crate::db::types::key::KEY_MAX_TXID;
-use crate::db::{Attr, Db, Ein, Txid, Val};
+use crate::db::{Db, Txid};
 use crate::find::{Find, ValsInSlot};
 use crate::trie::prelude::*;
 use futures::FutureExt;
+use sky_types::db::{Attr, Ein, Val};
 
 pub trait DbQuery {
     fn find<F: Find>(&self, find: F) -> impl Future<Output = Vec<F::Output>>;
@@ -50,9 +51,9 @@ impl<S: ReadWriteTrieStorage> DbQuery for Db<S> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::{dat, ent};
     use futures::StreamExt;
-    use sky_types::db::types::datom;
+    use sky_types::db::datom;
+    use sky_types::db::{dat, ent};
 
     #[tokio::test]
     async fn ev_stream_test() -> anyhow::Result<()> {

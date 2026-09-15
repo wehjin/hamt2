@@ -1,7 +1,7 @@
 use hamt2::ConnectError;
-use hamt2::db::db::types::datom;
-use hamt2::db::{Attr, Db, Ent, val};
+use hamt2::db::Db;
 use hamt2::storage::MemDbStorage;
+use sky_types::db::{Attr, Ent, datom, val};
 
 pub const ATTR_SKYBASE_VERSION: Attr = Attr("skybase/version");
 pub async fn start_db() -> Result<Db<MemDbStorage>, ConnectError> {

@@ -2,11 +2,12 @@ use crate::db::attr_loader::AttributeLoader;
 use crate::db::attr_table::AttrTable;
 use crate::db::db_trie;
 use crate::db::db_trie::AttrEin;
-use crate::db::{Attr, AttrName, Db, Dir, Txid};
+use crate::db::{AttrName, Db, Txid};
 use crate::find::Find;
 use crate::trie::prelude::*;
 use crate::{LoadError, TransactError, db};
 use attribute::Attribute;
+use sky_types::db::{Attr, Dir};
 use std::ops::{Deref, DerefMut, Index};
 
 pub mod attr_loader;

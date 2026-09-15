@@ -1,5 +1,5 @@
-use crate::db::Attr;
 use crate::db::cardinality::Cardinality;
+use sky_types::db::Attr;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AttrSpec {

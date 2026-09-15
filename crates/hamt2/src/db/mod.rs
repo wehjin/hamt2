@@ -10,6 +10,7 @@ use crate::reader::DbReader;
 pub use crate::types::*;
 use sky_trie::Trie;
 use sky_trie::prelude::ReadWriteTrieStorage;
+use sky_types::db::Attr;
 pub use types::*;
 
 #[derive(Debug)]

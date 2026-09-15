@@ -1,10 +1,10 @@
 use hamt2::LoadError;
+use hamt2::db::Db;
 use hamt2::db::Txid;
-use hamt2::db::{Attr, Db, ein, val};
 use hamt2::find::EinsWithAttr;
 use hamt2::query::DbQuery;
 use hamt2::storage::MemDbStorage;
-use sky_types::db::types::datom;
+use sky_types::db::{Attr, datom, ein, val};
 
 pub const ATTR_COUNT: Attr = Attr("counter/count");
 pub const ATTR_GREETING: Attr = Attr("speech/greeting");

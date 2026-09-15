@@ -2,8 +2,8 @@ use crate::crate_services::u32;
 use crate::db::types::key::KEY_VAL_TABLE;
 use crate::db::vid::Vid;
 use crate::trie::prelude::*;
-use crate::types::Val;
 use crate::{QueryError, TransactError};
+use sky_types::db::Val;
 
 pub async fn insert<S: ReadWriteTrieStorage>(
     trie: Trie<S>,
@@ -170,7 +170,7 @@ async fn find_hash_trie<T: TrieQuery>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::val;
+    use sky_types::db::{Val, val};
 
     #[tokio::test]
     async fn insert_and_query() {

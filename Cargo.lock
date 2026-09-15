@@ -2114,6 +2114,7 @@ dependencies = [
  "leptos_meta",
  "leptos_router",
  "serde",
+ "sky-types",
  "tokio",
  "wasm-bindgen",
 ]
