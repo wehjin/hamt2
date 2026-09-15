@@ -1,12 +1,13 @@
 pub mod db_trie;
 pub mod types;
 
+use crate::LoadError;
 use crate::db::attr_spec::DbSpec;
 use crate::db::attribute::Attribute;
 use crate::db::types::MaxEid;
+use crate::error::ConnectError;
 use crate::reader::DbReader;
 pub use crate::types::*;
-use crate::{LoadError, TransactError};
 use sky_trie::Trie;
 use sky_trie::prelude::ReadWriteTrieStorage;
 pub use types::*;
@@ -26,7 +27,7 @@ impl<S: ReadWriteTrieStorage> Db<S> {
 
 /// Construction methods for Db
 impl<S: ReadWriteTrieStorage> Db<S> {
-    pub async fn new(storage: S, db_spec: impl Into<DbSpec>) -> Result<Self, TransactError> {
+    pub async fn new(storage: S, db_spec: impl Into<DbSpec>) -> Result<Self, ConnectError> {
         let db_spec = db_spec.into();
         let attr_specs = db_spec.as_ref();
         let (schema, trie) = {
