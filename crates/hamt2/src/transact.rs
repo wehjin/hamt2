@@ -1,4 +1,4 @@
-use crate::TransactError;
+use sky_types::db::TransactError;
 use crate::db::Db;
 use crate::db::db_trie;
 use crate::db::types::MaxEid;

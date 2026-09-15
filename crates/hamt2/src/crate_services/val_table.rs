@@ -2,7 +2,7 @@ use crate::crate_services::u32;
 use crate::db::types::key::KEY_VAL_TABLE;
 use crate::db::vid::Vid;
 use crate::trie::prelude::*;
-use crate::{QueryError, TransactError};
+use sky_types::db::{QueryError, TransactError};
 use sky_types::db::Val;
 
 pub async fn insert<S: ReadWriteTrieStorage>(

@@ -1,4 +1,4 @@
-use crate::QueryError;
+use sky_types::db::QueryError;
 use crate::db::db_trie;
 use crate::db::types::key::KEY_MAX_TXID;
 use crate::db::{Db, Txid};

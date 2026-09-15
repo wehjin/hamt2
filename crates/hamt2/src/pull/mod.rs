@@ -1,4 +1,4 @@
-use crate::QueryError;
+use sky_types::db::QueryError;
 use crate::db::Db;
 use crate::trie::prelude::*;
 use serde::{Deserialize, Serialize};

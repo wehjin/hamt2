@@ -1,4 +1,4 @@
-use crate::TransactError;
+use sky_types::db::TransactError;
 use crate::crate_services::datalog::Program;
 use crate::crate_services::datalog::atom::{Atom, atom};
 use crate::crate_services::datalog::rule::rule;

@@ -1,5 +1,5 @@
 use crate::LoadError;
-use crate::TransactError;
+use sky_types::db::TransactError;
 use crate::db::Db;
 use crate::reader::DbReader;
 use crate::trie::prelude::*;

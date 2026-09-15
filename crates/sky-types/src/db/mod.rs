@@ -1,5 +1,5 @@
-mod error;
+mod errors;
 mod types;
 
-pub use error::*;
+pub use errors::*;
 pub use types::*;

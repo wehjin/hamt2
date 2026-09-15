@@ -1,5 +1,5 @@
 use crate::types::slot_base::SlotBase;
-use sky_types::storage::errors::{StorageReadError, StorageWriteError};
+use sky_types::storage::error::{StorageReadError, StorageWriteError};
 use sky_types::trie::MapBase;
 use sky_types::trie::SlotBaseId;
 
