@@ -4,9 +4,6 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum LoadError {
-    #[error("Query error: {0:?}")]
-    QueryError(#[from] crate::QueryError),
-
     #[error("Trie storage read: {0}")]
     TrieStorageRead(#[from] TrieStorageReadError),
 

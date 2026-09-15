@@ -1,5 +1,4 @@
 use crate::{QueryError, TransactError};
-use sky_trie::TrieWriteError;
 use sky_trie::prelude::{TrieStorageReadError, TrieStorageWriteError};
 
 #[derive(thiserror::Error, Debug)]
@@ -15,10 +14,4 @@ pub enum ConnectError {
 
     #[error("TrieStorageWrite: {0}")]
     TrieStorageWrite(#[from] TrieStorageWriteError),
-
-    #[error("Trie: {0}")]
-    Trie(#[from] TrieWriteError),
-
-    #[error("NoSpaceInValueTable")]
-    NoSpaceInValueTable,
 }
