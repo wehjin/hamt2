@@ -1,14 +1,13 @@
 use crate::StorageTrieQuery;
+use crate::TrieInsertError;
 use crate::TrieReader;
-use crate::TrieWriteError;
 use crate::crate_services::map_base::{self, query_value};
 use crate::prelude::TrieValue;
 use crate::trie_storage::ReadWriteTrieStorage;
 use crate::trie_storage::errors::{StorageReadError, StorageWriteError};
 use crate::types::DeepKey;
 use crate::types::HashKey;
-use sky_types::trie::MapBase
-;
+use sky_types::trie::MapBase;
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -53,7 +52,7 @@ impl<S: ReadWriteTrieStorage> Trie<S> {
 
 /// Trie update methods.
 impl<S: ReadWriteTrieStorage> Trie<S> {
-    pub async fn insert(mut self, key: i32, value: TrieValue) -> Result<Self, TrieWriteError> {
+    pub async fn insert(mut self, key: i32, value: TrieValue) -> Result<Self, TrieInsertError> {
         let key = HashKey::new(key);
         let root = map_base::insert_kv(self.root, key, value, &mut self.storage).await?;
         self.root = root;
@@ -65,7 +64,7 @@ impl<S: ReadWriteTrieStorage> Trie<S> {
         key: [i32; N],
         value: impl Into<TrieValue>,
         replace_tail: bool,
-    ) -> Result<Self, TrieWriteError> {
+    ) -> Result<Self, TrieInsertError> {
         let deep_key = DeepKey::from(key);
         let last_index = N - 1;
         let mut map_bases = HashMap::new();
@@ -81,7 +80,7 @@ impl<S: ReadWriteTrieStorage> Trie<S> {
                     None => MapBase::empty(),
                     Some(TrieValue::SubTrie(map_base)) => map_base,
                     Some(TrieValue::U32(_)) => {
-                        return Err(TrieWriteError::ExpectedMapBaseAtKey);
+                        return Err(TrieInsertError::ExpectedMapBaseAtKey);
                     }
                 }
             };

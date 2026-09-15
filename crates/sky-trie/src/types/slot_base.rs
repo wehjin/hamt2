@@ -1,4 +1,4 @@
-use crate::TrieWriteError;
+use crate::TrieInsertError;
 use crate::crate_services::map_base;
 use crate::trie_storage::ReadWriteTrieStorage;
 use crate::types::HashKey;
@@ -67,7 +67,7 @@ impl SlotBase {
         key: HashKey,
         value: TrieValue,
         storage: &mut impl ReadWriteTrieStorage,
-    ) -> Result<Self, TrieWriteError> {
+    ) -> Result<Self, TrieInsertError> {
         let SlotBase { mut slots } = self;
         let pre_slot = slots.remove(base_index);
         let post_slot = {

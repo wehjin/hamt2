@@ -13,7 +13,7 @@ pub enum TransactError {
     StorageWriteError(#[from] StorageWriteError),
 
     #[error("TrieWriteError: {0}")]
-    TrieWriteError(#[from] TrieWriteError),
+    TrieWriteError(#[from] TrieInsertError),
 
     #[error("No space in value table")]
     NoSpaceInValueTable,

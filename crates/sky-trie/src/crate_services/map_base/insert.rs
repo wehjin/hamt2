@@ -1,4 +1,4 @@
-use crate::TrieWriteError;
+use crate::TrieInsertError;
 use crate::trie_storage::ReadWriteTrieStorage;
 use crate::types::HashKey;
 use crate::types::TrieValue;
@@ -11,7 +11,7 @@ pub async fn insert_kv(
     key: HashKey,
     value: TrieValue,
     storage: &mut impl ReadWriteTrieStorage,
-) -> Result<MapBase, TrieWriteError> {
+) -> Result<MapBase, TrieInsertError> {
     let MapBase { map, base } = map_base;
     let post_map_base = match map.try_base_index(key) {
         Some(base_index) => {

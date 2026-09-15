@@ -3,7 +3,7 @@ use thiserror::Error;
 
 /// An error from a trie mutation (insert) operation.
 #[derive(Debug, Error)]
-pub enum TrieWriteError {
+pub enum TrieInsertError {
     #[error("expected a map base at the key")]
     ExpectedMapBaseAtKey,
     #[error("query failed during mutation: {0}")]
