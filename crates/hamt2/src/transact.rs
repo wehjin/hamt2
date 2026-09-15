@@ -5,7 +5,8 @@ use crate::db::types::ent_eid::EntEid;
 use crate::trie::prelude::*;
 use sky_types::db::Transact;
 use sky_types::db::TransactError;
-use sky_types::db::{Dat, Datom, Ent, val};
+use sky_types::db::Datom;
+use sky_types::db::{Dat, Ent, val};
 
 impl<S: ReadWriteTrieStorage> Transact for Db<S> {
     async fn transact(self, datoms: impl Into<Vec<Datom>>) -> Result<Self, TransactError> {

@@ -1,9 +1,9 @@
 use hamt2::db::Db;
 use hamt2::query::DbQuery;
 use hamt2::storage::FileDbStorage;
-use sky_types::db::Transact;
 use sky_types::db::Attr;
-use sky_types::db::datom;
+use sky_types::db::Transact;
+use sky_types::db::datum;
 use sky_types::db::val;
 
 pub const ATTR_COUNT: Attr = Attr("counter/count");
@@ -15,7 +15,7 @@ async fn file_db_works() -> anyhow::Result<()> {
     {
         let storage = FileDbStorage::new(dir.path())?;
         let db = Db::new(storage, [ATTR_COUNT]).await?;
-        let db = db.transact([datom::add(1, ATTR_COUNT, 1)]).await?;
+        let db = db.transact([datum::add(1, ATTR_COUNT, 1)]).await?;
         assert_eq!(Some(val(1)), db.find_val(1, ATTR_COUNT).await?);
         db.close();
     }
@@ -33,7 +33,7 @@ async fn file_db_strings_work() -> anyhow::Result<()> {
     {
         let storage = FileDbStorage::new(dir.path())?;
         let db = Db::new(storage, [ATTR_GREETING]).await?;
-        let db = db.transact([datom::add(1, ATTR_GREETING, "hello")]).await?;
+        let db = db.transact([datum::add(1, ATTR_GREETING, "hello")]).await?;
         assert_eq!(Some(val("hello")), db.find_val(1, ATTR_GREETING).await?);
         db.close();
     }

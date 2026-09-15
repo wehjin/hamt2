@@ -42,19 +42,20 @@ pub trait Find {
 
 #[cfg(test)]
 mod tests {
-    use crate::db::Db;
-    use crate::find::BindsForAttr;
-    use crate::query::DbQuery;
-    use crate::trie::prelude::*;
-    use sky_types::db::{Attr, datom, ein, val};
-    use sky_types::db::Transact;
+	use crate::db::Db;
+	use crate::find::BindsForAttr;
+	use crate::query::DbQuery;
+	use crate::trie::prelude::*;
+	use sky_types::db::Transact;
+	use sky_types::db::datum;
+	use sky_types::db::{Attr, ein, val};
 
-    #[tokio::test]
-    async fn find_with_reader() {
+	#[tokio::test]
+	async fn find_with_reader() {
         let attr = Attr::from("Counter/count");
         let store = MemTrieStorage::new();
         let db = Db::new(store, [attr]).await.unwrap();
-        let txn = [datom::add(10, attr, 42)];
+        let txn = [datum::add(10, attr, 42)];
         let db = db.transact(txn).await.unwrap();
         let reader = db.to_reader().await;
         let found = reader.find(BindsForAttr::new(attr)).await;

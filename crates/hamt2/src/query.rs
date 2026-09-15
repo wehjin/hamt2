@@ -51,21 +51,21 @@ impl<S: ReadWriteTrieStorage> DbQuery for Db<S> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sky_types::db::Transact;
     use futures::StreamExt;
-    use sky_types::db::datom;
+    use sky_types::db::Transact;
+    use sky_types::db::datum;
     use sky_types::db::{dat, ent};
 
     #[tokio::test]
-    async fn ev_stream_test() -> anyhow::Result<()> {
+	async fn ev_stream_test() -> anyhow::Result<()> {
         const COUNT: Attr = Attr("counter/count");
         let schema = vec![COUNT];
         let storage = MemTrieStorage::new();
         let mut db = Db::new(storage, schema.clone()).await?;
         db = db
             .transact(vec![
-                datom::add(ent(10), COUNT, dat(Val::from(10))),
-                datom::add(ent(11), COUNT, dat(Val::from(11))),
+	            datum::add(ent(10), COUNT, dat(Val::from(10))),
+	            datum::add(ent(11), COUNT, dat(Val::from(11))),
             ])
             .await?;
 

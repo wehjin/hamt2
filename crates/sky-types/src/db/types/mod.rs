@@ -1,17 +1,27 @@
-pub mod attr;
-pub mod dat;
-pub mod datom;
-pub mod dir;
-pub mod ein;
-pub mod ent;
-pub mod find_result;
-pub mod val;
+mod attr;
+mod dat;
+mod ein;
+mod ent;
+mod find_result;
+mod val;
 
 pub use attr::*;
 pub use dat::*;
-pub use datom::*;
-pub use dir::*;
 pub use ein::*;
 pub use ent::*;
 pub use find_result::*;
 pub use val::*;
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct Datom {
+    pub ent: Ent,
+    pub attr: Attr,
+    pub dat: Dat,
+    pub dir: Dir,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Dir {
+    In,
+    Out,
+}

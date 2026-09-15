@@ -3,7 +3,8 @@ use hamt2::find::EinsWithAttr;
 use hamt2::query::DbQuery;
 use hamt2::storage::MemDbStorage;
 use sky_types::db::Transact;
-use sky_types::db::{Attr, datom, val};
+use sky_types::db::datum;
+use sky_types::db::{Attr, val};
 
 const ATTR_COUNT: Attr = Attr("counter/count");
 
@@ -12,9 +13,9 @@ async fn mem_db_works() -> anyhow::Result<()> {
     let db = Db::new(MemDbStorage::new(), [ATTR_COUNT]).await?;
     let db = db
         .transact([
-            datom::add(1, ATTR_COUNT, val(10)),
-            datom::add(2, ATTR_COUNT, val(20)),
-            datom::add(3, ATTR_COUNT, val(30)),
+            datum::add(1, ATTR_COUNT, val(10)),
+            datum::add(2, ATTR_COUNT, val(20)),
+            datum::add(3, ATTR_COUNT, val(30)),
         ])
         .await?;
 

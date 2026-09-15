@@ -1,11 +1,11 @@
 use crate::LoadError;
 use crate::db::Db;
 use crate::reader::DbReader;
-use sky_types::db::Transact;
 use crate::trie::prelude::*;
 use log::error;
-use sky_types::db::Datom;
+use sky_types::db::Transact;
 use sky_types::db::TransactError;
+use sky_types::db::Datom;
 use thiserror::Error;
 use tokio::sync::mpsc::Receiver;
 use tokio::sync::{mpsc, oneshot};

@@ -54,7 +54,8 @@ mod tests {
     use crate::crate_services::datalog::var::var;
     use crate::db::Db;
     use sky_types::db::Transact;
-    use sky_types::db::{Attr, datom, ent, val};
+    use sky_types::db::datum;
+    use sky_types::db::{Attr, ent, val};
 
     const ADVISOR: Attr = Attr("member/advisor");
     const NAME: Attr = Attr("member/name");
@@ -70,11 +71,11 @@ mod tests {
             let mut db = Db::new(MemTrieStorage::new(), schema.clone()).await?;
             db = db
                 .transact([
-                    datom::add("a", NAME, val("Alice")),
-                    datom::add("b", NAME, val("Bob")),
-                    datom::add("c", NAME, val("Clark")),
-                    datom::add("a", ADVISOR, ent("c")),
-                    datom::add("b", ADVISOR, ent("c")),
+                    datum::add("a", NAME, val("Alice")),
+                    datum::add("b", NAME, val("Bob")),
+                    datum::add("c", NAME, val("Clark")),
+                    datum::add("a", ADVISOR, ent("c")),
+                    datum::add("b", ADVISOR, ent("c")),
                 ])
                 .await?;
             storage = db.close();

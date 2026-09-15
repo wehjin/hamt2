@@ -1,9 +1,5 @@
 use crate::db::{Ent, Val, val};
 
-pub fn dat(from: impl Into<Dat>) -> Dat {
-    from.into()
-}
-
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Dat {
     Val(Val),

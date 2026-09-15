@@ -1,5 +1,5 @@
-use crate::db::{Attr, Dat, Dir, Ent};
-use std::fmt::Debug;
+use crate::db::types::{Datom, Dir};
+use crate::db::{Attr, Dat, Ent};
 
 pub fn add(ent: impl Into<Ent>, attr: impl Into<Attr>, dat: impl Into<Dat>) -> Datom {
     Datom {
@@ -17,12 +17,4 @@ pub fn del(ent: impl Into<Ent>, attr: impl Into<Attr>, dat: impl Into<Dat>) -> D
         dat: dat.into(),
         dir: Dir::Out,
     }
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct Datom {
-    pub ent: Ent,
-    pub attr: Attr,
-    pub dat: Dat,
-    pub dir: Dir,
 }

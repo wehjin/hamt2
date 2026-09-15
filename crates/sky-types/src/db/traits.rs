@@ -1,4 +1,5 @@
-use crate::db::{Datom, TransactError};
+use crate::db::Datom;
+use crate::db::TransactError;
 
 #[allow(async_fn_in_trait)]
 pub trait Transact {

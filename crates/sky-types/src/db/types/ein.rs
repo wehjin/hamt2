@@ -2,10 +2,6 @@ use crate::db::Val;
 use serde::{Deserialize, Serialize};
 use std::ops::AddAssign;
 
-pub fn ein(from: impl Into<Ein>) -> Ein {
-    from.into()
-}
-
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub struct Ein(pub i32);
 

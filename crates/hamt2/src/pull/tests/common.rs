@@ -1,10 +1,12 @@
-use sky_types::db::QueryError;
 use crate::db::Db;
 use crate::pull::Pull;
 use crate::query::DbQuery;
 use crate::trie::prelude::*;
 use serde::{Deserialize, Serialize};
-use sky_types::db::{Attr, Datom, Ein, Ent, datom};
+use sky_types::db::QueryError;
+use sky_types::db::datum;
+use sky_types::db::Datom;
+use sky_types::db::{Attr, Ein, Ent};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename = "basis")]
@@ -34,10 +36,10 @@ impl<'a> Pull<'a> for Basis {
 
     fn into_datoms(self, ent: Ent) -> Vec<Datom> {
         vec![
-            datom::add(ent, Self::SYMBOL, self.symbol),
-            datom::add(ent, Self::SHARES, self.shares),
-            datom::add(ent, Self::PRICE_EACH, self.price_each),
-            datom::add(ent, Self::DIRECTION, self.direction),
+	        datum::add(ent, Self::SYMBOL, self.symbol),
+	        datum::add(ent, Self::SHARES, self.shares),
+	        datum::add(ent, Self::PRICE_EACH, self.price_each),
+	        datum::add(ent, Self::DIRECTION, self.direction),
         ]
     }
 

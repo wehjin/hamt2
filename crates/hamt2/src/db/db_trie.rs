@@ -1,4 +1,3 @@
-use sky_types::db::TransactError;
 use crate::crate_services::datalog::Program;
 use crate::crate_services::datalog::atom::{Atom, atom};
 use crate::crate_services::datalog::rule::rule;
@@ -16,6 +15,7 @@ use crate::trie::prelude::*;
 use async_stream::stream;
 use futures::{StreamExt, pin_mut};
 use serde::{Deserialize, Serialize};
+use sky_types::db::TransactError;
 use sky_types::db::*;
 use std::collections::HashMap;
 

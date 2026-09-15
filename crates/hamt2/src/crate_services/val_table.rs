@@ -2,8 +2,8 @@ use crate::crate_services::u32;
 use crate::db::types::key::KEY_VAL_TABLE;
 use crate::db::vid::Vid;
 use crate::trie::prelude::*;
-use sky_types::db::{QueryError, TransactError};
 use sky_types::db::Val;
+use sky_types::db::{QueryError, TransactError};
 
 pub async fn insert<S: ReadWriteTrieStorage>(
     trie: Trie<S>,
@@ -169,10 +169,10 @@ async fn find_hash_trie<T: TrieQuery>(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use sky_types::db::{Val, val};
+	use super::*;
+	use sky_types::db::{Val, val};
 
-    #[tokio::test]
+	#[tokio::test]
     async fn insert_and_query() {
         let mut trie = Trie::connect(MemTrieStorage::new())
             .await

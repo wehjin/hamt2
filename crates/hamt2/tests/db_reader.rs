@@ -4,7 +4,8 @@ use hamt2::query::DbQuery;
 use hamt2::reader::DbReader;
 use hamt2::storage::MemDbStorage;
 use sky_types::db::Transact;
-use sky_types::db::{Attr, datom, ein, val};
+use sky_types::db::datum;
+use sky_types::db::{Attr, ein, val};
 
 const ATTR_COUNT: Attr = Attr("counter/count");
 
@@ -13,9 +14,9 @@ async fn db_reader_works() -> anyhow::Result<()> {
     let db = Db::new(MemDbStorage::new(), [ATTR_COUNT]).await?;
     let db = db
         .transact([
-            datom::add(1, ATTR_COUNT, val(10)),
-            datom::add(2, ATTR_COUNT, val(20)),
-            datom::add(3, ATTR_COUNT, val(30)),
+            datum::add(1, ATTR_COUNT, val(10)),
+            datum::add(2, ATTR_COUNT, val(20)),
+            datum::add(3, ATTR_COUNT, val(30)),
         ])
         .await?;
 
@@ -29,7 +30,7 @@ async fn db_reader_works() -> anyhow::Result<()> {
     assert_eq!(Some(val(30)), reader.find_val(3, ATTR_COUNT).await?);
 
     // The db stays usable after the reader is loaded.
-    let db = db.transact([datom::add(4, ATTR_COUNT, val(40))]).await?;
+    let db = db.transact([datum::add(4, ATTR_COUNT, val(40))]).await?;
     assert_eq!(Some(val(40)), db.find_val(4, ATTR_COUNT).await?);
     // The reader is a snapshot from before the new transact.
     assert_eq!(None, reader.find_val(4, ATTR_COUNT).await?);
@@ -42,7 +43,7 @@ async fn db_reader_finds_entities() {
     let db = Db::new(MemDbStorage::new(), [ATTR_COUNT])
         .await
         .unwrap()
-        .transact([datom::add(100, ATTR_COUNT, val(100))])
+        .transact([datum::add(100, ATTR_COUNT, val(100))])
         .await
         .unwrap();
 
@@ -57,7 +58,7 @@ async fn db_reader_lists_entity_attributes() {
     let db = Db::new(MemDbStorage::new(), [ATTR_COUNT])
         .await
         .unwrap()
-        .transact([datom::add(100, ATTR_COUNT, val(100))])
+        .transact([datum::add(100, ATTR_COUNT, val(100))])
         .await
         .unwrap();
     let reader = db.to_reader().await;

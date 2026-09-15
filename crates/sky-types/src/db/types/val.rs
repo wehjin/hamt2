@@ -1,9 +1,5 @@
-use crate::db::Ein;
+use crate::db::{Ein, services};
 use serde::{Deserialize, Serialize};
-
-pub fn val(from: impl Into<Val>) -> Val {
-    from.into()
-}
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum Val {
@@ -52,7 +48,7 @@ impl Val {
 
 impl From<Ein> for Val {
     fn from(value: Ein) -> Self {
-        val(value.to_i32())
+        services::val(value.to_i32())
     }
 }
 

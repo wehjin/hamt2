@@ -6,9 +6,9 @@ use crate::db::{AttrName, Db, Txid};
 use crate::find::Find;
 use crate::trie::prelude::*;
 use crate::{LoadError, db};
-use sky_types::db::TransactError;
 use attribute::Attribute;
-use sky_types::db::{Attr, Dir};
+use sky_types::db::Attr;
+use sky_types::db::{Dir, TransactError};
 use std::ops::{Deref, DerefMut, Index};
 
 pub mod attr_loader;
