@@ -1,5 +1,5 @@
 [package]
-name = "hamt2"
+name = "sky-db"
 version.workspace = true
 edition.workspace = true
 

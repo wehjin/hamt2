@@ -1,7 +1,7 @@
 # AGENTS.md
 
 Datomic-like database library written in Rust (edition 2024), built on persistent
-Hash Array Mapped Tries (HAMT). A Cargo workspace: `hamt2` (the Datomic-style db, `crates/hamt2`) built on `sky-trie`
+Hash Array Mapped Tries (HAMT). A Cargo workspace: `sky-db` (the Datomic-style db, `crates/sky-db`) built on `sky-trie`
 (the HAMT, `crates/sky-trie`) and `universal-hash` (the hashing primitive, `crates/universal-hash`); plus
 `skybase` (the Leptos web app, which contains its database layer: `skybase::db`). No CI, no README.
 
@@ -20,7 +20,7 @@ Hash Array Mapped Tries (HAMT). A Cargo workspace: `hamt2` (the Datomic-style db
   or services required; everything uses in-memory or temp-folder storage.
 - Single test: `cargo test <name>` (standard). Tests are `#[tokio::test]` async.
 - `cargo leptos build` (run from the workspace root) — builds the `skybase` Leptos web app. `crates/skybase` is the
-  Leptos frontend/backend; `skybase::db` is its database layer (a `Db` wrapper over `hamt2` for reading the
+  Leptos frontend/backend; `skybase::db` is its database layer (a `Db` wrapper over `sky-db` for reading the
   skybase version). `cargo leptos` needs `cargo-leptos` installed; it compiles the `hydrate` feature (wasm) and `ssr`
   feature (native axum server) targets.
 - `rust-analyzer` (CLI) — available for occasional read-only semantic checks: `rust-analyzer analysis-stats
@@ -30,15 +30,15 @@ Hash Array Mapped Tries (HAMT). A Cargo workspace: `hamt2` (the Datomic-style db
 
 ## Architecture (read top-down in this order)
 
-Layered, each layer building on the one below. All trie/storage code lives in the separate `sky-trie` crate; `hamt2`
-imports it privately as `use sky_trie as trie;` in `crates/hamt2/src/lib.rs`, so hamt2 code uses `use
-crate::trie::prelude::*` internally. The only trie types hamt2 re-exports publicly are the ones its APIs require
+Layered, each layer building on the one below. All trie/storage code lives in the separate `sky-trie` crate; `sky-db`
+imports it privately as `use sky_trie as trie;` in `crates/sky-db/src/lib.rs`, so sky-db code uses `use
+crate::trie::prelude::*` internally. The only trie types sky-db re-exports publicly are the ones its APIs require
 callers to name, re-exported under db-flavored names (`as` imports in `src/storage.rs` / `src/lib.rs`): the
-`hamt2::storage` module (`MemDbStorage`, `FileDbStorage`, the `ReadDbStorage`/`ReadWriteDbStorage` traits,
+`sky_db::storage` module (`MemDbStorage`, `FileDbStorage`, the `ReadDbStorage`/`ReadWriteDbStorage` traits,
 `DbStorageReadError`/`DbStorageWriteError`) and `DbQueryError`/`DbWriteError` at the crate root (they embed in
 `QueryError`/`TransactError`).
 
-1. `crates/universal-hash` — the single hashing primitive: `hash(bytes, level) -> u32`. A direct hamt2/sky-trie
+1. `crates/universal-hash` — the single hashing primitive: `hash(bytes, level) -> u32`. A direct sky-db/sky-trie
    dependency, referenced via the extern prelude (`universal_hash::hash`); not re-exported.
 2. `crates/sky-trie` — the HAMT.
    - `trie_storage/` — persistence abstraction. `ReadTrieStorage: Sync`
@@ -50,7 +50,7 @@ callers to name, re-exported under db-flavored names (`as` imports in `src/stora
      `MemReadStorage` snapshots) and `file::FileTrieStorage` (postcard-encoded base files in two-level subfolders
      under `<folder>/bases/`, with `max_id` and `root` files in the folder root; `FileReadStorage` snapshots).
    - `error.rs` — the trie's own error layer: `TrieQueryError` (wraps `TrieStorageReadError`) and `TrieWriteError`
-     (`ExpectedMapBaseAtKey`, wraps `TrieQueryError`). Nothing in the trie produces hamt2's db-level errors.
+     (`ExpectedMapBaseAtKey`, wraps `TrieQueryError`). Nothing in the trie produces sky-db's db-level errors.
    - `types/` — `MapBase { map: SlotMap, base: SlotBaseId }` (a node: bases are read from storage, never inline
      slots), `SlotBase { slots: Vec<Slot> }`, `Slot::KeyValue(i32, TrieValue) | MapBase(MapBase)`,
      `TrieValue::U32(u32) | SubTrie(MapBase)`, plus `HashKey`/`DeepKey`. `SlotBaseId(0)` is the reserved empty
@@ -68,18 +68,18 @@ callers to name, re-exported under db-flavored names (`as` imports in `src/stora
      query methods come from the direct `TrieQuery` impls in `storage_trie_query.rs`, which delegate to the free fns
      in `crate_services/map_base`). `subtrie_stream()` and `to_subtrie_from_value()` yield `Self::Subtrie`, so
      callers never name `TrieReader`. The `prelude` re-exports all of the above.
-3. `crates/hamt2` — the Datomic layer plus error glue. Public modules in `src/lib.rs`: `db`, `find`,
+3. `crates/sky-db` — the Datomic layer plus error glue. Public modules in `src/lib.rs`: `db`, `find`,
    `handle`, `pull`, `query`, `reader`, `storage`, `transact`, `types` (plus `pub(crate) crate_services`), with
    `pub use error::*;` and `pub use sky_trie::error::{TrieQueryError as DbQueryError, TrieWriteError as DbWriteError};`
-   at the root. The `src/storage.rs` module re-exports the trie surface that hamt2's public APIs name, aliased under
+   at the root. The `src/storage.rs` module re-exports the trie surface that sky-db's public APIs name, aliased under
    db names: `MemDbStorage`, `FileDbStorage`, `ReadDbStorage`/`ReadWriteDbStorage`, and the storage error types.
    - `src/types/` — user-facing value types: `Attr(&'static str)` (idents), `AttrName(String)`, `Ein(pub i32)`
      (non-negative; 0–2 reserved: `DB_IDENT`, `DB_CARDINALITY`, `DB_MAX`), `Txid(u32)` (`SETUP` = 0, `FLOOR` = 1),
      `Dir` (`In` = add / `Out` = delete), `Val` (`U32(u32)`/`String`); the datom machinery: `dat::Dat`
      (`Val(Val)`/`Ent(Ent)`), `ent::Ent` (`Id(Ein)`/`Temp(&'static str)`), and `datom::{add, del}` constructors
      building `datom::Datom { ent, attr, dat, dir }` (`Datom` is re-exported at the `types` root, and from there
-     `pub use`d out of `db/mod.rs`, so `hamt2::db::Datom`/`Dat`/`Ent` all resolve; `datom::add`/`datom::del` come
-     from `hamt2::types::datom`). `src/types/schema/` — `Schema` (newtype over
+     `pub use`d out of `db/mod.rs`, so `sky_db::db::Datom`/`Dat`/`Ent` all resolve; `datom::add`/`datom::del` come
+     from `sky_db::types::datom`). `src/types/schema/` — `Schema` (newtype over
      `AttrTable` via `Deref`), `AttrTable` (`HashMap<Attr, Attribute>`: `Index<Attr>`, always seeded with the
      `db/ident` and `db/cardinality` starter attributes), `Attribute { ein, spec: AttrSpec }`,
      `AttrSpec { attr, cardinality }`, `Cardinality` (`One`/`Many`), `attr_loader::AttributeLoader` (a `Find` impl
@@ -129,7 +129,7 @@ callers to name, re-exported under db-flavored names (`as` imports in `src/stora
      `T: TrieQuery`, so it works for `Trie` and `TrieReader` alike; it never needs
      `storage()`. Helpers that yield sub-tries return `T::Subtrie`. Unit tests are `#[cfg(test)]` beside the code (e.g. in
      `query.rs`, `find/mod.rs`, `crate_services/datalog/mod.rs`, `crate_services/val_table.rs`); integration tests in
-     `crates/hamt2/tests/` (cardinality, db_reader, file_db, handle, mem_db, multiple_entities).
+     `crates/sky-db/tests/` (cardinality, db_reader, file_db, handle, mem_db, multiple_entities).
 
 ## Skybase frontend layout
 
@@ -138,7 +138,7 @@ Within `crates/skybase/src`:
 - `routes/` — route-level/page components, one module per route (`routes/home.rs`). Pages own route wiring and data
   fetching (via `#[server]` calls in `api/` or resources); they are mounted in `<Route>`s in `app.rs`.
 - `components/` — reusable presentational components with no data logic; they receive everything as props. If a
-  component fetches or depends on `skybase::db`/`hamt2` data directly, it belongs in `routes/` (or its data should be loaded
+  component fetches or depends on `skybase::db`/`sky-db` data directly, it belongs in `routes/` (or its data should be loaded
   in a `route` and passed down).
 - `api/` — all `#[server]` functions (isomorphic: the same definition compiles to a client stub under `hydrate` and a
   server impl under `ssr`). Keep them out of components.
@@ -165,8 +165,8 @@ Within `crates/skybase/src`:
 - **Generic bounds are pervasive.** Any struct/fn mentioning `Trie<S>` or `Db<S>` needs `S: ReadWriteTrieStorage`.
   Read-only sub-tries are owned `TrieReader` snapshots (`trie.view()`, `to_subtrie_from_value()`, `subtrie_stream()`);
   every `ReadTrieStorage` provides `Snapshot`/`snapshot()`, which makes snapshots cheap: mem readers Arc-share the
-  base pool and only capture `max_id`/`root`, file readers copy a `PathBuf`/`max_id`/`root`. Outside hamt2, the same
-  traits are exported as `hamt2::storage::ReadDbStorage`/`ReadWriteDbStorage`.
+  base pool and only capture `max_id`/`root`, file readers copy a `PathBuf`/`max_id`/`root`. Outside sky-db, the same
+  traits are exported as `sky_db::storage::ReadDbStorage`/`ReadWriteDbStorage`.
 - **Query methods live on the parameterless `TrieQuery` trait** (in `sky_types::trie`; `root`, `query_value`,
   `query_keys_values`, `deep_query_value`, `u32_stream`, `subtrie_stream`, `to_subtrie_from_value`, plus
   `type Subtrie: TrieQuery`) — all required,
@@ -176,11 +176,11 @@ Within `crates/skybase/src`:
   `deep_insert`, `commit`) stay inherent on `Trie`. `subtrie_stream`/`to_subtrie_from_value` yield
   `Self::Subtrie`. `TrieReader` connects to a `ReadTrieStorage` only (e.g. `storage.snapshot()`).
 - **Errors are layered.** The trie crate only produces `TrieQueryError` / `TrieWriteError` (plus
-  `TrieStorageReadError`/`TrieStorageWriteError`); hamt2's `QueryError`/`TransactError`/`LoadError` embed them via
+  `TrieStorageReadError`/`TrieStorageWriteError`); sky-db's `QueryError`/`TransactError`/`LoadError` embed them via
   `QueryError::Trie`, `TransactError::TrieStorageRead`/`TransactError::TrieStorageWrite`/`TransactError::Trie`,
   and `LoadError::TrieStorageRead`, so `?` chains across crates work through `From` impls (`use crate::trie::prelude::*`
-  brings the trie error types in scope). These trie error types are exported at the hamt2 root as `DbQueryError`/
-  `DbWriteError` aliases (storage ones in `hamt2::storage`). `TransactError` also embeds `QueryError` as
+  brings the trie error types in scope). These trie error types are exported at the sky-db root as `DbQueryError`/
+  `DbWriteError` aliases (storage ones in `sky_db::storage`). `TransactError` also embeds `QueryError` as
   `TransactError::Query`.
 - **`Ent` is either `Id(Ein)` or `Temp(&'static str)`.** Temp entities get auto-assigned `Ein`s at transact time (see
   `src/db/types/ent_eid.rs`). Reusing the same temp ident in a tx rewrites the same entity, whereas separate txns

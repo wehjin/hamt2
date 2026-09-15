@@ -10,10 +10,10 @@ pub struct AttributesReport {
 
 #[server]
 pub async fn get_entity_attributes_report(ein: Ein) -> Result<AttributesReport, ServerFnError> {
-    use hamt2::find::AttrsOfEin;
-    use hamt2::handle::DbHandle;
-    use hamt2::query::DbQuery;
-    use hamt2::storage::MemDbStorage;
+    use sky_db::find::AttrsOfEin;
+    use sky_db::handle::DbHandle;
+    use sky_db::query::DbQuery;
+    use sky_db::storage::MemDbStorage;
     use leptos::prelude::expect_context;
 
     let reader = expect_context::<DbHandle<MemDbStorage>>()

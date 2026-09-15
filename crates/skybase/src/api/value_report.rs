@@ -1,4 +1,4 @@
-use hamt2::db::AttrName;
+use sky_db::db::AttrName;
 use leptos::prelude::ServerFnError;
 use leptos::server;
 use serde::{Deserialize, Serialize};
@@ -11,10 +11,10 @@ pub struct ValueReport {
 
 #[server]
 pub async fn get_value_report(ein: Ein, attr_name: AttrName) -> Result<ValueReport, ServerFnError> {
-    use hamt2::find::*;
-    use hamt2::handle::DbHandle;
-    use hamt2::query::DbQuery;
-    use hamt2::storage::MemDbStorage;
+    use sky_db::find::*;
+    use sky_db::handle::DbHandle;
+    use sky_db::query::DbQuery;
+    use sky_db::storage::MemDbStorage;
     use leptos::prelude::expect_context;
     let reader = expect_context::<DbHandle<MemDbStorage>>()
         .to_reader()

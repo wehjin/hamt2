@@ -1,6 +1,6 @@
-use hamt2::db::Db;
-use hamt2::query::DbQuery;
-use hamt2::storage::FileDbStorage;
+use sky_db::db::Db;
+use sky_db::query::DbQuery;
+use sky_db::storage::FileDbStorage;
 use sky_types::db::Attr;
 use sky_types::db::Transact;
 use sky_types::db::datum;

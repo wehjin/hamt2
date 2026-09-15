@@ -1,9 +1,9 @@
-use hamt2::db::Db;
-use hamt2::db::attr_spec::AttrSpec;
-use hamt2::db::cardinality::Cardinality;
-use hamt2::find::ValsInSlot;
-use hamt2::query::DbQuery;
-use hamt2::storage::MemDbStorage;
+use sky_db::db::Db;
+use sky_db::db::attr_spec::AttrSpec;
+use sky_db::db::cardinality::Cardinality;
+use sky_db::find::ValsInSlot;
+use sky_db::query::DbQuery;
+use sky_db::storage::MemDbStorage;
 use sky_types::db::Transact;
 use sky_types::db::datum;
 use sky_types::db::{Attr, val};

@@ -1,7 +1,7 @@
 use crate::api::version::get_version;
 use crate::api::{get_entities_report, get_entity_attributes_report, get_value_report};
 use crate::components::TitleAndDelete;
-use hamt2::db::AttrName;
+use sky_db::db::AttrName;
 use leptos::prelude::*;
 use sky_types::db::{Ein, Val};
 

@@ -18,7 +18,7 @@ tokio-stream = "0.1.18"
 futures = "0.3.32"
 async-stream = "0.3.6"
 
-hamt2 = { path = "crates/hamt2" }
+sky-db = { path = "crates/sky-db" }
 sky-trie = { path = "crates/sky-trie" }
 sky-types = { path = "crates/sky-types" }
 universal-hash = { path = "crates/universal-hash" }

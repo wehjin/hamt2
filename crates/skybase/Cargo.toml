@@ -21,7 +21,7 @@ console_error_panic_hook = { version = "0.1", optional = true }
 wasm-bindgen = { version = "0.2", optional = true }
 anyhow = { workspace = true, optional = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net"], optional = true }
-hamt2.workspace = true
+sky-db.workspace = true
 serde.workspace = true
 sky-types.workspace = true
 

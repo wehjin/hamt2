@@ -781,23 +781,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "17e2ac29387b1aa07a1e448f7bb4f35b500787971e965b02842b900afa5c8f6f"
 
 [[package]]
-name = "hamt2"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-stream",
- "futures",
- "log",
- "serde",
- "sky-trie",
- "sky-types",
- "tempfile",
- "thiserror 2.0.20",
- "tokio",
- "universal-hash",
-]
-
-[[package]]
 name = "hash32"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2076,6 +2059,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3a9fe34e3e7a50316060351f37187a3f546bce95496156754b601a5fa71b76e"
 
 [[package]]
+name = "sky-db"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-stream",
+ "futures",
+ "log",
+ "serde",
+ "sky-trie",
+ "sky-types",
+ "tempfile",
+ "thiserror 2.0.20",
+ "tokio",
+ "universal-hash",
+]
+
+[[package]]
 name = "sky-trie"
 version = "0.1.0"
 dependencies = [
@@ -2109,12 +2109,12 @@ dependencies = [
  "axum",
  "clap",
  "console_error_panic_hook",
- "hamt2",
  "leptos",
  "leptos_axum",
  "leptos_meta",
  "leptos_router",
  "serde",
+ "sky-db",
  "sky-types",
  "tokio",
  "wasm-bindgen",

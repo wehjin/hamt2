@@ -1,8 +1,8 @@
-use hamt2::db::Db;
-use hamt2::find::{AllEins, AttrsOfEin, EinsWithAttr};
-use hamt2::query::DbQuery;
-use hamt2::reader::DbReader;
-use hamt2::storage::MemDbStorage;
+use sky_db::db::Db;
+use sky_db::find::{AllEins, AttrsOfEin, EinsWithAttr};
+use sky_db::query::DbQuery;
+use sky_db::reader::DbReader;
+use sky_db::storage::MemDbStorage;
 use sky_types::db::Transact;
 use sky_types::db::datum;
 use sky_types::db::{Attr, ein, val};

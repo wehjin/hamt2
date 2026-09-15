@@ -1,6 +1,6 @@
-use hamt2::ConnectError;
-use hamt2::db::Db;
-use hamt2::storage::MemDbStorage;
+use sky_db::ConnectError;
+use sky_db::db::Db;
+use sky_db::storage::MemDbStorage;
 use sky_types::db::datum;
 use sky_types::db::{Attr, Ent, Transact, val};
 
