@@ -1,5 +1,6 @@
 use crate::db::Db;
 use crate::pull::Pull;
+use sky_types::db::Transact;
 use crate::trie::prelude::*;
 use common::Basis;
 use sky_types::db::{Attr, Ein, Ent, Val, dat, datom};

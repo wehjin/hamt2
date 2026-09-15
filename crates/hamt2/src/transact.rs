@@ -1,13 +1,14 @@
-use sky_types::db::TransactError;
 use crate::db::Db;
 use crate::db::db_trie;
 use crate::db::types::MaxEid;
 use crate::db::types::ent_eid::EntEid;
 use crate::trie::prelude::*;
+use sky_types::db::Transact;
+use sky_types::db::TransactError;
 use sky_types::db::{Dat, Datom, Ent, val};
 
-impl<S: ReadWriteTrieStorage> Db<S> {
-    pub async fn transact(self, datoms: impl Into<Vec<Datom>>) -> Result<Self, TransactError> {
+impl<S: ReadWriteTrieStorage> Transact for Db<S> {
+    async fn transact(self, datoms: impl Into<Vec<Datom>>) -> Result<Self, TransactError> {
         let datoms = datoms.into();
         let mut max_eid = MaxEid::read(&self.trie).await?;
         match datoms.is_empty() {

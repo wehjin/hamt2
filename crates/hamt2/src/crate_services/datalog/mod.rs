@@ -53,6 +53,7 @@ mod tests {
     use crate::crate_services::datalog::term::term;
     use crate::crate_services::datalog::var::var;
     use crate::db::Db;
+    use sky_types::db::Transact;
     use sky_types::db::{Attr, datom, ent, val};
 
     const ADVISOR: Attr = Attr("member/advisor");

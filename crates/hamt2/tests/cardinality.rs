@@ -4,6 +4,7 @@ use hamt2::db::cardinality::Cardinality;
 use hamt2::find::ValsInSlot;
 use hamt2::query::DbQuery;
 use hamt2::storage::MemDbStorage;
+use sky_types::db::Transact;
 use sky_types::db::{Attr, datom, val};
 
 #[tokio::test]

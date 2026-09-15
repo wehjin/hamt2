@@ -47,6 +47,7 @@ mod tests {
     use crate::query::DbQuery;
     use crate::trie::prelude::*;
     use sky_types::db::{Attr, datom, ein, val};
+    use sky_types::db::Transact;
 
     #[tokio::test]
     async fn find_with_reader() {

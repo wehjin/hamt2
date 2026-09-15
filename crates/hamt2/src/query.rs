@@ -1,10 +1,10 @@
-use sky_types::db::QueryError;
 use crate::db::db_trie;
 use crate::db::types::key::KEY_MAX_TXID;
 use crate::db::{Db, Txid};
 use crate::find::{Find, ValsInSlot};
 use crate::trie::prelude::*;
 use futures::FutureExt;
+use sky_types::db::QueryError;
 use sky_types::db::{Attr, Ein, Val};
 
 pub trait DbQuery {
@@ -51,6 +51,7 @@ impl<S: ReadWriteTrieStorage> DbQuery for Db<S> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use sky_types::db::Transact;
     use futures::StreamExt;
     use sky_types::db::datom;
     use sky_types::db::{dat, ent};
