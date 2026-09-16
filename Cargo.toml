@@ -19,6 +19,7 @@ futures = "0.3.32"
 async-stream = "0.3.6"
 
 sky-db = { path = "crates/sky-db" }
+sky-server = { path = "crates/sky-server" }
 sky-trie = { path = "crates/sky-trie" }
 sky-types = { path = "crates/sky-types" }
 universal-hash = { path = "crates/universal-hash" }

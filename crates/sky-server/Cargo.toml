@@ -1,0 +1,13 @@
+[package]
+name = "sky-server"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+tokio.workspace = true
+thiserror.workspace = true
+sky-db.workspace = true
+sky-types.workspace = true
+sky-trie.workspace = true
+log = "0.4.34"
+

@@ -1,3 +1,4 @@
+use crate::types::StorageHead;
 use crate::types::slot_base::SlotBase;
 use sky_types::storage::error::{StorageReadError, StorageWriteError};
 use sky_types::trie::MapBase;
@@ -35,6 +36,13 @@ pub trait ReadTrieStorage: Sync {
     /// no root has been committed.
     fn get_root(&self) -> impl Future<Output = Result<MapBase, StorageReadError>> + Send {
         async { Ok(self.read_root().await?.unwrap_or_else(|| MapBase::empty())) }
+    }
+
+    #[allow(async_fn_in_trait)]
+    async fn get_head(&self) -> StorageHead {
+        let max_id = self.max_id();
+        let root = self.read_root().await.expect("storage reads root");
+        StorageHead { max_id, root }
     }
 }
 

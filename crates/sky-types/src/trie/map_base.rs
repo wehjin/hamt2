@@ -1,7 +1,7 @@
 use crate::trie::{SlotBaseId, SlotMap};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct MapBase {
     pub map: SlotMap,
     pub base: SlotBaseId,
