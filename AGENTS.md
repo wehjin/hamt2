@@ -34,7 +34,7 @@ Layered, each layer building on the one below. All trie/storage code lives in th
 imports it privately as `use sky_trie as trie;` in `crates/sky-db/src/lib.rs`, so sky-db code uses `use
 crate::trie::prelude::*` internally. The only trie types sky-db re-exports publicly are the ones its APIs require
 callers to name, re-exported under db-flavored names (`as` imports in `src/storage.rs` / `src/lib.rs`): the
-`sky_db::storage` module (`MemDbStorage`, `FileDbStorage`, the `ReadDbStorage`/`ReadWriteDbStorage` traits,
+`sky_db::storage` module (`MemDbStorage`, `FileDbStorage`,
 `DbStorageReadError`/`DbStorageWriteError`) and `DbQueryError`/`DbWriteError` at the crate root (they embed in
 `QueryError`/`TransactError`).
 
@@ -72,7 +72,8 @@ callers to name, re-exported under db-flavored names (`as` imports in `src/stora
    `handle`, `pull`, `query`, `reader`, `storage`, `transact`, `types` (plus `pub(crate) crate_services`), with
    `pub use error::*;` and `pub use sky_trie::error::{TrieQueryError as DbQueryError, TrieWriteError as DbWriteError};`
    at the root. The `src/storage.rs` module re-exports the trie surface that sky-db's public APIs name, aliased under
-   db names: `MemDbStorage`, `FileDbStorage`, `ReadDbStorage`/`ReadWriteDbStorage`, and the storage error types.
+   db names: `MemDbStorage`, `FileDbStorage`, and the storage error types. (The `ReadStorage`/`ReadWriteStorage`
+   traits are named directly from `sky_trie::storage`, not re-exported.)
    - `src/types/` — user-facing value types: `Attr(&'static str)` (idents), `AttrName(String)`, `Ein(pub i32)`
      (non-negative; 0–2 reserved: `DB_IDENT`, `DB_CARDINALITY`, `DB_MAX`), `Txid(u32)` (`SETUP` = 0, `FLOOR` = 1),
      `Dir` (`In` = add / `Out` = delete), `Val` (`U32(u32)`/`String`); the datom machinery: `dat::Dat`
@@ -165,8 +166,8 @@ Within `crates/skybase/src`:
 - **Generic bounds are pervasive.** Any struct/fn mentioning `Trie<S>` or `Db<S>` needs `S: ReadWriteStorage`.
   Read-only sub-tries are owned `TrieReader` snapshots (`trie.view()`, `to_subtrie_from_value()`, `subtrie_stream()`);
   every `ReadStorage` provides `Snapshot`/`snapshot()`, which makes snapshots cheap: mem readers Arc-share the
-  base pool and only capture `max_id`/`root`, file readers copy a `PathBuf`/`max_id`/`root`. Outside sky-db, the same
-  traits are exported as `sky_db::storage::ReadDbStorage`/`ReadWriteDbStorage`.
+  base pool and only capture `max_id`/`root`, file readers copy a `PathBuf`/`max_id`/`root`. Outside sky-db, use the
+  traits directly from `sky_trie::storage` (`ReadStorage`/`ReadWriteStorage`).
 - **Query methods live on the parameterless `TrieQuery` trait** (in `sky_types::trie`; `root`, `query_value`,
   `query_keys_values`, `deep_query_value`, `u32_stream`, `subtrie_stream`, `to_subtrie_from_value`, plus
   `type Subtrie: TrieQuery`) — all required,
