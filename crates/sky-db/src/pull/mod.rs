@@ -12,7 +12,7 @@ mod tests;
 pub trait Pull<'a>: Sized + Serialize + Deserialize<'a> {
     fn attrs() -> Vec<Attr>;
     fn into_datoms(self, ent: Ent) -> Vec<Datom>;
-    fn pull<S: ReadWriteTrieStorage>(
+    fn pull<S: ReadWriteStorage>(
         db: &Db<S>,
         eid: Ein,
     ) -> impl Future<Output = Result<Self, QueryError>>;

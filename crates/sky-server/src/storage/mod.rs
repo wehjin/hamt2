@@ -1,7 +1,7 @@
 use log::error;
 use sky_db::db::Db;
 use sky_db::db::attr_spec::DbSpec;
-use sky_trie::prelude::{MemTrieStorage as MemDbStorage, ReadTrieStorage};
+use sky_trie::prelude::{MemTrieStorage as MemDbStorage, ReadStorage};
 use sky_trie::types::StorageHead;
 use sky_trie::types::slot_base::SlotBase;
 use sky_types::db::{Datom, Transact};

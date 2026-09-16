@@ -49,7 +49,7 @@ impl From<u32> for Value {
     }
 }
 
-pub(crate) async fn with_update<S: ReadWriteTrieStorage>(
+pub(crate) async fn with_update<S: ReadWriteStorage>(
     trie: Trie<S>,
     attr_map: &AttrTable,
     ein: Ein,
@@ -71,7 +71,7 @@ pub(crate) async fn with_update<S: ReadWriteTrieStorage>(
     Ok(trie)
 }
 
-pub(crate) async fn set_max_tx<S: ReadWriteTrieStorage>(
+pub(crate) async fn set_max_tx<S: ReadWriteStorage>(
     mut trie: Trie<S>,
     max_tx: Txid,
 ) -> Result<Trie<S>, TransactError> {

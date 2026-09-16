@@ -24,14 +24,14 @@ pub enum HandleError {
 
 pub struct DbHandle<S>
 where
-    S: ReadWriteTrieStorage + Send + Sync,
+    S: ReadWriteStorage + Send + Sync,
 {
     sender: mpsc::Sender<WorkerCommand<S>>,
 }
 
 impl<S> Clone for DbHandle<S>
 where
-    S: ReadWriteTrieStorage + Send + Sync,
+    S: ReadWriteStorage + Send + Sync,
 {
     fn clone(&self) -> Self {
         Self {
@@ -42,7 +42,7 @@ where
 
 impl<S> DbHandle<S>
 where
-    S: ReadWriteTrieStorage + Send + Sync + 'static,
+    S: ReadWriteStorage + Send + Sync + 'static,
 {
     pub async fn new(db: Db<S>) -> Self {
         let (sender, receiver) = mpsc::channel::<WorkerCommand<S>>(32);
@@ -79,7 +79,7 @@ where
 
 impl<S> std::fmt::Debug for DbHandle<S>
 where
-    S: ReadWriteTrieStorage + Send + Sync,
+    S: ReadWriteStorage + Send + Sync,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("DbHandle")
@@ -88,12 +88,12 @@ where
     }
 }
 
-enum WorkerCommand<S: ReadWriteTrieStorage> {
+enum WorkerCommand<S: ReadWriteStorage> {
     Transact(Vec<Datom>, oneshot::Sender<()>),
     Reader(oneshot::Sender<Result<DbReader<S::Snapshot>, LoadError>>),
 }
 
-async fn run_worker<S: ReadWriteTrieStorage + Send + Sync + 'static>(
+async fn run_worker<S: ReadWriteStorage + Send + Sync + 'static>(
     db: Db<S>,
     mut receiver: Receiver<WorkerCommand<S>>,
 ) {

@@ -1,7 +1,7 @@
 use crate::TrieQuery;
 use crate::TrieReader;
 use crate::crate_services::map_base::{kv_stream, query_keys_values, query_value};
-use crate::storage::{ReadTrieStorage, ReadWriteTrieStorage};
+use crate::storage::{ReadStorage, ReadWriteStorage};
 use crate::types::DeepKey;
 use crate::types::HashKey;
 use futures::Stream;
@@ -14,12 +14,12 @@ use sky_types::trie::{MapBase, TrieValue};
 ///
 /// Implementations only need to expose the storage; the root and every
 /// [`TrieQuery`] method are provided by the direct implementations below.
-pub trait StorageTrieQuery<S: ReadTrieStorage>: TrieQuery {
+pub trait StorageTrieQuery<S: ReadStorage>: TrieQuery {
     /// The storage this trie reads bases from.
     fn storage(&self) -> &S;
 }
 
-impl<S: ReadWriteTrieStorage> TrieQuery for crate::Trie<S> {
+impl<S: ReadWriteStorage> TrieQuery for crate::Trie<S> {
     type Subtrie = TrieReader<S::Snapshot>;
 
     fn root(&self) -> &MapBase {
@@ -54,7 +54,7 @@ impl<S: ReadWriteTrieStorage> TrieQuery for crate::Trie<S> {
     }
 }
 
-impl<S: ReadTrieStorage> TrieQuery for TrieReader<S> {
+impl<S: ReadStorage> TrieQuery for TrieReader<S> {
     type Subtrie = TrieReader<S::Snapshot>;
 
     fn root(&self) -> &MapBase {
@@ -89,7 +89,7 @@ impl<S: ReadTrieStorage> TrieQuery for TrieReader<S> {
     }
 }
 
-async fn deep_query_value<const N: usize, S: ReadTrieStorage>(
+async fn deep_query_value<const N: usize, S: ReadStorage>(
     root: &MapBase,
     storage: &S,
     key: [i32; N],
@@ -118,7 +118,7 @@ async fn deep_query_value<const N: usize, S: ReadTrieStorage>(
     unreachable!();
 }
 
-fn u32_stream<'a, S: ReadTrieStorage>(
+fn u32_stream<'a, S: ReadStorage>(
     root: &'a MapBase,
     storage: &'a S,
 ) -> impl Stream<Item = (i32, u32)> {
@@ -132,7 +132,7 @@ fn u32_stream<'a, S: ReadTrieStorage>(
     })
 }
 
-fn subtrie_stream<'a, S: ReadTrieStorage>(
+fn subtrie_stream<'a, S: ReadStorage>(
     root: &'a MapBase,
     storage: &'a S,
 ) -> impl Stream<Item = (i32, TrieReader<S::Snapshot>)> {

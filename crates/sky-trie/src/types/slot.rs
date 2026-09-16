@@ -1,5 +1,5 @@
 use crate::crate_services::map_base::{query_keys_values, query_value, two_kv};
-use crate::storage::{ReadTrieStorage, ReadWriteTrieStorage};
+use crate::storage::{ReadStorage, ReadWriteStorage};
 use crate::types::HashKey;
 use crate::types::slot_base::SlotBase;
 use serde::{Deserialize, Serialize};
@@ -23,7 +23,7 @@ impl Slot {
         a_value: TrieValue,
         b_key: HashKey,
         b_value: TrieValue,
-        storage: &mut impl ReadWriteTrieStorage,
+        storage: &mut impl ReadWriteStorage,
     ) -> Self {
         debug_assert!(a_key.i32() != b_key.i32());
         let (a_map_index, b_map_index) = (a_key.map_index(), b_key.map_index());
@@ -52,8 +52,8 @@ impl Slot {
         Slot::KeyValue(key, value)
     }
     pub async fn query_key_values(
-        &self,
-        storage: &impl ReadTrieStorage,
+	    &self,
+	    storage: &impl ReadStorage,
     ) -> Result<Vec<(i32, TrieValue)>, TrieQueryError> {
         match self {
             Slot::KeyValue(key, value) => Ok(vec![(*key, value.clone())]),
@@ -61,9 +61,9 @@ impl Slot {
         }
     }
     pub async fn query_value(
-        &self,
-        key: HashKey,
-        storage: &impl ReadTrieStorage,
+	    &self,
+	    key: HashKey,
+	    storage: &impl ReadStorage,
     ) -> Result<Option<TrieValue>, TrieQueryError> {
         match self {
             Slot::KeyValue(k, v) => {

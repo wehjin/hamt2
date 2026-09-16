@@ -1,4 +1,4 @@
-use crate::storage::{ReadTrieStorage, ReadWriteTrieStorage};
+use crate::storage::{ReadStorage, ReadWriteStorage};
 use crate::types::slot_base::SlotBase;
 use sky_types::storage::error::{StorageReadError, StorageWriteError};
 use sky_types::trie::MapBase;
@@ -43,7 +43,7 @@ impl Default for MemTrieStorage {
     }
 }
 
-impl ReadTrieStorage for MemTrieStorage {
+impl ReadStorage for MemTrieStorage {
     type Snapshot = MemReadStorage;
 
     fn snapshot(&self) -> Self::Snapshot {
@@ -77,7 +77,7 @@ impl ReadTrieStorage for MemTrieStorage {
 }
 
 /// A read-only snapshot of a [`MemTrieStorage`], taken at
-/// [`ReadTrieStorage::snapshot`] time. `max_id` and `root` are captured
+/// [`ReadStorage::snapshot`] time. `max_id` and `root` are captured
 /// when the snapshot is created, so later appends to the writer are invisible
 /// through it; the base pool itself is shared read-only.
 #[derive(Debug, Clone)]
@@ -87,7 +87,7 @@ pub struct MemReadStorage {
     root: Option<MapBase>,
 }
 
-impl ReadTrieStorage for MemReadStorage {
+impl ReadStorage for MemReadStorage {
     type Snapshot = MemReadStorage;
 
     fn snapshot(&self) -> Self::Snapshot {
@@ -119,7 +119,7 @@ impl ReadTrieStorage for MemReadStorage {
     }
 }
 
-impl ReadWriteTrieStorage for MemTrieStorage {
+impl ReadWriteStorage for MemTrieStorage {
     fn next_id(&self) -> SlotBaseId {
         let inner = self.inner.read().expect("storage poisoned");
         SlotBaseId(inner.bases.len() as i32)

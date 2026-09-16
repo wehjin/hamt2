@@ -1,4 +1,4 @@
-use crate::storage::ReadTrieStorage;
+use crate::storage::ReadStorage;
 use crate::types::HashKey;
 use crate::types::TrieValue;
 use crate::types::slot::Slot;
@@ -7,7 +7,7 @@ use futures::stream;
 use sky_types::trie::TrieQueryError;
 use sky_types::trie::{MapBase, SlotBaseId};
 
-pub struct State<S: ReadTrieStorage> {
+pub struct State<S: ReadStorage> {
     storage: S,
     jobs: Vec<Job>,
 }
@@ -15,7 +15,7 @@ pub struct State<S: ReadTrieStorage> {
 pub async fn query_value(
     map_base: &MapBase,
     key: HashKey,
-    storage: &impl ReadTrieStorage,
+    storage: &impl ReadStorage,
 ) -> Result<Option<TrieValue>, TrieQueryError> {
     let MapBase { map, base } = map_base;
     let value = match map.try_base_index(key) {
@@ -28,7 +28,7 @@ pub async fn query_value(
     Ok(value)
 }
 
-pub fn kv_stream<S: ReadTrieStorage>(
+pub fn kv_stream<S: ReadStorage>(
     map_base: MapBase,
     storage: S,
 ) -> impl Stream<Item = (i32, TrieValue)> {
@@ -68,7 +68,7 @@ pub fn kv_stream<S: ReadTrieStorage>(
 
 pub async fn query_keys_values(
     map_base: &MapBase,
-    storage: &impl ReadTrieStorage,
+    storage: &impl ReadStorage,
 ) -> Result<Vec<(i32, TrieValue)>, TrieQueryError> {
     let MapBase { map, base } = map_base;
     let mut out = Vec::new();

@@ -45,7 +45,7 @@ impl Schema {
         self.attr_table.find_attr_by_name(attr_name)
     }
 
-    pub async fn save<S: ReadWriteTrieStorage>(
+    pub async fn save<S: ReadWriteStorage>(
         &self,
         mut trie: Trie<S>,
         txid: Txid,
@@ -75,7 +75,7 @@ impl Schema {
         }
         Ok(trie)
     }
-    pub async fn load<S: ReadWriteTrieStorage>(
+    pub async fn load<S: ReadWriteStorage>(
         attrs: impl AsRef<[Attr]>,
         db: &Db<S>,
     ) -> Result<Self, LoadError> {

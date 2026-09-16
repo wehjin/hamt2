@@ -1,5 +1,5 @@
 use sky_types::storage::error::{StorageReadError, StorageWriteError};
-use crate::storage::{ReadTrieStorage, ReadWriteTrieStorage};
+use crate::storage::{ReadStorage, ReadWriteStorage};
 use crate::types::slot_base::SlotBase;
 use sky_types::trie::MapBase;
 use sky_types::trie::SlotBaseId;
@@ -131,7 +131,7 @@ impl Inner {
     }
 }
 
-impl ReadTrieStorage for FileTrieStorage {
+impl ReadStorage for FileTrieStorage {
     type Snapshot = FileReadStorage;
 
     fn snapshot(&self) -> Self::Snapshot {
@@ -173,7 +173,7 @@ impl ReadTrieStorage for FileTrieStorage {
 }
 
 /// A read-only, immutable view of a [`FileTrieStorage`] taken at
-/// [`ReadTrieStorage::snapshot`] time.
+/// [`ReadStorage::snapshot`] time.
 ///
 /// `max_id` and `root` are captured into memory when the view is created, so
 /// later appends or commits on the writer are invisible through it. Bases are
@@ -192,7 +192,7 @@ impl FileReadStorage {
     }
 }
 
-impl ReadTrieStorage for FileReadStorage {
+impl ReadStorage for FileReadStorage {
     type Snapshot = FileReadStorage;
 
     fn snapshot(&self) -> Self::Snapshot {
@@ -226,7 +226,7 @@ impl ReadTrieStorage for FileReadStorage {
     }
 }
 
-impl ReadWriteTrieStorage for FileTrieStorage {
+impl ReadWriteStorage for FileTrieStorage {
     fn next_id(&self) -> SlotBaseId {
         let inner = self.inner.read().expect("storage poisoned");
         SlotBaseId(inner.max_id + 1)

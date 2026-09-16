@@ -9,25 +9,25 @@ use crate::error::ConnectError;
 use crate::reader::DbReader;
 pub use crate::types::*;
 use sky_trie::Trie;
-use sky_trie::prelude::ReadWriteTrieStorage;
+use sky_trie::prelude::ReadWriteStorage;
 use sky_types::db::Attr;
 pub use types::*;
 
 #[derive(Debug)]
-pub struct Db<S: ReadWriteTrieStorage> {
+pub struct Db<S: ReadWriteStorage> {
     pub(crate) schema: Schema,
     pub(crate) trie: Trie<S>,
 }
 
 /// Production methods for Db
-impl<S: ReadWriteTrieStorage> Db<S> {
+impl<S: ReadWriteStorage> Db<S> {
     pub async fn to_reader(&self) -> DbReader<S::Snapshot> {
         DbReader::load(self).await.expect("load reader")
     }
 }
 
 /// Construction methods for Db
-impl<S: ReadWriteTrieStorage> Db<S> {
+impl<S: ReadWriteStorage> Db<S> {
     pub async fn new(storage: S, db_spec: impl Into<DbSpec>) -> Result<Self, ConnectError> {
         let db_spec = db_spec.into();
         let attr_specs = db_spec.as_ref();

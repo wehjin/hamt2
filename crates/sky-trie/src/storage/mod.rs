@@ -10,11 +10,11 @@ pub mod mem;
 /// A trait for reading Bases from storage.
 ///
 /// Base id 0 is reserved and always represents the empty base.
-pub trait ReadTrieStorage: Sync {
+pub trait ReadStorage: Sync {
     /// The storage type of an owned read-only snapshot, produced by
-    /// [`ReadTrieStorage::snapshot`]. Writer storages use their read-only
+    /// [`ReadStorage::snapshot`]. Writer storages use their read-only
     /// snapshot type; read-only snapshot types usually use `Self`.
-    type Snapshot: ReadTrieStorage + Send + Clone;
+    type Snapshot: ReadStorage + Send + Clone;
 
     /// Returns an owned read-only snapshot of this storage. The snapshot does
     /// not observe writes made after this call.
@@ -47,7 +47,7 @@ pub trait ReadTrieStorage: Sync {
 }
 
 /// A trait for reading and writing Bases from storage.
-pub trait ReadWriteTrieStorage: ReadTrieStorage {
+pub trait ReadWriteStorage: ReadStorage {
     /// Read the next available base id. The value is 1 in an empty storage because base id 0 is reserved for the empty base.
     fn next_id(&self) -> SlotBaseId;
 

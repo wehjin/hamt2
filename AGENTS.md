@@ -41,10 +41,10 @@ callers to name, re-exported under db-flavored names (`as` imports in `src/stora
 1. `crates/universal-hash` — the single hashing primitive: `hash(bytes, level) -> u32`. A direct sky-db/sky-trie
    dependency, referenced via the extern prelude (`universal_hash::hash`); not re-exported.
 2. `crates/sky-trie` — the HAMT.
-   - `trie_storage/` — persistence abstraction. `ReadTrieStorage: Sync`
+   - `trie_storage/` — persistence abstraction. `ReadStorage: Sync`
      (`read`/`max_id`/`read_root`/`get_root`/`snapshot` + `type Snapshot`, errors `TrieStorageReadError`; every
      storage is snapshottable — writers capture their read-only snapshot, read-only types use `Self` via `Clone`)
-     and `ReadWriteTrieStorage`
+     and `ReadWriteStorage`
      (`next_id`/`append`/`write_root`, errors `TrieStorageWriteError`).
      Implementations: `mem::MemTrieStorage` (a `Vec<SlotBase>` seeded with the empty base at index 0;
      `MemReadStorage` snapshots) and `file::FileTrieStorage` (postcard-encoded base files in two-level subfolders
@@ -55,7 +55,7 @@ callers to name, re-exported under db-flavored names (`as` imports in `src/stora
      slots), `SlotBase { slots: Vec<Slot> }`, `Slot::KeyValue(i32, TrieValue) | MapBase(MapBase)`,
      `TrieValue::U32(u32) | SubTrie(MapBase)`, plus `HashKey`/`DeepKey`. `SlotBaseId(0)` is the reserved empty
      base.
-   - `Trie<S: ReadWriteTrieStorage>` — the persistent map: `connect(storage)` (`-> TrieStorageReadError`) loads the
+   - `Trie<S: ReadWriteStorage>` — the persistent map: `connect(storage)` (`-> TrieStorageReadError`) loads the
      persisted root, mutations (`insert`, `deep_insert`) consume and return a new `Trie` (`-> TrieWriteError`),
      `.commit()` (`-> TrieStorageWriteError`) writes the root, `.view()` gives a `TrieReader<S::Snapshot>` snapshot.
      Queries live on
@@ -63,7 +63,7 @@ callers to name, re-exported under db-flavored names (`as` imports in `src/stora
      re-exported by the prelude; `root`, `query_value`, `query_keys_values`, `deep_query_value`,
      `u32_stream`,
      `subtrie_stream`, `to_subtrie_from_value`, plus `type Subtrie: TrieQuery`; `-> TrieQueryError`) — all methods
-     required, no defaults, no storage types mentioned. `StorageTrieQuery<S: ReadTrieStorage>` supertrait adds
+     required, no defaults, no storage types mentioned. `StorageTrieQuery<S: ReadStorage>` supertrait adds
      `storage()`; `Trie` and `TrieReader<S>` implement both (`type Subtrie = TrieReader<S::Snapshot>`; root + all
      query methods come from the direct `TrieQuery` impls in `storage_trie_query.rs`, which delegate to the free fns
      in `crate_services/map_base`). `subtrie_stream()` and `to_subtrie_from_value()` yield `Self::Subtrie`, so
@@ -115,12 +115,12 @@ callers to name, re-exported under db-flavored names (`as` imports in `src/stora
      `attrs_of_ein`, `binds_for_attr`, `eins_with_attr`, `vals_in_slot`; each compiles to a datalog `rule` headed by
      `db/query`.
    - `src/query.rs` — `DbQuery` trait (`find`, `get`, `find_val`, `get_val`), implemented by `Db` and `DbReader`.
-   - `src/reader.rs` — `DbReader<S: ReadTrieStorage>`: `DbReader::load(db)` *borrows* a `Db<T>` and builds an
-     independent snapshot via `T::Snapshot` (bound `T: ReadWriteTrieStorage<Snapshot = S>`, so `T` stays inferable
+   - `src/reader.rs` — `DbReader<S: ReadStorage>`: `DbReader::load(db)` *borrows* a `Db<T>` and builds an
+     independent snapshot via `T::Snapshot` (bound `T: ReadWriteStorage<Snapshot = S>`, so `T` stays inferable
      from the `Db`); the `Db` remains usable, and writes after `load` are invisible to the reader.
    - `src/transact.rs` — `Db::transact(self, datoms)` consumes and returns a new `Db`: resolves temps via `EntEid`,
      inserts values in the val table, `with_update` per datom, `set_max_tx(tx + 1)`, writes `MaxEid`, commits.
-   - `src/handle.rs` — `DbHandle<S: ReadWriteTrieStorage + Send + Sync + 'static>` owns the `Db` in a worker task;
+   - `src/handle.rs` — `DbHandle<S: ReadWriteStorage + Send + Sync + 'static>` owns the `Db` in a worker task;
      `transact` sends datoms over an mpsc channel, `to_reader()` returns a `DbReader<S::Snapshot>` snapshot; errors
      as `HandleError` (`TaskClosed`/`TaskFailed`/`TransactFailed`/`LoadFailed`).
    - `src/pull/` — `Pull` trait (`Serialize + Deserialize`; `attrs()` / `into_datoms()` / `pull(&Db, eid)`),
@@ -162,9 +162,9 @@ Within `crates/skybase/src`:
   `MaxEid`, which starts at `Ein::DB_MAX`.
 - **`Db` is immutable-value / consumed-ownership.** `Db::transact(...)` consumes `self` and returns a new `Db`. Get the
   underlying storage back with `db.close()` before re-`load`ing.
-- **Generic bounds are pervasive.** Any struct/fn mentioning `Trie<S>` or `Db<S>` needs `S: ReadWriteTrieStorage`.
+- **Generic bounds are pervasive.** Any struct/fn mentioning `Trie<S>` or `Db<S>` needs `S: ReadWriteStorage`.
   Read-only sub-tries are owned `TrieReader` snapshots (`trie.view()`, `to_subtrie_from_value()`, `subtrie_stream()`);
-  every `ReadTrieStorage` provides `Snapshot`/`snapshot()`, which makes snapshots cheap: mem readers Arc-share the
+  every `ReadStorage` provides `Snapshot`/`snapshot()`, which makes snapshots cheap: mem readers Arc-share the
   base pool and only capture `max_id`/`root`, file readers copy a `PathBuf`/`max_id`/`root`. Outside sky-db, the same
   traits are exported as `sky_db::storage::ReadDbStorage`/`ReadWriteDbStorage`.
 - **Query methods live on the parameterless `TrieQuery` trait** (in `sky_types::trie`; `root`, `query_value`,
@@ -174,7 +174,7 @@ Within `crates/skybase/src`:
   `TrieQuery` and `storage()` via `StorageTrieQuery`). Calling a query method needs
   `TrieQuery` in scope (it comes with `use crate::trie::prelude::*`); mutation methods (`insert`,
   `deep_insert`, `commit`) stay inherent on `Trie`. `subtrie_stream`/`to_subtrie_from_value` yield
-  `Self::Subtrie`. `TrieReader` connects to a `ReadTrieStorage` only (e.g. `storage.snapshot()`).
+  `Self::Subtrie`. `TrieReader` connects to a `ReadStorage` only (e.g. `storage.snapshot()`).
 - **Errors are layered.** The trie crate only produces `TrieQueryError` / `TrieWriteError` (plus
   `TrieStorageReadError`/`TrieStorageWriteError`); sky-db's `QueryError`/`TransactError`/`LoadError` embed them via
   `QueryError::Trie`, `TransactError::TrieStorageRead`/`TransactError::TrieStorageWrite`/`TransactError::Trie`,

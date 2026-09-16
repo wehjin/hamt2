@@ -13,7 +13,7 @@ pub use trie_reader::TrieReader;
 
 #[cfg(test)]
 mod tests {
-    use crate::storage::ReadTrieStorage;
+    use crate::storage::ReadStorage;
     use crate::storage::file::FileTrieStorage;
     use crate::storage::mem::MemTrieStorage;
     use crate::{Trie, TrieQuery, TrieReader};

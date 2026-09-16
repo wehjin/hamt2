@@ -29,7 +29,7 @@ pub trait DbQuery {
     }
 }
 
-impl<S: ReadWriteTrieStorage> Db<S> {
+impl<S: ReadWriteStorage> Db<S> {
     pub async fn max_tx(&self) -> Result<Txid, QueryError> {
         let Some(TrieValue::U32(value)) = self.trie.query_value(KEY_MAX_TXID).await? else {
             panic!("max_tx not found");
@@ -42,7 +42,7 @@ impl<S: ReadWriteTrieStorage> Db<S> {
     }
 }
 
-impl<S: ReadWriteTrieStorage> DbQuery for Db<S> {
+impl<S: ReadWriteStorage> DbQuery for Db<S> {
     fn find<F: Find>(&self, find: F) -> impl Future<Output = Vec<F::Output>> {
         find.apply(&self.trie, &self.schema)
     }

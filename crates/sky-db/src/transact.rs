@@ -8,7 +8,7 @@ use sky_types::db::TransactError;
 use sky_types::db::Datom;
 use sky_types::db::{Dat, Ent, val};
 
-impl<S: ReadWriteTrieStorage> Transact for Db<S> {
+impl<S: ReadWriteStorage> Transact for Db<S> {
     async fn transact(self, datoms: impl Into<Vec<Datom>>) -> Result<Self, TransactError> {
         let datoms = datoms.into();
         let mut max_eid = MaxEid::read(&self.trie).await?;

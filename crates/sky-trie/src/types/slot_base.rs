@@ -1,5 +1,5 @@
 use crate::crate_services::map_base;
-use crate::storage::ReadWriteTrieStorage;
+use crate::storage::ReadWriteStorage;
 use crate::types::HashKey;
 use crate::types::slot::Slot;
 use serde::{Deserialize, Serialize};
@@ -40,11 +40,11 @@ impl SlotBase {
     }
 
     pub async fn kick_kv(
-        self,
-        base_index: usize,
-        key: HashKey,
-        value: TrieValue,
-        storage: &mut impl ReadWriteTrieStorage,
+	    self,
+	    base_index: usize,
+	    key: HashKey,
+	    value: TrieValue,
+	    storage: &mut impl ReadWriteStorage,
     ) -> Self {
         let SlotBase { mut slots } = self;
         let pre_slot = slots.remove(base_index);
@@ -61,11 +61,11 @@ impl SlotBase {
     }
 
     pub async fn merge_kv(
-        self,
-        base_index: usize,
-        key: HashKey,
-        value: TrieValue,
-        storage: &mut impl ReadWriteTrieStorage,
+	    self,
+	    base_index: usize,
+	    key: HashKey,
+	    value: TrieValue,
+	    storage: &mut impl ReadWriteStorage,
     ) -> Result<Self, TrieInsertError> {
         let SlotBase { mut slots } = self;
         let pre_slot = slots.remove(base_index);

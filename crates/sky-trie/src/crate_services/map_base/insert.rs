@@ -1,4 +1,4 @@
-use crate::storage::ReadWriteTrieStorage;
+use crate::storage::ReadWriteStorage;
 use crate::types::HashKey;
 use crate::types::TrieValue;
 use crate::types::slot::{KvTest, Slot};
@@ -7,10 +7,10 @@ use sky_types::trie::MapBase;
 use sky_types::trie::TrieInsertError;
 
 pub async fn insert_kv(
-    map_base: MapBase,
-    key: HashKey,
-    value: TrieValue,
-    storage: &mut impl ReadWriteTrieStorage,
+	map_base: MapBase,
+	key: HashKey,
+	value: TrieValue,
+	storage: &mut impl ReadWriteStorage,
 ) -> Result<MapBase, TrieInsertError> {
     let MapBase { map, base } = map_base;
     let post_map_base = match map.try_base_index(key) {

@@ -2,7 +2,7 @@ use crate::StorageTrieQuery;
 use crate::TrieReader;
 use crate::crate_services::map_base::{self, query_value};
 use crate::prelude::TrieValue;
-use crate::storage::ReadWriteTrieStorage;
+use crate::storage::ReadWriteStorage;
 use sky_types::storage::error::{StorageReadError, StorageWriteError};
 use crate::types::DeepKey;
 use crate::types::HashKey;
@@ -11,19 +11,19 @@ use sky_types::trie::TrieInsertError;
 use std::collections::HashMap;
 
 #[derive(Debug)]
-pub struct Trie<S: ReadWriteTrieStorage> {
+pub struct Trie<S: ReadWriteStorage> {
     pub(crate) root: MapBase,
     storage: S,
 }
 
-impl<S: ReadWriteTrieStorage> StorageTrieQuery<S> for Trie<S> {
+impl<S: ReadWriteStorage> StorageTrieQuery<S> for Trie<S> {
     fn storage(&self) -> &S {
         &self.storage
     }
 }
 
 /// Trie construction methods.
-impl<S: ReadWriteTrieStorage> Trie<S> {
+impl<S: ReadWriteStorage> Trie<S> {
     /// Connects to the storage, loading the persisted root if there is one.
     pub async fn connect(storage: S) -> Result<Self, StorageReadError> {
         let root = storage.get_root().await?;
@@ -51,7 +51,7 @@ impl<S: ReadWriteTrieStorage> Trie<S> {
 }
 
 /// Trie update methods.
-impl<S: ReadWriteTrieStorage> Trie<S> {
+impl<S: ReadWriteStorage> Trie<S> {
     pub async fn insert(mut self, key: i32, value: TrieValue) -> Result<Self, TrieInsertError> {
         let key = HashKey::new(key);
         let root = map_base::insert_kv(self.root, key, value, &mut self.storage).await?;

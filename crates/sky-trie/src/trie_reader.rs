@@ -1,17 +1,17 @@
 use crate::storage_trie_query::StorageTrieQuery;
-use crate::storage::ReadTrieStorage;
+use crate::storage::ReadStorage;
 use sky_types::storage::error::StorageReadError;
 use sky_types::trie::MapBase;
 use sky_types::trie::TrieValue;
 
 /// A read-only trie over an owned read-only storage, used only for queries.
 #[derive(Debug)]
-pub struct TrieReader<S: ReadTrieStorage> {
+pub struct TrieReader<S: ReadStorage> {
     pub(crate) root: MapBase,
     storage: S,
 }
 
-impl<S: ReadTrieStorage> TrieReader<S> {
+impl<S: ReadStorage> TrieReader<S> {
     /// Builds a reader over the given storage with the given root.
     pub fn new(root: MapBase, storage: S) -> Self {
         Self { root, storage }
@@ -32,7 +32,7 @@ impl<S: ReadTrieStorage> TrieReader<S> {
     }
 }
 
-impl<S: ReadTrieStorage> StorageTrieQuery<S> for TrieReader<S> {
+impl<S: ReadStorage> StorageTrieQuery<S> for TrieReader<S> {
     fn storage(&self) -> &S {
         &self.storage
     }

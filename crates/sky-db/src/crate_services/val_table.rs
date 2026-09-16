@@ -5,7 +5,7 @@ use crate::trie::prelude::*;
 use sky_types::db::Val;
 use sky_types::db::{QueryError, TransactError};
 
-pub async fn insert<S: ReadWriteTrieStorage>(
+pub async fn insert<S: ReadWriteStorage>(
     trie: Trie<S>,
     val: Val,
 ) -> Result<(Trie<S>, Vid), TransactError> {
@@ -78,7 +78,7 @@ const SUBKEY_BYTES: i32 = 100;
 const VAL_TYPE_U32: u8 = 0;
 const VAL_TYPE_STRING: u8 = 1;
 
-async fn insert_bytes<S: ReadWriteTrieStorage>(
+async fn insert_bytes<S: ReadWriteStorage>(
     mut trie: Trie<S>,
     hash: i32,
     bytes: &[u8],

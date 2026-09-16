@@ -10,5 +10,5 @@ pub use sky_types::storage::error::{
 pub use sky_trie::storage::file::FileTrieStorage as FileDbStorage;
 pub use sky_trie::storage::mem::MemTrieStorage as MemDbStorage;
 pub use sky_trie::storage::{
-    ReadTrieStorage as ReadDbStorage, ReadWriteTrieStorage as ReadWriteDbStorage,
+	ReadStorage as ReadDbStorage, ReadWriteStorage as ReadWriteDbStorage,
 };

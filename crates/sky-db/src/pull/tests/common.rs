@@ -43,7 +43,7 @@ impl<'a> Pull<'a> for Basis {
         ]
     }
 
-    async fn pull<S: ReadWriteTrieStorage>(db: &Db<S>, eid: Ein) -> Result<Self, QueryError> {
+    async fn pull<S: ReadWriteStorage>(db: &Db<S>, eid: Ein) -> Result<Self, QueryError> {
         let symbol = db.find_val(eid, Self::SYMBOL).await?.expect("symbol");
         let shares = db.find_val(eid, Self::SHARES).await?.expect("shares");
         let price_each = db
