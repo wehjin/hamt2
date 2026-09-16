@@ -1,6 +1,6 @@
 use crate::storage::{ReadStorage, ReadWriteStorage};
 use crate::types::slot_base::SlotBase;
-use sky_types::storage::error::{StorageReadError, StorageWriteError};
+use sky_types::storage::error::{ReadStorageError, WriteStorageError};
 use sky_types::trie::MapBase;
 use sky_types::trie::SlotBaseId;
 use std::sync::{Arc, RwLock};
@@ -56,7 +56,7 @@ impl ReadStorage for MemStorage {
         }
     }
 
-    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, StorageReadError> {
+    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
         let inner = self.inner.read().expect("storage poisoned");
         assert!(
             id.0 < inner.bases.len() as i32,
@@ -71,7 +71,7 @@ impl ReadStorage for MemStorage {
         SlotBaseId((inner.bases.len() - 1) as i32)
     }
 
-    async fn read_root(&self) -> Result<MapBase, StorageReadError> {
+    async fn read_root(&self) -> Result<MapBase, ReadStorageError> {
         Ok(self.inner.read().expect("storage poisoned").root.clone())
     }
 }
@@ -94,7 +94,7 @@ impl ReadStorage for MemReadStorage {
         self.clone()
     }
 
-    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, StorageReadError> {
+    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
         if id.0 == 0 {
             return Ok(SlotBase::new());
         }
@@ -111,7 +111,7 @@ impl ReadStorage for MemReadStorage {
         SlotBaseId(self.max_id)
     }
 
-    async fn read_root(&self) -> Result<MapBase, StorageReadError> {
+    async fn read_root(&self) -> Result<MapBase, ReadStorageError> {
         Ok(self.root.clone())
     }
 }
@@ -122,14 +122,14 @@ impl ReadWriteStorage for MemStorage {
         SlotBaseId(inner.bases.len() as i32)
     }
 
-    async fn append(&mut self, base: &SlotBase) -> Result<SlotBaseId, StorageWriteError> {
+    async fn append(&mut self, base: &SlotBase) -> Result<SlotBaseId, WriteStorageError> {
         let mut inner = self.inner.write().expect("storage poisoned");
         let id = inner.bases.len() as i32;
         inner.bases.push(base.clone());
         Ok(SlotBaseId(id))
     }
 
-    async fn write_root(&mut self, root: MapBase) -> Result<(), StorageWriteError> {
+    async fn write_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
         self.inner.write().expect("storage poisoned").root = root;
         Ok(())
     }

@@ -1,6 +1,6 @@
 use crate::storage_trie_query::StorageTrieQuery;
 use crate::storage::ReadStorage;
-use sky_types::storage::error::StorageReadError;
+use sky_types::storage::error::ReadStorageError;
 use sky_types::trie::MapBase;
 use sky_types::trie::TrieValue;
 
@@ -18,7 +18,7 @@ impl<S: ReadStorage> TrieReader<S> {
     }
 
     /// Connects to the storage, loading the persisted root.
-    pub async fn connect(storage: S) -> Result<Self, StorageReadError> {
+    pub async fn connect(storage: S) -> Result<Self, ReadStorageError> {
         let root = storage.read_root().await?;
         Ok(Self { root, storage })
     }

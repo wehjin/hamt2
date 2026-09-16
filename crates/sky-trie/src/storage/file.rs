@@ -1,4 +1,4 @@
-use sky_types::storage::error::{StorageReadError, StorageWriteError};
+use sky_types::storage::error::{ReadStorageError, WriteStorageError};
 use crate::storage::{ReadStorage, ReadWriteStorage};
 use crate::types::slot_base::SlotBase;
 use sky_types::trie::MapBase;
@@ -58,8 +58,8 @@ impl FileStorage {
         std::fs::create_dir_all(&inner.bases_dir)?;
         inner.write_max_id()?;
         inner.write_root_with(&MapBase::empty()).map_err(|e| match e {
-            StorageWriteError::Io(_, e) => e,
-            StorageWriteError::Encode(_, e) => std::io::Error::new(ErrorKind::InvalidData, e),
+            WriteStorageError::Io(_, e) => e,
+            WriteStorageError::Encode(_, e) => std::io::Error::new(ErrorKind::InvalidData, e),
         })?;
         Ok(Self {
             inner: Arc::new(RwLock::new(inner)),
@@ -111,28 +111,28 @@ impl Inner {
         base_path(&self.bases_dir, id)
     }
 
-    fn write_max_id_with(&self, id: SlotBaseId) -> Result<(), StorageWriteError> {
-        let bytes = postcard::to_allocvec(&id.0).map_err(|e| StorageWriteError::Encode(id, e))?;
-        std::fs::write(&self.max_id_path, bytes).map_err(|e| StorageWriteError::Io(id, e))
+    fn write_max_id_with(&self, id: SlotBaseId) -> Result<(), WriteStorageError> {
+        let bytes = postcard::to_allocvec(&id.0).map_err(|e| WriteStorageError::Encode(id, e))?;
+        std::fs::write(&self.max_id_path, bytes).map_err(|e| WriteStorageError::Io(id, e))
     }
 
-    fn read_root(&self) -> Result<MapBase, StorageReadError> {
+    fn read_root(&self) -> Result<MapBase, ReadStorageError> {
         match std::fs::read(&self.root_path) {
             Ok(bytes) => {
                 let root = postcard::from_bytes::<MapBase>(&bytes)
-                    .map_err(|e| StorageReadError::Decode(SlotBaseId::ZERO, e))?;
+                    .map_err(|e| ReadStorageError::Decode(SlotBaseId::ZERO, e))?;
                 Ok(root)
             }
             // A missing root file is treated as an empty root.
             Err(e) if e.kind() == ErrorKind::NotFound => Ok(MapBase::empty()),
-            Err(e) => Err(StorageReadError::Io(SlotBaseId::ZERO, e)),
+            Err(e) => Err(ReadStorageError::Io(SlotBaseId::ZERO, e)),
         }
     }
 
-    fn write_root_with(&self, root: &MapBase) -> Result<(), StorageWriteError> {
+    fn write_root_with(&self, root: &MapBase) -> Result<(), WriteStorageError> {
         let bytes =
-            postcard::to_allocvec(root).map_err(|e| StorageWriteError::Encode(SlotBaseId::ZERO, e))?;
-        std::fs::write(&self.root_path, bytes).map_err(|e| StorageWriteError::Io(SlotBaseId::ZERO, e))
+            postcard::to_allocvec(root).map_err(|e| WriteStorageError::Encode(SlotBaseId::ZERO, e))?;
+        std::fs::write(&self.root_path, bytes).map_err(|e| WriteStorageError::Io(SlotBaseId::ZERO, e))
     }
 }
 
@@ -148,7 +148,7 @@ impl ReadStorage for FileStorage {
         }
     }
 
-    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, StorageReadError> {
+    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
         if id.0 == 0 {
             return Ok(SlotBase::new());
         }
@@ -158,9 +158,9 @@ impl ReadStorage for FileStorage {
             "base id {id} has not been written"
         );
         let path = inner.base_path(id);
-        let bytes = std::fs::read(&path).map_err(|e| StorageReadError::Io(id, e))?;
+        let bytes = std::fs::read(&path).map_err(|e| ReadStorageError::Io(id, e))?;
         let base = postcard::from_bytes::<SlotBase>(&bytes)
-            .map_err(|e| StorageReadError::Decode(id, e))?;
+            .map_err(|e| ReadStorageError::Decode(id, e))?;
         Ok(base)
     }
 
@@ -169,7 +169,7 @@ impl ReadStorage for FileStorage {
         SlotBaseId(inner.max_id)
     }
 
-    async fn read_root(&self) -> Result<MapBase, StorageReadError> {
+    async fn read_root(&self) -> Result<MapBase, ReadStorageError> {
         Ok(self.inner.read().expect("storage poisoned").read_root()?)
     }
 }
@@ -201,7 +201,7 @@ impl ReadStorage for FileReadStorage {
         self.clone()
     }
 
-    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, StorageReadError> {
+    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
         if id.0 == 0 {
             return Ok(SlotBase::new());
         }
@@ -210,9 +210,9 @@ impl ReadStorage for FileReadStorage {
             "base id {id} is beyond this snapshot's max_id"
         );
         let path = self.base_path(id);
-        let bytes = std::fs::read(&path).map_err(|e| StorageReadError::Io(id, e))?;
+        let bytes = std::fs::read(&path).map_err(|e| ReadStorageError::Io(id, e))?;
         let base = postcard::from_bytes::<SlotBase>(&bytes)
-            .map_err(|e| StorageReadError::Decode(id, e))?;
+            .map_err(|e| ReadStorageError::Decode(id, e))?;
         Ok(base)
     }
 
@@ -220,7 +220,7 @@ impl ReadStorage for FileReadStorage {
         SlotBaseId(self.max_id)
     }
 
-    async fn read_root(&self) -> Result<MapBase, StorageReadError> {
+    async fn read_root(&self) -> Result<MapBase, ReadStorageError> {
         Ok(self.root.clone())
     }
 }
@@ -234,19 +234,19 @@ impl ReadWriteStorage for FileStorage {
     fn append(
         &mut self,
         base: &SlotBase,
-    ) -> impl Future<Output = Result<SlotBaseId, StorageWriteError>> {
+    ) -> impl Future<Output = Result<SlotBaseId, WriteStorageError>> {
         let mut inner = self.inner.write().expect("storage poisoned");
         let id = SlotBaseId(inner.max_id + 1);
         let bytes = match postcard::to_allocvec(base) {
             Ok(bytes) => bytes,
-            Err(e) => return future::ready(Err(StorageWriteError::Encode(id, e))),
+            Err(e) => return future::ready(Err(WriteStorageError::Encode(id, e))),
         };
         let path = inner.base_path(id);
         if let Err(e) = std::fs::create_dir_all(path.parent().expect("base path has parent")) {
-            return future::ready(Err(StorageWriteError::Io(id, e)));
+            return future::ready(Err(WriteStorageError::Io(id, e)));
         }
         if let Err(e) = std::fs::write(&path, bytes) {
-            return future::ready(Err(StorageWriteError::Io(id, e)));
+            return future::ready(Err(WriteStorageError::Io(id, e)));
         }
         if let Err(e) = inner.write_max_id_with(id) {
             return future::ready(Err(e));
@@ -255,7 +255,7 @@ impl ReadWriteStorage for FileStorage {
         future::ready(Ok(id))
     }
 
-    fn write_root(&mut self, root: MapBase) -> impl Future<Output = Result<(), StorageWriteError>> {
+    fn write_root(&mut self, root: MapBase) -> impl Future<Output = Result<(), WriteStorageError>> {
         match self
             .inner
             .read()

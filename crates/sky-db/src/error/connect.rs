@@ -1,5 +1,5 @@
 use sky_types::db::{QueryError, TransactError};
-use sky_types::storage::error::{StorageReadError, StorageWriteError};
+use sky_types::storage::error::{ReadStorageError, WriteStorageError};
 
 #[derive(thiserror::Error, Debug)]
 pub enum ConnectError {
@@ -10,8 +10,8 @@ pub enum ConnectError {
     Transact(#[from] TransactError),
 
     #[error("TrieStorageRead: {0}")]
-    TrieStorageRead(#[from] StorageReadError),
+    TrieStorageRead(#[from] ReadStorageError),
 
     #[error("TrieStorageWrite: {0}")]
-    TrieStorageWrite(#[from] StorageWriteError),
+    TrieStorageWrite(#[from] WriteStorageError),
 }
