@@ -21,13 +21,26 @@ pub struct StorageService {
     broadcast_sender: broadcast::Sender<StorageBroadcastEvent>,
 }
 
-/// The requester is used to send messages to the storage service.
-#[derive(Clone)]
-pub struct StorageRequester {
-    request_sender: mpsc::Sender<StorageRequest>,
-}
+impl StorageService {
+    /// Starts the storage service
+    pub async fn start(db_spec: impl Into<DbSpec>) -> Result<Self, StorageServiceError> {
+        let (request_sender, broadcast_sender) = begin_storage(db_spec).await?;
+        let service = Self {
+            request_sender,
+            broadcast_sender,
+        };
+        Ok(service)
+    }
 
-impl StorageRequester {
+    /// Produces a broadcast-event receiver for the service's broadcast events.
+    ///
+    /// # Gotchas
+    /// The receiver must be read in a loop or dropped. If it is left unread and undropped, it
+    /// will accumulate broadcast messages and eventually overflow.
+    pub fn subscribe(&self) -> broadcast::Receiver<StorageBroadcastEvent> {
+        self.broadcast_sender.subscribe()
+    }
+
     pub async fn transact(
         &self,
         datoms: impl Into<Vec<Datom>>,
@@ -67,29 +80,6 @@ impl StorageRequester {
 enum StorageRequest {
     Transact(Vec<Datom>, oneshot::Sender<StorageHead>),
     ReadSlotBase(SlotBaseId, oneshot::Sender<Option<SlotBase>>),
-}
-
-impl StorageService {
-    pub async fn start(db_spec: impl Into<DbSpec>) -> Result<Self, StorageServiceError> {
-        let (request_sender, broadcast_sender) = begin_storage(db_spec).await?;
-        let service = Self {
-            request_sender,
-            broadcast_sender,
-        };
-        Ok(service)
-    }
-
-    /// Connecting to the storage service produces a requester and a broadcast receiver.
-    /// The requester is used to transact directly with the service, while the receiver
-    /// must be used to listen to messages from the service.  If it is left unread and
-    /// undropped, it will accumulate broadcast messages and eventually overflow.
-    pub fn subscribe(&self) -> (StorageRequester, broadcast::Receiver<StorageBroadcastEvent>) {
-        let requester = StorageRequester {
-            request_sender: self.request_sender.clone(),
-        };
-        let receiver = self.broadcast_sender.subscribe();
-        (requester, receiver)
-    }
 }
 
 async fn begin_storage(
@@ -166,27 +156,23 @@ mod tests {
         const ATTR: Attr = Attr("Counter/count");
         let db_spec = [ATTR];
         let storage = StorageService::start(db_spec).await.unwrap();
+        let mut broadcasts = storage.subscribe();
 
-        let (requester, mut receiver) = storage.subscribe();
-
-        let new_head = requester
-            .transact([datom::add(100, ATTR, 10)])
-            .await
-            .unwrap();
+        let new_head = storage.transact([datom::add(100, ATTR, 10)]).await.unwrap();
         let StorageHead { max_id, root } = new_head;
         assert_ne!(SlotBaseId::ZERO, max_id);
         assert_ne!(MapBase::empty(), root);
 
-        let broadcast = receiver.recv().await.unwrap();
+        let broadcast = broadcasts.recv().await.unwrap();
         assert_eq!(
             StorageBroadcastEvent::NewHead(StorageHead { max_id, root }),
             broadcast
         );
 
-        let slot_base = requester.read_slot_base(max_id).await.unwrap();
+        let slot_base = storage.read_slot_base(max_id).await.unwrap();
         assert_ne!(None, slot_base);
 
-        let out_of_range = requester.read_slot_base(SlotBaseId(10_000)).await.unwrap();
+        let out_of_range = storage.read_slot_base(SlotBaseId(10_000)).await.unwrap();
         assert_eq!(None, out_of_range);
     }
 }
