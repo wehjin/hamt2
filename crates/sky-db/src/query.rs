@@ -53,7 +53,7 @@ mod tests {
     use super::*;
     use futures::StreamExt;
     use sky_types::db::Transact;
-    use sky_types::db::datum;
+    use sky_types::db::datom;
     use sky_types::db::{dat, ent};
 
     #[tokio::test]
@@ -64,8 +64,8 @@ mod tests {
         let mut db = Db::new(storage, schema.clone()).await?;
         db = db
             .transact(vec![
-	            datum::add(ent(10), COUNT, dat(Val::from(10))),
-	            datum::add(ent(11), COUNT, dat(Val::from(11))),
+	            datom::add(ent(10), COUNT, dat(Val::from(10))),
+	            datom::add(ent(11), COUNT, dat(Val::from(11))),
             ])
             .await?;
 

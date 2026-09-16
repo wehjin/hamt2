@@ -1,6 +1,6 @@
 use crate::db::{Dat, Ein, Ent, Val};
 
-pub mod datum;
+pub mod datom;
 
 pub fn val(from: impl Into<Val>) -> Val {
     from.into()

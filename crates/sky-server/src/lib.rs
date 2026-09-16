@@ -124,14 +124,14 @@ async fn handle_storage(
 mod tests {
     use crate::StorageService;
     use sky_trie::types::StorageHead;
-    use sky_types::db::{Attr, datum};
+    use sky_types::db::{Attr, datom};
 
     #[tokio::test]
     async fn it_works() {
         const ATTR: Attr = Attr("Counter/count");
         let db_spec = [ATTR];
         let storage = StorageService::start(db_spec).await.unwrap();
-        let new_head = storage.transact([datum::add(100, ATTR, 10)]).await.unwrap();
+        let new_head = storage.transact([datom::add(100, ATTR, 10)]).await.unwrap();
         let StorageHead { max_id, root } = new_head;
         assert_ne!(None, max_id);
         assert_ne!(None, root);
