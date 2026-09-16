@@ -7,8 +7,9 @@ use std::sync::{Arc, RwLock};
 
 /// An in-memory storage for Bases backed by a `Vec<Base>`.
 ///
-/// The vec is seeded with the empty base at index 0 so that `BaseId(0)` always
-/// reads back the empty base and no storage is wasted storing it.
+/// The vec is seeded with the empty base at index 0 so that
+/// [`SlotBaseId::ZERO`] always reads back the empty base and no storage is
+/// wasted storing it.
 #[derive(Debug, Clone)]
 pub struct MemStorage {
     inner: Arc<RwLock<Inner>>,
@@ -61,14 +62,9 @@ impl ReadStorage for MemStorage {
         Ok(inner.bases[index].clone())
     }
 
-    fn max_id(&self) -> Option<SlotBaseId> {
+    fn max_id(&self) -> SlotBaseId {
         let inner = self.inner.read().expect("storage poisoned");
-        let len = inner.bases.len();
-        if len <= 1 {
-            None
-        } else {
-            Some(SlotBaseId((len - 1) as i32))
-        }
+        SlotBaseId((inner.bases.len() - 1) as i32)
     }
 
     async fn read_root(&self) -> Result<Option<MapBase>, StorageReadError> {
@@ -106,12 +102,8 @@ impl ReadStorage for MemReadStorage {
         Ok(inner.bases[index].clone())
     }
 
-    fn max_id(&self) -> Option<SlotBaseId> {
-        if self.max_id == 0 {
-            None
-        } else {
-            Some(SlotBaseId(self.max_id))
-        }
+    fn max_id(&self) -> SlotBaseId {
+        SlotBaseId(self.max_id)
     }
 
     async fn read_root(&self) -> Result<Option<MapBase>, StorageReadError> {

@@ -11,7 +11,7 @@ impl MapBase {
     pub fn empty() -> Self {
         Self {
             map: SlotMap::empty(),
-            base: SlotBaseId(0),
+            base: SlotBaseId::ZERO,
         }
     }
 }

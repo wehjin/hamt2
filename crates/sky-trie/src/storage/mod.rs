@@ -9,7 +9,7 @@ pub mod mem;
 
 /// A trait for reading Bases from storage.
 ///
-/// Base id 0 is reserved and always represents the empty base.
+/// Base id [`SlotBaseId::ZERO`] is reserved and always represents the empty base.
 pub trait ReadStorage: Sync {
     /// The storage type of an owned read-only snapshot, produced by
     /// [`ReadStorage::snapshot`]. Writer storages use their read-only
@@ -26,8 +26,10 @@ pub trait ReadStorage: Sync {
         id: SlotBaseId,
     ) -> impl Future<Output = Result<SlotBase, StorageReadError>> + Send;
 
-    /// Returns the highest base id in the storage or none if empty. Base id 0 (the empty base) is not counted.
-    fn max_id(&self) -> Option<SlotBaseId>;
+    /// Returns the highest base id in the storage. The empty base id
+    /// ([`SlotBaseId::ZERO`]) counts, so an empty storage returns
+    /// [`SlotBaseId::ZERO`].
+    fn max_id(&self) -> SlotBaseId;
 
     /// Reads the root map base of the trie or none if no root has been committed.
     fn read_root(&self) -> impl Future<Output = Result<Option<MapBase>, StorageReadError>> + Send;
@@ -72,9 +74,9 @@ mod tests {
     use sky_types::trie::TrieValue;
 
     #[tokio::test]
-    async fn empty_storage_has_no_ids() {
+    async fn empty_storage_max_id_is_zero() {
         let storage = MemStorage::new();
-        assert_eq!(None, storage.max_id());
+        assert_eq!(SlotBaseId::ZERO, storage.max_id());
         assert_eq!(SlotBaseId(1), storage.next_id());
     }
 
@@ -83,7 +85,7 @@ mod tests {
         let storage = MemStorage::new();
         assert_eq!(
             SlotBase::new(),
-            storage.read(SlotBaseId(0)).await.expect("read")
+            storage.read(SlotBaseId::ZERO).await.expect("read")
         );
     }
 
@@ -95,7 +97,7 @@ mod tests {
         let id1 = storage.append(&base).await.expect("append");
         assert_eq!(SlotBaseId(1), id0);
         assert_eq!(SlotBaseId(2), id1);
-        assert_eq!(Some(SlotBaseId(2)), storage.max_id());
+        assert_eq!(SlotBaseId(2), storage.max_id());
         assert_eq!(SlotBaseId(3), storage.next_id());
         assert_eq!(base, storage.read(id0).await.expect("read"));
         assert_eq!(base, storage.read(id1).await.expect("read"));
@@ -108,8 +110,8 @@ mod tests {
         let id = storage.append(&base).await.expect("append");
         let view = storage.snapshot();
         storage.append(&base).await.expect("append");
-        assert_eq!(Some(SlotBaseId(2)), storage.max_id());
-        assert_eq!(Some(id), view.max_id());
+        assert_eq!(SlotBaseId(2), storage.max_id());
+        assert_eq!(id, view.max_id());
         assert_eq!(base, view.read(id).await.expect("read"));
     }
 }

@@ -23,7 +23,7 @@ use std::sync::{Arc, RwLock};
 ///         <id>.postcard
 /// ```
 ///
-/// Base id 0 is the reserved empty base and is never written to disk.
+/// Base id [`SlotBaseId::ZERO`] is the reserved empty base and is never written to disk.
 ///
 /// Clones share the same inner state (`Arc<RwLock<Inner>>`), so appends are
 /// serialized through a shared `max_id` counter and clones never assign
@@ -116,18 +116,18 @@ impl Inner {
         match std::fs::read(&self.root_path) {
             Ok(bytes) => {
                 let root = postcard::from_bytes::<MapBase>(&bytes)
-                    .map_err(|e| StorageReadError::Decode(SlotBaseId(0), e))?;
+                    .map_err(|e| StorageReadError::Decode(SlotBaseId::ZERO, e))?;
                 Ok(Some(root))
             }
             Err(e) if e.kind() == ErrorKind::NotFound => Ok(None),
-            Err(e) => Err(StorageReadError::Io(SlotBaseId(0), e)),
+            Err(e) => Err(StorageReadError::Io(SlotBaseId::ZERO, e)),
         }
     }
 
     fn write_root_with(&self, root: &MapBase) -> Result<(), StorageWriteError> {
         let bytes =
-            postcard::to_allocvec(root).map_err(|e| StorageWriteError::Encode(SlotBaseId(0), e))?;
-        std::fs::write(&self.root_path, bytes).map_err(|e| StorageWriteError::Io(SlotBaseId(0), e))
+            postcard::to_allocvec(root).map_err(|e| StorageWriteError::Encode(SlotBaseId::ZERO, e))?;
+        std::fs::write(&self.root_path, bytes).map_err(|e| StorageWriteError::Io(SlotBaseId::ZERO, e))
     }
 }
 
@@ -158,13 +158,9 @@ impl ReadStorage for FileStorage {
         Ok(base)
     }
 
-    fn max_id(&self) -> Option<SlotBaseId> {
+    fn max_id(&self) -> SlotBaseId {
         let inner = self.inner.read().expect("storage poisoned");
-        if inner.max_id == 0 {
-            None
-        } else {
-            Some(SlotBaseId(inner.max_id))
-        }
+        SlotBaseId(inner.max_id)
     }
 
     async fn read_root(&self) -> Result<Option<MapBase>, StorageReadError> {
@@ -213,12 +209,8 @@ impl ReadStorage for FileReadStorage {
         Ok(base)
     }
 
-    fn max_id(&self) -> Option<SlotBaseId> {
-        if self.max_id == 0 {
-            None
-        } else {
-            Some(SlotBaseId(self.max_id))
-        }
+    fn max_id(&self) -> SlotBaseId {
+        SlotBaseId(self.max_id)
     }
 
     async fn read_root(&self) -> Result<Option<MapBase>, StorageReadError> {
@@ -277,14 +269,14 @@ mod tests {
     use sky_types::trie::TrieValue;
 
     #[tokio::test]
-    async fn empty_storage_has_no_ids() -> anyhow::Result<()> {
+    async fn empty_storage_max_id_is_zero() -> anyhow::Result<()> {
         let dir = tempfile::tempdir()?;
         let storage = FileStorage::new(dir.path())?;
-        assert_eq!(None, storage.max_id());
+        assert_eq!(SlotBaseId::ZERO, storage.max_id());
         assert_eq!(SlotBaseId(1), storage.next_id());
         assert_eq!(
             SlotBase::new(),
-            storage.read(SlotBaseId(0)).await.expect("read")
+            storage.read(SlotBaseId::ZERO).await.expect("read")
         );
         Ok(())
     }
@@ -300,7 +292,7 @@ mod tests {
             for base in &bases {
                 storage.append(base).await.expect("append");
             }
-            assert_eq!(Some(SlotBaseId(10)), storage.max_id());
+            assert_eq!(SlotBaseId(10), storage.max_id());
             assert_eq!(SlotBaseId(11), storage.next_id());
             for (i, base) in bases.iter().enumerate() {
                 let id = SlotBaseId(i as i32 + 1);
@@ -308,7 +300,7 @@ mod tests {
             }
         }
         let storage = FileStorage::load(dir.path())?;
-        assert_eq!(Some(SlotBaseId(10)), storage.max_id());
+        assert_eq!(SlotBaseId(10), storage.max_id());
         for (i, base) in bases.iter().enumerate() {
             let id = SlotBaseId(i as i32 + 1);
             assert_eq!(base, &storage.read(id).await.expect("read"));
@@ -347,7 +339,7 @@ mod tests {
         let mut storage = FileStorage::load(dir.path())?;
         let id = storage.append(&base).await.expect("append");
         assert_eq!(SlotBaseId(2), id);
-        assert_eq!(Some(SlotBaseId(2)), storage.max_id());
+        assert_eq!(SlotBaseId(2), storage.max_id());
         Ok(())
     }
 
@@ -361,8 +353,8 @@ mod tests {
         let id1 = clone.append(&base).await.expect("append");
         assert_eq!(SlotBaseId(1), id0);
         assert_eq!(SlotBaseId(2), id1);
-        assert_eq!(Some(SlotBaseId(2)), storage.max_id());
-        assert_eq!(Some(SlotBaseId(2)), clone.max_id());
+        assert_eq!(SlotBaseId(2), storage.max_id());
+        assert_eq!(SlotBaseId(2), clone.max_id());
         Ok(())
     }
 
@@ -417,8 +409,8 @@ mod tests {
         .await;
         storage.write_root(new_root).await.expect("write root");
 
-        assert_eq!(Some(SlotBaseId(4)), storage.max_id());
-        assert_eq!(Some(SlotBaseId(2)), view.max_id());
+        assert_eq!(SlotBaseId(4), storage.max_id());
+        assert_eq!(SlotBaseId(2), view.max_id());
         assert_eq!(Some(root), view.read_root().await.expect("read root"));
         assert_eq!(base, view.read(id).await.expect("read"));
         assert!(matches!(

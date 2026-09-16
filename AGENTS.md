@@ -41,7 +41,8 @@ crate::trie::prelude::*` internally. sky-db does not re-export any storage types
    dependency, referenced via the extern prelude (`universal_hash::hash`); not re-exported.
 2. `crates/sky-trie` — the HAMT.
    - `trie_storage/` — persistence abstraction. `ReadStorage: Sync`
-     (`read`/`max_id`/`read_root`/`get_root`/`snapshot` + `type Snapshot`, errors `TrieStorageReadError`; every
+     (`read`/`max_id`/`read_root`/`get_root`/`snapshot` + `type Snapshot`, errors `TrieStorageReadError`; `max_id`
+     returns the highest id and counts the reserved empty base, so an empty storage returns `SlotBaseId::ZERO`; every
      storage is snapshottable — writers capture their read-only snapshot, read-only types use `Self` via `Clone`)
      and `ReadWriteStorage`
      (`next_id`/`append`/`write_root`, errors `TrieStorageWriteError`).
@@ -52,7 +53,7 @@ crate::trie::prelude::*` internally. sky-db does not re-export any storage types
      (`ExpectedMapBaseAtKey`, wraps `TrieQueryError`). Nothing in the trie produces sky-db's db-level errors.
    - `types/` — `MapBase { map: SlotMap, base: SlotBaseId }` (a node: bases are read from storage, never inline
      slots), `SlotBase { slots: Vec<Slot> }`, `Slot::KeyValue(i32, TrieValue) | MapBase(MapBase)`,
-     `TrieValue::U32(u32) | SubTrie(MapBase)`, plus `HashKey`/`DeepKey`. `SlotBaseId(0)` is the reserved empty
+     `TrieValue::U32(u32) | SubTrie(MapBase)`, plus `HashKey`/`DeepKey`. `SlotBaseId::ZERO` is the reserved empty
      base.
    - `Trie<S: ReadWriteStorage>` — the persistent map: `connect(storage)` (`-> TrieStorageReadError`) loads the
      persisted root, mutations (`insert`, `deep_insert`) consume and return a new `Trie` (`-> TrieWriteError`),
@@ -149,7 +150,7 @@ Within `crates/skybase/src`:
   `assertion failed: value >= 0`. Trie values are `TrieValue::U32(u32)` (32-bit). `Ein` (entity id) and `SlotBaseId`
   are non-negative `i32`s. `TrieValue`s stored in the EAVT/AEVT indexes pack `Dir` into bit 28 (`0x1000_0000`) and
   a 28-bit `Txid` into the low bits, so tx ids are capped below 2^28.
-- **`SlotBaseId(0)` is the empty base.** It is never stored; every storage returns an empty `SlotBase` for it and
+- **`SlotBaseId::ZERO` is the empty base.** It is never stored; every storage returns an empty `SlotBase` for it and
   appends start at id 1.
 - **`Attr` is `&'static str`** (attribute idents), not an integer. Schema attributes must be declared up front:
   `Db::new(storage, db_spec)` takes `impl Into<DbSpec>` (`[Attr; N]`, `Vec<Attr>`, or `[AttrSpec; N]` for
