@@ -117,7 +117,7 @@ crate::trie::prelude::*` internally. sky-db does not re-export any storage types
      `TrieStorageRead`/`UnknownAttr`). Re-exported at the crate root.
    - `src/find/` — the `Find` trait (`select()` + `where_() -> Vec<Atom>` + `process(FindResult)`; default `apply`
      runs `db_trie::find`; `FindResult` = `Vec<HashMap<String, Val>>`, lives at `find/types/find_result.rs`).
-     Impls: `all_eins`, `attr_with_name`,
+     Impls: `all_eins`,
      `attrs_of_ein`, `binds_for_attr`, `eins_with_attr`, `vals_in_slot`; each compiles to a datalog `rule` headed by
      `db/query`.
    - `src/query.rs` — `DbQuery` trait (`find`, `get`, `find_val`, `get_val`), implemented by `Db` and `DbReader`.
