@@ -38,8 +38,8 @@ impl StorageRequester {
         self.request_sender
             .send(request)
             .await
-            .expect("send storage request failed");
-        let new_storage_head = receive.await.expect("receive storage response failed");
+            .expect("send transact failed");
+        let new_storage_head = receive.await.expect("receive transact response failed");
         Ok(new_storage_head)
     }
 
