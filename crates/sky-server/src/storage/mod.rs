@@ -41,19 +41,16 @@ impl StorageService {
         self.broadcast_sender.subscribe()
     }
 
-    pub async fn transact(
-        &self,
-        datoms: impl Into<Vec<Datom>>,
-    ) -> Result<StorageHead, StorageServiceError> {
-        let datoms = datoms.into();
+    /// Read the head of the storage service. This tells the client what is in
+    /// the storage.
+    pub async fn read_storage_head(&self) -> StorageHead {
         let (send, receive) = oneshot::channel();
-        let request = StorageRequest::Transact(datoms, send);
+        let request = StorageRequest::ReadStorageHead(send);
         self.request_sender
             .send(request)
             .await
-            .expect("send transact failed");
-        let new_storage_head = receive.await.expect("receive transact response failed");
-        Ok(new_storage_head)
+            .expect("send request failed");
+        receive.await.expect("receive response failed")
     }
 
     /// Reads a slot base from the storage service. Returns `None` for ids
@@ -67,19 +64,33 @@ impl StorageService {
         self.request_sender
             .send(request)
             .await
-            .expect("send read-slot-base failed");
-        let slot_base = receive
-            .await
-            .expect("receive read-slot-base response failed");
+            .expect("send request failed");
+        let slot_base = receive.await.expect("receive response failed");
         Ok(slot_base)
+    }
+
+    pub async fn transact(
+        &self,
+        datoms: impl Into<Vec<Datom>>,
+    ) -> Result<StorageHead, StorageServiceError> {
+        let datoms = datoms.into();
+        let (send, receive) = oneshot::channel();
+        let request = StorageRequest::Transact(datoms, send);
+        self.request_sender
+            .send(request)
+            .await
+            .expect("send request failed");
+        let new_storage_head = receive.await.expect("receive response failed");
+        Ok(new_storage_head)
     }
 }
 
 /// These are messages sent to the storage service after connection.
 #[derive(Debug)]
 enum StorageRequest {
-    Transact(Vec<Datom>, oneshot::Sender<StorageHead>),
+    ReadStorageHead(oneshot::Sender<StorageHead>),
     ReadSlotBase(SlotBaseId, oneshot::Sender<Option<SlotBase>>),
+    Transact(Vec<Datom>, oneshot::Sender<StorageHead>),
 }
 
 async fn begin_storage(
@@ -113,6 +124,24 @@ async fn handle_storage(
     let mut db = Db::new(storage.clone(), db_spec).await?;
     while let Some(event) = from_clients.recv().await {
         match event {
+            StorageRequest::ReadStorageHead(response) => {
+                let head = storage.get_head().await;
+                if let Err(e) = response.send(head) {
+                    log::error!("ReadTrieStatus response failed: {:?}", e);
+                }
+            }
+            StorageRequest::ReadSlotBase(base_id, response) => {
+                // Guard against ids the storage has never assigned; reading
+                // them directly would panic the storage task.
+                let base = if base_id < SlotBaseId::ZERO || base_id > storage.max_id() {
+                    None
+                } else {
+                    storage.read(base_id).await.ok()
+                };
+                if let Err(e) = response.send(base) {
+                    error!("ReadSlotBase response failed: {:?}", e);
+                }
+            }
             StorageRequest::Transact(datoms, response) => match db.transact(datoms).await {
                 Err(e) => {
                     let _ =
@@ -128,16 +157,6 @@ async fn handle_storage(
                     db = new_db;
                 }
             },
-            StorageRequest::ReadSlotBase(base_id, response) => {
-                // Guard against ids the storage has never assigned; reading
-                // them directly would panic the storage task.
-                let base = if base_id < SlotBaseId::ZERO || base_id > storage.max_id() {
-                    None
-                } else {
-                    storage.read(base_id).await.ok()
-                };
-                let _ = response.send(base);
-            }
         }
     }
     Ok(())

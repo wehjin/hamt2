@@ -2080,6 +2080,7 @@ name = "sky-server"
 version = "0.1.0"
 dependencies = [
  "log",
+ "serde",
  "sky-db",
  "sky-trie",
  "sky-types",
