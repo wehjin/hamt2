@@ -10,7 +10,7 @@ pub use query::*;
 mod tests {
     use crate::crate_services::map_base;
     use crate::crate_services::map_base::*;
-    use crate::storage::mem::MemTrieStorage;
+    use crate::storage::mem::MemStorage;
     use crate::types::HashKey;
     use sky_types::trie::TrieValue
 ;
@@ -20,7 +20,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_stream_kvs_empty_map() {
-        let storage = MemTrieStorage::new();
+        let storage = MemStorage::new();
         let map_base = MapBase::empty();
         let stream = kv_stream(map_base, storage);
         let kvs = stream.collect::<Vec<_>>().await;
@@ -30,7 +30,7 @@ mod tests {
     async fn test_stream_kvs_one_slot() {
         let key = HashKey::new(0);
         let value = TrieValue::from(11);
-        let mut storage = MemTrieStorage::new();
+        let mut storage = MemStorage::new();
         let map_base = one_kv(key, value.clone(), &mut storage).await;
         let stream = kv_stream(map_base, storage);
         let kvs = stream.collect::<Vec<_>>().await;
@@ -42,7 +42,7 @@ mod tests {
         let test_kvs = (0..35)
             .map(|i| (i, TrieValue::from(i as u32)))
             .collect::<Vec<_>>();
-        let mut storage = MemTrieStorage::new();
+        let mut storage = MemStorage::new();
         let map_base = {
             let mut map_base = {
                 let key = HashKey::new(test_kvs[0].0);

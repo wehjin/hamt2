@@ -18,7 +18,7 @@ async fn pull_test() {
             direction: -1,
         };
         let ent = Ent::from(27);
-        let mut db = Db::new(MemTrieStorage::new(), Basis::attrs())
+        let mut db = Db::new(MemStorage::new(), Basis::attrs())
             .await
             .expect("Db::new");
         let datoms = basis.into_datoms(ent);

@@ -60,7 +60,7 @@ mod tests {
 	async fn ev_stream_test() -> anyhow::Result<()> {
         const COUNT: Attr = Attr("counter/count");
         let schema = vec![COUNT];
-        let storage = MemTrieStorage::new();
+        let storage = MemStorage::new();
         let mut db = Db::new(storage, schema.clone()).await?;
         db = db
             .transact(vec![

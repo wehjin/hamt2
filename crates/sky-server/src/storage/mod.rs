@@ -1,7 +1,7 @@
 use log::error;
 use sky_db::db::Db;
 use sky_db::db::attr_spec::DbSpec;
-use sky_trie::prelude::{MemTrieStorage as MemDbStorage, ReadStorage};
+use sky_trie::prelude::{MemStorage, ReadStorage};
 use sky_trie::types::StorageHead;
 use sky_trie::types::slot_base::SlotBase;
 use sky_types::db::{Datom, Transact};
@@ -117,7 +117,7 @@ async fn handle_storage(
     to_clients: broadcast::Sender<StorageBroadcastEvent>,
     db_spec: DbSpec,
 ) -> Result<(), StorageServiceError> {
-    let storage = MemDbStorage::new();
+    let storage = MemStorage::new();
     let mut db = Db::new(storage.clone(), db_spec).await?;
     while let Some(event) = from_clients.recv().await {
         match event {

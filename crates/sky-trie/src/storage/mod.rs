@@ -67,20 +67,20 @@ pub trait ReadWriteStorage: ReadStorage {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::storage::mem::MemTrieStorage;
+    use crate::storage::mem::MemStorage;
     use crate::types::HashKey;
     use sky_types::trie::TrieValue;
 
     #[tokio::test]
     async fn empty_storage_has_no_ids() {
-        let storage = MemTrieStorage::new();
+        let storage = MemStorage::new();
         assert_eq!(None, storage.max_id());
         assert_eq!(SlotBaseId(1), storage.next_id());
     }
 
     #[tokio::test]
     async fn base_id_zero_is_the_empty_base() {
-        let storage = MemTrieStorage::new();
+        let storage = MemStorage::new();
         assert_eq!(
             SlotBase::new(),
             storage.read(SlotBaseId(0)).await.expect("read")
@@ -89,7 +89,7 @@ mod tests {
 
     #[tokio::test]
     async fn append_assigns_sequential_ids() {
-        let mut storage = MemTrieStorage::new();
+        let mut storage = MemStorage::new();
         let base = SlotBase::new_kv(HashKey::new(7), TrieValue::U32(7));
         let id0 = storage.append(&base).await.expect("append");
         let id1 = storage.append(&base).await.expect("append");
@@ -103,7 +103,7 @@ mod tests {
 
     #[tokio::test]
     async fn mem_readonly_snapshot_does_not_see_new_bases() {
-        let mut storage = MemTrieStorage::new();
+        let mut storage = MemStorage::new();
         let base = SlotBase::new_kv(HashKey::new(7), TrieValue::U32(7));
         let id = storage.append(&base).await.expect("append");
         let view = storage.snapshot();

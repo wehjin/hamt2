@@ -174,7 +174,7 @@ mod tests {
 
 	#[tokio::test]
     async fn insert_and_query() {
-        let mut trie = Trie::connect(MemTrieStorage::new())
+        let mut trie = Trie::connect(MemStorage::new())
             .await
             .expect("Failed to connect to MemBaseStorage");
         let mut vids = Vec::new();
@@ -194,7 +194,7 @@ mod tests {
 
     #[tokio::test]
     async fn negative_numbers() {
-        let trie = Trie::connect(MemTrieStorage::new())
+        let trie = Trie::connect(MemStorage::new())
             .await
             .expect("Failed to connect to MemBaseStorage");
         let (trie, vid) = insert(trie, val(-1)).await.expect("Failed to insert");
@@ -204,7 +204,7 @@ mod tests {
 
     #[tokio::test]
     async fn same_value_inserted_twice() {
-        let trie = Trie::connect(MemTrieStorage::new())
+        let trie = Trie::connect(MemStorage::new())
             .await
             .expect("Failed to connect to MemBaseStorage");
 
@@ -217,7 +217,7 @@ mod tests {
 
     #[tokio::test]
     async fn string_insert_and_query() {
-        let trie = Trie::connect(MemTrieStorage::new())
+        let trie = Trie::connect(MemStorage::new())
             .await
             .expect("Failed to connect to MemBaseStorage");
         let (trie, vid) = insert(trie, Val::String("hello".into()))

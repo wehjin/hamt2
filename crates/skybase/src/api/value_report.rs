@@ -14,9 +14,9 @@ pub async fn get_value_report(ein: Ein, attr_name: AttrName) -> Result<ValueRepo
     use sky_db::find::*;
     use sky_db::handle::DbHandle;
     use sky_db::query::DbQuery;
-    use sky_db::storage::MemDbStorage;
+    use sky_trie::storage::mem::MemStorage;
     use leptos::prelude::expect_context;
-    let reader = expect_context::<DbHandle<MemDbStorage>>()
+    let reader = expect_context::<DbHandle<MemStorage>>()
         .to_reader()
         .await?;
 

@@ -1,7 +1,7 @@
 use sky_db::db::Db;
 use sky_db::find::EinsWithAttr;
 use sky_db::query::DbQuery;
-use sky_db::storage::MemDbStorage;
+use sky_trie::storage::mem::MemStorage;
 use sky_types::db::Transact;
 use sky_types::db::datom;
 use sky_types::db::{Attr, val};
@@ -10,7 +10,7 @@ const ATTR_COUNT: Attr = Attr("counter/count");
 
 #[tokio::test]
 async fn mem_db_works() -> anyhow::Result<()> {
-    let db = Db::new(MemDbStorage::new(), [ATTR_COUNT]).await?;
+    let db = Db::new(MemStorage::new(), [ATTR_COUNT]).await?;
     let db = db
         .transact([
             datom::add(1, ATTR_COUNT, val(10)),

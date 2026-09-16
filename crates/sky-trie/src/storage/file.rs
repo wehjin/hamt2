@@ -29,7 +29,7 @@ use std::sync::{Arc, RwLock};
 /// serialized through a shared `max_id` counter and clones never assign
 /// duplicate ids or write stale state back to disk.
 #[derive(Debug, Clone)]
-pub struct FileTrieStorage {
+pub struct FileStorage {
     inner: Arc<RwLock<Inner>>,
 }
 
@@ -41,7 +41,7 @@ struct Inner {
     max_id: i32,
 }
 
-impl FileTrieStorage {
+impl FileStorage {
     const BASES_DIR: &'static str = "bases";
     const MAX_ID_FILE: &'static str = "max_id";
     const ROOT_FILE: &'static str = "root";
@@ -131,7 +131,7 @@ impl Inner {
     }
 }
 
-impl ReadStorage for FileTrieStorage {
+impl ReadStorage for FileStorage {
     type Snapshot = FileReadStorage;
 
     fn snapshot(&self) -> Self::Snapshot {
@@ -172,7 +172,7 @@ impl ReadStorage for FileTrieStorage {
     }
 }
 
-/// A read-only, immutable view of a [`FileTrieStorage`] taken at
+/// A read-only, immutable view of a [`FileStorage`] taken at
 /// [`ReadStorage::snapshot`] time.
 ///
 /// `max_id` and `root` are captured into memory when the view is created, so
@@ -226,7 +226,7 @@ impl ReadStorage for FileReadStorage {
     }
 }
 
-impl ReadWriteStorage for FileTrieStorage {
+impl ReadWriteStorage for FileStorage {
     fn next_id(&self) -> SlotBaseId {
         let inner = self.inner.read().expect("storage poisoned");
         SlotBaseId(inner.max_id + 1)
@@ -279,7 +279,7 @@ mod tests {
     #[tokio::test]
     async fn empty_storage_has_no_ids() -> anyhow::Result<()> {
         let dir = tempfile::tempdir()?;
-        let storage = FileTrieStorage::new(dir.path())?;
+        let storage = FileStorage::new(dir.path())?;
         assert_eq!(None, storage.max_id());
         assert_eq!(SlotBaseId(1), storage.next_id());
         assert_eq!(
@@ -296,7 +296,7 @@ mod tests {
             .map(|i| SlotBase::new_kv(HashKey::new(i), TrieValue::U32(i as u32)))
             .collect::<Vec<_>>();
         {
-            let mut storage = FileTrieStorage::new(dir.path())?;
+            let mut storage = FileStorage::new(dir.path())?;
             for base in &bases {
                 storage.append(base).await.expect("append");
             }
@@ -307,7 +307,7 @@ mod tests {
                 assert_eq!(base, &storage.read(id).await.expect("read"));
             }
         }
-        let storage = FileTrieStorage::load(dir.path())?;
+        let storage = FileStorage::load(dir.path())?;
         assert_eq!(Some(SlotBaseId(10)), storage.max_id());
         for (i, base) in bases.iter().enumerate() {
             let id = SlotBaseId(i as i32 + 1);
@@ -321,14 +321,14 @@ mod tests {
         use sky_types::trie::MapBase;
         let dir = tempfile::tempdir()?;
         {
-            let mut storage = FileTrieStorage::new(dir.path())?;
+            let mut storage = FileStorage::new(dir.path())?;
             assert_eq!(None, storage.read_root().await.expect("read root"));
             storage
                 .write_root(MapBase::empty())
                 .await
                 .expect("write root");
         }
-        let storage = FileTrieStorage::load(dir.path())?;
+        let storage = FileStorage::load(dir.path())?;
         assert_eq!(
             Some(MapBase::empty()),
             storage.read_root().await.expect("read root")
@@ -341,10 +341,10 @@ mod tests {
         let dir = tempfile::tempdir()?;
         let base = SlotBase::new_kv(HashKey::new(7), TrieValue::U32(7));
         {
-            let mut storage = FileTrieStorage::new(dir.path())?;
+            let mut storage = FileStorage::new(dir.path())?;
             storage.append(&base).await.expect("append");
         }
-        let mut storage = FileTrieStorage::load(dir.path())?;
+        let mut storage = FileStorage::load(dir.path())?;
         let id = storage.append(&base).await.expect("append");
         assert_eq!(SlotBaseId(2), id);
         assert_eq!(Some(SlotBaseId(2)), storage.max_id());
@@ -354,7 +354,7 @@ mod tests {
     #[tokio::test]
     async fn clones_share_the_same_id_counter() -> anyhow::Result<()> {
         let dir = tempfile::tempdir()?;
-        let mut storage = FileTrieStorage::new(dir.path())?;
+        let mut storage = FileStorage::new(dir.path())?;
         let mut clone = storage.clone();
         let base = SlotBase::new_kv(HashKey::new(7), TrieValue::U32(7));
         let id0 = storage.append(&base).await.expect("append");
@@ -369,12 +369,12 @@ mod tests {
     #[tokio::test]
     async fn bases_are_spread_over_two_level_subfolders() -> anyhow::Result<()> {
         let dir = tempfile::tempdir()?;
-        let mut storage = FileTrieStorage::new(dir.path())?;
+        let mut storage = FileStorage::new(dir.path())?;
         let base = SlotBase::new_kv(HashKey::new(7), TrieValue::U32(7));
         for _ in 0..300 {
             storage.append(&base).await.expect("append");
         }
-        let bases_dir = dir.path().join(FileTrieStorage::BASES_DIR);
+        let bases_dir = dir.path().join(FileStorage::BASES_DIR);
         // Id 1 lives in <bases>/0000/0001/00000001.postcard.
         assert!(
             bases_dir
@@ -399,7 +399,7 @@ mod tests {
         use sky_types::storage::error::StorageReadError;
         let dir = tempfile::tempdir()?;
         let base = SlotBase::new_kv(HashKey::new(7), TrieValue::U32(7));
-        let mut storage = FileTrieStorage::new(dir.path())?;
+        let mut storage = FileStorage::new(dir.path())?;
         let id = storage.append(&base).await.expect("append");
         let root = one_kv(HashKey::new(7), TrieValue::U32(7), &mut storage).await;
         storage.write_root(root.clone()).await.expect("write root");

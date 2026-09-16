@@ -6,7 +6,6 @@ pub mod handle;
 pub mod pull;
 pub mod query;
 pub mod reader;
-pub mod storage;
 pub mod transact;
 pub mod types;
 

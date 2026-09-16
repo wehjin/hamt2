@@ -66,9 +66,9 @@ mod tests {
     #[tokio::test]
     async fn program_test() -> anyhow::Result<()> {
         let schema = vec![ADVISOR, NAME];
-        let storage: MemTrieStorage;
+        let storage: MemStorage;
         {
-            let mut db = Db::new(MemTrieStorage::new(), schema.clone()).await?;
+            let mut db = Db::new(MemStorage::new(), schema.clone()).await?;
             db = db
                 .transact([
                     datom::add("a", NAME, val("Alice")),

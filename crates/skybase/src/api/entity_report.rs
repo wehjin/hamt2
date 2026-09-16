@@ -13,10 +13,10 @@ pub async fn get_entities_report() -> Result<EntitiesReport, ServerFnError> {
     use sky_db::find::AllEins;
     use sky_db::handle::DbHandle;
     use sky_db::query::DbQuery;
-    use sky_db::storage::MemDbStorage;
+    use sky_trie::storage::mem::MemStorage;
     use leptos::prelude::expect_context;
 
-    let reader = expect_context::<DbHandle<MemDbStorage>>()
+    let reader = expect_context::<DbHandle<MemStorage>>()
         .to_reader()
         .await?;
     let eins = reader.find(AllEins).await;

@@ -10,7 +10,7 @@ use std::sync::{Arc, RwLock};
 /// The vec is seeded with the empty base at index 0 so that `BaseId(0)` always
 /// reads back the empty base and no storage is wasted storing it.
 #[derive(Debug, Clone)]
-pub struct MemTrieStorage {
+pub struct MemStorage {
     inner: Arc<RwLock<Inner>>,
 }
 
@@ -29,13 +29,13 @@ impl Inner {
     }
 }
 
-impl MemTrieStorage {
+impl MemStorage {
     pub fn new() -> Self {
         Self::default()
     }
 }
 
-impl Default for MemTrieStorage {
+impl Default for MemStorage {
     fn default() -> Self {
         Self {
             inner: Arc::new(RwLock::new(Inner::new())),
@@ -43,7 +43,7 @@ impl Default for MemTrieStorage {
     }
 }
 
-impl ReadStorage for MemTrieStorage {
+impl ReadStorage for MemStorage {
     type Snapshot = MemReadStorage;
 
     fn snapshot(&self) -> Self::Snapshot {
@@ -76,7 +76,7 @@ impl ReadStorage for MemTrieStorage {
     }
 }
 
-/// A read-only snapshot of a [`MemTrieStorage`], taken at
+/// A read-only snapshot of a [`MemStorage`], taken at
 /// [`ReadStorage::snapshot`] time. `max_id` and `root` are captured
 /// when the snapshot is created, so later appends to the writer are invisible
 /// through it; the base pool itself is shared read-only.
@@ -119,7 +119,7 @@ impl ReadStorage for MemReadStorage {
     }
 }
 
-impl ReadWriteStorage for MemTrieStorage {
+impl ReadWriteStorage for MemStorage {
     fn next_id(&self) -> SlotBaseId {
         let inner = self.inner.read().expect("storage poisoned");
         SlotBaseId(inner.bases.len() as i32)

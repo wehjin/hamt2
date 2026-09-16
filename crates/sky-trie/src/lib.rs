@@ -14,8 +14,8 @@ pub use trie_reader::TrieReader;
 #[cfg(test)]
 mod tests {
     use crate::storage::ReadStorage;
-    use crate::storage::file::FileTrieStorage;
-    use crate::storage::mem::MemTrieStorage;
+    use crate::storage::file::FileStorage;
+    use crate::storage::mem::MemStorage;
     use crate::{Trie, TrieQuery, TrieReader};
     use sky_types::trie::TrieValue;
 
@@ -23,12 +23,12 @@ mod tests {
     async fn file_trie_works() -> anyhow::Result<()> {
         let dir = tempfile::tempdir()?;
         {
-            let storage = FileTrieStorage::new(dir.path())?;
+            let storage = FileStorage::new(dir.path())?;
             let trie = Trie::connect(storage).await?;
             trie.insert(1, TrieValue::U32(1)).await?.commit().await?;
         }
         {
-            let storage = FileTrieStorage::load(dir.path())?;
+            let storage = FileStorage::load(dir.path())?;
             let trie = Trie::connect(storage).await?;
             let value = trie.query_value(1).await?;
             assert_eq!(Some(TrieValue::U32(1)), value);
@@ -38,7 +38,7 @@ mod tests {
 
     #[tokio::test]
     async fn max_u32_works_as_value() -> anyhow::Result<()> {
-        let mut trie = Trie::connect(MemTrieStorage::new()).await?;
+        let mut trie = Trie::connect(MemStorage::new()).await?;
         trie = trie.insert(1, TrieValue::U32(u32::MAX)).await?;
         assert_eq!(
             vec![(1, TrieValue::U32(u32::MAX))],
@@ -59,13 +59,13 @@ mod tests {
     #[tokio::test]
     #[should_panic(expected = "assertion failed: value >= 0")]
     async fn negative_i32_does_not_work_as_key() {
-        let trie = Trie::connect(MemTrieStorage::new()).await.expect("connect");
+        let trie = Trie::connect(MemStorage::new()).await.expect("connect");
         let _trie = trie.insert(-1, TrieValue::U32(10)).await.expect("insert");
     }
 
     #[tokio::test]
     async fn query_key_values_works() {
-        let mut trie = Trie::connect(MemTrieStorage::new()).await.expect("connect");
+        let mut trie = Trie::connect(MemStorage::new()).await.expect("connect");
         trie = trie.insert(1, TrieValue::U32(1)).await.expect("insert");
         trie = trie.insert(2, TrieValue::U32(2)).await.expect("insert");
         let key_values = trie.query_keys_values().await.expect("all_keys_values");
@@ -86,7 +86,7 @@ mod tests {
     async fn multiple_commits_work() {
         // Commit once.
         let storage = {
-            let mut trie = Trie::connect(MemTrieStorage::new()).await.unwrap();
+            let mut trie = Trie::connect(MemStorage::new()).await.unwrap();
             trie = trie.insert(1, TrieValue::U32(42)).await.unwrap();
             trie = trie
                 .deep_insert([2, 42], TrieValue::U32(242), false)
@@ -116,7 +116,7 @@ mod tests {
     #[tokio::test]
     async fn read_trie_queries_work() -> anyhow::Result<()> {
         let storage = {
-            let mut trie = Trie::connect(MemTrieStorage::new()).await?;
+            let mut trie = Trie::connect(MemStorage::new()).await?;
             trie = trie.insert(1, TrieValue::U32(42)).await?;
             trie = trie
                 .deep_insert([2, 42], TrieValue::U32(242), false)
@@ -137,7 +137,7 @@ mod tests {
     async fn persistence_works() {
         // Commit some values.
         let storage = {
-            let mut trie = Trie::connect(MemTrieStorage::new()).await.unwrap();
+            let mut trie = Trie::connect(MemStorage::new()).await.unwrap();
             trie = trie.insert(100, TrieValue::U32(42)).await.unwrap();
             for a in 0..=32 {
                 trie = trie
@@ -201,7 +201,7 @@ mod tests {
 
     #[tokio::test]
     async fn later_insertion_overwrites_earlier_insertion() {
-        let trie = Trie::connect(MemTrieStorage::new())
+        let trie = Trie::connect(MemStorage::new())
             .await
             .unwrap()
             .insert(1, TrieValue::U32(42))
@@ -216,7 +216,7 @@ mod tests {
 
     #[tokio::test]
     async fn different_keys_have_different_values() {
-        let mut trie = Trie::connect(MemTrieStorage::new()).await.unwrap();
+        let mut trie = Trie::connect(MemStorage::new()).await.unwrap();
         // 33 keys will saturate the root block.
         let keys = (0..=32).collect::<Vec<_>>();
         for i in &keys {
@@ -239,7 +239,7 @@ mod tests {
 
     #[tokio::test]
     async fn deep_insert_and_query_works() {
-        let mut trie = Trie::connect(MemTrieStorage::new()).await.unwrap();
+        let mut trie = Trie::connect(MemStorage::new()).await.unwrap();
         for e in 0..=33 {
             trie = trie
                 .deep_insert([e, e], TrieValue::U32(e as u32), false)
@@ -270,7 +270,7 @@ mod tests {
     #[tokio::test]
     #[should_panic(expected = "assertion failed: value >= 0")]
     async fn deep_query_fails_for_invalid_key() {
-        let trie = Trie::connect(MemTrieStorage::new()).await.unwrap();
+        let trie = Trie::connect(MemStorage::new()).await.unwrap();
         let _result = trie.deep_query_value([4, 4, -1]).await;
     }
 }

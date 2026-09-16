@@ -53,7 +53,7 @@ mod tests {
 	#[tokio::test]
 	async fn find_with_reader() {
         let attr = Attr::from("Counter/count");
-        let store = MemTrieStorage::new();
+        let store = MemStorage::new();
         let db = Db::new(store, [attr]).await.unwrap();
         let txn = [datom::add(10, attr, 42)];
         let db = db.transact(txn).await.unwrap();
