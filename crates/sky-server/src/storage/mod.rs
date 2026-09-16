@@ -28,7 +28,7 @@ pub struct StorageRequester {
 }
 
 impl StorageRequester {
-    async fn transact(
+    pub async fn transact(
         &self,
         datoms: impl Into<Vec<Datom>>,
     ) -> Result<StorageHead, StorageServiceError> {
@@ -41,6 +41,22 @@ impl StorageRequester {
             .expect("send storage request failed");
         let new_storage_head = receive.await.expect("receive storage response failed");
         Ok(new_storage_head)
+    }
+
+    pub async fn read_slot_base(
+        &self,
+        slot_base_id: SlotBaseId,
+    ) -> Result<Option<SlotBase>, StorageServiceError> {
+        let (send, receive) = oneshot::channel();
+        let request = StorageRequest::ReadSlotBase(slot_base_id, send);
+        self.request_sender
+            .send(request)
+            .await
+            .expect("send read-slot-base failed");
+        let slot_base = receive
+            .await
+            .expect("receive read-slot-base response failed");
+        Ok(slot_base)
     }
 }
 
@@ -157,5 +173,9 @@ mod tests {
             StorageBroadcastEvent::NewHead(StorageHead { max_id, root }),
             broadcast
         );
+
+        let max_id = max_id.unwrap();
+        let slot_base = requester.read_slot_base(max_id).await.unwrap();
+        assert_ne!(None, slot_base);
     }
 }
