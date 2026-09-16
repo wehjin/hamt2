@@ -76,7 +76,7 @@ crate::trie::prelude::*` internally. sky-db does not re-export any storage types
    `handle`, `pull`, `query`, `reader`, `transact`, `types` (plus `pub(crate) crate_services`), with
    `pub use error::*;` at the root. No storage re-exports.
    - `src/types/` — user-facing value types: `Attr(String)` (idents; construct with `Attr::from("...")` —
-     a plain `Attr("...")` with a literal no longer compiles), `AttrName(String)`, `Ein(pub i32)`
+     a plain `Attr("...")` with a literal no longer compiles), `Ein(pub i32)`
      (non-negative; 0–2 reserved: `DB_IDENT`, `DB_CARDINALITY`, `DB_MAX`), `Txid(u32)` (`SETUP` = 0, `FLOOR` = 1),
      `Dir` (`In` = add / `Out` = delete), `Val` (`U32(u32)`/`String`); the datom machinery: `dat::Dat`
      (`Val(Val)`/`Ent(Ent)`), `ent::Ent` (`Id(Ein)`/`Temp(String)`), and `datom::{add, del}` constructors
@@ -203,7 +203,7 @@ Within `crates/skybase/src`:
 - Heavily async (`tokio`); most APIs return `impl Future` via `async fn` with `Result`.
 - Symbol-heavy internal types: `Val` (db user value, `U32`/`String`), `TrieValue` (`U32`/`SubTrie(MapBase)`),
   `SlotBase` (a trie node's `Vec<Slot>`), `Slot` (`KeyValue`/`MapBase`), `MapBase` (`SlotMap` + `SlotBaseId`),
-  `HashKey`/`DeepKey`, plus the db layer's `Dat`/`Datom`/`Ent`/`Dir`, `Attr`/`AttrName`/`AttrSpec`/`DbSpec`/`Schema`,
+  `HashKey`/`DeepKey`, plus the db layer's `Dat`/`Datom`/`Ent`/`Dir`, `Attr`/`AttrSpec`/`DbSpec`/`Schema`,
   `Ein`/`Txid`/`Vid`/`MaxEid`/`EntEid`/`AttrEin` — don't confuse the similar names despite the overlap.
 - `Dat::Val` vs `Dat::Ent` and `dir` (`Dir::In`/`Dir::Out`, i.e. add/delete) drive query semantics; see
   `src/types/datom.rs` (`datom::add` / `datom::del`).

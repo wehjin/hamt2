@@ -1,8 +1,7 @@
-use sky_db::db::AttrName;
 use leptos::prelude::ServerFnError;
 use leptos::server;
 use serde::{Deserialize, Serialize};
-use sky_types::db::{Ein, Val};
+use sky_types::db::{Attr, Ein, Val};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ValueReport {
@@ -10,7 +9,7 @@ pub struct ValueReport {
 }
 
 #[server]
-pub async fn get_value_report(ein: Ein, attr_name: AttrName) -> Result<ValueReport, ServerFnError> {
+pub async fn get_value_report(ein: Ein, attr: Attr) -> Result<ValueReport, ServerFnError> {
     use sky_db::find::*;
     use sky_db::handle::DbHandle;
     use sky_db::query::DbQuery;
@@ -20,7 +19,7 @@ pub async fn get_value_report(ein: Ein, attr_name: AttrName) -> Result<ValueRepo
         .to_reader()
         .await?;
 
-    let attr = reader.find(AttrWithName::new(attr_name)).await;
+    let attr = reader.find(AttrWithName::new(attr)).await;
     let Some(attr) = attr.first() else {
         return Ok(ValueReport { val: None });
     };

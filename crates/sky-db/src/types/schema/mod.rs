@@ -2,7 +2,7 @@ use crate::db::attr_loader::AttributeLoader;
 use crate::db::attr_table::AttrTable;
 use crate::db::db_trie;
 use crate::db::db_trie::AttrEin;
-use crate::db::{AttrName, Db, Txid};
+use crate::db::{Db, Txid};
 use crate::find::Find;
 use crate::trie::prelude::*;
 use crate::{LoadError, db};
@@ -39,10 +39,6 @@ impl Schema {
     }
     pub fn find_attr(&self, attr_ein: AttrEin) -> Option<&Attr> {
         self.attr_table.find_attr(attr_ein)
-    }
-
-    pub fn find_attr_by_name(&self, attr_name: &AttrName) -> Option<&Attr> {
-        self.attr_table.find_attr_by_name(attr_name)
     }
 
     pub async fn save<S: ReadWriteStorage>(

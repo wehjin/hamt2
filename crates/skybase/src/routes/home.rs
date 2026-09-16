@@ -1,9 +1,8 @@
 use crate::api::version::get_version;
 use crate::api::{get_entities_report, get_entity_attributes_report, get_value_report};
 use crate::components::TitleAndDelete;
-use sky_db::db::AttrName;
 use leptos::prelude::*;
-use sky_types::db::{Ein, Val};
+use sky_types::db::{Attr, Ein, Val};
 
 #[component]
 pub fn HomePage() -> impl IntoView {
@@ -91,7 +90,7 @@ pub fn AttributesSection(ein: Ein) -> impl IntoView {
             report
         },
     );
-    let (active_attr, set_active_attr) = signal(None::<AttrName>);
+    let (active_attr, set_active_attr) = signal(None::<Attr>);
     let title = format_ein(ein);
     view! {
         <div class="cell is-flex"><div class="box is-flex-grow-1">
@@ -105,7 +104,7 @@ pub fn AttributesSection(ein: Ein) -> impl IntoView {
                         <select id="attr-select" multiple size=8
                             on:change:target=move |ev| {
                                 let value = ev.target().value();
-                                set_active_attr.set(Some(AttrName(value)));
+                                set_active_attr.set(Some(Attr::from(value)));
                             }>
                             <For
                                 each=move || report.names.clone()
@@ -121,7 +120,7 @@ pub fn AttributesSection(ein: Ein) -> impl IntoView {
             </Suspense>
         </div></div>
         <Show when=move || {active_attr.get().is_some()}>
-            <ValueSection ein=ein attr_name={active_attr.get().unwrap()}/>
+            <ValueSection ein=ein attr={active_attr.get().unwrap()}/>
         </Show>
     }
 }
@@ -131,22 +130,22 @@ fn format_ein(ein: Ein) -> String {
 }
 
 #[component]
-pub fn ValueSection(ein: Ein, attr_name: AttrName) -> impl IntoView {
+pub fn ValueSection(ein: Ein, attr: Attr) -> impl IntoView {
     let value_report = {
-        let attr_name = attr_name.clone();
+        let attr = attr.clone();
         Resource::new(
             || (),
             move |_| {
-                let attr_name = attr_name.clone();
+                let attr = attr.clone();
                 async move {
-                    get_value_report(ein, attr_name)
+                    get_value_report(ein, attr)
                         .await
                         .expect("value_report should exist")
                 }
             },
         )
     };
-    let title = format!("⌖\u{202F}{attr_name}");
+    let title = format!("⌖\u{202F}{attr}");
     view! {
         <div class="cell is-flex"><div class="box is-flex-grow-1">
             <TitleAndDelete title=title/>

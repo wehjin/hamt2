@@ -1,5 +1,4 @@
 use crate::crate_services::datalog::atom::Atom;
-use crate::db::AttrName;
 use crate::db::Schema;
 use crate::find::Find;
 use crate::trie::prelude::*;
@@ -7,12 +6,12 @@ use sky_types::db::{Attr, FindResult};
 use std::future::Future;
 
 pub struct AttrWithName {
-    attr_name: AttrName,
+    attr: Attr,
 }
 
 impl AttrWithName {
-    pub fn new(attr_name: AttrName) -> Self {
-        Self { attr_name }
+    pub fn new(attr: Attr) -> Self {
+        Self { attr }
     }
 }
 
@@ -37,8 +36,11 @@ impl Find for AttrWithName {
         T: TrieQuery,
     {
         async move {
-            let attr = schema.find_attr_by_name(&self.attr_name);
-            attr.into_iter().cloned().collect::<Vec<_>>()
+            if schema.contains(&self.attr) {
+                vec![self.attr]
+            } else {
+                vec![]
+            }
         }
     }
 }

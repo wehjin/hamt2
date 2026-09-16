@@ -1,5 +1,4 @@
 use crate::db;
-use crate::db::AttrName;
 use crate::db::attr_spec::AttrSpec;
 use crate::db::cardinality::Cardinality;
 use crate::db::db_trie::AttrEin;
@@ -23,15 +22,6 @@ impl AttrTable {
     pub fn find_attr(&self, attr_ein: AttrEin) -> Option<&Attr> {
         for (attr, attribute) in self.map.iter() {
             if attr_ein.has_ein(attribute.ein) {
-                return Some(attr);
-            }
-        }
-        None
-    }
-
-    pub fn find_attr_by_name(&self, attr_name: &AttrName) -> Option<&Attr> {
-        for attr in self.map.keys() {
-            if attr.as_ident() == &attr_name.0 {
                 return Some(attr);
             }
         }
