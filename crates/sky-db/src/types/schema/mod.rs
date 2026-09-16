@@ -1,15 +1,14 @@
 use crate::db::attr_loader::AttributeLoader;
 use crate::db::attr_table::AttrTable;
 use crate::db::db_trie;
-use crate::db::db_trie::AttrEin;
 use crate::db::{Db, Txid};
 use crate::find::Find;
 use crate::trie::prelude::*;
 use crate::{LoadError, db};
 use attribute::Attribute;
 use sky_types::db::Attr;
-use sky_types::db::{Dir, TransactError};
-use std::ops::{Deref, DerefMut, Index};
+use sky_types::db::{Dir, Ein, TransactError};
+use std::ops::{Deref, Index};
 
 pub mod attr_loader;
 pub mod attr_spec;
@@ -37,8 +36,8 @@ impl Schema {
     pub fn extend(&mut self, attributes: impl IntoIterator<Item = Attribute>) {
         self.attr_table.extend(attributes);
     }
-    pub fn find_attr(&self, attr_ein: AttrEin) -> Option<&Attr> {
-        self.attr_table.find_attr(attr_ein)
+    pub fn find_attr(&self, ein: Ein) -> Option<&Attr> {
+        self.attr_table.find_attr(ein)
     }
 
     pub async fn save<S: ReadWriteStorage>(
@@ -104,11 +103,5 @@ impl Deref for Schema {
     type Target = AttrTable;
     fn deref(&self) -> &Self::Target {
         &self.attr_table
-    }
-}
-
-impl DerefMut for Schema {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.attr_table
     }
 }

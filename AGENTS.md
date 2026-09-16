@@ -84,7 +84,8 @@ crate::trie::prelude::*` internally. sky-db does not re-export any storage types
      root, and from there
      `pub use`d out of `db/mod.rs`, so `sky_db::db::Datom`/`Dat`/`Ent` all resolve; `datom::add`/`datom::del` come
      from `sky_db::types::datom`). `src/types/schema/` — `Schema` (newtype over
-     `AttrTable` via `Deref`), `AttrTable` (`HashMap<Attr, Attribute>`: `Index<Attr>`, always seeded with the
+     `AttrTable` via `Deref`), `AttrTable` (`HashMap<Attr, Attribute>` keyed by ident plus an `Ein -> Attr`
+     reverse index for O(1) `find_attr(ein)`; `Index<Attr>`, always seeded with the
      `db/ident` and `db/cardinality` starter attributes), `Attribute { ein, spec: AttrSpec }`,
      `AttrSpec { attr, cardinality }`, `Cardinality` (`One`/`Many`), `attr_loader::AttributeLoader` (a `Find` impl
      used by `Db::load` to read attrs back out of the trie).

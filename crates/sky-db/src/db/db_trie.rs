@@ -153,8 +153,8 @@ where
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub struct AttrEin(Ein);
 impl AttrEin {
-    pub fn has_ein(&self, ein: Ein) -> bool {
-        self.0 == ein
+    pub fn ein(&self) -> Ein {
+        self.0
     }
 }
 impl From<i32> for AttrEin {

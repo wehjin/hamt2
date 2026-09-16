@@ -1,34 +1,31 @@
 use crate::db;
 use crate::db::attr_spec::AttrSpec;
 use crate::db::cardinality::Cardinality;
-use crate::db::db_trie::AttrEin;
 use crate::types::schema::attribute::Attribute;
 use sky_types::db::{Attr, Ein};
 use std::collections::HashMap;
-use std::ops::{Deref, DerefMut, Index};
+use std::ops::{Deref, Index};
 
 #[derive(Debug, Clone)]
 pub struct AttrTable {
     map: HashMap<Attr, Attribute>,
+    by_ein: HashMap<Ein, Attr>,
 }
 
 impl AttrTable {
     pub fn new() -> Self {
         Self {
             map: HashMap::new(),
+            by_ein: HashMap::new(),
         }
     }
 
-    pub fn find_attr(&self, attr_ein: AttrEin) -> Option<&Attr> {
-        for (attr, attribute) in self.map.iter() {
-            if attr_ein.has_ein(attribute.ein) {
-                return Some(attr);
-            }
-        }
-        None
+    pub fn find_attr(&self, ein: Ein) -> Option<&Attr> {
+        self.by_ein.get(&ein)
     }
 
     pub fn insert(&mut self, attribute: Attribute) {
+        self.by_ein.insert(attribute.ein, attribute.attr().clone());
         let key = attribute.attr().clone();
         self.map.insert(key, attribute);
     }
@@ -76,11 +73,5 @@ impl Deref for AttrTable {
 
     fn deref(&self) -> &Self::Target {
         &self.map
-    }
-}
-
-impl DerefMut for AttrTable {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.map
     }
 }

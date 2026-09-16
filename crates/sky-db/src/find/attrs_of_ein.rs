@@ -43,7 +43,7 @@ impl Find for AttrsOfEin {
             let attr_eins = db_trie::list_entity_attributes(trie, self.ein).await;
             let attrs = attr_eins
                 .into_iter()
-                .filter_map(|attr_ein| schema.find_attr(attr_ein).cloned())
+                .filter_map(|attr_ein| schema.find_attr(attr_ein.ein()).cloned())
                 .collect::<Vec<_>>();
             attrs
         }
