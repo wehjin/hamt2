@@ -41,8 +41,9 @@ crate::trie::prelude::*` internally. sky-db does not re-export any storage types
    dependency, referenced via the extern prelude (`universal_hash::hash`); not re-exported.
 2. `crates/sky-trie` — the HAMT.
    - `trie_storage/` — persistence abstraction. `ReadStorage: Sync`
-     (`read`/`max_id`/`read_root`/`get_root`/`snapshot` + `type Snapshot`, errors `TrieStorageReadError`; `max_id`
-     returns the highest id and counts the reserved empty base, so an empty storage returns `SlotBaseId::ZERO`; every
+     (`read`/`max_id`/`read_root`/`snapshot` + `type Snapshot`, errors `TrieStorageReadError`; `max_id`
+     returns the highest id and counts the reserved empty base, so an empty storage returns `SlotBaseId::ZERO`;
+     `read_root` returns the committed root, defaulting to `MapBase::empty()` when none is committed; every
      storage is snapshottable — writers capture their read-only snapshot, read-only types use `Self` via `Clone`)
      and `ReadWriteStorage`
      (`next_id`/`append`/`write_root`, errors `TrieStorageWriteError`).

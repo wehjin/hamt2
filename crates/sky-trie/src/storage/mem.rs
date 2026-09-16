@@ -18,14 +18,14 @@ pub struct MemStorage {
 #[derive(Debug)]
 struct Inner {
     bases: Vec<SlotBase>,
-    root: Option<MapBase>,
+    root: MapBase,
 }
 
 impl Inner {
     fn new() -> Self {
         Self {
             bases: vec![SlotBase::new()],
-            root: None,
+            root: MapBase::empty(),
         }
     }
 }
@@ -67,7 +67,7 @@ impl ReadStorage for MemStorage {
         SlotBaseId((inner.bases.len() - 1) as i32)
     }
 
-    async fn read_root(&self) -> Result<Option<MapBase>, StorageReadError> {
+    async fn read_root(&self) -> Result<MapBase, StorageReadError> {
         Ok(self.inner.read().expect("storage poisoned").root.clone())
     }
 }
@@ -80,7 +80,7 @@ impl ReadStorage for MemStorage {
 pub struct MemReadStorage {
     inner: Arc<RwLock<Inner>>,
     max_id: i32,
-    root: Option<MapBase>,
+    root: MapBase,
 }
 
 impl ReadStorage for MemReadStorage {
@@ -106,7 +106,7 @@ impl ReadStorage for MemReadStorage {
         SlotBaseId(self.max_id)
     }
 
-    async fn read_root(&self) -> Result<Option<MapBase>, StorageReadError> {
+    async fn read_root(&self) -> Result<MapBase, StorageReadError> {
         Ok(self.root.clone())
     }
 }
@@ -125,7 +125,7 @@ impl ReadWriteStorage for MemStorage {
     }
 
     async fn write_root(&mut self, root: MapBase) -> Result<(), StorageWriteError> {
-        self.inner.write().expect("storage poisoned").root = Some(root);
+        self.inner.write().expect("storage poisoned").root = root;
         Ok(())
     }
 }

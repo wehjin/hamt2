@@ -151,7 +151,7 @@ mod tests {
     use crate::storage::types::StorageBroadcastEvent;
     use sky_trie::types::StorageHead;
     use sky_types::db::{Attr, datom};
-    use sky_types::trie::SlotBaseId;
+    use sky_types::trie::{MapBase, SlotBaseId};
 
     #[tokio::test]
     async fn it_works() {
@@ -167,7 +167,7 @@ mod tests {
             .unwrap();
         let StorageHead { max_id, root } = new_head;
         assert_ne!(SlotBaseId::ZERO, max_id);
-        assert_ne!(None, root);
+        assert_ne!(MapBase::empty(), root);
 
         let broadcast = receiver.recv().await.unwrap();
         assert_eq!(

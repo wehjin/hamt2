@@ -7,5 +7,5 @@ pub use sky_types::trie::*;
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct StorageHead {
     pub max_id: SlotBaseId,
-    pub root: Option<MapBase>,
+    pub root: MapBase,
 }

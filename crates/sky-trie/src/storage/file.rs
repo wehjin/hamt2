@@ -57,6 +57,10 @@ impl FileStorage {
         };
         std::fs::create_dir_all(&inner.bases_dir)?;
         inner.write_max_id()?;
+        inner.write_root_with(&MapBase::empty()).map_err(|e| match e {
+            StorageWriteError::Io(_, e) => e,
+            StorageWriteError::Encode(_, e) => std::io::Error::new(ErrorKind::InvalidData, e),
+        })?;
         Ok(Self {
             inner: Arc::new(RwLock::new(inner)),
         })
@@ -112,14 +116,15 @@ impl Inner {
         std::fs::write(&self.max_id_path, bytes).map_err(|e| StorageWriteError::Io(id, e))
     }
 
-    fn read_root(&self) -> Result<Option<MapBase>, StorageReadError> {
+    fn read_root(&self) -> Result<MapBase, StorageReadError> {
         match std::fs::read(&self.root_path) {
             Ok(bytes) => {
                 let root = postcard::from_bytes::<MapBase>(&bytes)
                     .map_err(|e| StorageReadError::Decode(SlotBaseId::ZERO, e))?;
-                Ok(Some(root))
+                Ok(root)
             }
-            Err(e) if e.kind() == ErrorKind::NotFound => Ok(None),
+            // A missing root file is treated as an empty root.
+            Err(e) if e.kind() == ErrorKind::NotFound => Ok(MapBase::empty()),
             Err(e) => Err(StorageReadError::Io(SlotBaseId::ZERO, e)),
         }
     }
@@ -163,7 +168,7 @@ impl ReadStorage for FileStorage {
         SlotBaseId(inner.max_id)
     }
 
-    async fn read_root(&self) -> Result<Option<MapBase>, StorageReadError> {
+    async fn read_root(&self) -> Result<MapBase, StorageReadError> {
         Ok(self.inner.read().expect("storage poisoned").read_root()?)
     }
 }
@@ -179,7 +184,7 @@ impl ReadStorage for FileStorage {
 pub struct FileReadStorage {
     bases_dir: PathBuf,
     max_id: i32,
-    root: Option<MapBase>,
+    root: MapBase,
 }
 
 impl FileReadStorage {
@@ -213,7 +218,7 @@ impl ReadStorage for FileReadStorage {
         SlotBaseId(self.max_id)
     }
 
-    async fn read_root(&self) -> Result<Option<MapBase>, StorageReadError> {
+    async fn read_root(&self) -> Result<MapBase, StorageReadError> {
         Ok(self.root.clone())
     }
 }
@@ -310,21 +315,19 @@ mod tests {
 
     #[tokio::test]
     async fn root_round_trip_works() -> anyhow::Result<()> {
-        use sky_types::trie::MapBase;
         let dir = tempfile::tempdir()?;
+        let root;
         {
             let mut storage = FileStorage::new(dir.path())?;
-            assert_eq!(None, storage.read_root().await.expect("read root"));
-            storage
-                .write_root(MapBase::empty())
-                .await
-                .expect("write root");
+            assert_eq!(
+                MapBase::empty(),
+                storage.read_root().await.expect("read root")
+            );
+            root = one_kv(HashKey::new(7), TrieValue::U32(7), &mut storage).await;
+            storage.write_root(root.clone()).await.expect("write root");
         }
         let storage = FileStorage::load(dir.path())?;
-        assert_eq!(
-            Some(MapBase::empty()),
-            storage.read_root().await.expect("read root")
-        );
+        assert_eq!(root, storage.read_root().await.expect("read root"));
         Ok(())
     }
 
@@ -411,7 +414,7 @@ mod tests {
 
         assert_eq!(SlotBaseId(4), storage.max_id());
         assert_eq!(SlotBaseId(2), view.max_id());
-        assert_eq!(Some(root), view.read_root().await.expect("read root"));
+        assert_eq!(root, view.read_root().await.expect("read root"));
         assert_eq!(base, view.read(id).await.expect("read"));
         assert!(matches!(
             view.read(new_id).await,

@@ -31,14 +31,9 @@ pub trait ReadStorage: Sync {
     /// [`SlotBaseId::ZERO`].
     fn max_id(&self) -> SlotBaseId;
 
-    /// Reads the root map base of the trie or none if no root has been committed.
-    fn read_root(&self) -> impl Future<Output = Result<Option<MapBase>, StorageReadError>> + Send;
-
-    /// Reads the root map base of the trie, defaulting to the empty map base if
-    /// no root has been committed.
-    fn get_root(&self) -> impl Future<Output = Result<MapBase, StorageReadError>> + Send {
-        async { Ok(self.read_root().await?.unwrap_or_else(|| MapBase::empty())) }
-    }
+    /// Reads the committed root map base, returning [`MapBase::empty()`] when
+    /// no root has been committed yet.
+    fn read_root(&self) -> impl Future<Output = Result<MapBase, StorageReadError>> + Send;
 
     #[allow(async_fn_in_trait)]
     async fn get_head(&self) -> StorageHead {
@@ -69,9 +64,10 @@ pub trait ReadWriteStorage: ReadStorage {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::crate_services::map_base::one_kv;
     use crate::storage::mem::MemStorage;
     use crate::types::HashKey;
-    use sky_types::trie::TrieValue;
+    use sky_types::trie::{MapBase, TrieValue};
 
     #[tokio::test]
     async fn empty_storage_max_id_is_zero() {
@@ -87,6 +83,25 @@ mod tests {
             SlotBase::new(),
             storage.read(SlotBaseId::ZERO).await.expect("read")
         );
+    }
+
+    #[tokio::test]
+    async fn empty_storage_root_is_empty() {
+        let storage = MemStorage::new();
+        assert_eq!(
+            MapBase::empty(),
+            storage.read_root().await.expect("read root")
+        );
+    }
+
+    #[tokio::test]
+    async fn root_round_trip_works() {
+        let mut storage = MemStorage::new();
+        let root = one_kv(HashKey::new(7), TrieValue::U32(7), &mut storage).await;
+        storage.write_root(root).await.expect("write root");
+        let view = storage.snapshot();
+        assert_eq!(root, storage.read_root().await.expect("read root"));
+        assert_eq!(root, view.read_root().await.expect("read root"));
     }
 
     #[tokio::test]

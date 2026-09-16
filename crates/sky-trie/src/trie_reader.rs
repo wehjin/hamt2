@@ -17,9 +17,9 @@ impl<S: ReadStorage> TrieReader<S> {
         Self { root, storage }
     }
 
-    /// Connects to the storage, loading the persisted root if there is one.
+    /// Connects to the storage, loading the persisted root.
     pub async fn connect(storage: S) -> Result<Self, StorageReadError> {
-        let root = storage.get_root().await?;
+        let root = storage.read_root().await?;
         Ok(Self { root, storage })
     }
 
