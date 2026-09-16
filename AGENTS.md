@@ -40,25 +40,28 @@ crate::trie::prelude::*` internally. sky-db does not re-export any storage types
 1. `crates/universal-hash` — the single hashing primitive: `hash(bytes, level) -> u32`. A direct sky-db/sky-trie
    dependency, referenced via the extern prelude (`universal_hash::hash`); not re-exported.
 2. `crates/sky-trie` — the HAMT.
-   - `trie_storage/` — persistence abstraction. `ReadStorage: Sync`
-     (`read`/`max_id`/`read_root`/`snapshot` + `type Snapshot`, errors `TrieStorageReadError`; `max_id`
+   - `storage/` — persistence abstraction. `ReadStorage: Sync`
+     (`read`/`max_id`/`read_root`/`snapshot` + `type Snapshot`, errors `StorageReadError` (Io/Decode); `read`
+     returns the empty base for `SlotBaseId::ZERO` and panics on unwritten ids (writer storages) or ids beyond a
+     snapshot's captured `max_id`; `max_id`
      returns the highest id and counts the reserved empty base, so an empty storage returns `SlotBaseId::ZERO`;
      `read_root` returns the committed root, defaulting to `MapBase::empty()` when none is committed; every
      storage is snapshottable — writers capture their read-only snapshot, read-only types use `Self` via `Clone`)
      and `ReadWriteStorage`
-     (`next_id`/`append`/`write_root`, errors `TrieStorageWriteError`).
+     (`next_id`/`append`/`write_root`, errors `StorageWriteError` (Io/Encode)).
       Implementations: `mem::MemStorage` (a `Vec<SlotBase>` seeded with the empty base at index 0;
       `MemReadStorage` snapshots) and `file::FileStorage` (postcard-encoded base files in two-level subfolders
      under `<folder>/bases/`, with `max_id` and `root` files in the folder root; `FileReadStorage` snapshots).
-   - `error.rs` — the trie's own error layer: `TrieQueryError` (wraps `TrieStorageReadError`) and `TrieWriteError`
-     (`ExpectedMapBaseAtKey`, wraps `TrieQueryError`). Nothing in the trie produces sky-db's db-level errors.
+    - `error.rs` — the trie's own error layer lives in `sky_types::trie`: `TrieQueryError` (`SystemError`) and
+      `TrieInsertError` (`ExpectedMapBaseAtKey`, wraps `TrieQueryError`). Nothing in the trie produces sky-db's
+      db-level errors.
    - `types/` — `MapBase { map: SlotMap, base: SlotBaseId }` (a node: bases are read from storage, never inline
      slots), `SlotBase { slots: Vec<Slot> }`, `Slot::KeyValue(i32, TrieValue) | MapBase(MapBase)`,
      `TrieValue::U32(u32) | SubTrie(MapBase)`, plus `HashKey`/`DeepKey`. `SlotBaseId::ZERO` is the reserved empty
      base.
-   - `Trie<S: ReadWriteStorage>` — the persistent map: `connect(storage)` (`-> TrieStorageReadError`) loads the
-     persisted root, mutations (`insert`, `deep_insert`) consume and return a new `Trie` (`-> TrieWriteError`),
-     `.commit()` (`-> TrieStorageWriteError`) writes the root, `.view()` gives a `TrieReader<S::Snapshot>` snapshot.
+    - `Trie<S: ReadWriteStorage>` — the persistent map: `connect(storage)` (`-> StorageReadError`) loads the
+      persisted root, mutations (`insert`, `deep_insert`) consume and return a new `Trie` (`-> TrieInsertError`),
+      `.commit()` (`-> StorageWriteError`) writes the root, `.view()` gives a `TrieReader<S::Snapshot>` snapshot.
      Queries live on
      the parameterless `TrieQuery` trait (defined in `sky-types` under `sky_types::trie`, alongside `TrieValue`;
      re-exported by the prelude; `root`, `query_value`, `query_keys_values`, `deep_query_value`,
@@ -152,7 +155,9 @@ Within `crates/skybase/src`:
   are non-negative `i32`s. `TrieValue`s stored in the EAVT/AEVT indexes pack `Dir` into bit 28 (`0x1000_0000`) and
   a 28-bit `Txid` into the low bits, so tx ids are capped below 2^28.
 - **`SlotBaseId::ZERO` is the empty base.** It is never stored; every storage returns an empty `SlotBase` for it and
-  appends start at id 1.
+  appends start at id 1. Reading any other id that the storage (or snapshot) never assigned is a programming error
+  and panics with a descriptive assert — ids come from committed map bases; external id sources (e.g.
+  sky-server's `read_slot_base`) must range-check against `max_id` before calling `read`.
 - **`Attr` is `&'static str`** (attribute idents), not an integer. Schema attributes must be declared up front:
   `Db::new(storage, db_spec)` takes `impl Into<DbSpec>` (`[Attr; N]`, `Vec<Attr>`, or `[AttrSpec; N]` for
   cardinality), and `Db::load(storage, attrs)` takes `impl AsRef<[Attr]>`; every `Attr` used must be enumerated.
@@ -174,13 +179,13 @@ Within `crates/skybase/src`:
   `TrieQuery` in scope (it comes with `use crate::trie::prelude::*`); mutation methods (`insert`,
   `deep_insert`, `commit`) stay inherent on `Trie`. `subtrie_stream`/`to_subtrie_from_value` yield
   `Self::Subtrie`. `TrieReader` connects to a `ReadStorage` only (e.g. `storage.snapshot()`).
-- **Errors are layered.** The trie crate only produces `TrieQueryError` / `TrieWriteError` (plus
-  `TrieStorageReadError`/`TrieStorageWriteError`); sky-db's `QueryError`/`TransactError`/`LoadError` embed them via
-  `QueryError::Trie`, `TransactError::TrieStorageRead`/`TransactError::TrieStorageWrite`/`TransactError::Trie`,
-  and `LoadError::TrieStorageRead`, so `?` chains across crates work through `From` impls (`use crate::trie::prelude::*`
-  brings the trie error types in scope). These trie error types are exported at the sky-db root as `DbQueryError`/
-  `DbWriteError` aliases. `TransactError` also embeds `QueryError` as
-  `TransactError::Query`.
+- **Errors are layered.** sky-types owns the storage errors `StorageReadError` (`Io`/`Decode`) and
+  `StorageWriteError` (`Io`/`Encode`), plus the trie errors `TrieQueryError` (`SystemError`) and `TrieInsertError`
+  (`ExpectedMapBaseAtKey`/`Query`); sky-db's `ConnectError` (`Query`/`Transact`/`TrieStorageRead`/
+  `TrieStorageWrite`) and `LoadError` (`TrieStorageRead`/`UnknownAttr`) embed them, and `QueryError`/`TransactError`
+  (the latter embedding `QueryError`/`StorageReadError`/`StorageWriteError`/`TrieInsertError`/`NoSpaceInValueTable`)
+  live in `sky_types::db`, so `?` chains across crates work through `From` impls (`use crate::trie::prelude::*`
+  brings the trie error types in scope).
 - **`Ent` is either `Id(Ein)` or `Temp(&'static str)`.** Temp entities get auto-assigned `Ein`s at transact time (see
   `src/db/types/ent_eid.rs`). Reusing the same temp ident in a tx rewrites the same entity, whereas separate txns
   create separate entities.

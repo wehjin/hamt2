@@ -153,9 +153,10 @@ impl ReadStorage for FileStorage {
             return Ok(SlotBase::new());
         }
         let inner = self.inner.read().expect("storage poisoned");
-        if id.0 > inner.max_id {
-            return Err(StorageReadError::NotFound(id));
-        }
+        assert!(
+            id.0 <= inner.max_id,
+            "base id {id} has not been written"
+        );
         let path = inner.base_path(id);
         let bytes = std::fs::read(&path).map_err(|e| StorageReadError::Io(id, e))?;
         let base = postcard::from_bytes::<SlotBase>(&bytes)
@@ -204,9 +205,10 @@ impl ReadStorage for FileReadStorage {
         if id.0 == 0 {
             return Ok(SlotBase::new());
         }
-        if id.0 > self.max_id {
-            return Err(StorageReadError::NotFound(id));
-        }
+        assert!(
+            id.0 <= self.max_id,
+            "base id {id} is beyond this snapshot's max_id"
+        );
         let path = self.base_path(id);
         let bytes = std::fs::read(&path).map_err(|e| StorageReadError::Io(id, e))?;
         let base = postcard::from_bytes::<SlotBase>(&bytes)
@@ -391,7 +393,6 @@ mod tests {
 
     #[tokio::test]
     async fn readonly_snapshot_freezes_max_id_and_root() -> anyhow::Result<()> {
-        use sky_types::storage::error::StorageReadError;
         let dir = tempfile::tempdir()?;
         let base = SlotBase::new_kv(HashKey::new(7), TrieValue::U32(7));
         let mut storage = FileStorage::new(dir.path())?;
@@ -401,7 +402,7 @@ mod tests {
         let view = storage.snapshot();
 
         // Writes after the snapshot are invisible to the view.
-        let new_id = storage.append(&base).await.expect("append");
+        storage.append(&base).await.expect("append");
         let new_root = two_kv(
             HashKey::new(7),
             TrieValue::U32(7),
@@ -416,10 +417,26 @@ mod tests {
         assert_eq!(SlotBaseId(2), view.max_id());
         assert_eq!(root, view.read_root().await.expect("read root"));
         assert_eq!(base, view.read(id).await.expect("read"));
-        assert!(matches!(
-            view.read(new_id).await,
-            Err(StorageReadError::NotFound(rid)) if rid == new_id
-        ));
         Ok(())
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "beyond this snapshot's max_id")]
+    async fn readonly_snapshot_panics_reading_beyond_max_id() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let base = SlotBase::new_kv(HashKey::new(7), TrieValue::U32(7));
+        let mut storage = FileStorage::new(dir.path()).expect("new storage");
+        storage.append(&base).await.expect("append");
+        let view = storage.snapshot();
+        let new_id = storage.append(&base).await.expect("append");
+        let _ = view.read(new_id).await;
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "has not been written")]
+    async fn read_panics_on_unwritten_id() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let storage = FileStorage::new(dir.path()).expect("new storage");
+        let _ = storage.read(SlotBaseId(1)).await;
     }
 }

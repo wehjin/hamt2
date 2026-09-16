@@ -21,6 +21,12 @@ pub trait ReadStorage: Sync {
     fn snapshot(&self) -> Self::Snapshot;
 
     /// Reads a base from storage.
+    ///
+    /// Base id [`SlotBaseId::ZERO`] always reads back the empty base. Reading
+    /// any other unwritten id is a programming error: writer storages panic
+    /// for ids they have never assigned, and snapshot readers panic for ids
+    /// beyond their captured `max_id`. Ids read from committed map bases are
+    /// always valid.
     fn read(
         &self,
         id: SlotBaseId,
@@ -128,5 +134,23 @@ mod tests {
         assert_eq!(SlotBaseId(2), storage.max_id());
         assert_eq!(id, view.max_id());
         assert_eq!(base, view.read(id).await.expect("read"));
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "beyond this snapshot's max_id")]
+    async fn mem_snapshot_panics_reading_beyond_max_id() {
+        let mut storage = MemStorage::new();
+        let base = SlotBase::new_kv(HashKey::new(7), TrieValue::U32(7));
+        storage.append(&base).await.expect("append");
+        let view = storage.snapshot();
+        let new_id = storage.append(&base).await.expect("append");
+        let _ = view.read(new_id).await;
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "has not been written")]
+    async fn read_panics_on_unwritten_id() {
+        let storage = MemStorage::new();
+        let _ = storage.read(SlotBaseId(1)).await;
     }
 }

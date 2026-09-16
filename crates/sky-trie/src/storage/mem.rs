@@ -58,6 +58,10 @@ impl ReadStorage for MemStorage {
 
     async fn read(&self, id: SlotBaseId) -> Result<SlotBase, StorageReadError> {
         let inner = self.inner.read().expect("storage poisoned");
+        assert!(
+            id.0 < inner.bases.len() as i32,
+            "base id {id} has not been written"
+        );
         let index = id.0 as usize;
         Ok(inner.bases[index].clone())
     }
@@ -94,9 +98,10 @@ impl ReadStorage for MemReadStorage {
         if id.0 == 0 {
             return Ok(SlotBase::new());
         }
-        if id.0 > self.max_id {
-            return Err(StorageReadError::NotFound(id));
-        }
+        assert!(
+            id.0 <= self.max_id,
+            "base id {id} is beyond this snapshot's max_id"
+        );
         let inner = self.inner.read().expect("storage poisoned");
         let index = id.0 as usize;
         Ok(inner.bases[index].clone())

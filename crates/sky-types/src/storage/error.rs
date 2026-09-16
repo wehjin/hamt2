@@ -3,8 +3,6 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum StorageReadError {
-    #[error("base id {0} has not been written")]
-    NotFound(SlotBaseId),
     #[error("failed to read base id {0} from disk: {1}")]
     Io(SlotBaseId, #[source] std::io::Error),
     #[error("failed to decode base id {0}: {1}")]

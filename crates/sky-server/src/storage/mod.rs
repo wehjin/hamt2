@@ -43,6 +43,8 @@ impl StorageRequester {
         Ok(new_storage_head)
     }
 
+    /// Reads a slot base from the storage service. Returns `None` for ids
+    /// outside the current head (negative or beyond `max_id`).
     pub async fn read_slot_base(
         &self,
         slot_base_id: SlotBaseId,
@@ -137,7 +139,13 @@ async fn handle_storage(
                 }
             },
             StorageRequest::ReadSlotBase(base_id, response) => {
-                let base = storage.read(base_id).await.ok();
+                // Guard against ids the storage has never assigned; reading
+                // them directly would panic the storage task.
+                let base = if base_id < SlotBaseId::ZERO || base_id > storage.max_id() {
+                    None
+                } else {
+                    storage.read(base_id).await.ok()
+                };
                 let _ = response.send(base);
             }
         }
@@ -177,5 +185,8 @@ mod tests {
 
         let slot_base = requester.read_slot_base(max_id).await.unwrap();
         assert_ne!(None, slot_base);
+
+        let out_of_range = requester.read_slot_base(SlotBaseId(10_000)).await.unwrap();
+        assert_eq!(None, out_of_range);
     }
 }
