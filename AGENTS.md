@@ -34,8 +34,7 @@ Layered, each layer building on the one below. All trie/storage code lives in th
 imports it privately as `use sky_trie as trie;` in `crates/sky-db/src/lib.rs`, so sky-db code uses `use
 crate::trie::prelude::*` internally. The only trie types sky-db re-exports publicly are the ones its APIs require
 callers to name, re-exported under db-flavored names (`as` imports in `src/storage.rs` / `src/lib.rs`): the
-`sky_db::storage` module (`MemDbStorage`, `FileDbStorage`,
-`DbStorageReadError`/`DbStorageWriteError`) and `DbQueryError`/`DbWriteError` at the crate root (they embed in
+`sky_db::storage` module (`MemDbStorage`, `FileDbStorage`) and `DbQueryError`/`DbWriteError` at the crate root (they embed in
 `QueryError`/`TransactError`).
 
 1. `crates/universal-hash` — the single hashing primitive: `hash(bytes, level) -> u32`. A direct sky-db/sky-trie
@@ -72,8 +71,9 @@ callers to name, re-exported under db-flavored names (`as` imports in `src/stora
    `handle`, `pull`, `query`, `reader`, `storage`, `transact`, `types` (plus `pub(crate) crate_services`), with
    `pub use error::*;` and `pub use sky_trie::error::{TrieQueryError as DbQueryError, TrieWriteError as DbWriteError};`
    at the root. The `src/storage.rs` module re-exports the trie surface that sky-db's public APIs name, aliased under
-   db names: `MemDbStorage`, `FileDbStorage`, and the storage error types. (The `ReadStorage`/`ReadWriteStorage`
-   traits are named directly from `sky_trie::storage`, not re-exported.)
+   db names: `MemDbStorage`, `FileDbStorage`. (The `ReadStorage`/`ReadWriteStorage` traits and the
+   `StorageReadError`/`StorageWriteError` errors are named directly from `sky_trie::storage`/`sky_types`, not
+   re-exported.)
    - `src/types/` — user-facing value types: `Attr(&'static str)` (idents), `AttrName(String)`, `Ein(pub i32)`
      (non-negative; 0–2 reserved: `DB_IDENT`, `DB_CARDINALITY`, `DB_MAX`), `Txid(u32)` (`SETUP` = 0, `FLOOR` = 1),
      `Dir` (`In` = add / `Out` = delete), `Val` (`U32(u32)`/`String`); the datom machinery: `dat::Dat`
@@ -181,7 +181,7 @@ Within `crates/skybase/src`:
   `QueryError::Trie`, `TransactError::TrieStorageRead`/`TransactError::TrieStorageWrite`/`TransactError::Trie`,
   and `LoadError::TrieStorageRead`, so `?` chains across crates work through `From` impls (`use crate::trie::prelude::*`
   brings the trie error types in scope). These trie error types are exported at the sky-db root as `DbQueryError`/
-  `DbWriteError` aliases (storage ones in `sky_db::storage`). `TransactError` also embeds `QueryError` as
+  `DbWriteError` aliases. `TransactError` also embeds `QueryError` as
   `TransactError::Query`.
 - **`Ent` is either `Id(Ein)` or `Temp(&'static str)`.** Temp entities get auto-assigned `Ein`s at transact time (see
   `src/db/types/ent_eid.rs`). Reusing the same temp ident in a tx rewrites the same entity, whereas separate txns
