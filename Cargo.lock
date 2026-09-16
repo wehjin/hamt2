@@ -2079,6 +2079,7 @@ dependencies = [
 name = "sky-server"
 version = "0.1.0"
 dependencies = [
+ "futures-util",
  "log",
  "serde",
  "sky-db",
@@ -2086,6 +2087,8 @@ dependencies = [
  "sky-types",
  "thiserror 2.0.20",
  "tokio",
+ "tokio-stream",
+ "tokio-util",
 ]
 
 [[package]]

@@ -55,18 +55,14 @@ impl StorageService {
 
     /// Reads a slot base from the storage service. Returns `None` for ids
     /// outside the current head (negative or beyond `max_id`).
-    pub async fn read_slot_base(
-        &self,
-        slot_base_id: SlotBaseId,
-    ) -> Result<Option<SlotBase>, StorageServiceError> {
+    pub async fn read_slot_base(&self, slot_base_id: SlotBaseId) -> Option<SlotBase> {
         let (send, receive) = oneshot::channel();
         let request = StorageRequest::ReadSlotBase(slot_base_id, send);
         self.request_sender
             .send(request)
             .await
             .expect("send request failed");
-        let slot_base = receive.await.expect("receive response failed");
-        Ok(slot_base)
+        receive.await.expect("receive response failed")
     }
 
     pub async fn transact(
@@ -188,10 +184,10 @@ mod tests {
             broadcast
         );
 
-        let slot_base = storage.read_slot_base(max_id).await.unwrap();
+        let slot_base = storage.read_slot_base(max_id).await;
         assert_ne!(None, slot_base);
 
-        let out_of_range = storage.read_slot_base(SlotBaseId(10_000)).await.unwrap();
+        let out_of_range = storage.read_slot_base(SlotBaseId(10_000)).await;
         assert_eq!(None, out_of_range);
     }
 }
