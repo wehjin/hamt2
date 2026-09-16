@@ -76,8 +76,12 @@ impl StorageService {
             .send(request)
             .await
             .expect("send request failed");
-        let new_storage_head = receive.await.expect("receive response failed");
-        Ok(new_storage_head)
+        match receive.await {
+            Ok(head) => Ok(head),
+            // The storage task dropped the sender unsent: the transact lost
+            // the db and the worker exited.
+            Err(_) => Err(StorageServiceError::TransactFailed),
+        }
     }
 }
 
@@ -140,8 +144,7 @@ async fn handle_storage(
             }
             StorageRequest::Transact(datoms, response) => match db.transact(datoms).await {
                 Err(e) => {
-                    let _ =
-                        to_clients.send(StorageBroadcastEvent::TransactFailed(format!("{:?}", e)));
+                    error!("transact failed, storage stopping: {:?}", e);
                     // For now, return an error because we've lost the db!!!
                     return Err(StorageServiceError::TransactError(e));
                 }

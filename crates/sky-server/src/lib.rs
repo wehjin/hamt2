@@ -6,6 +6,7 @@ use futures_util::{Sink, SinkExt, Stream, StreamExt};
 use serde::{Deserialize, Serialize};
 use sky_trie::types::StorageHead;
 use sky_trie::types::slot_base::SlotBase;
+use sky_types::db::Datom;
 use sky_types::trie::SlotBaseId;
 pub use storage::*;
 
@@ -13,12 +14,14 @@ pub use storage::*;
 pub enum SocketRequest {
     Connect,
     ReadSlotBase(SlotBaseId),
+    Transact(Vec<Datom>),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SocketResponse {
     StorageStatus(StorageHead),
     SlotBase(SlotBaseId, Option<SlotBase>),
+    TransactResult(StorageHead),
 }
 
 /// Processes socket requests in a loop.
@@ -46,13 +49,18 @@ pub async fn process_socket_requests<In, Out>(
                         let slot_base = storage.read_slot_base(slotbase_id).await;
                         let _ = outgoing.send(SocketResponse::SlotBase(slotbase_id, slot_base)).await;
                     }
+                    SocketRequest::Transact(datoms) => {
+                        // Failures are logged by the storage task and never
+                        // reach the socket protocol (yet).
+                        if let Ok(head) = storage.transact(datoms).await {
+                            let _ = outgoing.send(SocketResponse::TransactResult(head)).await;
+                        }
+                    }
                 }
             }
             Ok(event) = broadcast.recv() => {
-                match event {
-                    StorageBroadcastEvent::TransactFailed(_) => {}
-                    StorageBroadcastEvent::NewHead(_) => {}
-                }
+                let StorageBroadcastEvent::NewHead(head) = event;
+                let _ = outgoing.send(SocketResponse::StorageStatus(head)).await;
             }
         }
     }
@@ -62,6 +70,7 @@ pub async fn process_socket_requests<In, Out>(
 mod tests {
     use crate::StorageService;
     use crate::{SocketRequest, SocketResponse, process_socket_requests};
+    use sky_types::db::{Attr, datom};
     use sky_types::trie::SlotBaseId;
     use tokio::sync::mpsc;
     use tokio::sync::mpsc::{Receiver, Sender};
@@ -97,6 +106,36 @@ mod tests {
             assert_eq!(head.max_id, base_id);
             assert_ne!(0, base.len());
         }
+    }
+
+    #[tokio::test]
+    async fn transact_over_socket_reaches_clients() {
+        let attr = || Attr::from("Counter/count");
+        let storage = StorageService::start([attr()]).await.unwrap();
+        let (_task, request, mut response) = spawn_socket_task(storage);
+
+        request
+            .send(SocketRequest::Transact(vec![datom::add(100, attr(), 10)]))
+            .await
+            .unwrap();
+
+        // The client receives the direct transact result plus the forwarded
+        // NewHead broadcast; their order depends on select scheduling.
+        let first = response.recv().await.unwrap();
+        let second = response.recv().await.unwrap();
+        let mut result_heads = Vec::new();
+        let mut status_heads = Vec::new();
+        for response in [first, second] {
+            match response {
+                SocketResponse::TransactResult(head) => result_heads.push(head),
+                SocketResponse::StorageStatus(head) => status_heads.push(head),
+                other => panic!("Unexpected response: {:?}", other),
+            }
+        }
+        assert_eq!(1, result_heads.len());
+        assert_eq!(1, status_heads.len());
+        assert_eq!(result_heads[0], status_heads[0]);
+        assert_ne!(SlotBaseId::ZERO, result_heads[0].max_id);
     }
 
     fn spawn_socket_task(
