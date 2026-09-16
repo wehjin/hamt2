@@ -1,20 +1,26 @@
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub struct Attr(pub &'static str);
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+pub struct Attr(pub String);
 
 impl Attr {
-    pub fn as_ident(&self) -> &'static str {
-        self.0
+    pub fn as_ident(&self) -> &str {
+        &self.0
     }
     pub fn to_name(&self) -> String {
-        self.as_ident().to_string()
+        self.0.clone()
     }
 }
 
-impl From<&'static str> for Attr {
-    fn from(value: &'static str) -> Self {
+impl From<&str> for Attr {
+    fn from(value: &str) -> Self {
+        Self(value.to_string())
+    }
+}
+
+impl From<String> for Attr {
+    fn from(value: String) -> Self {
         Self(value)
     }
 }

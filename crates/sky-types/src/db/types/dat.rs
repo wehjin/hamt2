@@ -1,6 +1,7 @@
 use crate::db::{Ent, Val, val};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Dat {
     Val(Val),
     Ent(Ent),

@@ -66,10 +66,10 @@ where
     fn facts_stream(&self, earth_atom: &Atom) -> impl futures::Stream<Item = Atom> {
         stream! {
             if earth_atom.terms.len() == 2 {
-                let ev_stream = db_trie::ev_stream(self.db_trie, earth_atom.attr, self.schema);
+                let ev_stream = db_trie::ev_stream(self.db_trie, earth_atom.attr.clone(), self.schema);
                 pin_mut!(ev_stream);
                 while let Some((e,v)) = ev_stream.next().await {
-                    yield Atom::new(earth_atom.attr, [Term::from(e), Term::from(v)]);
+                    yield Atom::new(earth_atom.attr.clone(), [Term::from(e), Term::from(v)]);
                 }
             }
             for fact in self.facts.iter() {

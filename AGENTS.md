@@ -75,11 +75,13 @@ crate::trie::prelude::*` internally. sky-db does not re-export any storage types
 3. `crates/sky-db` — the Datomic layer plus error glue. Public modules in `src/lib.rs`: `db`, `find`,
    `handle`, `pull`, `query`, `reader`, `transact`, `types` (plus `pub(crate) crate_services`), with
    `pub use error::*;` at the root. No storage re-exports.
-   - `src/types/` — user-facing value types: `Attr(&'static str)` (idents), `AttrName(String)`, `Ein(pub i32)`
+   - `src/types/` — user-facing value types: `Attr(String)` (idents; construct with `Attr::from("...")` —
+     a plain `Attr("...")` with a literal no longer compiles), `AttrName(String)`, `Ein(pub i32)`
      (non-negative; 0–2 reserved: `DB_IDENT`, `DB_CARDINALITY`, `DB_MAX`), `Txid(u32)` (`SETUP` = 0, `FLOOR` = 1),
      `Dir` (`In` = add / `Out` = delete), `Val` (`U32(u32)`/`String`); the datom machinery: `dat::Dat`
-     (`Val(Val)`/`Ent(Ent)`), `ent::Ent` (`Id(Ein)`/`Temp(&'static str)`), and `datom::{add, del}` constructors
-     building `datom::Datom { ent, attr, dat, dir }` (`Datom` is re-exported at the `types` root, and from there
+     (`Val(Val)`/`Ent(Ent)`), `ent::Ent` (`Id(Ein)`/`Temp(String)`), and `datom::{add, del}` constructors
+     building `datom::Datom { ent, attr, dat, dir }` (`Datom` is Serialize/Deserialize; re-exported at the `types`
+     root, and from there
      `pub use`d out of `db/mod.rs`, so `sky_db::db::Datom`/`Dat`/`Ent` all resolve; `datom::add`/`datom::del` come
      from `sky_db::types::datom`). `src/types/schema/` — `Schema` (newtype over
      `AttrTable` via `Deref`), `AttrTable` (`HashMap<Attr, Attribute>`: `Index<Attr>`, always seeded with the
@@ -87,12 +89,14 @@ crate::trie::prelude::*` internally. sky-db does not re-export any storage types
      `AttrSpec { attr, cardinality }`, `Cardinality` (`One`/`Many`), `attr_loader::AttributeLoader` (a `Find` impl
      used by `Db::load` to read attrs back out of the trie).
    - `src/db/` — `db/mod.rs` builds `Db<S>` (`schema: Schema` + `trie: Trie<S>`). Construction:
-     `Db::new(storage, db_spec: impl Into<DbSpec>)` (`-> TransactError`; `DbSpec` is `From<[Attr; N]>`,
-     `From<Vec<Attr>>`, `From<[AttrSpec; N]>`) assigns fresh `Ein`s from `MaxEid`, saves the schema under
+     `Db::new(storage, db_spec: impl Into<DbSpec>)` (`-> TransactError`; `DbSpec` is `From<[&str; N]>`,
+     `From<Vec<&str>>`, `From<[Attr; N]>`, `From<Vec<Attr>>`, `From<[AttrSpec; N]>`) assigns fresh `Ein`s from
+     `MaxEid`, saves the schema under
      `Txid::SETUP`, resets max tx to `Txid::FLOOR`, commits; `Db::load(storage, attrs: impl AsRef<[Attr]>)`
      (`-> LoadError`) reopens against `Schema::load` (undeclared attr => `LoadError::UnknownAttr`); `close()` returns
-     the storage; inherent `to_reader()` and `max_tx()`. Also the reserved attr idents `db/query` (`QUERY`),
-     `db/ident` (`IDENT`), `db/cardinality` (`CARDINALITY`).
+     the storage; inherent `to_reader()` and `max_tx()`. Also the reserved attr idents `db/query` (`db::query()`),
+     `db/ident` (`db::ident()`), `db/cardinality` (`db::cardinality()`) — `fn`s, not consts, since `Attr` owns a
+     `String`.
      `src/db/db_trie.rs` — storage layout plus the datalog bridge. Trie keys are `[i32-prefix, ...]`, prefixes per
      `src/db/types/key.rs`: `KEY_MAX_TXID` (0), `KEY_EAVT` (1), `KEY_AEVT` (2), `KEY_MAX_EID` (3), `KEY_VAL_TABLE` (4).
      Datoms live at `[KEY_EAVT, eid, aid, vid]` and `[KEY_AEVT, aid, eid, vid]`; the value is a packed `u32`
@@ -158,10 +162,12 @@ Within `crates/skybase/src`:
   appends start at id 1. Reading any other id that the storage (or snapshot) never assigned is a programming error
   and panics with a descriptive assert — ids come from committed map bases; external id sources (e.g.
   sky-server's `read_slot_base`) must range-check against `max_id` before calling `read`.
-- **`Attr` is `&'static str`** (attribute idents), not an integer. Schema attributes must be declared up front:
-  `Db::new(storage, db_spec)` takes `impl Into<DbSpec>` (`[Attr; N]`, `Vec<Attr>`, or `[AttrSpec; N]` for
+- **`Attr` owns a `String`** (attribute idents), not an integer or a `&'static str`. Schema attributes must be
+  declared up front: `Db::new(storage, db_spec)` takes `impl Into<DbSpec>` (`[&str; N]`/`Vec<&str>`, `[Attr; N]`,
+  `Vec<Attr>`, or `[AttrSpec; N]` for
   cardinality), and `Db::load(storage, attrs)` takes `impl AsRef<[Attr]>`; every `Attr` used must be enumerated.
-  Loading with an undeclared attr fails with `LoadError::UnknownAttr`. Entity ids 0–2 are reserved (`Ein::DB_IDENT`,
+  Loading with an undeclared attr fails with `LoadError::UnknownAttr`. Build an `Attr` with `Attr::from("...")`.
+  Entity ids 0–2 are reserved (`Ein::DB_IDENT`,
   `Ein::DB_CARDINALITY`, `Ein::DB_MAX`); fresh eins (attributes at `Db::new`, temps at `transact`) are handed out by
   `MaxEid`, which starts at `Ein::DB_MAX`.
 - **`Db` is immutable-value / consumed-ownership.** `Db::transact(...)` consumes `self` and returns a new `Db`. Get the
@@ -186,7 +192,7 @@ Within `crates/skybase/src`:
   (the latter embedding `QueryError`/`ReadStorageError`/`WriteStorageError`/`TrieInsertError`/`NoSpaceInValueTable`)
   live in `sky_types::db`, so `?` chains across crates work through `From` impls (`use crate::trie::prelude::*`
   brings the trie error types in scope).
-- **`Ent` is either `Id(Ein)` or `Temp(&'static str)`.** Temp entities get auto-assigned `Ein`s at transact time (see
+- **`Ent` is either `Id(Ein)` or `Temp(String)`.** Temp entities get auto-assigned `Ein`s at transact time (see
   `src/db/types/ent_eid.rs`). Reusing the same temp ident in a tx rewrites the same entity, whereas separate txns
   create separate entities.
 - `universal_hash::hash` (crate `universal-hash`, used via the extern prelude) is the hashing primitive;

@@ -168,12 +168,12 @@ mod tests {
 
     #[tokio::test]
     async fn it_works() {
-        const ATTR: Attr = Attr("Counter/count");
-        let db_spec = [ATTR];
+        let attr = || Attr::from("Counter/count");
+        let db_spec = [attr()];
         let storage = StorageService::start(db_spec).await.unwrap();
         let mut broadcasts = storage.subscribe();
 
-        let new_head = storage.transact([datom::add(100, ATTR, 10)]).await.unwrap();
+        let new_head = storage.transact([datom::add(100, attr(), 10)]).await.unwrap();
         let StorageHead { max_id, root } = new_head;
         assert_ne!(SlotBaseId::ZERO, max_id);
         assert_ne!(MapBase::empty(), root);

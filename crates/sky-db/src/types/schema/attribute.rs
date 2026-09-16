@@ -9,17 +9,17 @@ pub struct Attribute {
 }
 
 impl Attribute {
-    pub const fn new(ein: Ein, spec: AttrSpec) -> Self {
+    pub fn new(ein: Ein, spec: AttrSpec) -> Self {
         Self { ein, spec }
     }
     pub fn ein(&self) -> Ein {
         self.ein
     }
     pub fn attr(&self) -> Attr {
-        self.spec.attr
+        self.spec.attr.clone()
     }
-    pub fn ident(&self) -> &'static str {
-        self.attr().as_ident()
+    pub fn ident(&self) -> &str {
+        self.spec.attr.as_ident()
     }
     pub fn cardinality(&self) -> Cardinality {
         self.spec.cardinality

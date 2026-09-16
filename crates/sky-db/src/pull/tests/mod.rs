@@ -48,13 +48,13 @@ fn push_test() {
         direction: -1,
     };
     let ent = Ent::from(27);
-    let datoms = basis.into_datoms(ent);
+    let datoms = basis.into_datoms(ent.clone());
     assert_eq!(
         vec![
-	        datom::add(ent, Attr("basis/symbol"), dat(Val::from_str("ABC"))),
-	        datom::add(ent, Attr("basis/shares"), dat(Val::U32(100))),
-	        datom::add(ent, Attr("basis/price_each"), dat(Val::U32(101))),
-	        datom::add(ent, Attr("basis/direction"), dat(Val::U32(u32::MAX))),
+	        datom::add(ent.clone(), Attr::from("basis/symbol"), dat(Val::from_str("ABC"))),
+	        datom::add(ent.clone(), Attr::from("basis/shares"), dat(Val::U32(100))),
+	        datom::add(ent.clone(), Attr::from("basis/price_each"), dat(Val::U32(101))),
+	        datom::add(ent, Attr::from("basis/direction"), dat(Val::U32(u32::MAX))),
         ],
         datoms
     );

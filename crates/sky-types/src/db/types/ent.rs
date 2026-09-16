@@ -1,9 +1,10 @@
 use crate::db::{Ein, Val};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum Ent {
     Id(Ein),
-    Temp(&'static str),
+    Temp(String),
 }
 
 impl Ent {
@@ -34,8 +35,14 @@ impl From<i32> for Ent {
     }
 }
 
-impl From<&'static str> for Ent {
-    fn from(s: &'static str) -> Self {
+impl From<&str> for Ent {
+    fn from(s: &str) -> Self {
+        Self::Temp(s.to_string())
+    }
+}
+
+impl From<String> for Ent {
+    fn from(s: String) -> Self {
         Self::Temp(s)
     }
 }

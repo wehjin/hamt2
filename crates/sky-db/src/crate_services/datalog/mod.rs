@@ -57,62 +57,72 @@ mod tests {
     use sky_types::db::datom;
     use sky_types::db::{Attr, ent, val};
 
-    const ADVISOR: Attr = Attr("member/advisor");
-    const NAME: Attr = Attr("member/name");
-    const QUERY_1: Attr = Attr("query/1");
-    const QUERY_2: Attr = Attr("query/2");
-    const QUERY_3: Attr = Attr("query/3");
+    fn advisor() -> Attr {
+        Attr::from("member/advisor")
+    }
+    fn name() -> Attr {
+        Attr::from("member/name")
+    }
+    fn query_1() -> Attr {
+        Attr::from("query/1")
+    }
+    fn query_2() -> Attr {
+        Attr::from("query/2")
+    }
+    fn query_3() -> Attr {
+        Attr::from("query/3")
+    }
 
     #[tokio::test]
     async fn program_test() -> anyhow::Result<()> {
-        let schema = vec![ADVISOR, NAME];
+        let schema = vec![advisor(), name()];
         let storage: MemStorage;
         {
             let mut db = Db::new(MemStorage::new(), schema.clone()).await?;
             db = db
                 .transact([
-                    datom::add("a", NAME, val("Alice")),
-                    datom::add("b", NAME, val("Bob")),
-                    datom::add("c", NAME, val("Clark")),
-                    datom::add("a", ADVISOR, ent("c")),
-                    datom::add("b", ADVISOR, ent("c")),
+                    datom::add("a", name(), val("Alice")),
+                    datom::add("b", name(), val("Bob")),
+                    datom::add("c", name(), val("Clark")),
+                    datom::add("a", advisor(), ent("c")),
+                    datom::add("b", advisor(), ent("c")),
                 ])
                 .await?;
             storage = db.close();
         }
         let db = Db::load(storage, schema).await?;
         let query1 = rule(
-            atom(QUERY_1, [term(var("name"))]),
+            atom(query_1(), [term(var("name"))]),
             [
-                atom(ADVISOR, [term(var("advisor")), term(var("advisee"))]),
-                atom(NAME, [term(var("advisor")), term(var("name"))]),
+                atom(advisor(), [term(var("advisor")), term(var("advisee"))]),
+                atom(name(), [term(var("advisor")), term(var("name"))]),
             ],
         );
         let query2 = rule(
-            atom(QUERY_2, []),
+            atom(query_2(), []),
             [
-                atom(NAME, [term(var("a")), term(val("Alice"))]),
-                atom(NAME, [term(var("c")), term(val("Clark"))]),
-                atom(ADVISOR, [term(var("a")), term(var("c"))]),
+                atom(name(), [term(var("a")), term(val("Alice"))]),
+                atom(name(), [term(var("c")), term(val("Clark"))]),
+                atom(advisor(), [term(var("a")), term(var("c"))]),
             ],
         );
         let query3 = rule(
-            atom(QUERY_3, []),
+            atom(query_3(), []),
             [
-                atom(NAME, [term(var("a")), term(val("Alice"))]),
-                atom(NAME, [term(var("b")), term(val("Bob"))]),
-                atom(ADVISOR, [term(var("a")), term(var("b"))]),
+                atom(name(), [term(var("a")), term(val("Alice"))]),
+                atom(name(), [term(var("b")), term(val("Bob"))]),
+                atom(advisor(), [term(var("a")), term(var("b"))]),
             ],
         );
         let program = Program::new([], [query1, query2, query3]);
         let kb = program.solve(&db.trie, &db.schema).await;
-        let q1_result = kb.query(QUERY_1);
+        let q1_result = kb.query(query_1());
         let mut answers = q1_result.into_iter().flatten().collect::<Vec<_>>();
         answers.sort();
         assert_eq!(vec![val("Alice"), val("Bob")], answers);
-        let q2_result = kb.query(QUERY_2);
+        let q2_result = kb.query(query_2());
         assert_eq!(1, q2_result.len());
-        let q3_result = kb.query(QUERY_3);
+        let q3_result = kb.query(query_3());
         assert_eq!(0, q3_result.len());
         Ok(())
     }

@@ -22,7 +22,7 @@ impl Find for EinsWithAttr {
     }
 
     fn where_(&self) -> Vec<Atom> {
-        vec![atom(self.attr, [term(var("ein")), term(var("ignore"))])]
+        vec![atom(self.attr.clone(), [term(var("ein")), term(var("ignore"))])]
     }
 
     fn process(self, result: FindResult) -> Vec<Self::Output> {

@@ -23,9 +23,9 @@ impl<S: ReadWriteStorage> Transact for Db<S> {
                 } = self;
                 let ent_eid = EntEid::new(&datoms, &mut max_eid);
                 for datom in datoms {
-                    let eid = match datom.ent {
-                        Ent::Id(eid) => eid,
-                        Ent::Temp(name) => ent_eid[name],
+                    let eid = match &datom.ent {
+                        Ent::Id(eid) => *eid,
+                        Ent::Temp(name) => ent_eid[name.as_str()],
                     };
                     let attr = datom.attr;
                     let val = match datom.dat {
@@ -33,7 +33,7 @@ impl<S: ReadWriteStorage> Transact for Db<S> {
                         Dat::Ent(ent) => {
                             let eid = match ent {
                                 Ent::Id(eid) => eid,
-                                Ent::Temp(name) => ent_eid[name],
+                                Ent::Temp(name) => ent_eid[name.as_str()],
                             };
                             val(eid)
                         }

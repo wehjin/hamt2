@@ -30,7 +30,7 @@ impl Atom {
             .collect()
     }
     pub fn ground(&self, substitution: &Substitution) -> Atom {
-        let attr = self.attr;
+        let attr = self.attr.clone();
         let mut terms = Vec::with_capacity(self.terms.len());
         {
             for term in self.terms.clone() {

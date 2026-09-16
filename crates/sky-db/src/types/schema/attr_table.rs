@@ -39,7 +39,8 @@ impl AttrTable {
     }
 
     pub fn insert(&mut self, attribute: Attribute) {
-        self.map.insert(attribute.attr(), attribute);
+        let key = attribute.attr().clone();
+        self.map.insert(key, attribute);
     }
     pub fn extend(&mut self, attributes: impl IntoIterator<Item = Attribute>) {
         for attribute in attributes {
@@ -49,26 +50,28 @@ impl AttrTable {
 
     pub fn starter() -> Self {
         let mut attr_table = Self::new();
-        attr_table.extend(Self::STARTER_ATTRIBUTES);
+        attr_table.extend(Self::starter_attributes());
         attr_table
     }
 
-    const STARTER_ATTRIBUTES: [Attribute; 2] = [
-        Attribute::new(
-            Ein::DB_IDENT,
-            AttrSpec {
-                attr: db::IDENT,
-                cardinality: Cardinality::One,
-            },
-        ),
-        Attribute::new(
-            Ein::DB_CARDINALITY,
-            AttrSpec {
-                attr: db::CARDINALITY,
-                cardinality: Cardinality::One,
-            },
-        ),
-    ];
+    fn starter_attributes() -> [Attribute; 2] {
+        [
+            Attribute::new(
+                Ein::DB_IDENT,
+                AttrSpec {
+                    attr: db::ident(),
+                    cardinality: Cardinality::One,
+                },
+            ),
+            Attribute::new(
+                Ein::DB_CARDINALITY,
+                AttrSpec {
+                    attr: db::cardinality(),
+                    cardinality: Cardinality::One,
+                },
+            ),
+        ]
+    }
 }
 
 impl Index<Attr> for AttrTable {

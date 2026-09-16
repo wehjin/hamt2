@@ -7,43 +7,45 @@ use sky_types::db::Transact;
 use sky_types::db::datom;
 use sky_types::db::{Attr, ein, val};
 
-const ATTR_COUNT: Attr = Attr("counter/count");
+fn attr_count() -> Attr {
+    Attr::from("counter/count")
+}
 
 #[tokio::test]
 async fn db_reader_works() -> anyhow::Result<()> {
-    let db = Db::new(MemStorage::new(), [ATTR_COUNT]).await?;
+    let db = Db::new(MemStorage::new(), [attr_count()]).await?;
     let db = db
         .transact([
-            datom::add(1, ATTR_COUNT, val(10)),
-            datom::add(2, ATTR_COUNT, val(20)),
-            datom::add(3, ATTR_COUNT, val(30)),
+            datom::add(1, attr_count(), val(10)),
+            datom::add(2, attr_count(), val(20)),
+            datom::add(3, attr_count(), val(30)),
         ])
         .await?;
 
-    let mut eins = db.find(EinsWithAttr::new(ATTR_COUNT)).await;
+    let mut eins = db.find(EinsWithAttr::new(attr_count())).await;
     eins.sort();
     assert_eq!(vec![ein(1), ein(2), ein(3)], eins);
 
     let reader = DbReader::load(&db).await?;
-    assert_eq!(Some(val(10)), reader.find_val(1, ATTR_COUNT).await?);
-    assert_eq!(Some(val(20)), reader.find_val(2, ATTR_COUNT).await?);
-    assert_eq!(Some(val(30)), reader.find_val(3, ATTR_COUNT).await?);
+    assert_eq!(Some(val(10)), reader.find_val(1, attr_count()).await?);
+    assert_eq!(Some(val(20)), reader.find_val(2, attr_count()).await?);
+    assert_eq!(Some(val(30)), reader.find_val(3, attr_count()).await?);
 
     // The db stays usable after the reader is loaded.
-    let db = db.transact([datom::add(4, ATTR_COUNT, val(40))]).await?;
-    assert_eq!(Some(val(40)), db.find_val(4, ATTR_COUNT).await?);
+    let db = db.transact([datom::add(4, attr_count(), val(40))]).await?;
+    assert_eq!(Some(val(40)), db.find_val(4, attr_count()).await?);
     // The reader is a snapshot from before the new transact.
-    assert_eq!(None, reader.find_val(4, ATTR_COUNT).await?);
+    assert_eq!(None, reader.find_val(4, attr_count()).await?);
 
     Ok(())
 }
 
 #[tokio::test]
 async fn db_reader_finds_entities() {
-    let db = Db::new(MemStorage::new(), [ATTR_COUNT])
+    let db = Db::new(MemStorage::new(), [attr_count()])
         .await
         .unwrap()
-        .transact([datom::add(100, ATTR_COUNT, val(100))])
+        .transact([datom::add(100, attr_count(), val(100))])
         .await
         .unwrap();
 
@@ -55,14 +57,14 @@ async fn db_reader_finds_entities() {
 
 #[tokio::test]
 async fn db_reader_lists_entity_attributes() {
-    let db = Db::new(MemStorage::new(), [ATTR_COUNT])
+    let db = Db::new(MemStorage::new(), [attr_count()])
         .await
         .unwrap()
-        .transact([datom::add(100, ATTR_COUNT, val(100))])
+        .transact([datom::add(100, attr_count(), val(100))])
         .await
         .unwrap();
     let reader = db.to_reader().await;
     let find = AttrsOfEin::new(100);
     let attrs = (async move { reader.find(find).await }).await;
-    assert_eq!(&[ATTR_COUNT], &attrs[..]);
+    assert_eq!(&[attr_count()], &attrs[..]);
 }

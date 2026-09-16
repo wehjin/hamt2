@@ -26,7 +26,7 @@ impl Find for ValsInSlot {
     }
 
     fn where_(&self) -> Vec<Atom> {
-        vec![atom(self.attr, [term(val(self.ein)), term(var("val"))])]
+        vec![atom(self.attr.clone(), [term(val(self.ein)), term(var("val"))])]
     }
 
     fn process(self, result: FindResult) -> Vec<Self::Output> {

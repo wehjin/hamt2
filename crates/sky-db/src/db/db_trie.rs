@@ -4,7 +4,7 @@ use crate::crate_services::datalog::rule::rule;
 use crate::crate_services::datalog::term::term;
 use crate::crate_services::datalog::var::var;
 use crate::crate_services::val_table;
-use crate::db::QUERY;
+use crate::db::query as query_attr;
 use crate::db::Schema;
 use crate::db::attr_table::AttrTable;
 use crate::db::cardinality::Cardinality;
@@ -92,10 +92,11 @@ where
 {
     let select = select.into();
     let query_terms = select.iter().map(|s| term(var(*s))).collect::<Vec<_>>();
-    let query_rule = rule(atom(QUERY, query_terms), where_.into());
+    let query_attr = query_attr();
+    let query_rule = rule(atom(query_attr.clone(), query_terms), where_.into());
     let program = Program::new([], [query_rule]);
     let kb = program.solve(trie, schema).await;
-    let query_result = kb.query(QUERY);
+    let query_result = kb.query(query_attr);
     let mut found = FindResult::new();
     for row in query_result {
         let mut map = HashMap::new();

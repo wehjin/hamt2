@@ -10,41 +10,41 @@ use sky_types::db::{Attr, val};
 
 #[tokio::test]
 async fn test_cardinality_one() -> anyhow::Result<()> {
-    const COUNT: Attr = Attr("counter/count");
+    let count = || Attr::from("counter/count");
     let schema = [AttrSpec {
-        attr: COUNT,
+        attr: count(),
         cardinality: Cardinality::One,
     }];
     let mut db = Db::new(MemStorage::new(), schema).await?;
-    db = db.transact([datom::add(100, COUNT, 100)]).await?;
-    db = db.transact([datom::add(100, COUNT, 101)]).await?;
-    db = db.transact([datom::add(100, COUNT, 102)]).await?;
-    let vals = db.find(ValsInSlot::new(100, COUNT)).await;
+    db = db.transact([datom::add(100, count(), 100)]).await?;
+    db = db.transact([datom::add(100, count(), 101)]).await?;
+    db = db.transact([datom::add(100, count(), 102)]).await?;
+    let vals = db.find(ValsInSlot::new(100, count())).await;
     assert_eq!(vec![val(102)], vals);
 
-    db = db.transact([datom::del(100, COUNT, 102)]).await?;
-    let vals = db.find(ValsInSlot::new(100, COUNT)).await;
+    db = db.transact([datom::del(100, count(), 102)]).await?;
+    let vals = db.find(ValsInSlot::new(100, count())).await;
     assert!(vals.is_empty());
     Ok(())
 }
 
 #[tokio::test]
 async fn test_cardinality_many() -> anyhow::Result<()> {
-    const COUNT: Attr = Attr("counter/count");
+    let count = || Attr::from("counter/count");
     let schema = [AttrSpec {
-        attr: COUNT,
+        attr: count(),
         cardinality: Cardinality::Many,
     }];
     let mut db = Db::new(MemStorage::new(), schema).await?;
-    db = db.transact([datom::add(100, COUNT, 100)]).await?;
-    db = db.transact([datom::add(100, COUNT, 101)]).await?;
-    db = db.transact([datom::add(100, COUNT, 102)]).await?;
-    let mut vals = db.find(ValsInSlot::new(100, COUNT)).await;
+    db = db.transact([datom::add(100, count(), 100)]).await?;
+    db = db.transact([datom::add(100, count(), 101)]).await?;
+    db = db.transact([datom::add(100, count(), 102)]).await?;
+    let mut vals = db.find(ValsInSlot::new(100, count())).await;
     vals.sort();
     assert_eq!(vec![val(100), val(101), val(102)], vals);
 
-    db = db.transact([datom::del(100, COUNT, 101)]).await?;
-    let mut vals = db.find(ValsInSlot::new(100, COUNT)).await;
+    db = db.transact([datom::del(100, count(), 101)]).await?;
+    let mut vals = db.find(ValsInSlot::new(100, count())).await;
     vals.sort();
     assert_eq!(vec![val(100), val(102)], vals);
     Ok(())

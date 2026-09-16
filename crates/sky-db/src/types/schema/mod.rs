@@ -56,7 +56,7 @@ impl Schema {
                 trie,
                 &self.attr_table,
                 ein,
-                db::IDENT,
+                db::ident(),
                 attribute.ident().into(),
                 Dir::In,
                 &txid,
@@ -66,7 +66,7 @@ impl Schema {
                 trie,
                 &self.attr_table,
                 ein,
-                db::CARDINALITY,
+                db::cardinality(),
                 attribute.cardinality().into(),
                 Dir::In,
                 &txid,
@@ -89,7 +89,7 @@ impl Schema {
             // Confirm we have found an attribute for every requested attr.
             for attr in attrs.iter() {
                 if !schema.contains(attr) {
-                    return Err(LoadError::UnknownAttr(*attr));
+                    return Err(LoadError::UnknownAttr(attr.clone()));
                 }
             }
         }

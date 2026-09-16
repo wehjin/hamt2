@@ -18,39 +18,47 @@ pub struct Basis {
 }
 
 impl Basis {
-    const SYMBOL: Attr = Attr("basis/symbol");
-    const SHARES: Attr = Attr("basis/shares");
-    const PRICE_EACH: Attr = Attr("basis/price_each");
-    const DIRECTION: Attr = Attr("basis/direction");
+    fn symbol() -> Attr {
+        Attr::from("basis/symbol")
+    }
+    fn shares() -> Attr {
+        Attr::from("basis/shares")
+    }
+    fn price_each() -> Attr {
+        Attr::from("basis/price_each")
+    }
+    fn direction() -> Attr {
+        Attr::from("basis/direction")
+    }
 }
 
 impl<'a> Pull<'a> for Basis {
     fn attrs() -> Vec<Attr> {
         vec![
-            Self::SYMBOL,
-            Self::SHARES,
-            Self::PRICE_EACH,
-            Self::DIRECTION,
+            Self::symbol(),
+            Self::shares(),
+            Self::price_each(),
+            Self::direction(),
         ]
     }
 
     fn into_datoms(self, ent: Ent) -> Vec<Datom> {
         vec![
-	        datom::add(ent, Self::SYMBOL, self.symbol),
-	        datom::add(ent, Self::SHARES, self.shares),
-	        datom::add(ent, Self::PRICE_EACH, self.price_each),
-	        datom::add(ent, Self::DIRECTION, self.direction),
+	        datom::add(ent.clone(), Self::symbol(), self.symbol),
+	        datom::add(ent.clone(), Self::shares(), self.shares),
+	        datom::add(ent.clone(), Self::price_each(), self.price_each),
+	        datom::add(ent, Self::direction(), self.direction),
         ]
     }
 
     async fn pull<S: ReadWriteStorage>(db: &Db<S>, eid: Ein) -> Result<Self, QueryError> {
-        let symbol = db.find_val(eid, Self::SYMBOL).await?.expect("symbol");
-        let shares = db.find_val(eid, Self::SHARES).await?.expect("shares");
+        let symbol = db.find_val(eid, Self::symbol()).await?.expect("symbol");
+        let shares = db.find_val(eid, Self::shares()).await?.expect("shares");
         let price_each = db
-            .find_val(eid, Self::PRICE_EACH)
+            .find_val(eid, Self::price_each())
             .await?
             .expect("price_each");
-        let direction = db.find_val(eid, Self::DIRECTION).await?.expect("direction");
+        let direction = db.find_val(eid, Self::direction()).await?.expect("direction");
         Ok(Self {
             symbol: symbol.as_str().to_string(),
             shares: shares.u32(),

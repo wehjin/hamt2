@@ -13,7 +13,7 @@ pub use find_result::*;
 use serde::{Deserialize, Serialize};
 pub use val::*;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Datom {
     pub ent: Ent,
     pub attr: Attr,

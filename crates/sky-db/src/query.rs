@@ -58,18 +58,18 @@ mod tests {
 
     #[tokio::test]
 	async fn ev_stream_test() -> anyhow::Result<()> {
-        const COUNT: Attr = Attr("counter/count");
-        let schema = vec![COUNT];
+        let count = || Attr::from("counter/count");
+        let schema = vec![count()];
         let storage = MemStorage::new();
         let mut db = Db::new(storage, schema.clone()).await?;
         db = db
             .transact(vec![
-	            datom::add(ent(10), COUNT, dat(Val::from(10))),
-	            datom::add(ent(11), COUNT, dat(Val::from(11))),
+	            datom::add(ent(10), count(), dat(Val::from(10))),
+	            datom::add(ent(11), count(), dat(Val::from(11))),
             ])
             .await?;
 
-        let ev_stream = db.ev_stream(COUNT);
+        let ev_stream = db.ev_stream(count());
         let mut ev_vec = ev_stream.collect::<Vec<_>>().await;
         ev_vec.sort_by_key(|ev| ev.0);
         assert_eq!(vec![(10, Val::from(10)), (11, Val::from(11))], ev_vec);

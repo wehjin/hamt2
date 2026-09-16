@@ -30,9 +30,9 @@ impl Find for AttributeLoader {
 
     fn where_(&self) -> Vec<Atom> {
         vec![
-            atom(db::IDENT, [term(var("ein")), term(var("ident"))]),
+            atom(db::ident(), [term(var("ein")), term(var("ident"))]),
             atom(
-                db::CARDINALITY,
+                db::cardinality(),
                 [term(var("ein")), term(var("cardinality"))],
             ),
         ]

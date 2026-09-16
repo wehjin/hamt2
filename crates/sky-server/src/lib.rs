@@ -62,7 +62,6 @@ pub async fn process_socket_requests<In, Out>(
 mod tests {
     use crate::StorageService;
     use crate::{SocketRequest, SocketResponse, process_socket_requests};
-    use sky_types::db::Attr;
     use sky_types::trie::SlotBaseId;
     use tokio::sync::mpsc;
     use tokio::sync::mpsc::{Receiver, Sender};
@@ -72,8 +71,7 @@ mod tests {
 
     #[tokio::test]
     async fn process_socket_requests_works() {
-        const COUNT: Attr = Attr("Counter/count");
-        let storage = StorageService::start([COUNT]).await.unwrap();
+        let storage = StorageService::start(["Counter/count"]).await.unwrap();
         let (_task, request, mut response) = spawn_socket_task(storage);
 
         // Connect
