@@ -4,14 +4,20 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-tokio.workspace = true
-thiserror.workspace = true
-sky-db.workspace = true
+serde = { version = "1.0.229", features = ["derive"] }
 sky-types.workspace = true
 sky-trie.workspace = true
-log = "0.4.34"
-serde = { version = "1.0.229", features = ["derive"] }
-futures-util = "0.3.34"
+
+tokio = { workspace = true, optional = true }
+thiserror = { workspace = true, optional = true }
+sky-db = { workspace = true, optional = true }
+log = { version = "0.4.34", optional = true }
+futures-util = { version = "0.3.34", optional = true }
+
+[dev-dependencies]
 tokio-stream = "0.1.19"
 tokio-util = "0.7.19"
 
+[features]
+default = ["server"]
+server = ["dep:tokio", "dep:thiserror", "dep:sky-db", "dep:log", "dep:futures-util"]

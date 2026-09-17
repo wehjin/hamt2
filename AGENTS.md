@@ -3,6 +3,7 @@
 Datomic-like database library written in Rust (edition 2024), built on persistent
 Hash Array Mapped Tries (HAMT). A Cargo workspace: `sky-db` (the Datomic-style db, `crates/sky-db`) built on `sky-trie`
 (the HAMT, `crates/sky-trie`) and `universal-hash` (the hashing primitive, `crates/universal-hash`); plus
+`sky-server` (socket server, `crates/sky-server`) and
 `skybase` (the Leptos web app, which contains its database layer: `skybase::db`). No CI, no README.
 
 ## Scope & Boundaries
@@ -136,7 +137,15 @@ crate::trie::prelude::*` internally. sky-db does not re-export any storage types
      `T: TrieQuery`, so it works for `Trie` and `TrieReader` alike; it never needs
      `storage()`. Helpers that yield sub-tries return `T::Subtrie`. Unit tests are `#[cfg(test)]` beside the code (e.g. in
      `query.rs`, `find/mod.rs`, `crate_services/datalog/mod.rs`, `crate_services/val_table.rs`); integration tests in
-     `crates/sky-db/tests/` (cardinality, db_reader, file_db, handle, mem_db, multiple_entities).
+      `crates/sky-db/tests/` (cardinality, db_reader, file_db, handle, mem_db, multiple_entities).
+4. `crates/sky-server` — socket server over sky-db. `shared/` — the wire protocol (`SocketRequest`/`SocketResponse`,
+   serde-only, no tokio/sky-db); `server/` — `process_socket_requests` (turns `SocketRequest`s from a `Stream` into
+   `SocketResponse`s on a `Sink`) + `server/storage` (`StorageService`: `subscribe()`,
+   `read_storage_head()`, `read_slot_base()`, `transact()`; runs `Db` in a worker task, one-shot answers per
+   request, and a `broadcast` channel that carries only `StorageBroadcastEvent::NewHead` — failures are logged by
+   the worker and never broadcast; a failed transact kills the worker (db lost) and the unanswered one-shot maps
+   to `StorageServiceError::TransactFailed`). The `server` module is behind the `server` cargo feature (default
+   on); disabling it leaves only `shared` for client-side consumers.
 
 ## Skybase frontend layout
 
