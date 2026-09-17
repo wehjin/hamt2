@@ -4,26 +4,18 @@ mod server;
 #[cfg(feature = "ssr")]
 #[tokio::main]
 async fn main() {
-    use clap::{Parser, Subcommand};
+    use clap::Parser;
 
     #[derive(Parser)]
-    #[command(name = "skybase")]
-    pub struct Cli {
-        #[command(subcommand)]
-        pub command: Command,
-    }
+    #[command(
+        name = "skybase",
+        version = "0.1",
+        about = "A tool for managing sky-db."
+    )]
+    pub struct Cli {}
 
-    #[derive(Subcommand)]
-    pub enum Command {
-        Init,
-        #[cfg(feature = "ssr")]
-        Serve,
-    }
-    let cli = Cli::parse();
-    match cli.command {
-        Command::Init => println!("init"),
-        Command::Serve => server::serve().await,
-    }
+    let _cli = Cli::parse();
+    server::serve().await;
 }
 
 #[cfg(not(feature = "ssr"))]
