@@ -163,14 +163,14 @@ async fn handle_storage(
 
 #[cfg(test)]
 mod tests {
-    use crate::storage::StorageService;
-    use crate::storage::types::StorageBroadcastEvent;
-    use sky_trie::types::StorageHead;
-    use sky_types::db::{Attr, datom};
-    use sky_types::trie::{MapBase, SlotBaseId};
+	use crate::server::storage::StorageService;
+	use crate::server::storage::types::StorageBroadcastEvent;
+	use sky_trie::types::StorageHead;
+	use sky_types::db::{Attr, datom};
+	use sky_types::trie::{MapBase, SlotBaseId};
 
-    #[tokio::test]
-    async fn it_works() {
+	#[tokio::test]
+	async fn it_works() {
         let attr = || Attr::from("Counter/count");
         let db_spec = [attr()];
         let storage = StorageService::start(db_spec).await.unwrap();
