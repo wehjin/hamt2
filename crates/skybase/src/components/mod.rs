@@ -2,6 +2,8 @@
 
 use leptos::prelude::*;
 
+pub mod wss_sandbox;
+
 #[component]
 pub fn TitleAndDelete(title: String) -> impl IntoView {
     view! {

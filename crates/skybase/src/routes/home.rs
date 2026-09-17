@@ -1,6 +1,7 @@
 use crate::api::version::get_version;
 use crate::api::{get_entities_report, get_entity_attributes_report, get_value_report};
 use crate::components::TitleAndDelete;
+use crate::components::wss_sandbox::WebSocketSandbox;
 use leptos::prelude::*;
 use sky_types::db::{Attr, Ein, Val};
 
@@ -18,6 +19,9 @@ pub fn HomePage() -> impl IntoView {
                     {move || Suspend::new(async move { version.await })}
                 </p>
             </Suspense>
+            <section class="section">
+                <WebSocketSandbox/>
+            </section>
             <section class="section">
                 <h1 class="title is-2">"Browse Entities"</h1>
             </section>
