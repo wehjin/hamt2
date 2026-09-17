@@ -9,7 +9,7 @@ pub struct ValueReport {
 }
 
 #[server]
-pub async fn get_value_report(ein: Ein, attr: Attr) -> Result<ValueReport, ServerFnError> {
+pub async fn get_value_report(_ein: Ein, _attr: Attr) -> Result<ValueReport, ServerFnError> {
     let value: Vec<Val> = vec![];
     let Some(val) = value.first() else {
         return Ok(ValueReport { val: None });

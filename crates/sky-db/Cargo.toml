@@ -9,7 +9,6 @@ thiserror.workspace = true
 serde.workspace = true
 futures.workspace = true
 async-stream.workspace = true
-log = "0.4.34"
 sky-trie.workspace = true
 sky-types.workspace = true
 universal-hash.workspace = true

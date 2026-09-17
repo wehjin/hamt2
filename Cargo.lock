@@ -2285,7 +2285,6 @@ dependencies = [
  "anyhow",
  "async-stream",
  "futures",
- "log",
  "serde",
  "sky-trie",
  "sky-types",

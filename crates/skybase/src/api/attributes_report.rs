@@ -9,7 +9,7 @@ pub struct AttributesReport {
 }
 
 #[server]
-pub async fn get_entity_attributes_report(ein: Ein) -> Result<AttributesReport, ServerFnError> {
+pub async fn get_entity_attributes_report(_ein: Ein) -> Result<AttributesReport, ServerFnError> {
     use sky_types::db::Attr;
     let attrs: Vec<Attr> = vec![];
     let attr_names = attrs.into_iter().map(|it| it.to_name()).collect::<Vec<_>>();
