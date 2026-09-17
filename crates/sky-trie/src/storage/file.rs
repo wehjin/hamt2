@@ -25,163 +25,14 @@ use std::sync::{Arc, RwLock};
 ///
 /// Base id [`SlotBaseId::ZERO`] is the reserved empty base and is never written to disk.
 ///
-/// Clones share the same inner state (`Arc<RwLock<Inner>>`), so appends are
+/// Clones share the same inner state (`Arc<RwLock<FileReadStorage>>`), so appends are
 /// serialized through a shared `max_id` counter and clones never assign
 /// duplicate ids or write stale state back to disk.
 #[derive(Debug, Clone)]
 pub struct FileStorage {
-    inner: Arc<RwLock<Inner>>,
-}
-
-#[derive(Debug)]
-struct Inner {
-    bases_dir: PathBuf,
+    inner: Arc<RwLock<FileReadStorage>>,
     max_id_path: PathBuf,
     root_path: PathBuf,
-    max_id: i32,
-    root: MapBase,
-}
-
-impl FileStorage {
-    const BASES_DIR: &'static str = "bases";
-    const MAX_ID_FILE: &'static str = "max_id";
-    const ROOT_FILE: &'static str = "root";
-
-    /// Creates a fresh empty storage in the given folder.
-    pub fn new(path: impl AsRef<Path>) -> Result<Self, std::io::Error> {
-        let root = path.as_ref();
-        let inner = Inner {
-            bases_dir: root.join(Self::BASES_DIR),
-            max_id_path: root.join(Self::MAX_ID_FILE),
-            root_path: root.join(Self::ROOT_FILE),
-            max_id: 0,
-            root: MapBase::empty(),
-        };
-        std::fs::create_dir_all(&inner.bases_dir)?;
-        inner.write_max_id()?;
-        inner.write_root_with(&MapBase::empty()).map_err(|e| match e {
-            WriteStorageError::Io(_, e) => e,
-            WriteStorageError::Encode(_, e) => std::io::Error::new(ErrorKind::InvalidData, e),
-        })?;
-        Ok(Self {
-            inner: Arc::new(RwLock::new(inner)),
-        })
-    }
-
-    /// Opens an existing storage. A missing folder or max id file is treated
-    /// as an empty storage.
-    pub fn load(path: impl AsRef<Path>) -> Result<Self, std::io::Error> {
-        let root = path.as_ref();
-        let inner = Inner {
-            bases_dir: root.join(Self::BASES_DIR),
-            max_id_path: root.join(Self::MAX_ID_FILE),
-            root_path: root.join(Self::ROOT_FILE),
-            max_id: 0,
-            root: MapBase::empty(),
-        };
-        std::fs::create_dir_all(&inner.bases_dir)?;
-        let max_id = match std::fs::read(&inner.max_id_path) {
-            Ok(bytes) => postcard::from_bytes::<i32>(&bytes)
-                .map_err(|e| std::io::Error::new(ErrorKind::InvalidData, e))?,
-            Err(e) if e.kind() == ErrorKind::NotFound => 0,
-            Err(e) => return Err(e),
-        };
-        let root = match inner.read_root() {
-            Ok(root) => root,
-            Err(ReadStorageError::Io(_, e)) => return Err(e),
-            Err(ReadStorageError::Decode(_, e)) => {
-                return Err(std::io::Error::new(ErrorKind::InvalidData, e));
-            }
-        };
-        let inner = Inner { max_id, root, ..inner };
-        Ok(Self {
-            inner: Arc::new(RwLock::new(inner)),
-        })
-    }
-}
-
-/// The two-level subfolder layout of a base file under a `bases` dir.
-fn base_path(bases_dir: &Path, id: SlotBaseId) -> PathBuf {
-    let level_1 = id.0 >> 8;
-    let level_2 = id.0 & 0xff;
-    bases_dir
-        .join(format!("{:04x}", level_1))
-        .join(format!("{:04x}", level_2))
-        .join(format!("{:08x}.postcard", id.0))
-}
-
-impl Inner {
-    fn write_max_id(&self) -> Result<(), std::io::Error> {
-        let bytes = postcard::to_allocvec(&self.max_id)
-            .map_err(|e| std::io::Error::new(ErrorKind::InvalidData, e))?;
-        std::fs::write(&self.max_id_path, bytes)
-    }
-
-    fn base_path(&self, id: SlotBaseId) -> PathBuf {
-        base_path(&self.bases_dir, id)
-    }
-
-    fn write_max_id_with(&self, id: SlotBaseId) -> Result<(), WriteStorageError> {
-        let bytes = postcard::to_allocvec(&id.0).map_err(|e| WriteStorageError::Encode(id, e))?;
-        std::fs::write(&self.max_id_path, bytes).map_err(|e| WriteStorageError::Io(id, e))
-    }
-
-    fn read_root(&self) -> Result<MapBase, ReadStorageError> {
-        match std::fs::read(&self.root_path) {
-            Ok(bytes) => {
-                let root = postcard::from_bytes::<MapBase>(&bytes)
-                    .map_err(|e| ReadStorageError::Decode(SlotBaseId::ZERO, e))?;
-                Ok(root)
-            }
-            // A missing root file is treated as an empty root.
-            Err(e) if e.kind() == ErrorKind::NotFound => Ok(MapBase::empty()),
-            Err(e) => Err(ReadStorageError::Io(SlotBaseId::ZERO, e)),
-        }
-    }
-
-    fn write_root_with(&self, root: &MapBase) -> Result<(), WriteStorageError> {
-        let bytes =
-            postcard::to_allocvec(root).map_err(|e| WriteStorageError::Encode(SlotBaseId::ZERO, e))?;
-        std::fs::write(&self.root_path, bytes).map_err(|e| WriteStorageError::Io(SlotBaseId::ZERO, e))
-    }
-}
-
-impl ReadStorage for FileStorage {
-    type Snapshot = FileReadStorage;
-
-    fn snapshot(&self) -> Self::Snapshot {
-        let inner = self.inner.read().expect("storage poisoned");
-        FileReadStorage {
-            bases_dir: inner.bases_dir.clone(),
-            max_id: inner.max_id,
-            root: inner.root,
-        }
-    }
-
-    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
-        if id.0 == 0 {
-            return Ok(SlotBase::new());
-        }
-        let inner = self.inner.read().expect("storage poisoned");
-        assert!(
-            id.0 <= inner.max_id,
-            "base id {id} has not been written"
-        );
-        let path = inner.base_path(id);
-        let bytes = std::fs::read(&path).map_err(|e| ReadStorageError::Io(id, e))?;
-        let base = postcard::from_bytes::<SlotBase>(&bytes)
-            .map_err(|e| ReadStorageError::Decode(id, e))?;
-        Ok(base)
-    }
-
-    fn max_id(&self) -> SlotBaseId {
-        let inner = self.inner.read().expect("storage poisoned");
-        SlotBaseId(inner.max_id)
-    }
-
-    fn read_root(&self) -> MapBase {
-        self.inner.read().expect("storage poisoned").root
-    }
 }
 
 /// A read-only, immutable view of a [`FileStorage`] taken at
@@ -199,8 +50,15 @@ pub struct FileReadStorage {
 }
 
 impl FileReadStorage {
-    fn base_path(&self, id: SlotBaseId) -> PathBuf {
-        base_path(&self.bases_dir, id)
+    /// Reads and decodes the base file for `id`, without checking `max_id`.
+    /// Base id [`SlotBaseId::ZERO`] reads back the empty base.
+    fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
+        if id.0 == 0 {
+            return Ok(SlotBase::new());
+        }
+        let path = base_path(&self.bases_dir, id);
+        let bytes = std::fs::read(&path).map_err(|e| ReadStorageError::Io(id, e))?;
+        postcard::from_bytes::<SlotBase>(&bytes).map_err(|e| ReadStorageError::Decode(id, e))
     }
 }
 
@@ -212,18 +70,11 @@ impl ReadStorage for FileReadStorage {
     }
 
     async fn read(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
-        if id.0 == 0 {
-            return Ok(SlotBase::new());
-        }
         assert!(
             id.0 <= self.max_id,
             "base id {id} is beyond this snapshot's max_id"
         );
-        let path = self.base_path(id);
-        let bytes = std::fs::read(&path).map_err(|e| ReadStorageError::Io(id, e))?;
-        let base = postcard::from_bytes::<SlotBase>(&bytes)
-            .map_err(|e| ReadStorageError::Decode(id, e))?;
-        Ok(base)
+        self.read_base(id)
     }
 
     fn max_id(&self) -> SlotBaseId {
@@ -232,6 +83,126 @@ impl ReadStorage for FileReadStorage {
 
     fn read_root(&self) -> MapBase {
         self.root
+    }
+}
+
+impl FileStorage {
+    const BASES_DIR: &'static str = "bases";
+    const MAX_ID_FILE: &'static str = "max_id";
+    const ROOT_FILE: &'static str = "root";
+
+    /// Creates a fresh empty storage in the given folder.
+    pub fn new(path: impl AsRef<Path>) -> Result<Self, std::io::Error> {
+        let root = path.as_ref();
+        let bases_dir = root.join(Self::BASES_DIR);
+        let max_id_path = root.join(Self::MAX_ID_FILE);
+        let root_path = root.join(Self::ROOT_FILE);
+        std::fs::create_dir_all(&bases_dir)?;
+        write_max_id_file(&max_id_path, SlotBaseId::ZERO).map_err(write_to_io)?;
+        write_root_file(&root_path, &MapBase::empty()).map_err(write_to_io)?;
+        let inner = FileReadStorage {
+            bases_dir,
+            max_id: 0,
+            root: MapBase::empty(),
+        };
+        Ok(Self {
+            inner: Arc::new(RwLock::new(inner)),
+            max_id_path,
+            root_path,
+        })
+    }
+
+    /// Opens an existing storage. A missing folder or max id file is treated
+    /// as an empty storage.
+    pub fn load(path: impl AsRef<Path>) -> Result<Self, std::io::Error> {
+        let root = path.as_ref();
+        let bases_dir = root.join(Self::BASES_DIR);
+        let max_id_path = root.join(Self::MAX_ID_FILE);
+        let root_path = root.join(Self::ROOT_FILE);
+        std::fs::create_dir_all(&bases_dir)?;
+        let max_id = match std::fs::read(&max_id_path) {
+            Ok(bytes) => postcard::from_bytes::<i32>(&bytes)
+                .map_err(|e| std::io::Error::new(ErrorKind::InvalidData, e))?,
+            Err(e) if e.kind() == ErrorKind::NotFound => 0,
+            Err(e) => return Err(e),
+        };
+        let root = read_root_file(&root_path).map_err(read_to_io)?;
+        let inner = FileReadStorage { bases_dir, max_id, root };
+        Ok(Self {
+            inner: Arc::new(RwLock::new(inner)),
+            max_id_path,
+            root_path,
+        })
+    }
+}
+
+/// The two-level subfolder layout of a base file under a `bases` dir.
+fn base_path(bases_dir: &Path, id: SlotBaseId) -> PathBuf {
+    let level_1 = id.0 >> 8;
+    let level_2 = id.0 & 0xff;
+    bases_dir
+        .join(format!("{:04x}", level_1))
+        .join(format!("{:04x}", level_2))
+        .join(format!("{:08x}.postcard", id.0))
+}
+
+/// Writes the highest written base id to the `max_id` file.
+fn write_max_id_file(path: &Path, id: SlotBaseId) -> Result<(), WriteStorageError> {
+    let bytes = postcard::to_allocvec(&id.0).map_err(|e| WriteStorageError::Encode(id, e))?;
+    std::fs::write(path, bytes).map_err(|e| WriteStorageError::Io(id, e))
+}
+
+/// Reads the committed root from the `root` file. A missing root file is
+/// treated as an empty root.
+fn read_root_file(path: &Path) -> Result<MapBase, ReadStorageError> {
+    match std::fs::read(path) {
+        Ok(bytes) => postcard::from_bytes::<MapBase>(&bytes)
+            .map_err(|e| ReadStorageError::Decode(SlotBaseId::ZERO, e)),
+        Err(e) if e.kind() == ErrorKind::NotFound => Ok(MapBase::empty()),
+        Err(e) => Err(ReadStorageError::Io(SlotBaseId::ZERO, e)),
+    }
+}
+
+/// Writes the committed root to the `root` file.
+fn write_root_file(path: &Path, root: &MapBase) -> Result<(), WriteStorageError> {
+    let bytes =
+        postcard::to_allocvec(root).map_err(|e| WriteStorageError::Encode(SlotBaseId::ZERO, e))?;
+    std::fs::write(path, bytes).map_err(|e| WriteStorageError::Io(SlotBaseId::ZERO, e))
+}
+
+fn write_to_io(e: WriteStorageError) -> std::io::Error {
+    match e {
+        WriteStorageError::Io(_, e) => e,
+        WriteStorageError::Encode(_, e) => std::io::Error::new(ErrorKind::InvalidData, e),
+    }
+}
+
+fn read_to_io(e: ReadStorageError) -> std::io::Error {
+    match e {
+        ReadStorageError::Io(_, e) => e,
+        ReadStorageError::Decode(_, e) => std::io::Error::new(ErrorKind::InvalidData, e),
+    }
+}
+
+impl ReadStorage for FileStorage {
+    type Snapshot = FileReadStorage;
+
+    fn snapshot(&self) -> Self::Snapshot {
+        self.inner.read().expect("storage poisoned").snapshot()
+    }
+
+    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
+        let inner = self.inner.read().expect("storage poisoned");
+        assert!(id.0 <= inner.max_id, "base id {id} has not been written");
+        inner.read_base(id)
+    }
+
+    fn max_id(&self) -> SlotBaseId {
+        self.inner.read().expect("storage poisoned").max_id()
+    }
+
+    fn read_root(&self) -> MapBase {
+        self.inner.read().expect("storage poisoned").read_root()
     }
 }
 
@@ -251,14 +222,14 @@ impl ReadWriteStorage for FileStorage {
             Ok(bytes) => bytes,
             Err(e) => return future::ready(Err(WriteStorageError::Encode(id, e))),
         };
-        let path = inner.base_path(id);
+        let path = base_path(&inner.bases_dir, id);
         if let Err(e) = std::fs::create_dir_all(path.parent().expect("base path has parent")) {
             return future::ready(Err(WriteStorageError::Io(id, e)));
         }
         if let Err(e) = std::fs::write(&path, bytes) {
             return future::ready(Err(WriteStorageError::Io(id, e)));
         }
-        if let Err(e) = inner.write_max_id_with(id) {
+        if let Err(e) = write_max_id_file(&self.max_id_path, id) {
             return future::ready(Err(e));
         }
         inner.max_id = id.0;
@@ -267,7 +238,7 @@ impl ReadWriteStorage for FileStorage {
 
     fn write_root(&mut self, root: MapBase) -> impl Future<Output = Result<(), WriteStorageError>> {
         let mut inner = self.inner.write().expect("storage poisoned");
-        match inner.write_root_with(&root) {
+        match write_root_file(&self.root_path, &root) {
             Ok(()) => {
                 inner.root = root;
                 future::ready(Ok(()))
