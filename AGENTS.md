@@ -140,12 +140,16 @@ crate::trie::prelude::*` internally. sky-db does not re-export any storage types
       `crates/sky-db/tests/` (cardinality, db_reader, file_db, handle, mem_db, multiple_entities).
 4. `crates/sky-server` — socket server over sky-db. `shared/` — the wire protocol (`SocketRequest`/`SocketResponse`,
    serde-only, no tokio/sky-db); `server/` — `process_socket_requests` (turns `SocketRequest`s from a `Stream` into
-   `SocketResponse`s on a `Sink`) + `server/storage` (`StorageService`: `subscribe()`,
+   `SocketResponse`s on a `Sink`; a closed request stream ends the connection task) + `server/storage`
+   (`StorageService`: `subscribe()`,
    `read_storage_head()`, `read_slot_base()`, `transact()`; runs `Db` in a worker task, one-shot answers per
    request, and a `broadcast` channel that carries only `StorageBroadcastEvent::NewHead` — failures are logged by
    the worker and never broadcast; a failed transact kills the worker (db lost) and the unanswered one-shot maps
    to `StorageServiceError::TransactFailed`). The `server` module is behind the `server` cargo feature (default
-   on); disabling it leaves only `shared` for client-side consumers.
+   on); disabling it leaves only `shared` for client-side consumers. The optional `axum-ws` feature (implies
+   `server`) adds `server/axum_ws` — websocket transport glue (`serve_websocket(socket, storage)`: JSON text
+   frames of `SocketRequest`/`SocketResponse` routed through `process_socket_requests`); hosts own the axum route
+   registration.
 
 ## Skybase frontend layout
 
@@ -160,7 +164,10 @@ Within `crates/skybase/src`:
   server impl under `ssr`). Keep them out of components.
 - `state/` — app-wide shared context: signals/resources and the types provided with `provide_context` / read with
   `expect_context`.
-- `app.rs` — the `App` root (Router + `shell`); `server.rs` — the axum `serve()` glue (ssr-only).
+- `app.rs` — the `App` root (Router + `shell`); `server/mod.rs` — the axum `serve()` glue (ssr-only): mounts the
+  leptos routes + a `/ws` route (`sky-server`'s `axum_ws::serve_websocket` over a `StorageService` carried in an
+  axum `Extension`). Note: the websocket `StorageService` runs its own db for now — the `DbHandle` db in
+  `skybase::db` is temporary and will be removed.
 
 ## Key gotchas
 

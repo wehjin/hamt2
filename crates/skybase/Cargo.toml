@@ -15,7 +15,7 @@ leptos = "0.8.20"
 leptos_router = "0.8.15"
 leptos_meta = "0.8.6"
 clap = { version = "4.6.6", features = ["derive"] }
-axum = { version = "0.8", optional = true }
+axum = { version = "0.8", features = ["ws"], optional = true }
 leptos_axum = { version = "0.8.10", optional = true }
 console_error_panic_hook = { version = "0.1", optional = true }
 wasm-bindgen = { version = "0.2", optional = true }
@@ -25,6 +25,8 @@ sky-db.workspace = true
 serde.workspace = true
 sky-types.workspace = true
 sky-trie.workspace = true
+sky-server = { workspace = true, features = ["axum-ws"], optional = true }
+serde_json = { workspace = true, optional = true }
 
 [features]
 hydrate = [
@@ -40,6 +42,8 @@ ssr = [
     "dep:leptos_axum",
     "dep:anyhow",
     "dep:tokio",
+    "dep:sky-server",
+    "dep:serde_json",
 ]
 
 [package.metadata.leptos]

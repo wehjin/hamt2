@@ -3,6 +3,8 @@ use crate::shared::{SocketRequest, SocketResponse};
 use futures_util::{Sink, SinkExt, Stream, StreamExt};
 
 pub mod storage;
+#[cfg(feature = "axum-ws")]
+pub mod axum_ws;
 
 /// Processes socket requests in a loop.
 ///
@@ -19,23 +21,25 @@ pub async fn process_socket_requests<In, Out>(
     let mut broadcast = storage.subscribe();
     loop {
         tokio::select! {
-            Some(request) = incoming.next() => {
+            request = incoming.next() => {
                 match request {
-                    SocketRequest::Connect => {
+                    Some(SocketRequest::Connect) => {
                         let head  = storage.read_storage_head().await;
                         let _ = outgoing.send(SocketResponse::StorageStatus(head)).await;
                     }
-                    SocketRequest::ReadSlotBase(slotbase_id) => {
+                    Some(SocketRequest::ReadSlotBase(slotbase_id)) => {
                         let slot_base = storage.read_slot_base(slotbase_id).await;
                         let _ = outgoing.send(SocketResponse::SlotBase(slotbase_id, slot_base)).await;
                     }
-                    SocketRequest::Transact(datoms) => {
+                    Some(SocketRequest::Transact(datoms)) => {
                         // Failures are logged by the storage task and never
                         // reach the socket protocol (yet).
                         if let Ok(head) = storage.transact(datoms).await {
                             let _ = outgoing.send(SocketResponse::TransactResult(head)).await;
                         }
                     }
+                    // The client disconnected: end the connection task.
+                    None => break,
                 }
             }
             Ok(event) = broadcast.recv() => {

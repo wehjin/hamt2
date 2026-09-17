@@ -13,6 +13,8 @@ thiserror = { workspace = true, optional = true }
 sky-db = { workspace = true, optional = true }
 log = { version = "0.4.34", optional = true }
 futures-util = { version = "0.3.34", optional = true }
+axum = { version = "0.8", features = ["ws"], optional = true }
+serde_json = { workspace = true, optional = true }
 
 [dev-dependencies]
 tokio-stream = "0.1.19"
@@ -21,3 +23,4 @@ tokio-util = "0.7.19"
 [features]
 default = ["server"]
 server = ["dep:tokio", "dep:thiserror", "dep:sky-db", "dep:log", "dep:futures-util"]
+axum-ws = ["server", "dep:axum", "dep:serde_json"]

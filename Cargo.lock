@@ -2079,9 +2079,11 @@ dependencies = [
 name = "sky-server"
 version = "0.1.0"
 dependencies = [
+ "axum",
  "futures-util",
  "log",
  "serde",
+ "serde_json",
  "sky-db",
  "sky-trie",
  "sky-types",
@@ -2130,7 +2132,9 @@ dependencies = [
  "leptos_meta",
  "leptos_router",
  "serde",
+ "serde_json",
  "sky-db",
+ "sky-server",
  "sky-trie",
  "sky-types",
  "tokio",
