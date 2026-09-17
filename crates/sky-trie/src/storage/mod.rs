@@ -36,12 +36,13 @@ pub trait ReadStorage: Sync {
     fn max_id(&self) -> SlotBaseId;
 
     /// Reads the committed root map base, returning [`MapBase::empty()`] when
-    /// no root has been committed yet.
-    async fn read_root(&self) -> Result<MapBase, ReadStorageError>;
+    /// no root has been committed yet. Every implementation holds the root in
+    /// memory, so this never touches the backing medium.
+    fn read_root(&self) -> MapBase;
 
-    async fn get_head(&self) -> StorageHead {
+    fn get_head(&self) -> StorageHead {
         let max_id = self.max_id();
-        let root = self.read_root().await.expect("storage reads root");
+        let root = self.read_root();
         StorageHead { max_id, root }
     }
 }
@@ -91,10 +92,7 @@ mod tests {
     #[tokio::test]
     async fn empty_storage_root_is_empty() {
         let storage = MemStorage::new();
-        assert_eq!(
-            MapBase::empty(),
-            storage.read_root().await.expect("read root")
-        );
+        assert_eq!(MapBase::empty(), storage.read_root());
     }
 
     #[tokio::test]
@@ -103,8 +101,8 @@ mod tests {
         let root = one_kv(HashKey::new(7), TrieValue::U32(7), &mut storage).await;
         storage.write_root(root).await.expect("write root");
         let view = storage.snapshot();
-        assert_eq!(root, storage.read_root().await.expect("read root"));
-        assert_eq!(root, view.read_root().await.expect("read root"));
+        assert_eq!(root, storage.read_root());
+        assert_eq!(root, view.read_root());
     }
 
     #[tokio::test]

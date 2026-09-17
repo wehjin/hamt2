@@ -174,9 +174,7 @@ mod tests {
 
 	#[tokio::test]
     async fn insert_and_query() {
-        let mut trie = Trie::connect(MemStorage::new())
-            .await
-            .expect("Failed to connect to MemBaseStorage");
+        let mut trie = Trie::connect(MemStorage::new());
         let mut vids = Vec::new();
         let mut vals = Vec::new();
         for i in 0..100 {
@@ -194,9 +192,7 @@ mod tests {
 
     #[tokio::test]
     async fn negative_numbers() {
-        let trie = Trie::connect(MemStorage::new())
-            .await
-            .expect("Failed to connect to MemBaseStorage");
+        let trie = Trie::connect(MemStorage::new());
         let (trie, vid) = insert(trie, val(-1)).await.expect("Failed to insert");
         let table_val = query(&trie, vid).await.expect("Failed to query");
         assert_eq!(Some(val(-1)), table_val);
@@ -204,9 +200,7 @@ mod tests {
 
     #[tokio::test]
     async fn same_value_inserted_twice() {
-        let trie = Trie::connect(MemStorage::new())
-            .await
-            .expect("Failed to connect to MemBaseStorage");
+        let trie = Trie::connect(MemStorage::new());
 
         let (trie, vid) = insert(trie, val(101)).await.expect("Failed to insert");
         let (trie, vid2) = insert(trie, val(101)).await.expect("Failed to insert");
@@ -217,9 +211,7 @@ mod tests {
 
     #[tokio::test]
     async fn string_insert_and_query() {
-        let trie = Trie::connect(MemStorage::new())
-            .await
-            .expect("Failed to connect to MemBaseStorage");
+        let trie = Trie::connect(MemStorage::new());
         let (trie, vid) = insert(trie, Val::String("hello".into()))
             .await
             .expect("Failed to insert");

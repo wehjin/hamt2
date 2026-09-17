@@ -42,11 +42,13 @@ crate::trie::prelude::*` internally. sky-db does not re-export any storage types
    dependency, referenced via the extern prelude (`universal_hash::hash`); not re-exported.
 2. `crates/sky-trie` — the HAMT.
    - `storage/` — persistence abstraction. `ReadStorage: Sync`
-     (`read`/`max_id`/`read_root`/`snapshot` + `type Snapshot`, errors `ReadStorageError` (Io/Decode); `read`
-     returns the empty base for `SlotBaseId::ZERO` and panics on unwritten ids (writer storages) or ids beyond a
-     snapshot's captured `max_id`; `max_id`
+     (`read`/`max_id`/`read_root`/`snapshot`/`get_head` + `type Snapshot`, errors `ReadStorageError` (Io/Decode);
+     `read` returns the empty base for `SlotBaseId::ZERO` and panics on unwritten ids (writer storages) or ids
+     beyond a snapshot's captured `max_id`; `max_id`
      returns the highest id and counts the reserved empty base, so an empty storage returns `SlotBaseId::ZERO`;
-     `read_root` returns the committed root, defaulting to `MapBase::empty()` when none is committed; every
+     `read_root` (sync, infallible) returns the committed root, defaulting to `MapBase::empty()` when none is
+     committed — every implementation holds the root in memory, even file storage, which reads it once at
+     `FileStorage::load`; `get_head` (sync) = `StorageHead { max_id, root }`; every
      storage is snapshottable — writers capture their read-only snapshot, read-only types use `Self` via `Clone`)
      and `ReadWriteStorage`
      (`next_id`/`append`/`write_root`, errors `WriteStorageError` (Io/Encode)).
@@ -60,7 +62,7 @@ crate::trie::prelude::*` internally. sky-db does not re-export any storage types
      slots), `SlotBase { slots: Vec<Slot> }`, `Slot::KeyValue(i32, TrieValue) | MapBase(MapBase)`,
      `TrieValue::U32(u32) | SubTrie(MapBase)`, plus `HashKey`/`DeepKey`. `SlotBaseId::ZERO` is the reserved empty
      base.
-    - `Trie<S: ReadWriteStorage>` — the persistent map: `connect(storage)` (`-> ReadStorageError`) loads the
+    - `Trie<S: ReadWriteStorage>` — the persistent map: `connect(storage)` (sync, infallible) loads the
       persisted root, mutations (`insert`, `deep_insert`) consume and return a new `Trie` (`-> TrieInsertError`),
       `.commit()` (`-> WriteStorageError`) writes the root, `.view()` gives a `TrieReader<S::Snapshot>` snapshot.
      Queries live on
@@ -115,15 +117,16 @@ crate::trie::prelude::*` internally. sky-db does not re-export any storage types
      (bytes -> (`u32_subkey`, u32) iterator) / `Read` (per-u32 trie reads -> bytes)).
    - `src/error/` — `QueryError` (`Anyhow`/`SerdeJson`/`Io`/`Utf8`/`SerdeError`/`Trie(TrieQueryError)`, doubles as a
      `serde::de::Error`), `TransactError` (`Anyhow`/`SerdeJson`/`Query(QueryError)`/`TrieStorageRead`/
-     `TrieStorageWrite`/`Trie(TrieWriteError)`/`HighBitInValue`/`NoSpaceInValueTable`), `LoadError` (`QueryError`/
-     `TrieStorageRead`/`UnknownAttr`). Re-exported at the crate root.
+     `TrieStorageWrite`/`Trie(TrieWriteError)`/`HighBitInValue`/`NoSpaceInValueTable`), `LoadError`
+     (`UnknownAttr`). Re-exported at the crate root.
    - `src/find/` — the `Find` trait (`select()` + `where_() -> Vec<Atom>` + `process(FindResult)`; default `apply`
      runs `db_trie::find`; `FindResult` = `Vec<HashMap<String, Val>>`, lives at `find/types/find_result.rs`).
      Impls: `all_eins`,
      `attrs_of_ein`, `binds_for_attr`, `eins_with_attr`, `vals_in_slot`; each compiles to a datalog `rule` headed by
      `db/query`.
    - `src/query.rs` — `DbQuery` trait (`find`, `get`, `find_val`, `get_val`), implemented by `Db` and `DbReader`.
-   - `src/reader.rs` — `DbReader<S: ReadStorage>`: `DbReader::load(db)` *borrows* a `Db<T>` and builds an
+    - `src/reader.rs` — `DbReader<S: ReadStorage>`: `DbReader::load(db)` (sync, infallible) *borrows* a `Db<T>` and
+      builds an
      independent snapshot via `T::Snapshot` (bound `T: ReadWriteStorage<Snapshot = S>`, so `T` stays inferable
      from the `Db`); the `Db` remains usable, and writes after `load` are invisible to the reader.
    - `src/transact.rs` — `Db::transact(self, datoms)` consumes and returns a new `Db`: resolves temps via `EntEid`,
@@ -206,8 +209,8 @@ Within `crates/skybase/src`:
   `Self::Subtrie`. `TrieReader` connects to a `ReadStorage` only (e.g. `storage.snapshot()`).
 - **Errors are layered.** sky-types owns the storage errors `ReadStorageError` (`Io`/`Decode`) and
   `WriteStorageError` (`Io`/`Encode`), plus the trie errors `TrieQueryError` (`SystemError`) and `TrieInsertError`
-  (`ExpectedMapBaseAtKey`/`Query`); sky-db's `ConnectError` (`Query`/`Transact`/`TrieStorageRead`/
-  `TrieStorageWrite`) and `LoadError` (`TrieStorageRead`/`UnknownAttr`) embed them, and `QueryError`/`TransactError`
+   (`ExpectedMapBaseAtKey`/`Query`); sky-db's `ConnectError` (`Query`/`Transact`/
+   `TrieStorageWrite`) and `LoadError` (`UnknownAttr`) embed them, and `QueryError`/`TransactError`
   (the latter embedding `QueryError`/`ReadStorageError`/`WriteStorageError`/`TrieInsertError`/`NoSpaceInValueTable`)
   live in `sky_types::db`, so `?` chains across crates work through `From` impls (`use crate::trie::prelude::*`
   brings the trie error types in scope).

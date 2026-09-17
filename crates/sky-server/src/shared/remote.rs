@@ -133,8 +133,8 @@ impl<T: SpawnLocal> ReadStorage for RemoteStorage<T> {
         self.inner.max_id()
     }
 
-    async fn read_root(&self) -> Result<MapBase, ReadStorageError> {
-        self.inner.read_root().await
+    fn read_root(&self) -> MapBase {
+        self.inner.read_root()
     }
 }
 
@@ -169,8 +169,8 @@ impl<T: SpawnLocal> ReadStorage for RemoteReadStorage<T> {
         self.head.max_id
     }
 
-    async fn read_root(&self) -> Result<MapBase, ReadStorageError> {
-        Ok(self.head.root.clone())
+    fn read_root(&self) -> MapBase {
+        self.head.root
     }
 }
 

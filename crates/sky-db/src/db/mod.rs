@@ -21,8 +21,8 @@ pub struct Db<S: ReadWriteStorage> {
 
 /// Production methods for Db
 impl<S: ReadWriteStorage> Db<S> {
-    pub async fn to_reader(&self) -> DbReader<S::Snapshot> {
-        DbReader::load(self).await.expect("load reader")
+    pub fn to_reader(&self) -> DbReader<S::Snapshot> {
+        DbReader::load(self)
     }
 }
 
@@ -32,7 +32,7 @@ impl<S: ReadWriteStorage> Db<S> {
         let db_spec = db_spec.into();
         let attr_specs = db_spec.as_ref();
         let (schema, trie) = {
-            let mut trie = Trie::connect(storage).await?;
+            let mut trie = Trie::connect(storage);
             let mut max_eid = MaxEid::read(&trie).await?;
             let mut schema = Schema::starter();
             {
@@ -57,7 +57,7 @@ impl<S: ReadWriteStorage> Db<S> {
         let attrs = attrs.as_ref();
         let starter_db = Db {
             schema: Schema::starter(),
-            trie: Trie::connect(storage).await?,
+            trie: Trie::connect(storage),
         };
         let db = Db {
             schema: Schema::load(attrs, &starter_db).await?,

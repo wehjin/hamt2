@@ -125,7 +125,7 @@ async fn handle_storage(
     while let Some(event) = from_clients.recv().await {
         match event {
             StorageRequest::ReadStorageHead(response) => {
-                let head = storage.get_head().await;
+                let head = storage.get_head();
                 if let Err(e) = response.send(head) {
                     log::error!("ReadTrieStatus response failed: {:?}", e);
                 }
@@ -149,7 +149,7 @@ async fn handle_storage(
                     return Err(StorageServiceError::TransactError(e));
                 }
                 Ok(new_db) => {
-                    let head = storage.get_head().await;
+                    let head = storage.get_head();
                     let broadcast = StorageBroadcastEvent::NewHead(head);
                     let _ = to_clients.send(broadcast);
                     let _ = response.send(head);

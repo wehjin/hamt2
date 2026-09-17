@@ -1,4 +1,3 @@
-use crate::LoadError;
 use crate::db::{Db, Schema};
 use crate::find::Find;
 use crate::query::DbQuery;
@@ -15,13 +14,13 @@ impl<S: ReadStorage> DbReader<S> {
     /// Produces a read-only snapshot of the given `db`. The `db` remains fully
     /// usable afterward; writes made after this call are invisible to the
     /// reader.
-    pub async fn load<T>(db: &Db<T>) -> Result<Self, LoadError>
+    pub fn load<T>(db: &Db<T>) -> Self
     where
         T: ReadWriteStorage<Snapshot = S>,
     {
         let schema = db.schema.clone();
-        let read_trie = TrieReader::connect(db.trie.storage().snapshot()).await?;
-        Ok(DbReader { schema, read_trie })
+        let read_trie = TrieReader::connect(db.trie.storage().snapshot());
+        DbReader { schema, read_trie }
     }
 }
 

@@ -39,6 +39,7 @@ struct Inner {
     max_id_path: PathBuf,
     root_path: PathBuf,
     max_id: i32,
+    root: MapBase,
 }
 
 impl FileStorage {
@@ -54,6 +55,7 @@ impl FileStorage {
             max_id_path: root.join(Self::MAX_ID_FILE),
             root_path: root.join(Self::ROOT_FILE),
             max_id: 0,
+            root: MapBase::empty(),
         };
         std::fs::create_dir_all(&inner.bases_dir)?;
         inner.write_max_id()?;
@@ -75,6 +77,7 @@ impl FileStorage {
             max_id_path: root.join(Self::MAX_ID_FILE),
             root_path: root.join(Self::ROOT_FILE),
             max_id: 0,
+            root: MapBase::empty(),
         };
         std::fs::create_dir_all(&inner.bases_dir)?;
         let max_id = match std::fs::read(&inner.max_id_path) {
@@ -83,7 +86,14 @@ impl FileStorage {
             Err(e) if e.kind() == ErrorKind::NotFound => 0,
             Err(e) => return Err(e),
         };
-        let inner = Inner { max_id, ..inner };
+        let root = match inner.read_root() {
+            Ok(root) => root,
+            Err(ReadStorageError::Io(_, e)) => return Err(e),
+            Err(ReadStorageError::Decode(_, e)) => {
+                return Err(std::io::Error::new(ErrorKind::InvalidData, e));
+            }
+        };
+        let inner = Inner { max_id, root, ..inner };
         Ok(Self {
             inner: Arc::new(RwLock::new(inner)),
         })
@@ -144,7 +154,7 @@ impl ReadStorage for FileStorage {
         FileReadStorage {
             bases_dir: inner.bases_dir.clone(),
             max_id: inner.max_id,
-            root: inner.read_root().expect("read root"),
+            root: inner.root,
         }
     }
 
@@ -169,8 +179,8 @@ impl ReadStorage for FileStorage {
         SlotBaseId(inner.max_id)
     }
 
-    async fn read_root(&self) -> Result<MapBase, ReadStorageError> {
-        Ok(self.inner.read().expect("storage poisoned").read_root()?)
+    fn read_root(&self) -> MapBase {
+        self.inner.read().expect("storage poisoned").root
     }
 }
 
@@ -220,8 +230,8 @@ impl ReadStorage for FileReadStorage {
         SlotBaseId(self.max_id)
     }
 
-    async fn read_root(&self) -> Result<MapBase, ReadStorageError> {
-        Ok(self.root.clone())
+    fn read_root(&self) -> MapBase {
+        self.root
     }
 }
 
@@ -256,13 +266,12 @@ impl ReadWriteStorage for FileStorage {
     }
 
     fn write_root(&mut self, root: MapBase) -> impl Future<Output = Result<(), WriteStorageError>> {
-        match self
-            .inner
-            .read()
-            .expect("storage poisoned")
-            .write_root_with(&root)
-        {
-            Ok(()) => future::ready(Ok(())),
+        let mut inner = self.inner.write().expect("storage poisoned");
+        match inner.write_root_with(&root) {
+            Ok(()) => {
+                inner.root = root;
+                future::ready(Ok(()))
+            }
             Err(e) => future::ready(Err(e)),
         }
     }
@@ -321,15 +330,12 @@ mod tests {
         let root;
         {
             let mut storage = FileStorage::new(dir.path())?;
-            assert_eq!(
-                MapBase::empty(),
-                storage.read_root().await.expect("read root")
-            );
+            assert_eq!(MapBase::empty(), storage.read_root());
             root = one_kv(HashKey::new(7), TrieValue::U32(7), &mut storage).await;
             storage.write_root(root.clone()).await.expect("write root");
         }
         let storage = FileStorage::load(dir.path())?;
-        assert_eq!(root, storage.read_root().await.expect("read root"));
+        assert_eq!(root, storage.read_root());
         Ok(())
     }
 
@@ -415,7 +421,7 @@ mod tests {
 
         assert_eq!(SlotBaseId(4), storage.max_id());
         assert_eq!(SlotBaseId(2), view.max_id());
-        assert_eq!(root, view.read_root().await.expect("read root"));
+        assert_eq!(root, view.read_root());
         assert_eq!(base, view.read(id).await.expect("read"));
         Ok(())
     }

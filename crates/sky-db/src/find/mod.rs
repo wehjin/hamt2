@@ -55,7 +55,7 @@ mod tests {
         let db = Db::new(store, [attr.clone()]).await.unwrap();
         let txn = [datom::add(10, attr.clone(), 42)];
         let db = db.transact(txn).await.unwrap();
-        let reader = db.to_reader().await;
+        let reader = db.to_reader();
         let found = reader.find(BindsForAttr::new(attr)).await;
         assert_eq!(&[(ein(10), val(42))], found.as_slice());
     }

@@ -153,7 +153,7 @@ mod tests {
 
     #[tokio::test]
     async fn u32_stream() -> anyhow::Result<()> {
-        let mut trie = Trie::connect(MemStorage::new()).await?;
+        let mut trie = Trie::connect(MemStorage::new());
         trie = trie.insert(1, TrieValue::U32(1)).await?;
         trie = trie.insert(2, TrieValue::U32(2)).await?;
         trie = trie.deep_insert([3, 4], TrieValue::U32(34), false).await?;
@@ -166,7 +166,7 @@ mod tests {
 
     #[tokio::test]
     async fn subtrie_stream() -> anyhow::Result<()> {
-        let mut trie = Trie::connect(MemStorage::new()).await?;
+        let mut trie = Trie::connect(MemStorage::new());
         trie = trie
             .deep_insert([1, 101], TrieValue::U32(101), false)
             .await?;

@@ -71,8 +71,8 @@ impl ReadStorage for MemStorage {
         SlotBaseId((inner.bases.len() - 1) as i32)
     }
 
-    async fn read_root(&self) -> Result<MapBase, ReadStorageError> {
-        Ok(self.inner.read().expect("storage poisoned").root.clone())
+    fn read_root(&self) -> MapBase {
+        self.inner.read().expect("storage poisoned").root
     }
 }
 
@@ -111,8 +111,8 @@ impl ReadStorage for MemReadStorage {
         SlotBaseId(self.max_id)
     }
 
-    async fn read_root(&self) -> Result<MapBase, ReadStorageError> {
-        Ok(self.root.clone())
+    fn read_root(&self) -> MapBase {
+        self.root
     }
 }
 
