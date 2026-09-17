@@ -10,6 +10,7 @@ pub mod mem;
 /// A trait for reading Bases from storage.
 ///
 /// Base id [`SlotBaseId::ZERO`] is reserved and always represents the empty base.
+#[allow(async_fn_in_trait)]
 pub trait ReadStorage: Sync {
     /// The storage type of an owned read-only snapshot, produced by
     /// [`ReadStorage::snapshot`]. Writer storages use their read-only
@@ -27,10 +28,7 @@ pub trait ReadStorage: Sync {
     /// for ids they have never assigned, and snapshot readers panic for ids
     /// beyond their captured `max_id`. Ids read from committed map bases are
     /// always valid.
-    fn read(
-        &self,
-        id: SlotBaseId,
-    ) -> impl Future<Output = Result<SlotBase, ReadStorageError>> + Send;
+    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError>;
 
     /// Returns the highest base id in the storage. The empty base id
     /// ([`SlotBaseId::ZERO`]) counts, so an empty storage returns
@@ -39,9 +37,8 @@ pub trait ReadStorage: Sync {
 
     /// Reads the committed root map base, returning [`MapBase::empty()`] when
     /// no root has been committed yet.
-    fn read_root(&self) -> impl Future<Output = Result<MapBase, ReadStorageError>> + Send;
+    async fn read_root(&self) -> Result<MapBase, ReadStorageError>;
 
-    #[allow(async_fn_in_trait)]
     async fn get_head(&self) -> StorageHead {
         let max_id = self.max_id();
         let root = self.read_root().await.expect("storage reads root");

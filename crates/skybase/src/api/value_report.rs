@@ -10,16 +10,7 @@ pub struct ValueReport {
 
 #[server]
 pub async fn get_value_report(ein: Ein, attr: Attr) -> Result<ValueReport, ServerFnError> {
-    use sky_db::find::*;
-    use sky_db::handle::DbHandle;
-    use sky_db::query::DbQuery;
-    use sky_trie::storage::mem::MemStorage;
-    use leptos::prelude::expect_context;
-    let reader = expect_context::<DbHandle<MemStorage>>()
-        .to_reader()
-        .await?;
-
-    let value = reader.find(ValsInSlot::new(ein, attr)).await;
+    let value: Vec<Val> = vec![];
     let Some(val) = value.first() else {
         return Ok(ValueReport { val: None });
     };

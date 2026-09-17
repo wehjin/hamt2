@@ -3,6 +3,7 @@ use sky_trie::types::StorageHead;
 use sky_trie::types::slot_base::SlotBase;
 use sky_types::db::Datom;
 use sky_types::trie::SlotBaseId;
+pub mod remote;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SocketRequest {

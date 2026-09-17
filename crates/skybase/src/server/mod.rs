@@ -1,22 +1,18 @@
+use axum::Extension;
 use axum::Router;
 use axum::extract::FromRef;
 use axum::extract::ws::WebSocketUpgrade;
 use axum::response::IntoResponse;
-use axum::Extension;
 use axum::routing::get;
 use leptos::prelude::*;
 use leptos_axum::{ErrorHandler, LeptosRoutes, generate_route_list, site_pkg_dir_service};
-use sky_db::handle::DbHandle;
 use sky_server::server::axum_ws;
 use sky_server::server::storage::StorageService;
-use sky_trie::storage::mem::MemStorage;
 use skybase::app::{App, shell};
-use skybase::db::start_db;
 
 #[derive(Clone)]
 pub struct AppState {
     pub leptos_options: LeptosOptions,
-    pub db: DbHandle<MemStorage>,
     pub storage: StorageService,
 }
 
@@ -42,15 +38,11 @@ pub async fn serve() {
     let addr = conf.leptos_options.site_addr;
     let routes = generate_route_list(App);
 
-    let db = DbHandle::new(start_db().await.expect("start a db")).await;
-    // Temporary: the websocket storage service runs its own db until the
-    // DbHandle-backed db is removed from skybase.
     let storage = StorageService::start(["skybase/version"])
         .await
         .expect("start a storage service");
     let state = AppState {
         leptos_options: conf.leptos_options,
-        db,
         storage: storage.clone(),
     };
     let app = Router::new()
@@ -58,9 +50,9 @@ pub async fn serve() {
             &state,
             routes,
             {
-                let db = state.db.clone();
+                // let db = state.db.clone();
                 move || {
-                    provide_context(db.clone());
+                    //                    provide_context(db.clone());
                 }
             },
             {

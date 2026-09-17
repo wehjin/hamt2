@@ -6,7 +6,6 @@ edition.workspace = true
 [dependencies]
 anyhow.workspace = true
 thiserror.workspace = true
-tokio = { workspace = true, features = ["macros"] }
 serde.workspace = true
 futures.workspace = true
 async-stream.workspace = true
@@ -17,3 +16,4 @@ universal-hash.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true
+tokio = { workspace = true, features = ["macros"] }
