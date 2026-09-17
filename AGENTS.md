@@ -159,7 +159,9 @@ Within `crates/skybase/src`:
   fetching (via `#[server]` calls in `api/` or resources); they are mounted in `<Route>`s in `app.rs`.
 - `components/` — reusable presentational components with no data logic; they receive everything as props. If a
   component fetches or depends on `skybase::db`/`sky-db` data directly, it belongs in `routes/` (or its data should be loaded
-  in a `route` and passed down).
+  in a `route` and passed down). Exception (temporary): `components/wss_sandbox.rs` — the websocket playground, driven
+  by `leptos-use`'s `use_websocket::<String, String, FromToStringCodec>("/ws")` over the axum `/ws` route, using the
+  typed `sky_server::shared::{SocketRequest, SocketResponse}` protocol.
 - `api/` — all `#[server]` functions (isomorphic: the same definition compiles to a client stub under `hydrate` and a
   server impl under `ssr`). Keep them out of components.
 - `state/` — app-wide shared context: signals/resources and the types provided with `provide_context` / read with
