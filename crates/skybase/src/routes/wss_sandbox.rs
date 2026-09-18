@@ -2,6 +2,7 @@ use crate::routes::wss_sandbox::sky::SocketSender;
 use codee::string::FromToStringCodec;
 use leptos::logging::error;
 use leptos::prelude::*;
+use leptos_use::core::ConnectionReadyState;
 use leptos_use::{UseWebSocketReturn, use_websocket};
 use sky_server::shared::SocketResponse;
 use sky_types::db::{Attr, datom, val};
@@ -139,6 +140,15 @@ pub fn WebSocketSandbox() -> impl IntoView {
         }
     });
     let sky = sky::use_sky(socket_sender.clone(), socket_receiver.into());
+    {
+        let ready_state = ready_state.clone();
+        let sky = sky.clone();
+        Effect::new(move |_| {
+            if let (ConnectionReadyState::Open, true) = (ready_state.get(), sky.ready.get()) {
+                sky.reconnect();
+            }
+        });
+    }
     let max_id = Memo::new(move |_| match socket_receiver.get() {
         Some(response) => match response {
             SocketResponse::StorageStatus(head) | SocketResponse::TransactResult(head) => {
