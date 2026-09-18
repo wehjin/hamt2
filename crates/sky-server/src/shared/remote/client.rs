@@ -76,10 +76,7 @@ impl<T: SpawnTask> Transact for RemoteClient<T> {
     where
         Self: Sized,
     {
-        let (send, recv) = oneshot::channel();
-        let request = ClientRequest::RequestTransact(datoms.into(), send);
-        self.send_request(request);
-        match recv.await {
+        match self.send_transact(datoms).await {
             Err(e) => Err(TransactError::Disconnected(e.into())),
             Ok(None) => Err(TransactError::Refused(anyhow!("Transaction failed"))),
             Ok(Some(head)) => {
@@ -100,6 +97,16 @@ impl<T: SpawnTask> RemoteClient<T> {
     }
     pub fn update(&mut self, socket_response: SocketResponse) {
         self.updater.update(socket_response)
+    }
+
+    pub fn send_transact(
+        &self,
+        datoms: impl Into<Vec<Datom>>,
+    ) -> oneshot::Receiver<Option<StorageHead>> {
+        let (send, recv) = oneshot::channel();
+        let request = ClientRequest::RequestTransact(datoms.into(), send);
+        let _ = self.send_request(request);
+        recv
     }
 
     pub fn reconnect(&self) {

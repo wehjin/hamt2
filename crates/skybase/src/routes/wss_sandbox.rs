@@ -27,9 +27,6 @@ mod sky {
         pub fn send_read(&self, id: SlotBaseId) {
             self.send_request(SocketRequest::ReadSlotBase(id));
         }
-        pub fn send_transact(&self, datoms: impl Into<Vec<Datom>>) {
-            self.send_request(SocketRequest::Transact(datoms.into()));
-        }
         pub fn send_request(&self, request: SocketRequest) {
             let message = serde_json::to_string(&request).expect("serialize request");
             (self.send)(&message)
@@ -44,6 +41,7 @@ mod sky {
         }
     }
 
+    #[derive(Clone)]
     pub struct SkyClient {
         client: StoredValue<Option<RemoteClient<LeptosSpawnTask>>>,
     }
@@ -55,6 +53,14 @@ mod sky {
                     client.reconnect();
                 }
             });
+        }
+
+        pub fn transact(&self, datoms: impl Into<Vec<Datom>>) {
+            self.client.with_value(|client_opt| {
+                if let Some(client) = client_opt {
+                    let _ = client.send_transact(datoms);
+                }
+            })
         }
     }
 
@@ -144,7 +150,10 @@ pub fn WebSocketSandbox() -> impl IntoView {
             .get()
             .map(|response| serde_json::to_string_pretty(&response).expect("serialize response"))
     });
-    let send_connect = move |_| sky.reconnect();
+    let send_connect = {
+        let sky = sky.clone();
+        move |_| sky.reconnect()
+    };
     let send_read_slot_base = {
         let sender = socket_sender.clone();
         move |_| {
@@ -155,10 +164,10 @@ pub fn WebSocketSandbox() -> impl IntoView {
     };
 
     let send_transact = {
-        let sender = socket_sender.clone();
+        let sky = sky.clone();
         move |_| {
-            let datoms = vec![datom::add(100, Attr::from("skybase/version"), val("0.1"))];
-            sender.send_transact(datoms);
+            let datom = datom::add(100, Attr::from("skybase/version"), val("0.1"));
+            sky.transact(vec![datom]);
         }
     };
 
