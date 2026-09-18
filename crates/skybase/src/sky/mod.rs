@@ -1,4 +1,5 @@
 use leptos::prelude::*;
+use leptos_use::core::ConnectionReadyState;
 use sky_server::shared::SocketResponse;
 mod sky_client;
 mod socket_sender;
@@ -12,9 +13,11 @@ pub use spawn_task::*;
 pub fn use_sky(
     socket_sender: SocketSender,
     socket_receiver: Signal<Option<SocketResponse>>,
+    connection_ready: Signal<ConnectionReadyState>,
 ) -> SkyClient {
     let stored_client = StoredValue::new(None);
-    let (ready, set_ready) = signal(false);
+    let (client_ready, set_client_ready) = signal(false);
+    let (sky_ready, set_sky_ready) = signal(false);
     #[cfg(feature = "hydrate")]
     {
         use leptos::logging::log;
@@ -31,7 +34,7 @@ pub fn use_sky(
                     };
                     let client = RemoteClient::<LeptosSpawnTask>::connect(send_socket);
                     *stored_client = Some(client);
-                    set_ready.set(true);
+                    set_client_ready.set(true);
                     log!("sky client stored");
                 }
             });
@@ -52,9 +55,18 @@ pub fn use_sky(
                 });
             }
         });
+        {
+            let ws_ready = connection_ready.clone();
+            let client_ready = client_ready.clone();
+            Effect::new(move |_| {
+                if let (ConnectionReadyState::Open, true) = (ws_ready.get(), client_ready.get()) {
+                    set_sky_ready.set(true);
+                }
+            });
+        }
     }
     SkyClient {
         stored_client,
-        ready,
+        ready: sky_ready,
     }
 }
