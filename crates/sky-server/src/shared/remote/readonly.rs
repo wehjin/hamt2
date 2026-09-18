@@ -1,4 +1,4 @@
-use crate::shared::remote::SpawnLocal;
+use crate::shared::remote::SpawnTask;
 use crate::shared::remote::client::RemoteClientRequest;
 use sky_trie::prelude::ReadStorage;
 use sky_trie::types::StorageHead;
@@ -16,7 +16,7 @@ pub struct RemoteClientReadStorage<SpawnLocal> {
     pub(crate) _spawn_local: PhantomData<SpawnLocal>,
 }
 
-impl<T: SpawnLocal> ReadStorage for RemoteClientReadStorage<T> {
+impl<T: SpawnTask> ReadStorage for RemoteClientReadStorage<T> {
     type Snapshot = RemoteClientReadStorage<T>;
 
     fn snapshot(&self) -> Self::Snapshot {

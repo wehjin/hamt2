@@ -1,33 +1,102 @@
+use crate::routes::wss_sandbox::sky::SocketSender;
 use codee::string::FromToStringCodec;
 use leptos::logging::error;
 use leptos::prelude::*;
 use leptos_use::{UseWebSocketReturn, use_websocket};
-use sky_server::shared::{SocketRequest, SocketResponse};
-use sky_types::db::{Attr, Datom, datom, val};
-use sky_types::trie::SlotBaseId;
+use sky_server::shared::SocketResponse;
+use sky_types::db::{Attr, datom, val};
 use std::sync::Arc;
 
-#[derive(Clone)]
-pub struct RequestSender {
-    send: Arc<dyn Fn(&String)>,
-}
+mod sky {
+    use leptos::logging::log;
+    use leptos::prelude::*;
+    use sky_server::shared::remote::{RemoteClient, SpawnTask};
+    use sky_server::shared::{SocketRequest, SocketResponse};
+    use sky_types::db::Datom;
+    use sky_types::trie::SlotBaseId;
+    use std::sync::Arc;
 
-impl RequestSender {
-    pub fn new(send: Arc<dyn Fn(&String)>) -> Self {
-        Self { send }
+    #[derive(Clone)]
+    pub struct SocketSender {
+        send: Arc<dyn Fn(&String)>,
     }
-    fn send_request(&self, request: SocketRequest) {
-        let message = serde_json::to_string(&request).expect("serialize request");
-        (self.send)(&message)
+
+    impl SocketSender {
+        pub fn new(send: Arc<dyn Fn(&String)>) -> Self {
+            Self { send }
+        }
+        pub fn send_connect(&self) {
+            self.send_request(SocketRequest::Connect);
+        }
+        pub fn send_read(&self, id: SlotBaseId) {
+            self.send_request(SocketRequest::ReadSlotBase(id));
+        }
+        pub fn send_transact(&self, datoms: impl Into<Vec<Datom>>) {
+            self.send_request(SocketRequest::Transact(datoms.into()));
+        }
+        pub fn send_request(&self, request: SocketRequest) {
+            let message = serde_json::to_string(&request).expect("serialize request");
+            (self.send)(&message)
+        }
     }
-    pub fn send_connect(&self) {
-        self.send_request(SocketRequest::Connect);
+
+    #[derive(Clone)]
+    pub struct LeptosSpawnTask;
+    impl SpawnTask for LeptosSpawnTask {
+        fn spawn_task(future: impl Future<Output = ()> + 'static) {
+            leptos::task::spawn_local(future);
+        }
     }
-    pub fn send_read(&self, id: SlotBaseId) {
-        self.send_request(SocketRequest::ReadSlotBase(id));
+
+    pub struct SkyClient {
+        _client: StoredValue<Option<RemoteClient<LeptosSpawnTask>>>,
     }
-    pub fn send_transact(&self, datoms: impl Into<Vec<Datom>>) {
-        self.send_request(SocketRequest::Transact(datoms.into()));
+
+    fn set_up_client() {}
+
+    #[allow(unused_variables)]
+    pub fn use_sky(
+        socket_sender: SocketSender,
+        socket_receiver: Signal<Option<SocketResponse>>,
+    ) -> SkyClient {
+        let stored_client = StoredValue::new(None);
+        // Start the client.
+        #[cfg(feature = "hydrate")]
+        Effect::new(move |_| {
+            stored_client.update_value(|stored_client| {
+                if stored_client.is_none() {
+                    log!("set up sky client");
+                    let socket_sender = socket_sender.clone();
+                    let send_socket = move |req| {
+                        log!("got request: {:?}", req);
+                        socket_sender.send_request(req);
+                    };
+                    let client = RemoteClient::<LeptosSpawnTask>::connect(send_socket);
+                    *stored_client = Some(client);
+                    log!("sky client stored");
+                }
+            });
+        });
+        // Send sockets responses to the client.
+        #[cfg(feature = "hydrate")]
+        Effect::new(move |_| {
+            let response_opt = socket_receiver.get();
+            if let Some(response) = response_opt {
+                // Pass response to the client.
+                stored_client.with_value(|client_opt| {
+                    if let Some(client) = client_opt {
+                        log!("update sky client: {:?}", response);
+                        let mut updater = client.to_updater();
+                        updater.update(response);
+                    } else {
+                        log!("no sky client to update: {:?}", response);
+                    }
+                });
+            }
+        });
+        SkyClient {
+            _client: stored_client,
+        }
     }
 }
 
@@ -39,8 +108,8 @@ pub fn WebSocketSandbox() -> impl IntoView {
         send,
         ..
     } = use_websocket::<String, String, FromToStringCodec>("/ws");
-    let request_sender = RequestSender::new(Arc::new(send.clone()));
-    let received_response = Memo::new(move |_| match message.get() {
+    let socket_sender = SocketSender::new(Arc::new(send.clone()));
+    let socket_receiver = Memo::new(move |_| match message.get() {
         None => None,
         Some(json) => {
             let result = serde_json::from_str::<SocketResponse>(&json);
@@ -53,7 +122,8 @@ pub fn WebSocketSandbox() -> impl IntoView {
             }
         }
     });
-    let max_id = Memo::new(move |_| match received_response.get() {
+    let _sky = sky::use_sky(socket_sender.clone(), socket_receiver.into());
+    let max_id = Memo::new(move |_| match socket_receiver.get() {
         Some(response) => match response {
             SocketResponse::StorageStatus(head) | SocketResponse::TransactResult(head) => {
                 Some(head.max_id)
@@ -63,16 +133,16 @@ pub fn WebSocketSandbox() -> impl IntoView {
         None => None,
     });
     let last_response = Memo::new(move |_| {
-        received_response
+        socket_receiver
             .get()
             .map(|response| serde_json::to_string_pretty(&response).expect("serialize response"))
     });
     let send_connect = {
-        let sender = request_sender.clone();
+        let sender = socket_sender.clone();
         move |_| sender.send_connect()
     };
     let send_read_slot_base = {
-        let sender = request_sender.clone();
+        let sender = socket_sender.clone();
         move |_| {
             if let Some(id) = max_id.get() {
                 sender.send_read(id);
@@ -81,7 +151,7 @@ pub fn WebSocketSandbox() -> impl IntoView {
     };
 
     let send_transact = {
-        let sender = request_sender.clone();
+        let sender = socket_sender.clone();
         move |_| {
             let datoms = vec![datom::add(100, Attr::from("skybase/version"), val("0.1"))];
             sender.send_transact(datoms);

@@ -11,7 +11,7 @@ use tokio::task::spawn_local;
 
 async fn run_client_test<F, Fut>(runner: F)
 where
-    F: FnOnce(RemoteClient<TokioSpawnLocal>, tokio::sync::mpsc::Receiver<SocketRequest>) -> Fut,
+    F: FnOnce(RemoteClient<TokioSpawnTask>, tokio::sync::mpsc::Receiver<SocketRequest>) -> Fut,
     Fut: Future,
 {
     tokio::task::LocalSet::new()
@@ -28,7 +28,7 @@ where
                         send_request.send(request).await.expect("sending request");
                     });
                 };
-                RemoteClient::<TokioSpawnLocal>::connect(client_send_socket)
+                RemoteClient::<TokioSpawnTask>::connect(client_send_socket)
             };
             let client_request_after_connect =
                 requests_from_client.recv().await.expect("recv request");
@@ -122,9 +122,9 @@ async fn remote_client_works() {
 }
 
 #[derive(Copy, Clone)]
-struct TokioSpawnLocal;
-impl SpawnLocal for TokioSpawnLocal {
-    fn spawn_local(future: impl Future<Output = ()> + 'static) {
+struct TokioSpawnTask;
+impl SpawnTask for TokioSpawnTask {
+    fn spawn_task(future: impl Future<Output = ()> + 'static) {
         tokio::task::spawn_local(future);
     }
 }

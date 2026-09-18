@@ -1,4 +1,4 @@
-use crate::shared::remote::{RemoteClientReadStorage, SpawnLocal};
+use crate::shared::remote::{RemoteClientReadStorage, SpawnTask};
 use crate::shared::{SocketRequest, SocketResponse};
 use anyhow::anyhow;
 use sky_trie::prelude::ReadStorage;
@@ -21,11 +21,11 @@ pub(crate) enum RemoteClientRequest {
 }
 
 #[derive(Clone)]
-pub struct ClientUpdater<T: SpawnLocal> {
+pub struct ClientUpdater<T: SpawnTask> {
     requester: Sender<RemoteClientRequest>,
     _phantom_data: PhantomData<T>,
 }
-impl<T: SpawnLocal> ClientUpdater<T> {
+impl<T: SpawnTask> ClientUpdater<T> {
     fn send_request(&self, request: RemoteClientRequest) {
         send_request::<T>(&self.requester, request)
     }
@@ -45,12 +45,12 @@ impl<T: SpawnLocal> ClientUpdater<T> {
 }
 
 /// Deliberately non-Clone.
-pub struct RemoteClient<T: SpawnLocal> {
+pub struct RemoteClient<T: SpawnTask> {
     inner: RemoteClientReadStorage<T>,
     updater: ClientUpdater<T>,
 }
 
-impl<T: SpawnLocal> ReadStorage for RemoteClient<T> {
+impl<T: SpawnTask> ReadStorage for RemoteClient<T> {
     type Snapshot = RemoteClientReadStorage<T>;
 
     fn snapshot(&self) -> Self::Snapshot {
@@ -70,7 +70,7 @@ impl<T: SpawnLocal> ReadStorage for RemoteClient<T> {
     }
 }
 
-impl<T: SpawnLocal> Transact for RemoteClient<T> {
+impl<T: SpawnTask> Transact for RemoteClient<T> {
     async fn transact(self, datoms: impl Into<Vec<Datom>>) -> Result<Self, TransactError>
     where
         Self: Sized,
@@ -89,7 +89,7 @@ impl<T: SpawnLocal> Transact for RemoteClient<T> {
     }
 }
 
-impl<T: SpawnLocal> RemoteClient<T> {
+impl<T: SpawnTask> RemoteClient<T> {
     pub fn active_head(&self) -> StorageHead {
         self.inner.get_head()
     }
@@ -108,7 +108,7 @@ impl<T: SpawnLocal> RemoteClient<T> {
         let send_socket = std::sync::Arc::new(send_socket);
         let task_send_socket = send_socket.clone();
         let task_head = head.clone();
-        T::spawn_local(async move {
+        T::spawn_task(async move {
             let mut read_line: HashMap<SlotBaseId, Vec<oneshot::Sender<Option<SlotBase>>>> =
                 HashMap::new();
             let mut bases = HashMap::from([(SlotBaseId::ZERO, SlotBase::new())]);
@@ -183,12 +183,12 @@ impl<T: SpawnLocal> RemoteClient<T> {
     }
 }
 
-fn send_request<T: SpawnLocal>(
+fn send_request<T: SpawnTask>(
     requester: &Sender<RemoteClientRequest>,
     request: RemoteClientRequest,
 ) {
     let requester = requester.clone();
-    T::spawn_local(async move {
+    T::spawn_task(async move {
         let _ = requester.send(request).await;
     })
 }
