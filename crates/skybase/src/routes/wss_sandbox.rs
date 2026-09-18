@@ -8,7 +8,6 @@ use sky_types::db::{Attr, datom, val};
 use std::sync::Arc;
 
 mod sky {
-    use leptos::logging::log;
     use leptos::prelude::*;
     use sky_server::shared::remote::{RemoteClient, SpawnTask};
     use sky_server::shared::{SocketRequest, SocketResponse};
@@ -24,9 +23,6 @@ mod sky {
     impl SocketSender {
         pub fn new(send: Arc<dyn Fn(&String)>) -> Self {
             Self { send }
-        }
-        pub fn send_connect(&self) {
-            self.send_request(SocketRequest::Connect);
         }
         pub fn send_read(&self, id: SlotBaseId) {
             self.send_request(SocketRequest::ReadSlotBase(id));
@@ -49,10 +45,18 @@ mod sky {
     }
 
     pub struct SkyClient {
-        _client: StoredValue<Option<RemoteClient<LeptosSpawnTask>>>,
+        client: StoredValue<Option<RemoteClient<LeptosSpawnTask>>>,
     }
 
-    fn set_up_client() {}
+    impl SkyClient {
+        pub fn reconnect(&self) {
+            self.client.with_value(|client_opt| {
+                if let Some(client) = client_opt {
+                    client.reconnect();
+                }
+            });
+        }
+    }
 
     #[allow(unused_variables)]
     pub fn use_sky(
@@ -60,42 +64,45 @@ mod sky {
         socket_receiver: Signal<Option<SocketResponse>>,
     ) -> SkyClient {
         let stored_client = StoredValue::new(None);
-        // Start the client.
         #[cfg(feature = "hydrate")]
-        Effect::new(move |_| {
-            stored_client.update_value(|stored_client| {
-                if stored_client.is_none() {
-                    log!("set up sky client");
-                    let socket_sender = socket_sender.clone();
-                    let send_socket = move |req| {
-                        log!("got request: {:?}", req);
-                        socket_sender.send_request(req);
-                    };
-                    let client = RemoteClient::<LeptosSpawnTask>::connect(send_socket);
-                    *stored_client = Some(client);
-                    log!("sky client stored");
-                }
-            });
-        });
-        // Send sockets responses to the client.
-        #[cfg(feature = "hydrate")]
-        Effect::new(move |_| {
-            let response_opt = socket_receiver.get();
-            if let Some(response) = response_opt {
-                // Pass response to the client.
-                stored_client.with_value(|client_opt| {
-                    if let Some(client) = client_opt {
-                        log!("update sky client: {:?}", response);
-                        let mut updater = client.to_updater();
-                        updater.update(response);
-                    } else {
-                        log!("no sky client to update: {:?}", response);
+        {
+            use leptos::logging::log;
+
+            // Start the client.
+            Effect::new(move |_| {
+                stored_client.update_value(|stored_client| {
+                    if stored_client.is_none() {
+                        log!("set up sky client");
+                        let socket_sender = socket_sender.clone();
+                        let send_socket = move |req| {
+                            log!("got request: {:?}", req);
+                            socket_sender.send_request(req);
+                        };
+                        let client = RemoteClient::<LeptosSpawnTask>::connect(send_socket);
+                        *stored_client = Some(client);
+                        log!("sky client stored");
                     }
                 });
-            }
-        });
+            });
+            // Send sockets responses to the client.
+            Effect::new(move |_| {
+                let response_opt = socket_receiver.get();
+                if let Some(response) = response_opt {
+                    // Pass response to the client.
+                    stored_client.with_value(|client_opt| {
+                        if let Some(client) = client_opt {
+                            log!("update sky client: {:?}", response);
+                            let mut updater = client.to_updater();
+                            updater.update(response);
+                        } else {
+                            log!("no sky client to update: {:?}", response);
+                        }
+                    });
+                }
+            });
+        }
         SkyClient {
-            _client: stored_client,
+            client: stored_client,
         }
     }
 }
@@ -122,7 +129,7 @@ pub fn WebSocketSandbox() -> impl IntoView {
             }
         }
     });
-    let _sky = sky::use_sky(socket_sender.clone(), socket_receiver.into());
+    let sky = sky::use_sky(socket_sender.clone(), socket_receiver.into());
     let max_id = Memo::new(move |_| match socket_receiver.get() {
         Some(response) => match response {
             SocketResponse::StorageStatus(head) | SocketResponse::TransactResult(head) => {
@@ -137,10 +144,7 @@ pub fn WebSocketSandbox() -> impl IntoView {
             .get()
             .map(|response| serde_json::to_string_pretty(&response).expect("serialize response"))
     });
-    let send_connect = {
-        let sender = socket_sender.clone();
-        move |_| sender.send_connect()
-    };
+    let send_connect = move |_| sky.reconnect();
     let send_read_slot_base = {
         let sender = socket_sender.clone();
         move |_| {

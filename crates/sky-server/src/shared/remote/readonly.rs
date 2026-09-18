@@ -1,5 +1,5 @@
 use crate::shared::remote::SpawnTask;
-use crate::shared::remote::client::RemoteClientRequest;
+use crate::shared::remote::client::ClientRequest;
 use sky_trie::prelude::ReadStorage;
 use sky_trie::types::StorageHead;
 use sky_trie::types::slot_base::SlotBase;
@@ -11,7 +11,7 @@ use tokio::sync::oneshot;
 
 #[derive(Clone)]
 pub struct RemoteClientReadStorage<SpawnLocal> {
-    pub(crate) requester: Sender<RemoteClientRequest>,
+    pub(crate) requester: Sender<ClientRequest>,
     pub(crate) head: std::sync::Arc<std::sync::RwLock<StorageHead>>,
     pub(crate) _spawn_local: PhantomData<SpawnLocal>,
 }
@@ -34,7 +34,7 @@ impl<T: SpawnTask> ReadStorage for RemoteClientReadStorage<T> {
         }
         let (send, recv) = oneshot::channel();
         self.requester
-            .send(RemoteClientRequest::RequestBase(id, send))
+            .send(ClientRequest::RequestBase(id, send))
             .await
             .expect("send request");
         let base = recv.await.expect("recv base").expect("base");
