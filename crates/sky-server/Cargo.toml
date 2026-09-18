@@ -8,19 +8,19 @@ serde = { version = "1.0.229", features = ["derive"] }
 sky-types.workspace = true
 sky-trie.workspace = true
 
-tokio = { workspace = true }
+tokio = { workspace = true, features = ["macros"] }
 thiserror = { workspace = true, optional = true }
 sky-db = { workspace = true, optional = true }
-log = { version = "0.4.34", optional = true }
+log = { workspace = true }
 futures-util = { version = "0.3.34", optional = true }
 axum = { version = "0.8", features = ["ws"], optional = true }
 serde_json = { workspace = true, optional = true }
+anyhow.workspace = true
 
 [dev-dependencies]
 tokio-stream = "0.1.19"
 tokio-util = "0.7.19"
 
-
 [features]
-server = ["dep:thiserror", "dep:sky-db", "dep:log", "dep:futures-util"]
+server = ["dep:thiserror", "dep:sky-db", "dep:futures-util"]
 axum-ws = ["server", "dep:axum", "dep:serde_json"]

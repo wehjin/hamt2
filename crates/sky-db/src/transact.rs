@@ -3,9 +3,9 @@ use crate::db::db_trie;
 use crate::db::types::MaxEid;
 use crate::db::types::ent_eid::EntEid;
 use crate::trie::prelude::*;
+use sky_types::db::Datom;
 use sky_types::db::Transact;
 use sky_types::db::TransactError;
-use sky_types::db::Datom;
 use sky_types::db::{Dat, Ent, val};
 
 impl<S: ReadWriteStorage> Transact for Db<S> {

@@ -23,4 +23,10 @@ pub enum TransactError {
 
     #[error("No space in value table")]
     NoSpaceInValueTable,
+
+    #[error("Disconnected: {0}")]
+    Disconnected(#[source] anyhow::Error),
+
+    #[error("Refused: {0}")]
+    Refused(#[source] anyhow::Error),
 }

@@ -2298,6 +2298,7 @@ dependencies = [
 name = "sky-server"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "axum",
  "futures-util",
  "log",
@@ -2331,6 +2332,7 @@ dependencies = [
 name = "sky-types"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "futures",
  "postcard",
  "serde",

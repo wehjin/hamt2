@@ -6,7 +6,7 @@ pub use deep_key::*;
 use serde::{Deserialize, Serialize};
 pub use sky_types::trie::*;
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageHead {
     pub max_id: SlotBaseId,
     pub root: MapBase,

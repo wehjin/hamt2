@@ -1,6 +1,7 @@
 use crate::types::StorageHead;
 use crate::types::slot_base::SlotBase;
-use sky_types::storage::error::{ReadStorageError, WriteStorageError};
+use sky_types::storage::WriteStorageError;
+use sky_types::storage::error::ReadStorageError;
 use sky_types::trie::MapBase;
 use sky_types::trie::SlotBaseId;
 
@@ -48,21 +49,18 @@ pub trait ReadStorage: Sync {
 }
 
 /// A trait for reading and writing Bases from storage.
+#[allow(async_fn_in_trait)]
 pub trait ReadWriteStorage: ReadStorage {
     /// Read the next available base id. The value is 1 in an empty storage because base id 0 is reserved for the empty base.
-    fn next_id(&self) -> SlotBaseId;
+    fn next_id(&self) -> SlotBaseId {
+        self.max_id() + 1
+    }
 
     /// Stores a base and assigns it the next available id. The id can be used to read back the base in `BaseStorageRead::read`.
-    fn append(
-        &mut self,
-        base: &SlotBase,
-    ) -> impl Future<Output = Result<SlotBaseId, WriteStorageError>> + Send;
+    async fn append(&mut self, base: &SlotBase) -> Result<SlotBaseId, WriteStorageError>;
 
     /// Persists the given root map base. The root can be read back with `BaseStorageRead::read_root`.
-    fn write_root(
-        &mut self,
-        root: MapBase,
-    ) -> impl Future<Output = Result<(), WriteStorageError>> + Send;
+    async fn write_root(&mut self, root: MapBase) -> Result<(), WriteStorageError>;
 }
 
 #[cfg(test)]

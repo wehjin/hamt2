@@ -1,9 +1,18 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fmt::Display;
+use std::ops::Add;
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize, Default)]
 pub struct SlotBaseId(pub i32);
+
+impl Add<i32> for SlotBaseId {
+    type Output = Self;
+
+    fn add(self, rhs: i32) -> Self::Output {
+        Self(self.0 + rhs)
+    }
+}
 
 impl SlotBaseId {
     /// The reserved id of the empty base. It is never stored.

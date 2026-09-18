@@ -1,0 +1,201 @@
+use crate::shared::remote::{RemoteClientReadStorage, SpawnLocal};
+use crate::shared::{SocketRequest, SocketResponse};
+use anyhow::anyhow;
+use sky_trie::prelude::ReadStorage;
+use sky_trie::types::StorageHead;
+use sky_trie::types::slot_base::SlotBase;
+use sky_types::db::{Datom, Transact, TransactError};
+use sky_types::storage::ReadStorageError;
+use sky_types::trie::{MapBase, SlotBaseId};
+use std::collections::HashMap;
+use std::marker::PhantomData;
+use tokio::sync::mpsc::Sender;
+use tokio::sync::oneshot;
+
+pub(crate) enum RemoteClientRequest {
+    DeliverHead(StorageHead),
+    GetStatus(oneshot::Sender<StorageHead>),
+    RequestBase(SlotBaseId, oneshot::Sender<Option<SlotBase>>),
+    DeliverBase(SlotBaseId, Option<SlotBase>),
+    RequestTransact(Vec<Datom>, oneshot::Sender<Option<StorageHead>>),
+    DeliverTransact(StorageHead),
+}
+
+#[derive(Clone)]
+pub struct ClientUpdater<T: SpawnLocal> {
+    requester: Sender<RemoteClientRequest>,
+    _phantom_data: PhantomData<T>,
+}
+impl<T: SpawnLocal> ClientUpdater<T> {
+    fn send_request(&self, request: RemoteClientRequest) {
+        send_request::<T>(&self.requester, request)
+    }
+    pub fn update(&mut self, socket_response: SocketResponse) {
+        match socket_response {
+            SocketResponse::StorageStatus(head) => {
+                self.send_request(RemoteClientRequest::DeliverHead(head));
+            }
+            SocketResponse::SlotBase(id, base) => {
+                self.send_request(RemoteClientRequest::DeliverBase(id, base));
+            }
+            SocketResponse::TransactResult(head) => {
+                self.send_request(RemoteClientRequest::DeliverTransact(head))
+            }
+        }
+    }
+}
+
+/// Deliberately non-Clone.
+pub struct RemoteClient<T: SpawnLocal> {
+    inner: RemoteClientReadStorage<T>,
+    updater: ClientUpdater<T>,
+}
+
+impl<T: SpawnLocal> ReadStorage for RemoteClient<T> {
+    type Snapshot = RemoteClientReadStorage<T>;
+
+    fn snapshot(&self) -> Self::Snapshot {
+        self.inner.snapshot()
+    }
+
+    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
+        self.inner.read(id).await
+    }
+
+    fn max_id(&self) -> SlotBaseId {
+        self.inner.max_id()
+    }
+
+    fn read_root(&self) -> MapBase {
+        self.inner.read_root()
+    }
+}
+
+impl<T: SpawnLocal> Transact for RemoteClient<T> {
+    async fn transact(self, datoms: impl Into<Vec<Datom>>) -> Result<Self, TransactError>
+    where
+        Self: Sized,
+    {
+        let (send, recv) = oneshot::channel();
+        let request = RemoteClientRequest::RequestTransact(datoms.into(), send);
+        self.send_request(request);
+        match recv.await {
+            Err(e) => Err(TransactError::Disconnected(e.into())),
+            Ok(None) => Err(TransactError::Refused(anyhow!("Transaction failed"))),
+            Ok(Some(head)) => {
+                self.send_request(RemoteClientRequest::DeliverHead(head));
+                Ok(self)
+            }
+        }
+    }
+}
+
+impl<T: SpawnLocal> RemoteClient<T> {
+    pub fn active_head(&self) -> oneshot::Receiver<StorageHead> {
+        let (send, recv) = oneshot::channel();
+        self.send_request(RemoteClientRequest::GetStatus(send));
+        recv
+    }
+
+    pub fn to_updater(&self) -> ClientUpdater<T> {
+        self.updater.clone()
+    }
+    pub fn update(&mut self, socket_response: SocketResponse) {
+        self.updater.update(socket_response)
+    }
+
+    pub fn connect(send_socket: impl Fn(SocketRequest) + 'static) -> Self {
+        let head = std::sync::Arc::new(std::sync::RwLock::new(StorageHead::default()));
+        let (send_request, mut recv_request) =
+            tokio::sync::mpsc::channel::<RemoteClientRequest>(100);
+        let send_socket = std::sync::Arc::new(send_socket);
+        let task_send_socket = send_socket.clone();
+        let task_head = head.clone();
+        T::spawn_local(async move {
+            let mut read_line: HashMap<SlotBaseId, Vec<oneshot::Sender<Option<SlotBase>>>> =
+                HashMap::new();
+            let mut bases = HashMap::from([(SlotBaseId::ZERO, SlotBase::new())]);
+            let head = task_head;
+            let mut transact_line: Option<oneshot::Sender<Option<StorageHead>>> = None;
+            loop {
+                let event = recv_request.recv().await;
+                if let Some(request) = event {
+                    match request {
+                        RemoteClientRequest::GetStatus(status) => {
+                            let head = head.read().unwrap().clone();
+                            let _ = status.send(head);
+                        }
+                        RemoteClientRequest::DeliverHead(new_head) => {
+                            if new_head.max_id > head.read().unwrap().max_id {
+                                let mut write_lock = head.write().unwrap();
+                                *write_lock = new_head
+                            }
+                        }
+                        RemoteClientRequest::RequestBase(id, send_base) => {
+                            if id > head.read().unwrap().max_id {
+                                let _ = send_base.send(None);
+                            } else {
+                                if let Some(base) = bases.get(&id).cloned() {
+                                    let _ = send_base.send(Some(base));
+                                } else {
+                                    let mut line = read_line.remove(&id).unwrap_or_default();
+                                    line.push(send_base);
+                                    read_line.insert(id, line);
+                                    task_send_socket(SocketRequest::ReadSlotBase(id));
+                                }
+                            }
+                        }
+                        RemoteClientRequest::DeliverBase(id, base) => {
+                            let line = read_line.remove(&id).unwrap_or_default();
+                            for send_base in line {
+                                let base = base.clone();
+                                let _ = send_base.send(base);
+                            }
+                            if let Some(base) = base.clone() {
+                                bases.insert(id, base);
+                            }
+                        }
+                        RemoteClientRequest::RequestTransact(datoms, send_head) => {
+                            if transact_line.is_some() {
+                                let _ = send_head.send(None);
+                            } else {
+                                transact_line = Some(send_head);
+                                task_send_socket(SocketRequest::Transact(datoms));
+                            }
+                        }
+                        RemoteClientRequest::DeliverTransact(new_head) => {
+                            if let Some(send_head) = transact_line.take() {
+                                let _ = send_head.send(Some(new_head));
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        send_socket(SocketRequest::Connect);
+        let inner = RemoteClientReadStorage {
+            requester: send_request.clone(),
+            head,
+            _spawn_local: PhantomData,
+        };
+        let updater = ClientUpdater {
+            requester: send_request,
+            _phantom_data: PhantomData,
+        };
+        Self { inner, updater }
+    }
+
+    fn send_request(&self, request: RemoteClientRequest) {
+        send_request::<T>(&self.inner.requester, request)
+    }
+}
+
+fn send_request<T: SpawnLocal>(
+    requester: &Sender<RemoteClientRequest>,
+    request: RemoteClientRequest,
+) {
+    let requester = requester.clone();
+    T::spawn_local(async move {
+        let _ = requester.send(request).await;
+    })
+}

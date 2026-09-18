@@ -50,13 +50,13 @@ impl<S: ReadWriteStorage> DbQuery for Db<S> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use futures::StreamExt;
-    use sky_types::db::Transact;
-    use sky_types::db::datom;
-    use sky_types::db::{dat, ent};
+	use super::*;
+	use futures::StreamExt;
+	use sky_types::db::Transact;
+	use sky_types::db::datom;
+	use sky_types::db::{dat, ent};
 
-    #[tokio::test]
+	#[tokio::test]
 	async fn ev_stream_test() -> anyhow::Result<()> {
         let count = || Attr::from("counter/count");
         let schema = vec![count()];
