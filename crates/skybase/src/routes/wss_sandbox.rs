@@ -7,7 +7,7 @@ use sky_server::shared::SocketResponse;
 use sky_types::db::{Attr, datom, val};
 use std::sync::Arc;
 
-mod sky {
+pub mod sky {
     use leptos::prelude::*;
     use sky_server::shared::remote::{RemoteClient, SpawnTask};
     use sky_server::shared::{SocketRequest, SocketResponse};
@@ -44,6 +44,7 @@ mod sky {
     #[derive(Clone)]
     pub struct SkyClient {
         client: StoredValue<Option<RemoteClient<LeptosSpawnTask>>>,
+        pub ready: ReadSignal<bool>,
     }
 
     impl SkyClient {
@@ -70,10 +71,10 @@ mod sky {
         socket_receiver: Signal<Option<SocketResponse>>,
     ) -> SkyClient {
         let stored_client = StoredValue::new(None);
+        let (ready, set_ready) = signal(false);
         #[cfg(feature = "hydrate")]
         {
             use leptos::logging::log;
-
             // Start the client.
             Effect::new(move |_| {
                 stored_client.update_value(|stored_client| {
@@ -86,6 +87,7 @@ mod sky {
                         };
                         let client = RemoteClient::<LeptosSpawnTask>::connect(send_socket);
                         *stored_client = Some(client);
+                        set_ready.set(true);
                         log!("sky client stored");
                     }
                 });
@@ -109,6 +111,7 @@ mod sky {
         }
         SkyClient {
             client: stored_client,
+            ready,
         }
     }
 }
