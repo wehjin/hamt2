@@ -20,14 +20,16 @@ impl<T: SpawnLocal> ReadStorage for RemoteClientReadStorage<T> {
     type Snapshot = RemoteClientReadStorage<T>;
 
     fn snapshot(&self) -> Self::Snapshot {
-        let head = self.head.read().unwrap().clone();
+        // Fix the head of the snapshot in a new Arc so that future changes
+        // in the processing loop do not affect it.
+        let head = self.get_head();
         let mut clone = self.clone();
         clone.head = std::sync::Arc::new(std::sync::RwLock::new(head));
         clone
     }
 
     async fn read(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
-        if id > self.head.read().unwrap().max_id {
+        if id > self.max_id() {
             panic!("invalid base id");
         }
         let (send, recv) = oneshot::channel();

@@ -83,8 +83,8 @@ async fn remote_client_works() {
             },
         });
         client.update(first_socket_response);
-        let active_head = client.active_head().await.expect("active head");
-        assert_eq!(active_head.max_id, id1);
+        tokio::task::yield_now().await;
+        assert_eq!(id1, client.active_head().max_id);
 
         // Start a read at the client and check it sent a request to the socket. The read must
         // be in a separate call so we can continue working before the read returns.

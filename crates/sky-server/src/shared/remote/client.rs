@@ -14,7 +14,6 @@ use tokio::sync::oneshot;
 
 pub(crate) enum RemoteClientRequest {
     DeliverHead(StorageHead),
-    GetStatus(oneshot::Sender<StorageHead>),
     RequestBase(SlotBaseId, oneshot::Sender<Option<SlotBase>>),
     DeliverBase(SlotBaseId, Option<SlotBase>),
     RequestTransact(Vec<Datom>, oneshot::Sender<Option<StorageHead>>),
@@ -91,10 +90,8 @@ impl<T: SpawnLocal> Transact for RemoteClient<T> {
 }
 
 impl<T: SpawnLocal> RemoteClient<T> {
-    pub fn active_head(&self) -> oneshot::Receiver<StorageHead> {
-        let (send, recv) = oneshot::channel();
-        self.send_request(RemoteClientRequest::GetStatus(send));
-        recv
+    pub fn active_head(&self) -> StorageHead {
+        self.inner.get_head()
     }
 
     pub fn to_updater(&self) -> ClientUpdater<T> {
@@ -121,10 +118,6 @@ impl<T: SpawnLocal> RemoteClient<T> {
                 let event = recv_request.recv().await;
                 if let Some(request) = event {
                     match request {
-                        RemoteClientRequest::GetStatus(status) => {
-                            let head = head.read().unwrap().clone();
-                            let _ = status.send(head);
-                        }
                         RemoteClientRequest::DeliverHead(new_head) => {
                             if new_head.max_id > head.read().unwrap().max_id {
                                 let mut write_lock = head.write().unwrap();
