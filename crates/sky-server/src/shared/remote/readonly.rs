@@ -1,5 +1,5 @@
 use crate::shared::remote::SpawnTask;
-use crate::shared::remote::client::ClientRequest;
+use crate::shared::remote::client::requests::ClientRequest;
 use sky_trie::prelude::ReadStorage;
 use sky_trie::types::StorageHead;
 use sky_trie::types::slot_base::SlotBase;
