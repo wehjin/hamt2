@@ -5,51 +5,25 @@ mod eins_with_attr;
 pub mod types;
 mod vals_in_slot;
 
-use crate::crate_services::datalog::atom::Atom;
-
-use crate::db::Schema;
-use crate::db::db_trie;
-use crate::trie::prelude::*;
 pub use all_eins::*;
 pub use attrs_of_ein::*;
 pub use binds_for_attr::*;
 pub use eins_with_attr::*;
-use sky_types::db::FindResult;
+
 pub use vals_in_slot::*;
-
-pub trait Find {
-    type Output;
-
-    fn select(&self) -> Vec<&'static str>;
-    fn where_(&self) -> Vec<Atom>;
-    fn process(self, result: FindResult) -> Vec<Self::Output>;
-
-    fn apply<T>(self, trie: &T, schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
-    where
-        Self: Sized,
-        T: TrieQuery,
-    {
-        async move {
-            let select = self.select();
-            let where_ = self.where_();
-            let result = db_trie::find(trie, schema, select, where_).await;
-            self.process(result)
-        }
-    }
-}
 
 #[cfg(test)]
 mod tests {
-	use crate::db::Db;
-	use crate::find::BindsForAttr;
-	use crate::traits::DbQuery;
-	use crate::trie::prelude::*;
-	use sky_types::db::Transact;
-	use sky_types::db::datom;
-	use sky_types::db::{Attr, ein, val};
+    use crate::db::Db;
+    use crate::find::BindsForAttr;
+    use crate::traits::DbQuery;
+    use crate::trie::prelude::*;
+    use sky_types::db::Transact;
+    use sky_types::db::datom;
+    use sky_types::db::{Attr, ein, val};
 
-	#[tokio::test]
-	async fn find_with_reader() {
+    #[tokio::test]
+    async fn find_with_reader() {
         let attr = Attr::from("Counter/count");
         let store = MemStorage::new();
         let db = Db::new(store, [attr.clone()]).await.unwrap();

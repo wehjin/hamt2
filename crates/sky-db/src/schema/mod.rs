@@ -1,5 +1,5 @@
 use crate::db::{Db, db_trie};
-use crate::find::Find;
+use crate::traits::Find;
 use crate::types::Txid;
 use schema_loader::SchemaLoader;
 use sky_trie::Trie;

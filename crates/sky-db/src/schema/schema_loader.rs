@@ -1,11 +1,11 @@
 use crate::crate_services::datalog::atom::{Atom, atom};
 use crate::crate_services::datalog::term::term;
 use crate::crate_services::datalog::var::var;
-use crate::find::Find;
+use crate::traits::Find;
 use sky_types::db;
+use sky_types::db::FindResult;
 use sky_types::db::schema::attr_spec::AttrSpec;
 use sky_types::db::schema::attribute::Attribute;
-use sky_types::db::FindResult;
 
 pub struct SchemaLoader;
 

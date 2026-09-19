@@ -1,7 +1,7 @@
 use crate::crate_services::datalog::atom::Atom;
 use crate::db::Schema;
 use crate::db::db_trie;
-use crate::find::Find;
+use crate::traits::Find;
 use crate::trie::prelude::*;
 use sky_types::db::{Attr, Ein, FindResult};
 use std::future::Future;
