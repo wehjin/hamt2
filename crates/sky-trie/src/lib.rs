@@ -1,9 +1,10 @@
 pub(crate) mod crate_services;
+pub mod local;
 pub mod prelude;
+pub mod storage;
 pub mod storage_trie_query;
 mod trie;
 pub mod trie_reader;
-pub mod storage;
 pub mod types;
 
 pub use sky_types::trie::TrieQuery;
