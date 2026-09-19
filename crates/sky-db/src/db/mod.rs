@@ -7,10 +7,9 @@ use crate::db::types::MaxEid;
 use crate::error::ConnectError;
 use crate::reader::DbReader;
 pub use crate::types::*;
-use crate::{LoadError, schema};
+use crate::schema;
 use sky_trie::Trie;
 use sky_trie::prelude::ReadWriteStorage;
-use sky_types::db::Attr;
 pub use types::*;
 
 #[derive(Debug)]
@@ -57,17 +56,16 @@ impl<S: ReadWriteStorage> Db<S> {
         Ok(db)
     }
 
-    pub async fn load(storage: S, attrs: impl AsRef<[Attr]>) -> Result<Self, LoadError> {
-        let attrs = attrs.as_ref();
+    pub async fn load(storage: S) -> Self {
         let starter_db = Db {
             schema: Schema::starter(),
             trie: Trie::connect(storage),
         };
         let db = Db {
-            schema: schema::load(attrs, &starter_db).await?,
+            schema: schema::load(&starter_db).await,
             trie: starter_db.trie,
         };
-        Ok(db)
+        db
     }
 
     pub fn close(self) -> S {

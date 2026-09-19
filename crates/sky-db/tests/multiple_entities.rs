@@ -1,4 +1,3 @@
-use sky_db::LoadError;
 use sky_db::db::Db;
 use sky_db::db::Txid;
 use sky_db::find::EinsWithAttr;
@@ -11,9 +10,6 @@ use sky_types::db::{Attr, ein, val};
 pub fn attr_count() -> Attr {
     Attr::from("counter/count")
 }
-pub fn attr_greeting() -> Attr {
-    Attr::from("speech/greeting")
-}
 
 #[tokio::test]
 async fn load_works() -> anyhow::Result<()> {
@@ -21,20 +17,8 @@ async fn load_works() -> anyhow::Result<()> {
     let db = Db::new(storage, [attr_count()]).await?;
     let db = db.transact([datom::add(1, attr_count(), 1)]).await?;
     let storage = db.close();
-    let db = Db::load(storage, [attr_count()]).await?;
+    let db = Db::load(storage).await;
     assert_eq!(Some(val(1)), db.find_val(1, attr_count()).await?);
-    Ok(())
-}
-
-#[tokio::test]
-async fn load_fails_with_unknown_attribute() -> anyhow::Result<()> {
-    let db = Db::new(MemStorage::new(), [attr_count()]).await?;
-    let storage = db.close();
-    let result = Db::load(storage, [attr_count(), attr_greeting()]).await;
-    match result {
-        Err(LoadError::UnknownAttr(attr)) => assert_eq!(attr_greeting(), attr),
-        _ => panic!("load should fail with unknown attr"),
-    }
     Ok(())
 }
 

@@ -25,7 +25,7 @@ async fn file_db_works() -> anyhow::Result<()> {
     }
     {
         let storage = FileStorage::load(dir.path())?;
-        let db = Db::load(storage, [attr_count()]).await?;
+        let db = Db::load(storage).await;
         assert_eq!(Some(val(1)), db.find_val(1, attr_count()).await?);
     }
     Ok(())
@@ -43,7 +43,7 @@ async fn file_db_strings_work() -> anyhow::Result<()> {
     }
     {
         let storage = FileStorage::load(dir.path())?;
-        let db = Db::load(storage, [attr_greeting()]).await?;
+        let db = Db::load(storage).await;
         assert_eq!(Some(val("hello")), db.find_val(1, attr_greeting()).await?);
     }
     Ok(())

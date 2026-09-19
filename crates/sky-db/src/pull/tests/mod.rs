@@ -26,7 +26,7 @@ async fn pull_test() {
         db.close()
     };
     {
-        let db = Db::load(storage, Basis::attrs()).await.expect("Db::load");
+        let db = Db::load(storage).await;
         assert_eq!(
             Basis {
                 symbol: "ABC".to_string(),

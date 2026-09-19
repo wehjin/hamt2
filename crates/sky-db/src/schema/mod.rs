@@ -1,15 +1,14 @@
-use crate::LoadError;
 use crate::db::{Db, db_trie};
 use crate::find::Find;
 use crate::types::Txid;
-use attr_loader::AttributeLoader;
+use schema_loader::SchemaLoader;
 use sky_trie::Trie;
 use sky_trie::storage::ReadWriteStorage;
 use sky_types::db;
 use sky_types::db::schema::Schema;
-use sky_types::db::{Attr, Dir, TransactError};
+use sky_types::db::{Dir, TransactError};
 
-pub mod attr_loader;
+pub mod schema_loader;
 
 pub async fn save<S: ReadWriteStorage>(
     schema: &Schema,
@@ -41,23 +40,10 @@ pub async fn save<S: ReadWriteStorage>(
     }
     Ok(trie)
 }
-pub async fn load<S: ReadWriteStorage>(
-    attrs: impl AsRef<[Attr]>,
-    db: &Db<S>,
-) -> Result<Schema, LoadError> {
-    let attrs = attrs.as_ref();
+pub async fn load<S: ReadWriteStorage>(db: &Db<S>) -> Schema {
     let mut schema = db.schema.clone();
-    {
-        // Find attributes for the requested attrs in the db.
-        let loader = AttributeLoader::new(attrs);
-        let attributes = loader.apply(&db.trie, &db.schema).await;
-        schema.extend(attributes);
-        // Confirm we have found an attribute for every requested attr.
-        for attr in attrs.iter() {
-            if !schema.contains(attr) {
-                return Err(LoadError::UnknownAttr(attr.clone()));
-            }
-        }
-    }
-    Ok(schema)
+    let loader = SchemaLoader;
+    let attributes = loader.apply(&db.trie, &db.schema).await;
+    schema.extend(attributes);
+    schema
 }

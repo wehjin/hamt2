@@ -90,7 +90,7 @@ mod tests {
                 .await?;
             storage = db.close();
         }
-        let db = Db::load(storage, schema).await?;
+        let db = Db::load(storage).await;
         let query1 = rule(
             atom(query_1(), [term(var("name"))]),
             [

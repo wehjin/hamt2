@@ -90,14 +90,15 @@ crate::trie::prelude::*` internally. sky-db does not re-export any storage types
      `AttrTable` via `Deref`), `AttrTable` (`HashMap<Attr, Attribute>` keyed by ident plus an `Ein -> Attr`
      reverse index for O(1) `find_attr(ein)`; `Index<Attr>`, always seeded with the
      `db/ident` and `db/cardinality` starter attributes), `Attribute { ein, spec: AttrSpec }`,
-     `AttrSpec { attr, cardinality }`, `Cardinality` (`One`/`Many`), `attr_loader::AttributeLoader` (a `Find` impl
-     used by `Db::load` to read attrs back out of the trie).
+      `AttrSpec { attr, cardinality }`, `Cardinality` (`One`/`Many`), `schema_loader::SchemaLoader` (a `Find` impl
+      in `src/schema/`, used by `Db::load` to read all attrs back out of the trie).
    - `src/db/` — `db/mod.rs` builds `Db<S>` (`schema: Schema` + `trie: Trie<S>`). Construction:
      `Db::new(storage, db_spec: impl Into<DbSpec>)` (`-> TransactError`; `DbSpec` is `From<[&str; N]>`,
      `From<Vec<&str>>`, `From<[Attr; N]>`, `From<Vec<Attr>>`, `From<[AttrSpec; N]>`) assigns fresh `Ein`s from
      `MaxEid`, saves the schema under
-     `Txid::SETUP`, resets max tx to `Txid::FLOOR`, commits; `Db::load(storage, attrs: impl AsRef<[Attr]>)`
-     (`-> LoadError`) reopens against `Schema::load` (undeclared attr => `LoadError::UnknownAttr`); `close()` returns
+      `Txid::SETUP`, resets max tx to `Txid::FLOOR`, commits; `Db::load(storage: S)` (async, infallible —
+      `-> Self`) rebuilds the full schema via `schema::load` (every attr's `db/ident`/`db/cardinality`
+      datoms read out of the trie); `close()` returns
      the storage; inherent `to_reader()` and `max_tx()`. Also the reserved attr idents `db/query` (`db::query()`),
      `db/ident` (`db::ident()`), `db/cardinality` (`db::cardinality()`) — `fn`s, not consts, since `Attr` owns a
      `String`.
@@ -117,8 +118,8 @@ crate::trie::prelude::*` internally. sky-db does not re-export any storage types
      (bytes -> (`u32_subkey`, u32) iterator) / `Read` (per-u32 trie reads -> bytes)).
    - `src/error/` — `QueryError` (`Anyhow`/`SerdeJson`/`Io`/`Utf8`/`SerdeError`/`Trie(TrieQueryError)`, doubles as a
      `serde::de::Error`), `TransactError` (`Anyhow`/`SerdeJson`/`Query(QueryError)`/`TrieStorageRead`/
-     `TrieStorageWrite`/`Trie(TrieWriteError)`/`HighBitInValue`/`NoSpaceInValueTable`), `LoadError`
-     (`UnknownAttr`). Re-exported at the crate root.
+      `TrieStorageWrite`/`Trie(TrieWriteError)`/`HighBitInValue`/`NoSpaceInValueTable`).
+      Re-exported at the crate root.
    - `src/find/` — the `Find` trait (`select()` + `where_() -> Vec<Atom>` + `process(FindResult)`; default `apply`
      runs `db_trie::find`; `FindResult` = `Vec<HashMap<String, Val>>`, lives at `find/types/find_result.rs`).
      Impls: `all_eins`,
@@ -187,8 +188,8 @@ Within `crates/skybase/src`:
 - **`Attr` owns a `String`** (attribute idents), not an integer or a `&'static str`. Schema attributes must be
   declared up front: `Db::new(storage, db_spec)` takes `impl Into<DbSpec>` (`[&str; N]`/`Vec<&str>`, `[Attr; N]`,
   `Vec<Attr>`, or `[AttrSpec; N]` for
-  cardinality), and `Db::load(storage, attrs)` takes `impl AsRef<[Attr]>`; every `Attr` used must be enumerated.
-  Loading with an undeclared attr fails with `LoadError::UnknownAttr`. Build an `Attr` with `Attr::from("...")`.
+  cardinality), while `Db::load(storage)` rebuilds the whole schema from the trie. Build an `Attr` with
+  `Attr::from("...")`.
   Entity ids 0–2 are reserved (`Ein::DB_IDENT`,
   `Ein::DB_CARDINALITY`, `Ein::DB_MAX`); fresh eins (attributes at `Db::new`, temps at `transact`) are handed out by
   `MaxEid`, which starts at `Ein::DB_MAX`.
@@ -210,7 +211,7 @@ Within `crates/skybase/src`:
 - **Errors are layered.** sky-types owns the storage errors `ReadStorageError` (`Io`/`Decode`) and
   `WriteStorageError` (`Io`/`Encode`), plus the trie errors `TrieQueryError` (`SystemError`) and `TrieInsertError`
    (`ExpectedMapBaseAtKey`/`Query`); sky-db's `ConnectError` (`Query`/`Transact`/
-   `TrieStorageWrite`) and `LoadError` (`UnknownAttr`) embed them, and `QueryError`/`TransactError`
+   `TrieStorageWrite`) embed them, and `QueryError`/`TransactError`
   (the latter embedding `QueryError`/`ReadStorageError`/`WriteStorageError`/`TrieInsertError`/`NoSpaceInValueTable`)
   live in `sky_types::db`, so `?` chains across crates work through `From` impls (`use crate::trie::prelude::*`
   brings the trie error types in scope).
