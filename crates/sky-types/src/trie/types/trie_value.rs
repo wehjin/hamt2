@@ -1,4 +1,4 @@
-use crate::trie::map_base::MapBase;
+use crate::trie::MapBase;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Formatter};
 

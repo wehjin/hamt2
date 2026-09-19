@@ -7,7 +7,7 @@ pub trait DbRuntime {
 }
 
 pub struct LocalDb<S: ReadWriteStorage> {
-    db: Db<S>,
+    _db: Db<S>,
 }
 
 pub fn new_in_memory<R: DbRuntime>(db_spec: impl Into<DbSpec>) -> LocalDb<MemStorage> {
@@ -16,7 +16,7 @@ pub fn new_in_memory<R: DbRuntime>(db_spec: impl Into<DbSpec>) -> LocalDb<MemSto
     let Ok(db) = R::block_on(async move { Db::new(mem_storage, db_spec).await }) else {
         unreachable!("Building db from a mem-storage should not fail")
     };
-    LocalDb { db }
+    LocalDb { _db: db }
 }
 
 #[cfg(test)]

@@ -1,5 +1,5 @@
-use crate::trie::error::TrieQueryError;
-use crate::trie::map_base::MapBase;
+use crate::trie::MapBase;
+use crate::trie::TrieQueryError;
 use crate::trie::TrieValue;
 use futures::Stream;
 
