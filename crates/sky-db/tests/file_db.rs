@@ -1,5 +1,5 @@
 use sky_db::db::Db;
-use sky_db::query::DbQuery;
+use sky_db::traits::DbQuery;
 use sky_trie::storage::file::FileStorage;
 use sky_types::db::Attr;
 use sky_types::db::Transact;

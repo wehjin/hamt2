@@ -42,7 +42,7 @@ pub trait Find {
 mod tests {
 	use crate::db::Db;
 	use crate::find::BindsForAttr;
-	use crate::query::DbQuery;
+	use crate::traits::DbQuery;
 	use crate::trie::prelude::*;
 	use sky_types::db::Transact;
 	use sky_types::db::datom;

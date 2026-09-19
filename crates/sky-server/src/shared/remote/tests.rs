@@ -1,6 +1,6 @@
 use super::*;
 use crate::shared::{SocketRequest, SocketResponse};
-use sky_db::query::DbQuery;
+use sky_db::traits::DbQuery;
 use sky_trie::storage::ReadStorage;
 use sky_trie::types::slot::Slot;
 use sky_trie::types::slot_base::SlotBase;

@@ -1,7 +1,7 @@
 use sky_db::db::Db;
 use sky_db::find::{AllEins, AttrsOfEin, EinsWithAttr};
-use sky_db::query::DbQuery;
 use sky_db::reader::DbReader;
+use sky_db::traits::DbQuery;
 use sky_trie::storage::mem::MemStorage;
 use sky_types::db::Transact;
 use sky_types::db::datom;

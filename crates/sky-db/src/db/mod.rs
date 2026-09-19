@@ -1,5 +1,7 @@
 pub mod db_trie;
 pub mod types;
+pub mod query;
+pub mod transact;
 
 use crate::db::attr_spec::DbSpec;
 use crate::db::attribute::Attribute;

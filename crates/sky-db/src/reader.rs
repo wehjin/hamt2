@@ -1,6 +1,6 @@
 use crate::db::{Db, Schema};
 use crate::find::Find;
-use crate::query::DbQuery;
+use crate::traits::DbQuery;
 use crate::trie::prelude::*;
 
 /// A read-only snapshot of a [`Db`], for running queries only.
