@@ -22,6 +22,11 @@ impl<S: ReadStorage> DbReader<S> {
         let read_trie = TrieReader::connect(db.trie.storage().snapshot());
         DbReader { schema, read_trie }
     }
+
+    pub fn start(schema: Schema, storage: &impl ReadStorage<Snapshot = S>) -> Self {
+        let read_trie: TrieReader<S> = TrieReader::connect(storage.snapshot());
+        DbReader { schema, read_trie }
+    }
 }
 
 impl<S: ReadStorage> DbQuery for DbReader<S> {

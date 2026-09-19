@@ -1,8 +1,9 @@
-use crate::db::attr_spec::AttrSpec;
-use crate::db::cardinality::Cardinality;
-use sky_types::db::{Attr, Ein};
+use crate::db::schema::attr_spec::AttrSpec;
+use crate::db::schema::cardinality::Cardinality;
+use crate::db::{Attr, Ein};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Attribute {
     pub ein: Ein,
     pub spec: AttrSpec,

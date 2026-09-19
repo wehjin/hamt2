@@ -5,6 +5,7 @@ pub mod find;
 pub mod pull;
 pub mod query;
 pub mod reader;
+pub mod schema;
 pub mod transact;
 pub mod types;
 

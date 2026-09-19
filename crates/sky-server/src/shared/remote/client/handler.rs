@@ -1,7 +1,7 @@
 use crate::shared::SocketRequest;
 use crate::shared::remote::requests::ClientRequest;
-use sky_trie::types::StorageHead;
 use sky_trie::types::slot_base::SlotBase;
+use sky_types::db::DbStatus;
 use sky_types::trie::SlotBaseId;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
@@ -11,25 +11,24 @@ use tokio::sync::oneshot;
 pub async fn process_client_requests(
     mut recv_request: Receiver<ClientRequest>,
     task_send_socket: Arc<impl Fn(SocketRequest)>,
-    task_head: Arc<RwLock<StorageHead>>,
+    db_status: Arc<RwLock<DbStatus>>,
 ) {
     let mut read_line: HashMap<SlotBaseId, Vec<oneshot::Sender<Option<SlotBase>>>> = HashMap::new();
     let mut bases = HashMap::from([(SlotBaseId::ZERO, SlotBase::new())]);
-    let head = task_head;
-    let mut transact_line: Option<oneshot::Sender<Option<StorageHead>>> = None;
+    let mut transact_line: Option<oneshot::Sender<Option<DbStatus>>> = None;
     loop {
         let event = recv_request.recv().await;
         if let Some(request) = event {
             match request {
                 ClientRequest::Reconnect => task_send_socket(SocketRequest::Connect),
-                ClientRequest::DeliverHead(new_head) => {
-                    if new_head.max_id > head.read().unwrap().max_id {
-                        let mut write_lock = head.write().unwrap();
-                        *write_lock = new_head
+                ClientRequest::DeliverStatus(new_status) => {
+                    if new_status.head.max_id > db_status.read().unwrap().head.max_id {
+                        let mut write_lock = db_status.write().unwrap();
+                        *write_lock = new_status
                     }
                 }
                 ClientRequest::RequestBase(id, send_base) => {
-                    if id > head.read().unwrap().max_id {
+                    if id > db_status.read().unwrap().head.max_id {
                         let _ = send_base.send(None);
                     } else {
                         if let Some(base) = bases.get(&id).cloned() {
@@ -52,11 +51,11 @@ pub async fn process_client_requests(
                         bases.insert(id, base);
                     }
                 }
-                ClientRequest::RequestTransact(datoms, send_head) => {
+                ClientRequest::RequestTransact(datoms, send_status) => {
                     if transact_line.is_some() {
-                        let _ = send_head.send(None);
+                        let _ = send_status.send(None);
                     } else {
-                        transact_line = Some(send_head);
+                        transact_line = Some(send_status);
                         task_send_socket(SocketRequest::Transact(datoms));
                     }
                 }

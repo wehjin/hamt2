@@ -2,9 +2,10 @@ use crate::shared::remote::requests::ClientRequest;
 use crate::shared::remote::updater::ClientUpdater;
 use crate::shared::remote::{RemoteClientReadStorage, SpawnTask};
 use crate::shared::{SocketRequest, SocketResponse};
+use sky_db::reader::DbReader;
 use sky_trie::prelude::ReadStorage;
-use sky_trie::types::StorageHead;
-use sky_types::db::Datom;
+use sky_types::db::{Datom, DbStatus};
+use sky_types::storage::StorageHead;
 use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
 use tokio::sync::mpsc::Sender;
@@ -23,6 +24,12 @@ pub struct RemoteClient<T: SpawnTask> {
 }
 
 impl<T: SpawnTask> RemoteClient<T> {
+    pub fn to_reader(&self) -> DbReader<RemoteClientReadStorage<T>> {
+        let storage = self.inner.snapshot();
+        let schema = storage.to_status().schema;
+        DbReader::start(schema, &self.inner)
+    }
+
     pub fn active_head(&self) -> StorageHead {
         self.inner.get_head()
     }
@@ -37,7 +44,7 @@ impl<T: SpawnTask> RemoteClient<T> {
     pub fn send_transact(
         &self,
         datoms: impl Into<Vec<Datom>>,
-    ) -> oneshot::Receiver<Option<StorageHead>> {
+    ) -> oneshot::Receiver<Option<DbStatus>> {
         let (send, recv) = oneshot::channel();
         let request = ClientRequest::RequestTransact(datoms.into(), send);
         let _ = self.send_request(request);
@@ -49,11 +56,11 @@ impl<T: SpawnTask> RemoteClient<T> {
     }
 
     pub fn connect(send_socket: impl Fn(SocketRequest) + 'static) -> Self {
-        let head = Arc::new(RwLock::new(StorageHead::default()));
+        let status = Arc::new(RwLock::new(DbStatus::default()));
         let (send_request, recv_request) = mpsc::channel::<ClientRequest>(100);
         let send_socket = Arc::new(send_socket);
         let task_send_socket = send_socket.clone();
-        let task_head = head.clone();
+        let task_head = status.clone();
         T::spawn_task(handler::process_client_requests(
             recv_request,
             task_send_socket,
@@ -62,7 +69,7 @@ impl<T: SpawnTask> RemoteClient<T> {
         send_socket(SocketRequest::Connect);
         let inner = RemoteClientReadStorage {
             requester: send_request.clone(),
-            head,
+            status: status,
             _spawn_local: PhantomData,
         };
         let updater = ClientUpdater::new(send_request);

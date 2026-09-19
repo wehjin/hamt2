@@ -1,41 +1,42 @@
 use super::*;
 use crate::shared::{SocketRequest, SocketResponse};
+use sky_db::query::DbQuery;
 use sky_trie::storage::ReadStorage;
-use sky_trie::types::StorageHead;
 use sky_trie::types::slot::Slot;
 use sky_trie::types::slot_base::SlotBase;
-use sky_types::db::{Attr, Transact, datom, val};
+use sky_types::db;
+use sky_types::db::schema::Schema;
+use sky_types::db::{Attr, DbStatus, Transact, datom, val};
+use sky_types::storage::StorageHead;
 use sky_types::trie::{MapBase, SlotBaseId, SlotMap, TrieValue};
 use std::time::Duration;
 use tokio::task::spawn_local;
 
-async fn run_client_test<F, Fut>(runner: F)
-where
-    F: FnOnce(RemoteClient<TokioSpawnTask>, tokio::sync::mpsc::Receiver<SocketRequest>) -> Fut,
-    Fut: Future,
-{
-    tokio::task::LocalSet::new()
-        .run_until(async move {
-            // Set up fake socket.
-            let (tokio_send_socket, mut requests_from_client) =
-                tokio::sync::mpsc::channel::<SocketRequest>(100);
-
-            // Connect the client and check its first emission.
-            let client = {
-                let client_send_socket = move |request| {
-                    let send_request = tokio_send_socket.clone();
-                    tokio::task::spawn_local(async move {
-                        send_request.send(request).await.expect("sending request");
-                    });
-                };
-                RemoteClient::<TokioSpawnTask>::connect(client_send_socket)
-            };
-            let client_request_after_connect =
-                requests_from_client.recv().await.expect("recv request");
-            assert_eq!(client_request_after_connect, SocketRequest::Connect);
-            runner(client, requests_from_client).await;
-        })
-        .await;
+#[tokio::test]
+async fn get_reader_works() {
+    run_client_test(|mut client, mut socket_requests| async move {
+        let db_status = DbStatus {
+            head: StorageHead {
+                max_id: SlotBaseId(10),
+                root: MapBase {
+                    map: SlotMap(0xffffffff),
+                    base: SlotBaseId(1),
+                },
+            },
+            schema: Schema::default(),
+        };
+        client.update(SocketResponse::DbStatus(db_status));
+        tokio::task::yield_now().await;
+        let reader = client.to_reader();
+        spawn_local(async move { reader.find_val(0, db::ident()).await });
+        tokio::task::yield_now().await;
+        let mut contents = Vec::new();
+        while let Ok(msg) = socket_requests.try_recv() {
+            contents.push(msg);
+        }
+        assert_eq!(SocketRequest::ReadSlotBase(SlotBaseId(1)), contents[0]);
+    })
+    .await;
 }
 
 #[tokio::test]
@@ -54,14 +55,17 @@ async fn transact_works() {
 
         // Transact waits for an acknowledgement before returning so we feed it one. After
         // that, the client should return from the transact call.
-        let new_head = StorageHead {
-            max_id: SlotBaseId(1),
-            root: MapBase {
-                map: Default::default(),
-                base: Default::default(),
+        let status = DbStatus {
+            head: StorageHead {
+                max_id: SlotBaseId(1),
+                root: MapBase {
+                    map: Default::default(),
+                    base: Default::default(),
+                },
             },
+            schema: Schema::default(),
         };
-        updater.update(SocketResponse::TransactResult(new_head));
+        updater.update(SocketResponse::TransactResult(status));
         let result = tokio::time::timeout(Duration::from_secs(1), join)
             .await
             .expect("join");
@@ -75,12 +79,15 @@ async fn remote_client_works() {
     run_client_test(|mut client, mut requests_from_client| async move {
         // Update the client with the first response from the socket.
         let id1 = SlotBaseId(1);
-        let first_socket_response = SocketResponse::StorageStatus(StorageHead {
-            max_id: id1,
-            root: MapBase {
-                map: SlotMap::empty(),
-                base: id1,
+        let first_socket_response = SocketResponse::DbStatus(DbStatus {
+            head: StorageHead {
+                max_id: id1,
+                root: MapBase {
+                    map: SlotMap::empty(),
+                    base: id1,
+                },
             },
+            schema: Schema::starter(),
         });
         client.update(first_socket_response);
         tokio::task::yield_now().await;
@@ -89,7 +96,7 @@ async fn remote_client_works() {
         // Start a read at the client and check it sent a request to the socket. The read must
         // be in a separate call so we can continue working before the read returns.
         let mut updater = client.to_updater();
-        let join = tokio::task::spawn_local(async move {
+        let join = spawn_local(async move {
             let read = client.read(id1).await.unwrap();
             (client, read)
         });
@@ -121,10 +128,39 @@ async fn remote_client_works() {
     .await
 }
 
+async fn run_client_test<F, Fut>(runner: F)
+where
+    F: FnOnce(RemoteClient<TokioSpawnTask>, tokio::sync::mpsc::Receiver<SocketRequest>) -> Fut,
+    Fut: Future,
+{
+    tokio::task::LocalSet::new()
+        .run_until(async move {
+            // Set up fake socket.
+            let (tokio_send_socket, mut requests_from_client) =
+                tokio::sync::mpsc::channel::<SocketRequest>(100);
+
+            // Connect the client and check its first emission.
+            let client = {
+                let client_send_socket = move |request| {
+                    let send_request = tokio_send_socket.clone();
+                    spawn_local(async move {
+                        send_request.send(request).await.expect("sending request");
+                    });
+                };
+                RemoteClient::<TokioSpawnTask>::connect(client_send_socket)
+            };
+            let client_request_after_connect =
+                requests_from_client.recv().await.expect("recv request");
+            assert_eq!(client_request_after_connect, SocketRequest::Connect);
+            runner(client, requests_from_client).await;
+        })
+        .await;
+}
+
 #[derive(Copy, Clone)]
 struct TokioSpawnTask;
 impl SpawnTask for TokioSpawnTask {
     fn spawn_task(future: impl Future<Output = ()> + 'static) {
-        tokio::task::spawn_local(future);
+        spawn_local(future);
     }
 }

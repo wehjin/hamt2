@@ -1,7 +1,8 @@
-use crate::db::cardinality::Cardinality;
-use sky_types::db::Attr;
+use crate::db::Attr;
+use crate::db::schema::cardinality::Cardinality;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AttrSpec {
     pub attr: Attr,
     pub cardinality: Cardinality,
@@ -67,7 +68,10 @@ impl From<Vec<Attr>> for DbSpec {
 impl<const N: usize> From<[&str; N]> for DbSpec {
     fn from(value: [&str; N]) -> Self {
         Self {
-            attrs_specs: value.iter().map(|s| AttrSpec::from(Attr::from(*s))).collect(),
+            attrs_specs: value
+                .iter()
+                .map(|s| AttrSpec::from(Attr::from(*s)))
+                .collect(),
         }
     }
 }

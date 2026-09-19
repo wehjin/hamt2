@@ -1,13 +1,13 @@
 pub mod db_trie;
 pub mod types;
 
-use crate::LoadError;
 use crate::db::attr_spec::DbSpec;
 use crate::db::attribute::Attribute;
 use crate::db::types::MaxEid;
 use crate::error::ConnectError;
 use crate::reader::DbReader;
 pub use crate::types::*;
+use crate::{LoadError, schema};
 use sky_trie::Trie;
 use sky_trie::prelude::ReadWriteStorage;
 use sky_types::db::Attr;
@@ -28,6 +28,10 @@ impl<S: ReadWriteStorage> Db<S> {
 
 /// Construction methods for Db
 impl<S: ReadWriteStorage> Db<S> {
+    pub fn schema(&self) -> &Schema {
+        &self.schema
+    }
+
     pub async fn new(storage: S, db_spec: impl Into<DbSpec>) -> Result<Self, ConnectError> {
         let db_spec = db_spec.into();
         let attr_specs = db_spec.as_ref();
@@ -43,7 +47,7 @@ impl<S: ReadWriteStorage> Db<S> {
                     .map(|(ein, spec)| Attribute::new(ein, spec.clone()));
                 schema.extend(attributes);
             }
-            trie = schema.save(trie, Txid::SETUP).await?;
+            trie = schema::save(&schema, trie, Txid::SETUP).await?;
             trie = db_trie::set_max_tx(trie, Txid::FLOOR).await?;
             trie = max_eid.write(trie).await?;
             trie = trie.commit().await?;
@@ -60,7 +64,7 @@ impl<S: ReadWriteStorage> Db<S> {
             trie: Trie::connect(storage),
         };
         let db = Db {
-            schema: Schema::load(attrs, &starter_db).await?,
+            schema: schema::load(attrs, &starter_db).await?,
             trie: starter_db.trie,
         };
         Ok(db)
@@ -69,14 +73,4 @@ impl<S: ReadWriteStorage> Db<S> {
     pub fn close(self) -> S {
         self.trie.close()
     }
-}
-
-pub fn query() -> Attr {
-    Attr::from("db/query")
-}
-pub fn ident() -> Attr {
-    Attr::from("db/ident")
-}
-pub fn cardinality() -> Attr {
-    Attr::from("db/cardinality")
 }

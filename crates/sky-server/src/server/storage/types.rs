@@ -1,5 +1,5 @@
 use sky_db::ConnectError;
-use sky_trie::types::StorageHead;
+use sky_types::db::DbStatus;
 use sky_types::db::TransactError;
 use thiserror::Error;
 
@@ -20,5 +20,5 @@ pub enum StorageServiceError {
 /// task and never broadcast.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum StorageBroadcastEvent {
-    NewHead(StorageHead),
+    NewStatus(DbStatus),
 }

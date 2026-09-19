@@ -45,8 +45,8 @@ pub fn WebSocketSandbox() -> impl IntoView {
     }
     let max_id = Memo::new(move |_| match socket_receiver.get() {
         Some(response) => match response {
-            SocketResponse::StorageStatus(head) | SocketResponse::TransactResult(head) => {
-                Some(head.max_id)
+            SocketResponse::DbStatus(status) | SocketResponse::TransactResult(status) => {
+                Some(status.head.max_id)
             }
             _ => None,
         },

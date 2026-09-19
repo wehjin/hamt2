@@ -1,8 +1,8 @@
 use crate::shared::remote::SpawnTask;
 use crate::shared::remote::client::requests::ClientRequest;
 use sky_trie::prelude::ReadStorage;
-use sky_trie::types::StorageHead;
 use sky_trie::types::slot_base::SlotBase;
+use sky_types::db::DbStatus;
 use sky_types::storage::ReadStorageError;
 use sky_types::trie::{MapBase, SlotBaseId};
 use std::marker::PhantomData;
@@ -10,21 +10,21 @@ use tokio::sync::mpsc::Sender;
 use tokio::sync::oneshot;
 
 #[derive(Clone)]
-pub struct RemoteClientReadStorage<SpawnLocal> {
+pub struct RemoteClientReadStorage<T: SpawnTask> {
     pub(crate) requester: Sender<ClientRequest>,
-    pub(crate) head: std::sync::Arc<std::sync::RwLock<StorageHead>>,
-    pub(crate) _spawn_local: PhantomData<SpawnLocal>,
+    pub(crate) status: std::sync::Arc<std::sync::RwLock<DbStatus>>,
+    pub(crate) _spawn_local: PhantomData<T>,
 }
 
 impl<T: SpawnTask> ReadStorage for RemoteClientReadStorage<T> {
     type Snapshot = RemoteClientReadStorage<T>;
 
     fn snapshot(&self) -> Self::Snapshot {
-        // Fix the head of the snapshot in a new Arc so that future changes
-        // in the processing loop do not affect it.
-        let head = self.get_head();
+        // Fix the status of the snapshot in a new Arc so that future changes
+        // in the processing loop do not affect the snapshot.
+        let status = self.status.read().unwrap().clone();
         let mut clone = self.clone();
-        clone.head = std::sync::Arc::new(std::sync::RwLock::new(head));
+        clone.status = std::sync::Arc::new(std::sync::RwLock::new(status));
         clone
     }
 
@@ -42,10 +42,15 @@ impl<T: SpawnTask> ReadStorage for RemoteClientReadStorage<T> {
     }
 
     fn max_id(&self) -> SlotBaseId {
-        self.head.read().unwrap().max_id
+        self.status.read().unwrap().head.max_id
     }
 
     fn read_root(&self) -> MapBase {
-        self.head.read().unwrap().root
+        self.status.read().unwrap().head.root
+    }
+}
+impl<T: SpawnTask> RemoteClientReadStorage<T> {
+    pub fn to_status(&self) -> DbStatus {
+        self.status.read().unwrap().clone()
     }
 }

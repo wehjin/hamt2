@@ -2,11 +2,11 @@ use log::error;
 use sky_db::db::Db;
 use sky_db::db::attr_spec::DbSpec;
 use sky_trie::prelude::{MemStorage, ReadStorage};
-use sky_trie::types::StorageHead;
 use sky_trie::types::slot_base::SlotBase;
-use sky_types::db::{Datom, Transact};
+use sky_types::db::{Datom, DbStatus, Transact};
 use sky_types::trie::SlotBaseId;
 use tokio::sync::{broadcast, mpsc, oneshot};
+
 mod types;
 
 pub use types::*;
@@ -43,9 +43,9 @@ impl StorageService {
 
     /// Read the head of the storage service. This tells the client what is in
     /// the storage.
-    pub async fn read_storage_head(&self) -> StorageHead {
+    pub async fn read_status(&self) -> DbStatus {
         let (send, receive) = oneshot::channel();
-        let request = StorageRequest::ReadStorageHead(send);
+        let request = StorageRequest::ReadStatus(send);
         self.request_sender
             .send(request)
             .await
@@ -68,7 +68,7 @@ impl StorageService {
     pub async fn transact(
         &self,
         datoms: impl Into<Vec<Datom>>,
-    ) -> Result<StorageHead, StorageServiceError> {
+    ) -> Result<DbStatus, StorageServiceError> {
         let datoms = datoms.into();
         let (send, receive) = oneshot::channel();
         let request = StorageRequest::Transact(datoms, send);
@@ -77,7 +77,7 @@ impl StorageService {
             .await
             .expect("send request failed");
         match receive.await {
-            Ok(head) => Ok(head),
+            Ok(status) => Ok(status),
             // The storage task dropped the sender unsent: the transact lost
             // the db and the worker exited.
             Err(_) => Err(StorageServiceError::TransactFailed),
@@ -88,9 +88,9 @@ impl StorageService {
 /// These are messages sent to the storage service after connection.
 #[derive(Debug)]
 enum StorageRequest {
-    ReadStorageHead(oneshot::Sender<StorageHead>),
+    ReadStatus(oneshot::Sender<DbStatus>),
     ReadSlotBase(SlotBaseId, oneshot::Sender<Option<SlotBase>>),
-    Transact(Vec<Datom>, oneshot::Sender<StorageHead>),
+    Transact(Vec<Datom>, oneshot::Sender<DbStatus>),
 }
 
 async fn begin_storage(
@@ -124,10 +124,12 @@ async fn handle_storage(
     let mut db = Db::new(storage.clone(), db_spec).await?;
     while let Some(event) = from_clients.recv().await {
         match event {
-            StorageRequest::ReadStorageHead(response) => {
+            StorageRequest::ReadStatus(response) => {
                 let head = storage.get_head();
-                if let Err(e) = response.send(head) {
-                    log::error!("ReadTrieStatus response failed: {:?}", e);
+                let schema = db.schema().clone();
+                let status = DbStatus { head, schema };
+                if let Err(e) = response.send(status) {
+                    error!("Failed to send status: {:?}", e);
                 }
             }
             StorageRequest::ReadSlotBase(base_id, response) => {
@@ -150,9 +152,11 @@ async fn handle_storage(
                 }
                 Ok(new_db) => {
                     let head = storage.get_head();
-                    let broadcast = StorageBroadcastEvent::NewHead(head);
+                    let schema = new_db.schema().clone();
+                    let status = DbStatus { head, schema };
+                    let broadcast = StorageBroadcastEvent::NewStatus(status.clone());
                     let _ = to_clients.send(broadcast);
-                    let _ = response.send(head);
+                    let _ = response.send(status);
                     db = new_db;
                 }
             },
@@ -163,28 +167,35 @@ async fn handle_storage(
 
 #[cfg(test)]
 mod tests {
-	use crate::server::storage::StorageService;
-	use crate::server::storage::types::StorageBroadcastEvent;
-	use sky_trie::types::StorageHead;
-	use sky_types::db::{Attr, datom};
-	use sky_types::trie::{MapBase, SlotBaseId};
+    use crate::server::storage::StorageService;
+    use crate::server::storage::types::StorageBroadcastEvent;
+    use sky_types::db::{Attr, DbStatus, datom};
+    use sky_types::storage::StorageHead;
+    use sky_types::trie::{MapBase, SlotBaseId};
 
-	#[tokio::test]
-	async fn it_works() {
+    #[tokio::test]
+    async fn it_works() {
         let attr = || Attr::from("Counter/count");
         let db_spec = [attr()];
         let storage = StorageService::start(db_spec).await.unwrap();
+        let status = storage.read_status().await;
         let mut broadcasts = storage.subscribe();
 
-        let new_head = storage.transact([datom::add(100, attr(), 10)]).await.unwrap();
-        let StorageHead { max_id, root } = new_head;
+        let new_status = storage
+            .transact([datom::add(100, attr(), 10)])
+            .await
+            .unwrap();
+        let StorageHead { max_id, root } = new_status.head;
         assert_ne!(SlotBaseId::ZERO, max_id);
         assert_ne!(MapBase::empty(), root);
 
         let broadcast = broadcasts.recv().await.unwrap();
         assert_eq!(
-            StorageBroadcastEvent::NewHead(StorageHead { max_id, root }),
-            broadcast
+            broadcast,
+            StorageBroadcastEvent::NewStatus(DbStatus {
+                head: StorageHead { max_id, root },
+                schema: status.schema.clone(),
+            }),
         );
 
         let slot_base = storage.read_slot_base(max_id).await;

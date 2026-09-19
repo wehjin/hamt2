@@ -1,12 +1,13 @@
-use crate::db;
-use crate::db::attr_spec::AttrSpec;
-use crate::db::cardinality::Cardinality;
-use crate::types::schema::attribute::Attribute;
-use sky_types::db::{Attr, Ein};
+use crate::db::{Attr, Ein};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::ops::{Deref, Index};
+use crate::db;
+use crate::db::schema::attr_spec::AttrSpec;
+use crate::db::schema::attribute::Attribute;
+use crate::db::schema::cardinality::Cardinality;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AttrTable {
     map: HashMap<Attr, Attribute>,
     by_ein: HashMap<Ein, Attr>,

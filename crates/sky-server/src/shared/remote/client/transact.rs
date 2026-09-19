@@ -12,7 +12,7 @@ impl<T: SpawnTask> Transact for RemoteClient<T> {
             Err(e) => Err(TransactError::Disconnected(e.into())),
             Ok(None) => Err(TransactError::Refused(anyhow!("Transaction failed"))),
             Ok(Some(head)) => {
-                self.send_request(ClientRequest::DeliverHead(head));
+                self.send_request(ClientRequest::DeliverStatus(head));
                 Ok(self)
             }
         }

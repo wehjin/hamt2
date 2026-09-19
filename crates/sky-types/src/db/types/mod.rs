@@ -3,8 +3,11 @@ mod dat;
 mod ein;
 mod ent;
 mod find_result;
+pub mod schema;
 mod val;
 
+use crate::db::schema::Schema;
+use crate::storage::StorageHead;
 pub use attr::*;
 pub use dat::*;
 pub use ein::*;
@@ -25,4 +28,10 @@ pub struct Datom {
 pub enum Dir {
     In,
     Out,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct DbStatus {
+    pub head: StorageHead,
+    pub schema: Schema,
 }

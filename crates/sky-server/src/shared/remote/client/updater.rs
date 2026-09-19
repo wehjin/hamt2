@@ -22,8 +22,8 @@ impl<T: SpawnTask> ClientUpdater<T> {
     }
     pub fn update(&mut self, socket_response: SocketResponse) {
         match socket_response {
-            SocketResponse::StorageStatus(head) => {
-                self.send_request(ClientRequest::DeliverHead(head));
+            SocketResponse::DbStatus(status) => {
+                self.send_request(ClientRequest::DeliverStatus(status));
             }
             SocketResponse::SlotBase(id, base) => {
                 self.send_request(ClientRequest::DeliverBase(id, base));

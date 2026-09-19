@@ -1,6 +1,7 @@
-use sky_types::db::Val;
+use serde::{Deserialize, Serialize};
+use crate::db::Val;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Cardinality {
     One,
     Many,

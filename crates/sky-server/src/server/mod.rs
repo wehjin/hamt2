@@ -2,9 +2,9 @@ use crate::server::storage::{StorageBroadcastEvent, StorageService};
 use crate::shared::{SocketRequest, SocketResponse};
 use futures_util::{Sink, SinkExt, Stream, StreamExt};
 
-pub mod storage;
 #[cfg(feature = "axum-ws")]
 pub mod axum_ws;
+pub mod storage;
 
 /// Processes socket requests in a loop.
 ///
@@ -24,8 +24,8 @@ pub async fn process_socket_requests<In, Out>(
             request = incoming.next() => {
                 match request {
                     Some(SocketRequest::Connect) => {
-                        let head  = storage.read_storage_head().await;
-                        let _ = outgoing.send(SocketResponse::StorageStatus(head)).await;
+                        let status  = storage.read_status().await;
+                        let _ = outgoing.send(SocketResponse::DbStatus(status)).await;
                     }
                     Some(SocketRequest::ReadSlotBase(slotbase_id)) => {
                         let slot_base = storage.read_slot_base(slotbase_id).await;
@@ -43,8 +43,8 @@ pub async fn process_socket_requests<In, Out>(
                 }
             }
             Ok(event) = broadcast.recv() => {
-                let StorageBroadcastEvent::NewHead(head) = event;
-                let _ = outgoing.send(SocketResponse::StorageStatus(head)).await;
+                let StorageBroadcastEvent::NewStatus(status) = event;
+                let _ = outgoing.send(SocketResponse::DbStatus(status)).await;
             }
         }
     }
@@ -69,26 +69,26 @@ mod tests {
         let (_task, request, mut response) = spawn_socket_task(storage);
 
         // Connect
-        let head = {
+        let status = {
             request.send(SocketRequest::Connect).await.unwrap();
-            let SocketResponse::StorageStatus(head) = response.recv().await.unwrap() else {
+            let SocketResponse::DbStatus(status) = response.recv().await.unwrap() else {
                 panic!("Unexpected response received");
             };
-            assert_ne!(SlotBaseId::ZERO, head.max_id);
-            head
+            assert_ne!(SlotBaseId::ZERO, status.head.max_id);
+            status
         };
 
         // Read slot base
         {
             request
-                .send(SocketRequest::ReadSlotBase(head.max_id))
+                .send(SocketRequest::ReadSlotBase(status.head.max_id))
                 .await
                 .unwrap();
             let SocketResponse::SlotBase(base_id, Some(base)) = response.recv().await.unwrap()
             else {
                 panic!("Unexpected response received");
             };
-            assert_eq!(head.max_id, base_id);
+            assert_eq!(status.head.max_id, base_id);
             assert_ne!(0, base.len());
         }
     }
@@ -112,8 +112,8 @@ mod tests {
         let mut status_heads = Vec::new();
         for response in [first, second] {
             match response {
-                SocketResponse::TransactResult(head) => result_heads.push(head),
-                SocketResponse::StorageStatus(head) => status_heads.push(head),
+                SocketResponse::TransactResult(status) => result_heads.push(status.head),
+                SocketResponse::DbStatus(status) => status_heads.push(status.head),
                 other => panic!("Unexpected response: {:?}", other),
             }
         }
