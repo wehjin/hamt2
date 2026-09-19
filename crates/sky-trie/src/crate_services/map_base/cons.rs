@@ -6,11 +6,11 @@ use sky_types::trie::MapBase;
 use sky_types::trie::SlotMap;
 use sky_types::trie::TrieValue;
 
-#[allow(dead_code)]
+#[cfg(test)]
 pub async fn one_kv(
-	key: HashKey,
-	value: TrieValue,
-	storage: &mut impl ReadWriteStorage,
+    key: HashKey,
+    value: TrieValue,
+    storage: &mut impl ReadWriteStorage,
 ) -> MapBase {
     let id = storage
         .append(&SlotBase::new_kv(key, value))
@@ -23,11 +23,11 @@ pub async fn one_kv(
 }
 
 pub async fn two_kv(
-	key: HashKey,
-	value: TrieValue,
-	key2: HashKey,
-	value2: TrieValue,
-	storage: &mut impl ReadWriteStorage,
+    key: HashKey,
+    value: TrieValue,
+    key2: HashKey,
+    value2: TrieValue,
+    storage: &mut impl ReadWriteStorage,
 ) -> MapBase {
     debug_assert!(key.i32() != key2.i32());
     debug_assert!(key.map_index() != key2.map_index());

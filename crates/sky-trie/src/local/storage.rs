@@ -40,7 +40,7 @@ impl<'a> LocalStorage<'a> {
     }
 
     /// Add a base using the next available id.
-    pub fn push(self, base: SlotBase) -> (Self, SlotBaseId) {
+    pub fn append(self, base: SlotBase) -> (Self, SlotBaseId) {
         let next_id = self.head.max_id + 1;
         let Self {
             mut head,
@@ -80,7 +80,7 @@ mod tests {
     fn no_change_to_cloned_index() {
         let storage = LocalStorage::default();
         let cloned_storage = storage.clone();
-        let (_storage, next_id) = storage.push(SlotBase::new());
+        let (_storage, next_id) = storage.append(SlotBase::new());
         let _ = cloned_storage[next_id];
     }
 
@@ -88,7 +88,7 @@ mod tests {
     fn append() {
         let storage = LocalStorage::default();
         let cloned_storage = storage.clone();
-        let (storage, base_id) = storage.push(SlotBase::new());
+        let (storage, base_id) = storage.append(SlotBase::new());
         assert_eq!(base_id, SlotBaseId(1));
         assert_eq!(SlotBase::new(), storage[SlotBaseId(1)]);
         assert_eq!(cloned_storage.max_id() + 1, storage.max_id())
