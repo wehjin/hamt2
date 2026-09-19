@@ -1,10 +1,12 @@
 use crate::sky;
 use crate::sky::SocketSender;
 use codee::string::FromToStringCodec;
-use leptos::logging::error;
+use leptos::logging::{error, log};
 use leptos::prelude::*;
 use leptos_use::{UseWebSocketReturn, use_websocket};
+use sky_db::query::DbQuery;
 use sky_server::shared::SocketResponse;
+use sky_types::db;
 use sky_types::db::{Attr, datom, val};
 use std::sync::Arc;
 
@@ -43,6 +45,20 @@ pub fn WebSocketSandbox() -> impl IntoView {
             }
         });
     }
+    let local = {
+        let sky = sky.clone();
+        LocalResource::new(move || {
+            let sky = sky.clone();
+            async move {
+                let reader = sky.to_reader();
+                if let Some(reader) = reader {
+                    let val = reader.find_val(2, db::ident()).await;
+                    log!("found: {:?}", val);
+                }
+            }
+        })
+    };
+
     let max_id = Memo::new(move |_| match socket_receiver.get() {
         Some(response) => match response {
             SocketResponse::DbStatus(status) | SocketResponse::TransactResult(status) => {
@@ -69,6 +85,12 @@ pub fn WebSocketSandbox() -> impl IntoView {
             }
         }
     };
+    let read_ident = {
+        let local = local.clone();
+        move |_| {
+            local.refetch();
+        }
+    };
 
     let send_transact = {
         let sky = sky.clone();
@@ -85,6 +107,7 @@ pub fn WebSocketSandbox() -> impl IntoView {
                 <button class="button" on:click=send_connect>"Connect"</button>
                 <button class="button" on:click=send_read_slot_base>"Read slot base"</button>
                 <button class="button" on:click=send_transact>"Transact"</button>
+                <button class="button" on:click=read_ident>"Read Ident"</button>
             </div>
             <p>
                 "Ready state: "
