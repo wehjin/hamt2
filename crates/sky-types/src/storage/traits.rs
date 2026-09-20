@@ -3,8 +3,7 @@ use crate::storage::{
     WriteStorageError,
 };
 use crate::trie::{
-    HandleTrieConfig, HashKey, MapBase, SlotBase, SlotBaseId, TrieConfig, TrieReadPolicy,
-    TrieValue, TrieWritePolicy,
+    HandleTrieConfig, MapBase, SlotBase, SlotBaseId, TrieConfig, TrieReadPolicy, TrieWritePolicy,
 };
 
 /// A trait for reading Bases from storage.
@@ -95,27 +94,10 @@ where
 {
     type WriteErrorType = WriteStorageError;
 
-    async fn commit_single_slot_base(
-        &mut self,
-        key: HashKey,
-        value: TrieValue<Self::Config>,
-    ) -> Result<<Self::Config as TrieConfig>::HandleType, WriteStorageError> {
-        self.append(&SlotBase::new_kv(key, value)).await
-    }
-
     async fn commit_base(
         &mut self,
         base: SlotBase<Self::Config>,
     ) -> Result<<Self::Config as TrieConfig>::HandleType, WriteStorageError> {
         self.append(&base).await
-    }
-
-    fn replace_slot_value_in_base(
-        &self,
-        base: SlotBase<Self::Config>,
-        index: usize,
-        value: TrieValue<Self::Config>,
-    ) -> SlotBase<Self::Config> {
-        SlotBase::replace_value(base, index, value)
     }
 }

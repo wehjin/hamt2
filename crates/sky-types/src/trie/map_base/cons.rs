@@ -6,10 +6,8 @@ pub async fn one_kv<P: TrieWritePolicy>(
     value: TrieValue<P::Config>,
     policy: &mut P,
 ) -> MapBase<P::Config> {
-    let id = policy
-        .commit_single_slot_base(key, value)
-        .await
-        .expect("append base");
+    let base = policy.form_kv(key, value);
+    let id = policy.commit_base(base).await.expect("commit base");
     MapBase {
         map: SlotMap::set_key_bit(key),
         base: id,
@@ -37,6 +35,6 @@ pub async fn two_kv<P: TrieWritePolicy>(
         }
         SlotBase { slots }
     };
-    let id = policy.commit_base(base).await.expect("append base");
+    let id = policy.commit_base(base).await.expect("commit base");
     MapBase { map, base: id }
 }

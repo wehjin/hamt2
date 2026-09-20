@@ -13,7 +13,7 @@ pub async fn insert_kv<P: TrieWritePolicy>(
             match read_base.as_ref()[base_index].test_kv(&key, &value) {
                 KvTest::SameValue => MapBase { map, base: base_id },
                 KvTest::ValueConflict => {
-                    let post_base = policy.replace_slot_value_in_base(read_base, base_index, value);
+                    let post_base = policy.swap_v(read_base, base_index, value);
                     let id = policy.commit_base(post_base).await.expect("commit base");
                     MapBase { map, base: id }
                 }
@@ -38,7 +38,10 @@ pub async fn insert_kv<P: TrieWritePolicy>(
                 let kv_index = map.count_left(key);
                 base.as_ref().insert_slot(kv_index, kv_slot)
             };
-            let id = policy.commit_base(post_slot_base).await.expect("append base");
+            let id = policy
+                .commit_base(post_slot_base)
+                .await
+                .expect("append base");
             let post_map = map.with_key(key);
             MapBase {
                 map: post_map,

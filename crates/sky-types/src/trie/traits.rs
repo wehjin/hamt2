@@ -8,23 +8,27 @@ where
 {
     type WriteErrorType: Debug;
 
-    async fn commit_single_slot_base(
-        &mut self,
-        key: HashKey,
-        value: TrieValue<Self::Config>,
-    ) -> Result<<Self::Config as TrieConfig>::HandleType, Self::WriteErrorType>;
-
+    /// Commits a base and returns its assigned handle.
     async fn commit_base(
         &mut self,
         base: SlotBase<Self::Config>,
     ) -> Result<<Self::Config as TrieConfig>::HandleType, Self::WriteErrorType>;
 
-    fn replace_slot_value_in_base(
+    /// Makes a new base containing `key` and `value` in a single slot.
+    fn form_kv(&self, key: HashKey, value: TrieValue<Self::Config>) -> SlotBase<Self::Config> {
+        SlotBase::new_kv(key, value)
+    }
+
+    /// Makes a copy of `base` in which the slot at `index` contains `value` in place
+    /// of its previous value while preserving the key.
+    fn swap_v(
         &self,
         base: SlotBase<Self::Config>,
         index: usize,
         value: TrieValue<Self::Config>,
-    ) -> SlotBase<Self::Config>;
+    ) -> SlotBase<Self::Config> {
+        SlotBase::replace_value(base, index, value)
+    }
 
     /// Makes a copy of `base` where the kv already at `index` is moved into a new
     /// base containing both the old kv and a new kv.
@@ -46,8 +50,8 @@ where
         base.replace_slot(base_index, post_slot)
     }
 
-    /// Makes a copy of `base` where a new key and value are inserted in the
-    /// map-base already present at `index`.
+    /// Makes a copy of `base` where `key` and `value` are inserted into the
+    /// lower base already present at `index`.
     async fn merge_kv(
         &mut self,
         base: SlotBase<Self::Config>,
