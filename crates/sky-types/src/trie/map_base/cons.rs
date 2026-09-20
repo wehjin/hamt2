@@ -1,19 +1,13 @@
-use crate::storage::ReadWriteStorage;
-use crate::types::slot::Slot;
-use crate::types::slot_base::SlotBase;
-use sky_types::trie::HashKey;
-use sky_types::trie::MapBase;
-use sky_types::trie::SlotMap;
-use sky_types::trie::TrieValue;
+use crate::trie::{HashKey, MapBase, Slot, SlotBase, SlotMap, TrieValue, TrieWritePolicy};
 
 #[cfg(test)]
-pub async fn one_kv(
+pub async fn one_kv<P: TrieWritePolicy>(
     key: HashKey,
-    value: TrieValue,
-    storage: &mut impl ReadWriteStorage,
-) -> MapBase {
-    let id = storage
-        .append(&SlotBase::new_kv(key, value))
+    value: TrieValue<P::HandleType>,
+    policy: &mut P,
+) -> MapBase<P::HandleType> {
+    let id = policy
+        .commit_single_slot_base(key, value)
         .await
         .expect("append base");
     MapBase {
@@ -22,13 +16,13 @@ pub async fn one_kv(
     }
 }
 
-pub async fn two_kv(
+pub async fn two_kv<P: TrieWritePolicy>(
     key: HashKey,
-    value: TrieValue,
+    value: TrieValue<P::HandleType>,
     key2: HashKey,
-    value2: TrieValue,
-    storage: &mut impl ReadWriteStorage,
-) -> MapBase {
+    value2: TrieValue<P::HandleType>,
+    policy: &mut P,
+) -> MapBase<P::HandleType> {
     debug_assert!(key.i32() != key2.i32());
     debug_assert!(key.map_index() != key2.map_index());
     let map = SlotMap(key.to_map_bit() | key2.to_map_bit());
@@ -43,6 +37,6 @@ pub async fn two_kv(
         }
         SlotBase { slots }
     };
-    let id = storage.append(&base).await.expect("append base");
+    let id = policy.commit_base(base.into()).await.expect("append base");
     MapBase { map, base: id }
 }

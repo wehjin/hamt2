@@ -1,10 +1,10 @@
 use crate::db::Db;
 use crate::pull::Pull;
-use crate::trie::prelude::*;
 use common::Basis;
 use sky_types::db::Transact;
 use sky_types::db::datom;
 use sky_types::db::{Attr, Ein, Ent, Val, dat};
+use sky_types::storage::MemStorage;
 
 pub mod common;
 
@@ -51,10 +51,18 @@ fn push_test() {
     let datoms = basis.into_datoms(ent.clone());
     assert_eq!(
         vec![
-	        datom::add(ent.clone(), Attr::from("basis/symbol"), dat(Val::from_str("ABC"))),
-	        datom::add(ent.clone(), Attr::from("basis/shares"), dat(Val::U32(100))),
-	        datom::add(ent.clone(), Attr::from("basis/price_each"), dat(Val::U32(101))),
-	        datom::add(ent, Attr::from("basis/direction"), dat(Val::U32(u32::MAX))),
+            datom::add(
+                ent.clone(),
+                Attr::from("basis/symbol"),
+                dat(Val::from_str("ABC"))
+            ),
+            datom::add(ent.clone(), Attr::from("basis/shares"), dat(Val::U32(100))),
+            datom::add(
+                ent.clone(),
+                Attr::from("basis/price_each"),
+                dat(Val::U32(101))
+            ),
+            datom::add(ent, Attr::from("basis/direction"), dat(Val::U32(u32::MAX))),
         ],
         datoms
     );

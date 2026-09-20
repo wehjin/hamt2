@@ -1,12 +1,12 @@
 use crate::db::Db;
 use crate::pull::Pull;
 use crate::traits::DbQuery;
-use crate::trie::prelude::*;
 use serde::{Deserialize, Serialize};
 use sky_types::db::Datom;
 use sky_types::db::QueryError;
 use sky_types::db::datom;
 use sky_types::db::{Attr, Ein, Ent};
+use sky_types::storage::ReadWriteStorage;
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename = "basis")]
@@ -44,10 +44,10 @@ impl<'a> Pull<'a> for Basis {
 
     fn into_datoms(self, ent: Ent) -> Vec<Datom> {
         vec![
-	        datom::add(ent.clone(), Self::symbol(), self.symbol),
-	        datom::add(ent.clone(), Self::shares(), self.shares),
-	        datom::add(ent.clone(), Self::price_each(), self.price_each),
-	        datom::add(ent, Self::direction(), self.direction),
+            datom::add(ent.clone(), Self::symbol(), self.symbol),
+            datom::add(ent.clone(), Self::shares(), self.shares),
+            datom::add(ent.clone(), Self::price_each(), self.price_each),
+            datom::add(ent, Self::direction(), self.direction),
         ]
     }
 
@@ -58,7 +58,10 @@ impl<'a> Pull<'a> for Basis {
             .find_val(eid, Self::price_each())
             .await?
             .expect("price_each");
-        let direction = db.find_val(eid, Self::direction()).await?.expect("direction");
+        let direction = db
+            .find_val(eid, Self::direction())
+            .await?
+            .expect("direction");
         Ok(Self {
             symbol: symbol.as_str().to_string(),
             shares: shares.u32(),

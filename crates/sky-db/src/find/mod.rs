@@ -17,10 +17,11 @@ mod tests {
     use crate::db::Db;
     use crate::find::BindsForAttr;
     use crate::traits::DbQuery;
-    use crate::trie::prelude::*;
+
     use sky_types::db::Transact;
     use sky_types::db::datom;
     use sky_types::db::{Attr, ein, val};
+    use sky_types::storage::MemStorage;
 
     #[tokio::test]
     async fn find_with_reader() {

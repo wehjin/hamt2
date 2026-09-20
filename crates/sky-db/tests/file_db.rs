@@ -1,10 +1,10 @@
 use sky_db::db::Db;
 use sky_db::traits::DbQuery;
-use sky_trie::storage::file::FileStorage;
 use sky_types::db::Attr;
 use sky_types::db::Transact;
 use sky_types::db::datom;
 use sky_types::db::val;
+use sky_types::storage::FileStorage;
 
 pub fn attr_count() -> Attr {
     Attr::from("counter/count")
@@ -37,7 +37,9 @@ async fn file_db_strings_work() -> anyhow::Result<()> {
     {
         let storage = FileStorage::new(dir.path())?;
         let db = Db::new(storage, [attr_greeting()]).await?;
-        let db = db.transact([datom::add(1, attr_greeting(), "hello")]).await?;
+        let db = db
+            .transact([datom::add(1, attr_greeting(), "hello")])
+            .await?;
         assert_eq!(Some(val("hello")), db.find_val(1, attr_greeting()).await?);
         db.close();
     }

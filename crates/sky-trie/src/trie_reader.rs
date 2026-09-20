@@ -1,18 +1,18 @@
 use crate::storage_trie_query::StorageTrieQuery;
-use crate::storage::ReadStorage;
-use sky_types::trie::MapBase;
+use sky_types::storage::ReadStorage;
 use sky_types::trie::TrieValue;
+use sky_types::trie::{MapBase, SlotBaseId};
 
 /// A read-only trie over an owned read-only storage, used only for queries.
 #[derive(Debug)]
 pub struct TrieReader<S: ReadStorage> {
-    pub(crate) root: MapBase,
+    pub(crate) root: MapBase<SlotBaseId>,
     storage: S,
 }
 
 impl<S: ReadStorage> TrieReader<S> {
     /// Builds a reader over the given storage with the given root.
-    pub fn new(root: MapBase, storage: S) -> Self {
+    pub fn new(root: MapBase<SlotBaseId>, storage: S) -> Self {
         Self { root, storage }
     }
 
@@ -22,7 +22,7 @@ impl<S: ReadStorage> TrieReader<S> {
         Self { root, storage }
     }
 
-    pub fn subtrie_from_value(value: TrieValue, storage: S) -> Option<Self> {
+    pub fn subtrie_from_value(value: TrieValue<SlotBaseId>, storage: S) -> Option<Self> {
         let root = match value {
             TrieValue::SubTrie(root) => root,
             TrieValue::U32(_) => return None,

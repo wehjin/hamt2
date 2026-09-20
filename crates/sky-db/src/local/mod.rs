@@ -1,6 +1,6 @@
 use crate::db::Db;
-use sky_trie::prelude::{MemStorage, ReadWriteStorage};
 use sky_types::db::schema::attr_spec::DbSpec;
+use sky_types::storage::{MemStorage, ReadWriteStorage};
 
 pub trait DbRuntime {
     fn block_on<T>(main: impl Future<Output = T> + 'static) -> T;

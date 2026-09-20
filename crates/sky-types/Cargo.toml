@@ -10,3 +10,8 @@ thiserror.workspace = true
 futures.workspace = true
 anyhow.workspace = true
 postcard = { workspace = true, features = ["alloc"] }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros"] }
+tempfile.workspace = true
+tokio-stream.workspace = true

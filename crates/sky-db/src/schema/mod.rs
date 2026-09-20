@@ -3,10 +3,10 @@ use crate::traits::Find;
 use crate::types::Txid;
 use schema_loader::SchemaLoader;
 use sky_trie::Trie;
-use sky_trie::storage::ReadWriteStorage;
 use sky_types::db;
 use sky_types::db::schema::Schema;
 use sky_types::db::{Dir, TransactError};
+use sky_types::storage::ReadWriteStorage;
 
 pub mod schema_loader;
 

@@ -4,6 +4,7 @@ use crate::db::vid::Vid;
 use crate::trie::prelude::*;
 use sky_types::db::Val;
 use sky_types::db::{QueryError, TransactError};
+use sky_types::storage::ReadWriteStorage;
 
 pub async fn insert<S: ReadWriteStorage>(
     trie: Trie<S>,
@@ -43,7 +44,7 @@ pub async fn insert<S: ReadWriteStorage>(
 
 pub async fn query<T>(trie: &T, vid: Vid) -> Result<Option<Val>, QueryError>
 where
-    T: TrieQuery,
+    T: TrieQuery<SlotBaseId>,
 {
     match find_hash_trie(trie, vid.to_id()).await? {
         None => Ok(None),
@@ -111,7 +112,7 @@ async fn insert_bytes<S: ReadWriteStorage>(
     Ok(trie)
 }
 
-async fn is_equal_bytes<T: TrieQuery>(
+async fn is_equal_bytes<T: TrieQuery<SlotBaseId>>(
     hash_trie: &T,
     bytes: &[u8],
     bytes_type: u8,
@@ -153,7 +154,7 @@ async fn is_equal_bytes<T: TrieQuery>(
     }
 }
 
-async fn find_hash_trie<T: TrieQuery>(
+async fn find_hash_trie<T: TrieQuery<SlotBaseId>>(
     trie: &T,
     hash: i32,
 ) -> Result<Option<T::Subtrie>, QueryError> {
@@ -169,10 +170,11 @@ async fn find_hash_trie<T: TrieQuery>(
 
 #[cfg(test)]
 mod tests {
-	use super::*;
-	use sky_types::db::{Val, val};
+    use super::*;
+    use sky_types::db::{Val, val};
+    use sky_types::storage::MemStorage;
 
-	#[tokio::test]
+    #[tokio::test]
     async fn insert_and_query() {
         let mut trie = Trie::connect(MemStorage::new());
         let mut vids = Vec::new();

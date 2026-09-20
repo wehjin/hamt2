@@ -3,18 +3,18 @@ use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Formatter};
 
 #[derive(Clone, Eq, PartialEq, Serialize, Deserialize)]
-pub enum TrieValue {
+pub enum TrieValue<H> {
     U32(u32),
-    SubTrie(MapBase),
+    SubTrie(MapBase<H>),
 }
 
-impl From<u32> for TrieValue {
+impl<H> From<u32> for TrieValue<H> {
     fn from(v: u32) -> Self {
         Self::U32(v)
     }
 }
 
-impl Debug for TrieValue {
+impl<H> Debug for TrieValue<H> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             TrieValue::U32(v) => f

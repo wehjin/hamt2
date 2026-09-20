@@ -26,7 +26,7 @@ impl Program {
 
     pub async fn solve<'a, T>(self, db_trie: &'a T, schema: &'a Schema) -> KnowledgeBase<'a, T>
     where
-        T: TrieQuery,
+        T: TrieQuery<SlotBaseId>,
     {
         for rule in &self.rules {
             if !rule.is_range_restricted() {
@@ -56,6 +56,7 @@ mod tests {
     use sky_types::db::Transact;
     use sky_types::db::datom;
     use sky_types::db::{Attr, ent, val};
+    use sky_types::storage::MemStorage;
 
     fn advisor() -> Attr {
         Attr::from("member/advisor")

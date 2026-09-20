@@ -1,18 +1,18 @@
 use crate::StorageTrieQuery;
 use crate::TrieReader;
-use crate::crate_services::map_base::{self, query_value};
 use crate::prelude::TrieValue;
-use crate::storage::ReadWriteStorage;
-use sky_types::storage::error::WriteStorageError;
 use crate::types::DeepKey;
 use crate::types::HashKey;
-use sky_types::trie::MapBase;
-use sky_types::trie::TrieInsertError;
+use sky_types::storage::ReadWriteStorage;
+use sky_types::storage::error::WriteStorageError;
+use sky_types::trie::map_base::query_value;
+use sky_types::trie::{MapBase, TrieWritePolicy};
+use sky_types::trie::{SlotBaseId, TrieInsertError, map_base};
 use std::collections::HashMap;
 
 #[derive(Debug)]
-pub struct Trie<S: ReadWriteStorage> {
-    pub(crate) root: MapBase,
+pub struct Trie<S: ReadWriteStorage + TrieWritePolicy> {
+    pub(crate) root: MapBase<S::HandleType>,
     storage: S,
 }
 
@@ -36,7 +36,7 @@ impl<S: ReadWriteStorage> Trie<S> {
         Ok(self)
     }
 
-    pub fn unwrap(self) -> MapBase {
+    pub fn unwrap(self) -> MapBase<SlotBaseId> {
         self.root
     }
 
@@ -51,8 +51,12 @@ impl<S: ReadWriteStorage> Trie<S> {
 }
 
 /// Trie update methods.
-impl<S: ReadWriteStorage> Trie<S> {
-    pub async fn insert(mut self, key: i32, value: TrieValue) -> Result<Self, TrieInsertError> {
+impl<S: ReadWriteStorage + TrieWritePolicy> Trie<S> {
+    pub async fn insert(
+        mut self,
+        key: i32,
+        value: TrieValue<S::HandleType>,
+    ) -> Result<Self, TrieInsertError> {
         let key = HashKey::new(key);
         let root = map_base::insert_kv(self.root, key, value, &mut self.storage).await?;
         self.root = root;
@@ -62,7 +66,7 @@ impl<S: ReadWriteStorage> Trie<S> {
     pub async fn deep_insert<const N: usize>(
         mut self,
         key: [i32; N],
-        value: impl Into<TrieValue>,
+        value: impl Into<TrieValue<S::HandleType>>,
         replace_tail: bool,
     ) -> Result<Self, TrieInsertError> {
         let deep_key = DeepKey::from(key);

@@ -1,45 +1,44 @@
-use crate::storage::ReadStorage;
-use crate::types::HashKey;
-use crate::types::TrieValue;
-use crate::types::slot::Slot;
+use crate::trie::{HashKey, MapBase, Slot, TrieQueryError, TrieReadPolicy, TrieValue};
 use futures::Stream;
 use futures::stream;
-use sky_types::trie::TrieQueryError;
-use sky_types::trie::{MapBase, SlotBaseId};
 
-pub struct State<S: ReadStorage> {
+pub struct State<S: TrieReadPolicy> {
     storage: S,
-    jobs: Vec<Job>,
+    jobs: Vec<Job<S::HandleType>>,
 }
 
-pub async fn query_value(
-    map_base: &MapBase,
+pub async fn query_value<S: TrieReadPolicy>(
+    map_base: &MapBase<S::HandleType>,
     key: HashKey,
-    storage: &impl ReadStorage,
-) -> Result<Option<TrieValue>, TrieQueryError> {
-    let MapBase { map, base } = map_base;
+    storage: &S,
+) -> Result<Option<TrieValue<S::HandleType>>, TrieQueryError> {
+    let MapBase { map, base: base_id } = map_base;
     let value = match map.try_base_index(key) {
         Some(base_index) => {
-            let base = storage.read(*base).await.expect("read base");
-            Box::pin(base[base_index].query_value(key, storage)).await?
+            let base = storage.read_base(base_id.clone()).await.expect("read base");
+            Box::pin(base.as_ref()[base_index].query_value(key, storage)).await?
         }
         None => None,
     };
     Ok(value)
 }
 
-pub fn kv_stream<S: ReadStorage>(
-    map_base: MapBase,
+pub fn kv_stream<S: TrieReadPolicy>(
+    map_base: MapBase<S::HandleType>,
     storage: S,
-) -> impl Stream<Item = (i32, TrieValue)> {
+) -> impl Stream<Item = (i32, TrieValue<S::HandleType>)> {
     let state = State {
         storage,
         jobs: Job::start(&map_base).into_iter().collect::<Vec<_>>(),
     };
     stream::unfold(state, |mut state| async move {
         while let Some(mut job) = state.jobs.pop() {
-            let base = state.storage.read(job.base).await.expect("read base");
-            match &base[job.slot_offset] {
+            let base = state
+                .storage
+                .read_base(job.base.clone())
+                .await
+                .expect("read base");
+            match &base.as_ref()[job.slot_offset] {
                 Slot::KeyValue(key, value) => {
                     // Found a key and value. We finish by moving the current
                     // job forward and yielding the key-value pair.
@@ -66,29 +65,30 @@ pub fn kv_stream<S: ReadStorage>(
     })
 }
 
-pub async fn query_keys_values(
-    map_base: &MapBase,
-    storage: &impl ReadStorage,
-) -> Result<Vec<(i32, TrieValue)>, TrieQueryError> {
-    let MapBase { map, base } = map_base;
+pub async fn query_keys_values<P: TrieReadPolicy>(
+    map_base: &MapBase<P::HandleType>,
+    storage: &P,
+) -> Result<Vec<(i32, TrieValue<P::HandleType>)>, TrieQueryError> {
+    let MapBase { map, base: base_id } = map_base;
     let mut out = Vec::new();
     let slot_count = map.slot_count();
-    let base = storage.read(*base).await.expect("read base");
-    debug_assert_eq!(slot_count, base.len());
+    let base = storage.read_base(base_id.clone()).await.expect("read base");
+    let base_ref = base.as_ref();
+    debug_assert_eq!(slot_count, base_ref.len());
     for base_index in 0..slot_count {
-        let keys_values = Box::pin(base[base_index].query_key_values(storage)).await?;
+        let keys_values = Box::pin(base_ref[base_index].query_key_values(storage)).await?;
         out.extend(keys_values);
     }
     Ok(out)
 }
 
-struct Job {
+struct Job<HandleType> {
     slot_offset: usize,
     slot_count: usize,
-    base: SlotBaseId,
+    base: HandleType,
 }
-impl Job {
-    pub fn start(map_base: &MapBase) -> Option<Self> {
+impl<HandleType: Clone> Job<HandleType> {
+    pub fn start(map_base: &MapBase<HandleType>) -> Option<Self> {
         let slot_count = map_base.map.slot_count();
         if slot_count == 0 {
             None
@@ -96,7 +96,7 @@ impl Job {
             Some(Self {
                 slot_offset: 0,
                 slot_count,
-                base: map_base.base,
+                base: map_base.base.clone(),
             })
         }
     }

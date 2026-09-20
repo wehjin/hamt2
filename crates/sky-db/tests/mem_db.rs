@@ -1,10 +1,10 @@
 use sky_db::db::Db;
 use sky_db::find::EinsWithAttr;
 use sky_db::traits::DbQuery;
-use sky_trie::storage::mem::MemStorage;
 use sky_types::db::Transact;
 use sky_types::db::datom;
 use sky_types::db::{Attr, val};
+use sky_types::storage::MemStorage;
 
 fn attr_count() -> Attr {
     Attr::from("counter/count")

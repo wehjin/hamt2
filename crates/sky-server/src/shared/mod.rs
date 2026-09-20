@@ -1,8 +1,7 @@
 use serde::{Deserialize, Serialize};
-use sky_trie::types::slot_base::SlotBase;
 use sky_types::db::Datom;
 use sky_types::db::DbStatus;
-use sky_types::trie::SlotBaseId;
+use sky_types::trie::{SlotBase, SlotBaseId};
 
 pub mod remote;
 
@@ -16,6 +15,6 @@ pub enum SocketRequest {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SocketResponse {
     DbStatus(DbStatus),
-    SlotBase(SlotBaseId, Option<SlotBase>),
+    SlotBase(SlotBaseId, Option<SlotBase<SlotBaseId>>),
     TransactResult(DbStatus),
 }

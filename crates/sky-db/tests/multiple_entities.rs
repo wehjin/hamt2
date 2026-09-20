@@ -2,7 +2,7 @@ use sky_db::db::Db;
 use sky_db::db::Txid;
 use sky_db::find::EinsWithAttr;
 use sky_db::traits::DbQuery;
-use sky_trie::storage::mem::MemStorage;
+use sky_types::storage::MemStorage;
 use sky_types::db::Transact;
 use sky_types::db::datom;
 use sky_types::db::{Attr, ein, val};

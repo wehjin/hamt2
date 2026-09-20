@@ -2,8 +2,8 @@ use log::error;
 use sky_db::db::Db;
 use sky_db::db::attr_spec::DbSpec;
 use sky_trie::prelude::{MemStorage, ReadStorage};
-use sky_trie::types::slot_base::SlotBase;
 use sky_types::db::{Datom, DbStatus, Transact};
+use sky_types::storage::slot_base::SlotBase;
 use sky_types::trie::SlotBaseId;
 use tokio::sync::{broadcast, mpsc, oneshot};
 
@@ -167,14 +167,14 @@ async fn handle_storage(
 
 #[cfg(test)]
 mod tests {
-    use crate::server::storage::StorageService;
-    use crate::server::storage::types::StorageBroadcastEvent;
-    use sky_types::db::{Attr, DbStatus, datom};
-    use sky_types::storage::StorageHead;
-    use sky_types::trie::{MapBase, SlotBaseId};
+	use crate::server::storage::StorageService;
+	use crate::server::storage::types::StorageBroadcastEvent;
+	use sky_types::db::{Attr, DbStatus, datom};
+	use sky_types::storage::StorageHead;
+	use sky_types::trie::{MapBase, SlotBaseId};
 
-    #[tokio::test]
-    async fn it_works() {
+	#[tokio::test]
+	async fn it_works() {
         let attr = || Attr::from("Counter/count");
         let db_spec = [attr()];
         let storage = StorageService::start(db_spec).await.unwrap();

@@ -3,9 +3,8 @@ use crate::shared::remote::updater::ClientUpdater;
 use crate::shared::remote::{RemoteClientReadStorage, SpawnTask};
 use crate::shared::{SocketRequest, SocketResponse};
 use sky_db::reader::DbReader;
-use sky_trie::prelude::ReadStorage;
 use sky_types::db::{Datom, DbStatus};
-use sky_types::storage::StorageHead;
+use sky_types::storage::{ReadStorage, StorageHead};
 use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
 use tokio::sync::mpsc::Sender;
@@ -69,7 +68,7 @@ impl<T: SpawnTask> RemoteClient<T> {
         send_socket(SocketRequest::Connect);
         let inner = RemoteClientReadStorage {
             requester: send_request.clone(),
-            status: status,
+            status,
             _spawn_local: PhantomData,
         };
         let updater = ClientUpdater::new(send_request);

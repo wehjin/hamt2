@@ -1,29 +1,25 @@
-use crate::crate_services::map_base::{query_keys_values, query_value, two_kv};
-use crate::storage::{ReadStorage, ReadWriteStorage};
-use crate::types::HashKey;
-use crate::types::slot_base::SlotBase;
+use crate::trie::map_base::{query_keys_values, query_value, two_kv};
+use crate::trie::{
+    HashKey, MapBase, SlotBase, SlotMap, TrieQueryError, TrieReadPolicy, TrieValue, TrieWritePolicy,
+};
 use serde::{Deserialize, Serialize};
-use sky_types::trie::MapBase;
-use sky_types::trie::SlotMap;
-use sky_types::trie::TrieQueryError;
-use sky_types::trie::TrieValue;
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
-pub enum Slot {
-    KeyValue(i32, TrieValue),
-    MapBase(MapBase),
+pub enum Slot<HandleType> {
+    KeyValue(i32, TrieValue<HandleType>),
+    MapBase(MapBase<HandleType>),
 }
 
-impl Slot {
-    pub fn one_kv(key: HashKey, value: TrieValue) -> Self {
+impl<HandleType: Clone + Eq + PartialEq> Slot<HandleType> {
+    pub fn one_kv(key: HashKey, value: TrieValue<HandleType>) -> Self {
         Self::KeyValue(key.i32(), value)
     }
-    pub async fn two_kv(
+    pub async fn two_kv<P: TrieWritePolicy<HandleType = HandleType>>(
         a_key: HashKey,
-        a_value: TrieValue,
+        a_value: TrieValue<HandleType>,
         b_key: HashKey,
-        b_value: TrieValue,
-        storage: &mut impl ReadWriteStorage,
+        b_value: TrieValue<HandleType>,
+        policy: &mut P,
     ) -> Self {
         debug_assert!(a_key.i32() != b_key.i32());
         let (a_map_index, b_map_index) = (a_key.map_index(), b_key.map_index());
@@ -34,37 +30,37 @@ impl Slot {
                 a_value,
                 b_key.next(),
                 b_value,
-                storage,
+                policy,
             ))
             .await;
-            let base = SlotBase { slots: vec![slot] };
-            let id = storage.append(&base).await.expect("append base");
+            let base = P::BaseType::from(SlotBase { slots: vec![slot] });
+            let id = policy.commit_base(base).await.expect("append base");
             Slot::MapBase(MapBase { map, base: id })
         } else {
-            let map_base = two_kv(a_key, a_value, b_key, b_value, storage).await;
+            let map_base = two_kv(a_key, a_value, b_key, b_value, policy).await;
             Slot::MapBase(map_base)
         }
     }
-    pub fn replace_value(self, value: TrieValue) -> Self {
+    pub fn replace_value(self, value: TrieValue<HandleType>) -> Self {
         let Slot::KeyValue(key, _value) = self else {
             unreachable!("Should be a key-value slot, not a map-base slot:")
         };
         Slot::KeyValue(key, value)
     }
-    pub async fn query_key_values(
-	    &self,
-	    storage: &impl ReadStorage,
-    ) -> Result<Vec<(i32, TrieValue)>, TrieQueryError> {
+    pub async fn query_key_values<P: TrieReadPolicy<HandleType = HandleType>>(
+        &self,
+        storage: &P,
+    ) -> Result<Vec<(i32, TrieValue<HandleType>)>, TrieQueryError> {
         match self {
             Slot::KeyValue(key, value) => Ok(vec![(*key, value.clone())]),
             Slot::MapBase(map_base) => query_keys_values(map_base, storage).await,
         }
     }
-    pub async fn query_value(
-	    &self,
-	    key: HashKey,
-	    storage: &impl ReadStorage,
-    ) -> Result<Option<TrieValue>, TrieQueryError> {
+    pub async fn query_value<P: TrieReadPolicy<HandleType = HandleType>>(
+        &self,
+        key: HashKey,
+        storage: &P,
+    ) -> Result<Option<TrieValue<HandleType>>, TrieQueryError> {
         match self {
             Slot::KeyValue(k, v) => {
                 if *k != key.i32() {
@@ -76,7 +72,7 @@ impl Slot {
             Slot::MapBase(map_base) => query_value(map_base, key.next(), storage).await,
         }
     }
-    pub fn test_kv(&self, key: &HashKey, value: &TrieValue) -> KvTest {
+    pub fn test_kv(&self, key: &HashKey, value: &TrieValue<HandleType>) -> KvTest {
         match self {
             Slot::KeyValue(slot_key, slot_value) => {
                 if key.i32() == *slot_key {

@@ -1,7 +1,6 @@
 pub(crate) mod crate_services;
 pub mod local;
 pub mod prelude;
-pub mod storage;
 pub mod storage_trie_query;
 mod trie;
 pub mod trie_reader;
@@ -14,9 +13,7 @@ pub use trie_reader::TrieReader;
 
 #[cfg(test)]
 mod tests {
-    use crate::storage::ReadStorage;
-    use crate::storage::file::FileStorage;
-    use crate::storage::mem::MemStorage;
+    use sky_types::storage::{FileStorage, MemStorage, ReadStorage};
     use crate::{Trie, TrieQuery, TrieReader};
     use sky_types::trie::TrieValue;
 

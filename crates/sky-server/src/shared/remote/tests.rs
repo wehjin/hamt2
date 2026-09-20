@@ -1,14 +1,12 @@
 use super::*;
 use crate::shared::{SocketRequest, SocketResponse};
 use sky_db::traits::DbQuery;
-use sky_trie::storage::ReadStorage;
-use sky_trie::types::slot::Slot;
-use sky_trie::types::slot_base::SlotBase;
+use sky_trie::types::Slot;
 use sky_types::db;
 use sky_types::db::schema::Schema;
 use sky_types::db::{Attr, DbStatus, Transact, datom, val};
 use sky_types::storage::StorageHead;
-use sky_types::trie::{MapBase, SlotBaseId, SlotMap, TrieValue};
+use sky_types::trie::{MapBase, SlotBase, SlotBaseId, SlotMap, TrieReadPolicy, TrieValue};
 use std::time::Duration;
 use tokio::task::spawn_local;
 
@@ -97,7 +95,7 @@ async fn remote_client_works() {
         // be in a separate call so we can continue working before the read returns.
         let mut updater = client.to_updater();
         let join = spawn_local(async move {
-            let read = client.read(id1).await.unwrap();
+            let read = client.read_base(id1).await.unwrap();
             (client, read)
         });
         let client_request_after_read = requests_from_client.recv().await.expect("recv request");
@@ -116,7 +114,7 @@ async fn remote_client_works() {
 
         // Try the read again. This time it should be in the cache and there should be
         // no request sent to socket.
-        let read_result = tokio::time::timeout(Duration::from_secs(1), client.read(id1))
+        let read_result = tokio::time::timeout(Duration::from_secs(1), client.read_base(id1))
             .await
             .expect("read");
         let Ok(second_read_from_client) = read_result else {

@@ -1,17 +1,17 @@
 pub mod db_trie;
-pub mod types;
 pub mod query;
 pub mod transact;
+pub mod types;
 
 use crate::db::attr_spec::DbSpec;
 use crate::db::attribute::Attribute;
 use crate::db::types::MaxEid;
 use crate::error::ConnectError;
 use crate::reader::DbReader;
-pub use crate::types::*;
 use crate::schema;
+pub use crate::types::*;
 use sky_trie::Trie;
-use sky_trie::prelude::ReadWriteStorage;
+use sky_types::storage::ReadWriteStorage;
 pub use types::*;
 
 #[derive(Debug)]

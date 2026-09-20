@@ -1,0 +1,51 @@
+use crate::trie::{HashKey, KvTest, MapBase, Slot, TrieInsertError, TrieValue, TrieWritePolicy};
+
+pub async fn insert_kv<P: TrieWritePolicy>(
+    map_base: MapBase<P::HandleType>,
+    key: HashKey,
+    value: TrieValue<P::HandleType>,
+    policy: &mut P,
+) -> Result<MapBase<P::HandleType>, TrieInsertError> {
+    let MapBase { map, base: base_id } = map_base;
+    let post_map_base = match map.try_base_index(key) {
+        Some(base_index) => {
+            let read_base = policy.read_base(base_id.clone()).await.expect("read base");
+            match read_base.as_ref()[base_index].test_kv(&key, &value) {
+                KvTest::SameValue => MapBase { map, base: base_id },
+                KvTest::ValueConflict => {
+                    let post_base = policy.replace_slot_value_in_base(read_base, base_index, value);
+                    let id = policy.commit_base(post_base).await.expect("commit base");
+                    MapBase { map, base: id }
+                }
+                KvTest::KeyConflict => {
+                    let post_base = policy.kick_kv(read_base, base_index, key, value).await;
+                    let id = policy.commit_base(post_base).await.expect("commit base");
+                    MapBase { map, base: id }
+                }
+                KvTest::MapBaseConflict => {
+                    let post_base =
+                        Box::pin(policy.merge_kv(read_base, base_index, key, value)).await?;
+                    let id = policy.commit_base(post_base).await.expect("append base");
+                    MapBase { map, base: id }
+                }
+            }
+        }
+        None => {
+            assert_eq!(false, map.is_present(key));
+            let post_slot_base = {
+                let base = policy.read_base(base_id).await.expect("read base");
+                let kv_slot = Slot::one_kv(key, value);
+                let kv_index = map.count_left(key);
+                base.as_ref().insert_slot(kv_index, kv_slot)
+            };
+            let new_base = P::BaseType::from(post_slot_base);
+            let id = policy.commit_base(new_base).await.expect("append base");
+            let post_map = map.with_key(key);
+            MapBase {
+                map: post_map,
+                base: id,
+            }
+        }
+    };
+    Ok(post_map_base)
+}

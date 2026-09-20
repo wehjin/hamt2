@@ -4,6 +4,7 @@ use crate::db::{Db, Txid};
 use crate::trie::prelude::*;
 use sky_types::db::QueryError;
 use sky_types::db::{Attr, Val};
+use sky_types::storage::ReadWriteStorage;
 
 impl<S: ReadWriteStorage> Db<S> {
     pub async fn max_tx(&self) -> Result<Txid, QueryError> {
@@ -25,6 +26,7 @@ mod tests {
     use sky_types::db::Transact;
     use sky_types::db::datom;
     use sky_types::db::{dat, ent};
+    use sky_types::storage::MemStorage;
 
     #[tokio::test]
     async fn ev_stream_test() -> anyhow::Result<()> {

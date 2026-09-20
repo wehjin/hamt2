@@ -8,15 +8,10 @@ pub use query::*;
 
 #[cfg(test)]
 mod tests {
-    use crate::crate_services::map_base;
-    use crate::crate_services::map_base::*;
-    use crate::storage::mem::MemStorage;
-    use crate::types::HashKey;
-    use sky_types::trie::TrieValue
-;
-    use sky_types::trie::MapBase
-;
-    use tokio_stream::StreamExt;
+    use crate::storage::MemStorage;
+    use crate::trie::map_base::{kv_stream, one_kv};
+    use crate::trie::{HashKey, MapBase, TrieValue, map_base};
+    use futures::StreamExt;
 
     #[tokio::test]
     async fn test_stream_kvs_empty_map() {
