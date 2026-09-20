@@ -1,7 +1,7 @@
 use crate::trie::map_base::{query_keys_values, query_value, two_kv};
 use crate::trie::{
     HashKey, MapBase, SlotBase, SlotMap, TrieConfig, TrieInsertError, TrieQueryError,
-    TrieReadPolicy, TrieValue, TrieWritePolicy,
+    TrieBaseRead, TrieValue, TrieBaseCommit,
 };
 use serde::{Deserialize, Serialize};
 
@@ -19,7 +19,7 @@ impl<C: TrieConfig> Slot<C> {
     pub fn one_kv(key: HashKey, value: TrieValue<C>) -> Self {
         Self::KeyValue(key.i32(), value)
     }
-    pub async fn two_kv<P: TrieWritePolicy<Config = C>>(
+    pub async fn two_kv<P: TrieBaseCommit<Config = C>>(
         a_key: HashKey,
         a_value: TrieValue<C>,
         b_key: HashKey,
@@ -51,7 +51,7 @@ impl<C: TrieConfig> Slot<C> {
         };
         Slot::KeyValue(key, value)
     }
-    pub async fn query_key_values<P: TrieReadPolicy<Config = C>>(
+    pub async fn query_key_values<P: TrieBaseRead<Config = C>>(
         &self,
         storage: &P,
     ) -> Result<Vec<(i32, TrieValue<C>)>, TrieQueryError> {
@@ -60,7 +60,7 @@ impl<C: TrieConfig> Slot<C> {
             Slot::MapBase(map_base) => query_keys_values(map_base, storage).await,
         }
     }
-    pub async fn query_value<P: TrieReadPolicy<Config = C>>(
+    pub async fn query_value<P: TrieBaseRead<Config = C>>(
         &self,
         key: HashKey,
         storage: &P,

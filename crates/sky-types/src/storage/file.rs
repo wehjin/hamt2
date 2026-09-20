@@ -260,7 +260,7 @@ impl ReadWriteStorage for FileStorage {
 mod tests {
     use super::*;
     use crate::trie::map_base::{one_kv, two_kv};
-    use crate::trie::{HashKey, TrieReadPolicy, TrieValue};
+    use crate::trie::{HashKey, TrieBaseRead, TrieValue};
 
     #[tokio::test]
     async fn empty_storage_max_id_is_zero() -> anyhow::Result<()> {

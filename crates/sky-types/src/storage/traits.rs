@@ -4,18 +4,18 @@ use crate::storage::{
 };
 use crate::trie::{
     HandleTrieConfig, MapBase, SlotBase, SlotBaseId, TrieConfig, TrieInsertError, TrieQueryError,
-    TrieReadPolicy, TrieWritePolicy,
+    TrieBaseRead, TrieBaseCommit,
 };
 
 /// A trait for reading Bases from storage.
 ///
 /// Base id [`SlotBaseId::ZERO`] is reserved and always represents the empty base.
 #[allow(async_fn_in_trait)]
-pub trait ReadStorage: TrieReadPolicy + Sync {
+pub trait ReadStorage: TrieBaseRead + Sync {
     /// The storage type of an owned read-only snapshot, produced by
     /// [`ReadStorage::snapshot`]. Writer storages use their read-only
     /// snapshot type; read-only snapshot types usually use `Self`.
-    type Snapshot: ReadStorage + TrieReadPolicy<Config = Self::Config> + Send + Clone;
+    type Snapshot: ReadStorage + TrieBaseRead<Config = Self::Config> + Send + Clone;
 
     /// Returns an owned read-only snapshot of this storage. The snapshot does
     /// not observe writes made after this call.
@@ -52,7 +52,7 @@ pub trait ReadStorage: TrieReadPolicy + Sync {
 
 macro_rules! impl_handle_trie_read_policy {
     ($storage:ty) => {
-        impl TrieReadPolicy for $storage {
+        impl TrieBaseRead for $storage {
             type Config = HandleTrieConfig;
             async fn read_base(
                 &self,
@@ -88,7 +88,7 @@ pub trait ReadWriteStorage: ReadStorage {
     async fn write_root(&mut self, root: MapBase<Self::Config>) -> Result<(), WriteStorageError>;
 }
 
-impl<T> TrieWritePolicy for T
+impl<T> TrieBaseCommit for T
 where
     T: ReadWriteStorage,
 {

@@ -6,7 +6,7 @@ use futures::Stream;
 use futures::stream::StreamExt;
 use sky_types::storage::{ReadStorage, ReadWriteStorage};
 use sky_types::trie::map_base::{kv_stream, query_keys_values};
-use sky_types::trie::{MapBase, TrieReadPolicy, TrieValue, map_base};
+use sky_types::trie::{MapBase, TrieBaseRead, TrieValue, map_base};
 use sky_types::trie::TrieQueryError;
 
 /// The storage-backed query interface shared by [`Trie`] and
@@ -14,7 +14,7 @@ use sky_types::trie::TrieQueryError;
 ///
 /// Implementations only need to expose the storage; the root and every
 /// [`TrieQuery`] method are provided by the direct implementations below.
-pub trait StorageTrieQuery<S: ReadStorage + TrieReadPolicy>: TrieQuery<S::Config> {
+pub trait StorageTrieQuery<S: ReadStorage + TrieBaseRead>: TrieQuery<S::Config> {
     /// The storage this trie reads bases from.
     fn storage(&self) -> &S;
 }
@@ -60,7 +60,7 @@ impl<S: ReadWriteStorage> TrieQuery<S::Config> for Trie<S> {
     }
 }
 
-impl<S: ReadStorage + TrieReadPolicy> TrieQuery<S::Config> for TrieReader<S> {
+impl<S: ReadStorage + TrieBaseRead> TrieQuery<S::Config> for TrieReader<S> {
     type Subtrie = TrieReader<S::Snapshot>;
 
     fn root(&self) -> &MapBase<S::Config> {
@@ -101,7 +101,7 @@ impl<S: ReadStorage + TrieReadPolicy> TrieQuery<S::Config> for TrieReader<S> {
     }
 }
 
-async fn deep_query_value<const N: usize, S: ReadStorage + TrieReadPolicy>(
+async fn deep_query_value<const N: usize, S: ReadStorage + TrieBaseRead>(
     root: &MapBase<S::Config>,
     storage: &S,
     key: [i32; N],
@@ -135,7 +135,7 @@ fn u32_stream<'a, S>(
     storage: &'a S,
 ) -> impl Stream<Item = (i32, u32)>
 where
-    S: ReadStorage + TrieReadPolicy,
+    S: ReadStorage + TrieBaseRead,
 {
     let stream = kv_stream(root.clone(), storage.snapshot());
     stream.filter_map(|(key, value)| async move {
@@ -152,7 +152,7 @@ fn subtrie_stream<'a, S>(
     storage: &'a S,
 ) -> impl Stream<Item = (i32, TrieReader<S::Snapshot>)>
 where
-    S: ReadStorage + TrieReadPolicy,
+    S: ReadStorage + TrieBaseRead,
 {
     let storage = storage.snapshot();
     let stream = kv_stream(root.clone(), storage.clone());

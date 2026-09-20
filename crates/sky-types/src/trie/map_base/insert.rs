@@ -1,6 +1,6 @@
-use crate::trie::{HashKey, KvTest, MapBase, TrieInsertError, TrieValue, TrieWritePolicy, base};
+use crate::trie::{HashKey, KvTest, MapBase, TrieInsertError, TrieValue, TrieBaseCommit, base};
 
-pub async fn insert_kv<P: TrieWritePolicy>(
+pub async fn insert_kv<P: TrieBaseCommit>(
     map_base: MapBase<P::Config>,
     key: HashKey,
     value: TrieValue<P::Config>,

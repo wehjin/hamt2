@@ -8,7 +8,7 @@ use sky_types::storage::ReadWriteStorage;
 
 pub async fn insert<S>(trie: Trie<S>, val: Val) -> Result<(Trie<S>, Vid), TransactError>
 where
-    S: ReadWriteStorage + TrieReadPolicy<Config = HandleTrieConfig> + TrieReadPolicy<Config = HandleTrieConfig>,
+    S: ReadWriteStorage + TrieBaseRead<Config = HandleTrieConfig> + TrieBaseRead<Config = HandleTrieConfig>,
 {
     let bytes = match &val {
         Val::U32(u) => &u.to_be_bytes(),
@@ -81,7 +81,7 @@ const VAL_TYPE_STRING: u8 = 1;
 
 async fn insert_bytes<S>(mut trie: Trie<S>, hash: i32, bytes: &[u8], bytes_type: u8) -> Result<Trie<S>, TransactError>
 where
-    S: ReadWriteStorage + TrieReadPolicy<Config = HandleTrieConfig> + TrieReadPolicy<Config = HandleTrieConfig>,
+    S: ReadWriteStorage + TrieBaseRead<Config = HandleTrieConfig> + TrieBaseRead<Config = HandleTrieConfig>,
 {
     let u32_stream = u32::Stream::new(bytes, SUBKEY_BYTES);
     for (u32_subkey, u32_value) in u32_stream {

@@ -6,12 +6,12 @@ use crate::types::HashKey;
 use sky_types::storage::ReadWriteStorage;
 use sky_types::storage::error::WriteStorageError;
 use sky_types::trie::map_base::query_value;
-use sky_types::trie::{MapBase, TrieWritePolicy};
+use sky_types::trie::{MapBase, TrieBaseCommit};
 use sky_types::trie::{TrieInsertError, map_base};
 use std::collections::HashMap;
 
 #[derive(Debug)]
-pub struct Trie<S: ReadWriteStorage + TrieWritePolicy> {
+pub struct Trie<S: ReadWriteStorage + TrieBaseCommit> {
     pub(crate) root: MapBase<S::Config>,
     storage: S,
 }
@@ -51,7 +51,7 @@ impl<S: ReadWriteStorage> Trie<S> {
 }
 
 /// Trie update methods.
-impl<S: ReadWriteStorage + TrieWritePolicy> Trie<S> {
+impl<S: ReadWriteStorage + TrieBaseCommit> Trie<S> {
     pub async fn insert(
         mut self,
         key: i32,

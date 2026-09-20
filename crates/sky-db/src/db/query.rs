@@ -6,7 +6,7 @@ use sky_types::db::QueryError;
 use sky_types::db::{Attr, Val};
 use sky_types::storage::ReadWriteStorage;
 
-impl<S: ReadWriteStorage + TrieReadPolicy<Config = HandleTrieConfig>> Db<S> {
+impl<S: ReadWriteStorage + TrieBaseRead<Config = HandleTrieConfig>> Db<S> {
     pub async fn max_tx(&self) -> Result<Txid, QueryError> {
         let Some(TrieValue::U32(value)) = self.trie.query_value(KEY_MAX_TXID).await? else {
             panic!("max_tx not found");

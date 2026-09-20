@@ -1,7 +1,7 @@
 use crate::trie::{SlotBase, TrieConfig, TrieInsertError, TrieQueryError};
 
 #[allow(async_fn_in_trait)]
-pub trait TrieWritePolicy: TrieReadPolicy
+pub trait TrieBaseCommit: TrieBaseRead
 where
     Self: Sized,
 {
@@ -13,7 +13,7 @@ where
 }
 
 #[allow(async_fn_in_trait)]
-pub trait TrieReadPolicy {
+pub trait TrieBaseRead {
     type Config: TrieConfig;
 
     async fn read_base(

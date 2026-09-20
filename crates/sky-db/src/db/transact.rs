@@ -7,9 +7,9 @@ use sky_types::db::Transact;
 use sky_types::db::TransactError;
 use sky_types::db::{Dat, Ent, val};
 use sky_types::storage::ReadWriteStorage;
-use sky_types::trie::{HandleTrieConfig, TrieReadPolicy};
+use sky_types::trie::{HandleTrieConfig, TrieBaseRead};
 
-impl<S: ReadWriteStorage + TrieReadPolicy<Config = HandleTrieConfig>> Transact for Db<S> {
+impl<S: ReadWriteStorage + TrieBaseRead<Config = HandleTrieConfig>> Transact for Db<S> {
     async fn transact(self, datoms: impl Into<Vec<Datom>>) -> Result<Self, TransactError> {
         let datoms = datoms.into();
         let mut max_eid = MaxEid::read(&self.trie).await?;

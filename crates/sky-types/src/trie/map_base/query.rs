@@ -1,13 +1,13 @@
-use crate::trie::{HashKey, MapBase, Slot, TrieConfig, TrieQueryError, TrieReadPolicy, TrieValue};
+use crate::trie::{HashKey, MapBase, Slot, TrieConfig, TrieQueryError, TrieBaseRead, TrieValue};
 use futures::Stream;
 use futures::stream;
 
-pub struct State<S: TrieReadPolicy> {
+pub struct State<S: TrieBaseRead> {
     storage: S,
     jobs: Vec<Job<<S::Config as TrieConfig>::HandleType>>,
 }
 
-pub async fn query_value<S: TrieReadPolicy>(
+pub async fn query_value<S: TrieBaseRead>(
     map_base: &MapBase<S::Config>,
     key: HashKey,
     storage: &S,
@@ -23,7 +23,7 @@ pub async fn query_value<S: TrieReadPolicy>(
     Ok(value)
 }
 
-pub fn kv_stream<S: TrieReadPolicy>(
+pub fn kv_stream<S: TrieBaseRead>(
     map_base: MapBase<S::Config>,
     storage: S,
 ) -> impl Stream<Item = (i32, TrieValue<S::Config>)> {
@@ -65,7 +65,7 @@ pub fn kv_stream<S: TrieReadPolicy>(
     })
 }
 
-pub async fn query_keys_values<P: TrieReadPolicy>(
+pub async fn query_keys_values<P: TrieBaseRead>(
     map_base: &MapBase<P::Config>,
     storage: &P,
 ) -> Result<Vec<(i32, TrieValue<P::Config>)>, TrieQueryError> {
