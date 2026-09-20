@@ -2,7 +2,7 @@ use crate::trie::SlotBaseId;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
-pub trait TrieConfig: Clone + Debug + PartialEq + Eq {
+pub trait TrieConfig: Clone + Debug + PartialEq + Eq + Default {
     type HandleType: Clone + Eq + PartialEq + Default + Debug;
 }
 

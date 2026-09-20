@@ -1,11 +1,13 @@
 use serde::{Deserialize, Serialize};
 
+mod store;
 pub mod error;
 mod file;
 mod mem;
 mod traits;
 
 use crate::trie::{HandleTrieConfig, MapBase, SlotBaseId, TrieConfig};
+pub use store::*;
 pub use error::*;
 pub use file::*;
 pub use mem::*;

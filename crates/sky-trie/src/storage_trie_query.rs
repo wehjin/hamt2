@@ -5,9 +5,9 @@ use crate::{Trie, TrieQuery};
 use futures::Stream;
 use futures::stream::StreamExt;
 use sky_types::storage::{ReadStorage, ReadWriteStorage};
+use sky_types::trie::TrieQueryError;
 use sky_types::trie::map_base::{kv_stream, query_keys_values};
 use sky_types::trie::{MapBase, TrieBaseRead, TrieValue, map_base};
-use sky_types::trie::TrieQueryError;
 
 /// The storage-backed query interface shared by [`Trie`] and
 /// [`TrieReader`](crate::TrieReader).
@@ -26,10 +26,7 @@ impl<S: ReadWriteStorage> TrieQuery<S::Config> for Trie<S> {
         &self.root
     }
 
-    async fn query_value(
-        &self,
-        key: i32,
-    ) -> Result<Option<TrieValue<S::Config>>, TrieQueryError> {
+    async fn query_value(&self, key: i32) -> Result<Option<TrieValue<S::Config>>, TrieQueryError> {
         map_base::query_value(self.root(), HashKey::new(key), self.storage()).await
     }
 
@@ -67,10 +64,7 @@ impl<S: ReadStorage + TrieBaseRead> TrieQuery<S::Config> for TrieReader<S> {
         &self.root
     }
 
-    async fn query_value(
-        &self,
-        key: i32,
-    ) -> Result<Option<TrieValue<S::Config>>, TrieQueryError> {
+    async fn query_value(&self, key: i32) -> Result<Option<TrieValue<S::Config>>, TrieQueryError> {
         map_base::query_value(self.root(), HashKey::new(key), self.storage()).await
     }
 
@@ -130,10 +124,7 @@ async fn deep_query_value<const N: usize, S: ReadStorage + TrieBaseRead>(
     unreachable!();
 }
 
-fn u32_stream<'a, S>(
-    root: &'a MapBase<S::Config>,
-    storage: &'a S,
-) -> impl Stream<Item = (i32, u32)>
+fn u32_stream<'a, S>(root: &'a MapBase<S::Config>, storage: &'a S) -> impl Stream<Item = (i32, u32)>
 where
     S: ReadStorage + TrieBaseRead,
 {
