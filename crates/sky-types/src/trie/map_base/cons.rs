@@ -6,7 +6,7 @@ pub async fn one_kv<P: TrieWritePolicy>(
     value: TrieValue<P::Config>,
     policy: &mut P,
 ) -> MapBase<P::Config> {
-    let base = policy.form_kv(key, value);
+    let base = P::form_kv(key, value);
     let id = policy.commit_base(base).await.expect("commit base");
     MapBase {
         map: SlotMap::set_key_bit(key),

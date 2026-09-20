@@ -49,14 +49,6 @@ impl<C: TrieConfig> SlotBase<C> {
         Self { slots }
     }
 
-    /// Replaces the value of the slot at `base_index` with `value`.
-    pub fn replace_value(self, base_index: usize, value: TrieValue<C>) -> Self {
-        let SlotBase { mut slots } = self;
-        let slot = slots.remove(base_index).replace_value(value);
-        slots.insert(base_index, slot);
-        Self { slots }
-    }
-
     pub fn replace_slot(&self, base_index: usize, replacement: Slot<C>) -> Self {
         let mut new_slots = self.slots.clone();
         new_slots[base_index] = replacement;

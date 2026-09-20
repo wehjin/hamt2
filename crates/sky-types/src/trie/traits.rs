@@ -15,19 +15,21 @@ where
     ) -> Result<<Self::Config as TrieConfig>::HandleType, Self::WriteErrorType>;
 
     /// Makes a new base containing `key` and `value` in a single slot.
-    fn form_kv(&self, key: HashKey, value: TrieValue<Self::Config>) -> SlotBase<Self::Config> {
+    fn form_kv(key: HashKey, value: TrieValue<Self::Config>) -> SlotBase<Self::Config> {
         SlotBase::new_kv(key, value)
     }
 
     /// Makes a copy of `base` in which the slot at `index` contains `value` in place
     /// of its previous value while preserving the key.
     fn swap_v(
-        &self,
         base: SlotBase<Self::Config>,
         index: usize,
         value: TrieValue<Self::Config>,
     ) -> SlotBase<Self::Config> {
-        SlotBase::replace_value(base, index, value)
+        let SlotBase { mut slots } = base;
+        let revised_slot = slots.remove(index).replace_value(value);
+        slots.insert(index, revised_slot);
+        SlotBase::<Self::Config> { slots }
     }
 
     /// Makes a copy of `base` where the kv already at `index` is moved into a new

@@ -13,7 +13,7 @@ pub async fn insert_kv<P: TrieWritePolicy>(
             match read_base.as_ref()[base_index].test_kv(&key, &value) {
                 KvTest::SameValue => MapBase { map, base: base_id },
                 KvTest::ValueConflict => {
-                    let post_base = policy.swap_v(read_base, base_index, value);
+                    let post_base = P::swap_v(read_base, base_index, value);
                     let id = policy.commit_base(post_base).await.expect("commit base");
                     MapBase { map, base: id }
                 }
@@ -25,7 +25,7 @@ pub async fn insert_kv<P: TrieWritePolicy>(
                 KvTest::MapBaseConflict => {
                     let post_base =
                         Box::pin(policy.merge_kv(read_base, base_index, key, value)).await?;
-                    let id = policy.commit_base(post_base).await.expect("append base");
+                    let id = policy.commit_base(post_base).await.expect("commit base");
                     MapBase { map, base: id }
                 }
             }
