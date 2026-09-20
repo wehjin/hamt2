@@ -50,8 +50,7 @@ where
         let Slot::MapBase(pre_map_base) = pre_slot else {
             unreachable!("Should be a map-base slot, not a key-value slot:")
         };
-        let post_map_base =
-            map_base::insert_kv(pre_map_base, key.next(), value, policy).await?;
+        let post_map_base = map_base::insert_kv(pre_map_base, key.next(), value, policy).await?;
         Slot::MapBase(post_map_base)
     };
     Ok(base.replace_slot(index, post_slot))

@@ -83,9 +83,7 @@ impl<S: ReadWriteStorage + TrieWritePolicy> Trie<S> {
                 match query_value(map_base, key, &self.storage).await? {
                     None => MapBase::empty(),
                     Some(TrieValue::SubTrie(map_base)) => map_base,
-                    Some(TrieValue::U32(_)) => {
-                        return Err(TrieInsertError::ExpectedMapBaseAtKey);
-                    }
+                    Some(TrieValue::U32(_)) => unreachable!("expected a sub-trie but found a u32"),
                 }
             };
             map_bases.insert(subtrie_i, map_base_i);
