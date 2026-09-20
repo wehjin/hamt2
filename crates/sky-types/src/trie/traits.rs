@@ -19,6 +19,18 @@ where
         SlotBase::new_kv(key, value)
     }
 
+    /// Makes a copy of `base` in a new slot containing `key` and `value` are inserted
+    /// at `index`.
+    fn insert_kv(
+        base: SlotBase<Self::Config>,
+        index: usize,
+        key: HashKey,
+        value: TrieValue<Self::Config>,
+    ) -> SlotBase<Self::Config> {
+        let slot = Slot::one_kv(key, value);
+        base.as_ref().insert_slot(index, slot)
+    }
+
     /// Makes a copy of `base` in which the slot at `index` contains `value` in place
     /// of its previous value while preserving the key.
     fn swap_v(
@@ -37,19 +49,19 @@ where
     async fn kick_kv(
         &mut self,
         base: SlotBase<Self::Config>,
-        base_index: usize,
+        index: usize,
         key: HashKey,
         value: TrieValue<Self::Config>,
     ) -> SlotBase<Self::Config> {
         let post_slot = {
-            let Slot::KeyValue(b_key, b_value) = base[base_index].clone() else {
+            let Slot::KeyValue(b_key, b_value) = base[index].clone() else {
                 unreachable!("Should be a key-value slot, not a map-base slot:")
             };
             let b_key = key.sync(b_key);
             debug_assert!(b_key.i32() != key.i32());
             Slot::two_kv(b_key.next(), b_value, key.next(), value, self).await
         };
-        base.replace_slot(base_index, post_slot)
+        base.replace_slot(index, post_slot)
     }
 
     /// Makes a copy of `base` where `key` and `value` are inserted into the

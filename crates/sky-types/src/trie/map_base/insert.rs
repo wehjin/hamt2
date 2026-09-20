@@ -1,4 +1,4 @@
-use crate::trie::{HashKey, KvTest, MapBase, Slot, TrieInsertError, TrieValue, TrieWritePolicy};
+use crate::trie::{HashKey, KvTest, MapBase, TrieInsertError, TrieValue, TrieWritePolicy};
 
 pub async fn insert_kv<P: TrieWritePolicy>(
     map_base: MapBase<P::Config>,
@@ -34,9 +34,8 @@ pub async fn insert_kv<P: TrieWritePolicy>(
             assert_eq!(false, map.is_present(key));
             let post_slot_base = {
                 let base = policy.read_base(base_id).await.expect("read base");
-                let kv_slot = Slot::one_kv(key, value);
                 let kv_index = map.count_left(key);
-                base.as_ref().insert_slot(kv_index, kv_slot)
+                P::insert_kv(base, kv_index, key, value)
             };
             let id = policy
                 .commit_base(post_slot_base)
