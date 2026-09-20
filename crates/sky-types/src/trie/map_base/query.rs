@@ -15,7 +15,7 @@ pub async fn query_value<S: TrieReadPolicy>(
     let MapBase { map, base: base_id } = map_base;
     let value = match map.try_base_index(key) {
         Some(base_index) => {
-            let base = storage.read_base(base_id.clone()).await.expect("read base");
+            let base = storage.read_base(base_id.clone()).await?;
             Box::pin(base.as_ref()[base_index].query_value(key, storage)).await?
         }
         None => None,
@@ -72,7 +72,7 @@ pub async fn query_keys_values<P: TrieReadPolicy>(
     let MapBase { map, base: base_id } = map_base;
     let mut out = Vec::new();
     let slot_count = map.slot_count();
-    let base = storage.read_base(base_id.clone()).await.expect("read base");
+    let base = storage.read_base(base_id.clone()).await?;
     let base_ref = base.as_ref();
     debug_assert_eq!(slot_count, base_ref.len());
     for base_index in 0..slot_count {

@@ -2,7 +2,9 @@ use crate::shared::remote::SpawnTask;
 use crate::shared::remote::client::requests::ClientRequest;
 use sky_types::db::DbStatus;
 use sky_types::storage::{ReadStorage, ReadStorageError};
-use sky_types::trie::{HandleTrieConfig, MapBase, SlotBase, SlotBaseId, TrieReadPolicy};
+use sky_types::trie::{
+    HandleTrieConfig, MapBase, SlotBase, SlotBaseId, TrieQueryError, TrieReadPolicy,
+};
 use std::marker::PhantomData;
 use tokio::sync::mpsc::Sender;
 use tokio::sync::oneshot;
@@ -16,10 +18,13 @@ pub struct RemoteClientReadStorage<T: SpawnTask> {
 
 impl<T: SpawnTask> TrieReadPolicy for RemoteClientReadStorage<T> {
     type Config = HandleTrieConfig;
-    type ReadErrorType = ReadStorageError;
 
-    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase<HandleTrieConfig>, ReadStorageError> {
-        ReadStorage::read(self, id).await
+    async fn read_base(
+        &self,
+        id: SlotBaseId,
+    ) -> Result<SlotBase<HandleTrieConfig>, TrieQueryError> {
+        let base = ReadStorage::read(self, id).await?;
+        Ok(base)
     }
 }
 

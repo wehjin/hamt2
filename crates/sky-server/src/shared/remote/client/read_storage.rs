@@ -1,12 +1,16 @@
 use crate::shared::remote::{RemoteClient, RemoteClientReadStorage, SpawnTask};
 use sky_types::storage::{ReadStorage, ReadStorageError};
-use sky_types::trie::{HandleTrieConfig, MapBase, SlotBase, SlotBaseId, TrieReadPolicy};
+use sky_types::trie::{
+    HandleTrieConfig, MapBase, SlotBase, SlotBaseId, TrieQueryError, TrieReadPolicy,
+};
 
 impl<T: SpawnTask> TrieReadPolicy for RemoteClient<T> {
     type Config = HandleTrieConfig;
-    type ReadErrorType = ReadStorageError;
 
-    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase<HandleTrieConfig>, ReadStorageError> {
+    async fn read_base(
+        &self,
+        id: SlotBaseId,
+    ) -> Result<SlotBase<HandleTrieConfig>, TrieQueryError> {
         self.inner.read_base(id).await
     }
 }
@@ -19,7 +23,12 @@ impl<T: SpawnTask> ReadStorage for RemoteClient<T> {
     }
 
     async fn read(&self, id: SlotBaseId) -> Result<SlotBase<HandleTrieConfig>, ReadStorageError> {
-        self.inner.read_base(id).await
+        self.inner.read_base(id).await.map_err(|err| {
+            let TrieQueryError::ReadStorage(read_storage_error) = err else {
+                unreachable!("inner.read_base() should a ReadStorage variant");
+            };
+            read_storage_error
+        })
     }
 
     fn max_id(&self) -> SlotBaseId {

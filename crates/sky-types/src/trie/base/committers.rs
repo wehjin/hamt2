@@ -13,7 +13,7 @@ pub async fn kick_kv<C, P>(
     key: HashKey,
     value: TrieValue<C>,
     policy: &mut P,
-) -> SlotBase<C>
+) -> Result<SlotBase<C>, TrieInsertError>
 where
     C: TrieConfig,
     P: TrieWritePolicy<Config = C>,
@@ -24,9 +24,9 @@ where
         };
         let b_key = key.sync(b_key);
         debug_assert!(b_key.i32() != key.i32());
-        Slot::two_kv(b_key.next(), b_value, key.next(), value, policy).await
+        Slot::two_kv(b_key.next(), b_value, key.next(), value, policy).await?
     };
-    base.replace_slot(index, post_slot)
+    Ok(base.replace_slot(index, post_slot))
 }
 
 /// Makes a copy of `base` where `key` and `value` are inserted into the

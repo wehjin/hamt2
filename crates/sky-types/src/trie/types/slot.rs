@@ -1,7 +1,7 @@
 use crate::trie::map_base::{query_keys_values, query_value, two_kv};
 use crate::trie::{
-    HashKey, MapBase, SlotBase, SlotMap, TrieConfig, TrieQueryError, TrieReadPolicy, TrieValue,
-    TrieWritePolicy,
+    HashKey, MapBase, SlotBase, SlotMap, TrieConfig, TrieInsertError, TrieQueryError,
+    TrieReadPolicy, TrieValue, TrieWritePolicy,
 };
 use serde::{Deserialize, Serialize};
 
@@ -25,7 +25,7 @@ impl<C: TrieConfig> Slot<C> {
         b_key: HashKey,
         b_value: TrieValue<C>,
         policy: &mut P,
-    ) -> Self {
+    ) -> Result<Self, TrieInsertError> {
         let (a_map_index, b_map_index) = (a_key.map_index(), b_key.map_index());
         if a_map_index == b_map_index {
             let map = SlotMap::set_map_index_bit(a_map_index);
@@ -36,13 +36,13 @@ impl<C: TrieConfig> Slot<C> {
                 b_value,
                 policy,
             ))
-            .await;
+            .await?;
             let base = SlotBase { slots: vec![slot] };
-            let id = policy.commit_base(base).await.expect("append base");
-            Slot::MapBase(MapBase { map, base: id })
+            let id = policy.commit_base(base).await?;
+            Ok(Slot::MapBase(MapBase { map, base: id }))
         } else {
-            let map_base = two_kv(a_key, a_value, b_key, b_value, policy).await;
-            Slot::MapBase(map_base)
+            let map_base = two_kv(a_key, a_value, b_key, b_value, policy).await?;
+            Ok(Slot::MapBase(map_base))
         }
     }
     pub fn replace_value(self, value: TrieValue<C>) -> Self {

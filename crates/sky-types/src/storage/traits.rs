@@ -3,7 +3,8 @@ use crate::storage::{
     WriteStorageError,
 };
 use crate::trie::{
-    HandleTrieConfig, MapBase, SlotBase, SlotBaseId, TrieConfig, TrieReadPolicy, TrieWritePolicy,
+    HandleTrieConfig, MapBase, SlotBase, SlotBaseId, TrieConfig, TrieInsertError, TrieQueryError,
+    TrieReadPolicy, TrieWritePolicy,
 };
 
 /// A trait for reading Bases from storage.
@@ -53,13 +54,12 @@ macro_rules! impl_handle_trie_read_policy {
     ($storage:ty) => {
         impl TrieReadPolicy for $storage {
             type Config = HandleTrieConfig;
-            type ReadErrorType = ReadStorageError;
-
             async fn read_base(
                 &self,
                 id: <HandleTrieConfig as TrieConfig>::HandleType,
-            ) -> Result<SlotBase<HandleTrieConfig>, ReadStorageError> {
-                self.read(id).await
+            ) -> Result<SlotBase<HandleTrieConfig>, TrieQueryError> {
+                let base = self.read(id).await?;
+                Ok(base)
             }
         }
     };
@@ -92,12 +92,11 @@ impl<T> TrieWritePolicy for T
 where
     T: ReadWriteStorage,
 {
-    type WriteErrorType = WriteStorageError;
-
     async fn commit_base(
         &mut self,
         base: SlotBase<Self::Config>,
-    ) -> Result<<Self::Config as TrieConfig>::HandleType, WriteStorageError> {
-        self.append(&base).await
+    ) -> Result<<Self::Config as TrieConfig>::HandleType, TrieInsertError> {
+        let id = self.append(&base).await?;
+        Ok(id)
     }
 }

@@ -309,7 +309,9 @@ mod tests {
         {
             let mut storage = FileStorage::new(dir.path())?;
             assert_eq!(MapBase::empty(), storage.read_root());
-            root = one_kv(HashKey::new(7), TrieValue::U32(7), &mut storage).await;
+            root = one_kv(HashKey::new(7), TrieValue::U32(7), &mut storage)
+                .await
+                .expect("one_kv");
             storage.write_root(root.clone()).await.expect("write root");
         }
         let storage = FileStorage::load(dir.path())?;
@@ -381,7 +383,9 @@ mod tests {
         let base = SlotBase::new_kv(HashKey::new(7), TrieValue::U32(7));
         let mut storage = FileStorage::new(dir.path())?;
         let id = storage.append(&base).await.expect("append");
-        let root = one_kv(HashKey::new(7), TrieValue::U32(7), &mut storage).await;
+        let root = one_kv(HashKey::new(7), TrieValue::U32(7), &mut storage)
+            .await
+            .expect("one_kv");
         storage.write_root(root.clone()).await.expect("write root");
         let view = storage.snapshot();
 
@@ -394,7 +398,8 @@ mod tests {
             TrieValue::U32(8),
             &mut storage,
         )
-        .await;
+        .await
+        .expect("two_kv");
         storage.write_root(new_root).await.expect("write root");
 
         assert_eq!(SlotBaseId(4), storage.max_id());

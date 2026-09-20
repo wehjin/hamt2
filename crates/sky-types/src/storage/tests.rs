@@ -1,7 +1,7 @@
 use crate::storage::mem::MemStorage;
 use crate::storage::{ReadStorage, ReadWriteStorage};
-use crate::trie::{HashKey, MapBase, SlotBase, SlotBaseId, TrieValue};
 use crate::trie::map_base::one_kv;
+use crate::trie::{HashKey, MapBase, SlotBase, SlotBaseId, TrieValue};
 
 #[tokio::test]
 async fn empty_storage_max_id_is_zero() {
@@ -28,7 +28,9 @@ async fn empty_storage_root_is_empty() {
 #[tokio::test]
 async fn root_round_trip_works() {
     let mut storage = MemStorage::new();
-    let root = one_kv(HashKey::new(7), TrieValue::U32(7), &mut storage).await;
+    let root = one_kv(HashKey::new(7), TrieValue::U32(7), &mut storage)
+        .await
+        .expect("root");
     storage.write_root(root).await.expect("write root");
     let view = storage.snapshot();
     assert_eq!(root, storage.read_root());
