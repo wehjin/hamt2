@@ -1,10 +1,10 @@
 use log::error;
 use sky_db::db::Db;
 use sky_db::db::attr_spec::DbSpec;
-use sky_trie::prelude::{MemStorage, ReadStorage};
 use sky_types::db::{Datom, DbStatus, Transact};
-use sky_types::storage::slot_base::SlotBase;
-use sky_types::trie::SlotBaseId;
+use sky_types::storage::MemStorage;
+use sky_types::storage::ReadStorage;
+use sky_types::trie::{HandleTrieConfig, SlotBase, SlotBaseId};
 use tokio::sync::{broadcast, mpsc, oneshot};
 
 mod types;
@@ -55,7 +55,7 @@ impl StorageService {
 
     /// Reads a slot base from the storage service. Returns `None` for ids
     /// outside the current head (negative or beyond `max_id`).
-    pub async fn read_slot_base(&self, slot_base_id: SlotBaseId) -> Option<SlotBase> {
+    pub async fn read_slot_base(&self, slot_base_id: SlotBaseId) -> Option<SlotBase<HandleTrieConfig>> {
         let (send, receive) = oneshot::channel();
         let request = StorageRequest::ReadSlotBase(slot_base_id, send);
         self.request_sender
@@ -89,7 +89,7 @@ impl StorageService {
 #[derive(Debug)]
 enum StorageRequest {
     ReadStatus(oneshot::Sender<DbStatus>),
-    ReadSlotBase(SlotBaseId, oneshot::Sender<Option<SlotBase>>),
+    ReadSlotBase(SlotBaseId, oneshot::Sender<Option<SlotBase<HandleTrieConfig>>>),
     Transact(Vec<Datom>, oneshot::Sender<DbStatus>),
 }
 

@@ -7,10 +7,11 @@ use sky_types::db;
 use sky_types::db::schema::Schema;
 use sky_types::db::{Dir, TransactError};
 use sky_types::storage::ReadWriteStorage;
+use sky_types::trie::{HandleTrieConfig, TrieReadPolicy};
 
 pub mod schema_loader;
 
-pub async fn save<S: ReadWriteStorage>(
+pub async fn save<S: ReadWriteStorage + TrieReadPolicy<Config = HandleTrieConfig>>(
     schema: &Schema,
     mut trie: Trie<S>,
     txid: Txid,
@@ -40,7 +41,7 @@ pub async fn save<S: ReadWriteStorage>(
     }
     Ok(trie)
 }
-pub async fn load<S: ReadWriteStorage>(db: &Db<S>) -> Schema {
+pub async fn load<S: ReadWriteStorage + TrieReadPolicy<Config = HandleTrieConfig>>(db: &Db<S>) -> Schema {
     let mut schema = db.schema.clone();
     let loader = SchemaLoader;
     let attributes = loader.apply(&db.trie, &db.schema).await;

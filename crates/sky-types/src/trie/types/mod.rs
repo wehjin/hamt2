@@ -1,3 +1,4 @@
+mod config;
 mod error;
 mod hash_key;
 mod map_base;
@@ -8,6 +9,7 @@ mod slot_map;
 mod trie_query;
 mod trie_value;
 
+pub use config::*;
 pub use error::*;
 pub use hash_key::*;
 pub use map_base::*;

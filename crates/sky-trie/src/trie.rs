@@ -7,12 +7,12 @@ use sky_types::storage::ReadWriteStorage;
 use sky_types::storage::error::WriteStorageError;
 use sky_types::trie::map_base::query_value;
 use sky_types::trie::{MapBase, TrieWritePolicy};
-use sky_types::trie::{SlotBaseId, TrieInsertError, map_base};
+use sky_types::trie::{TrieInsertError, map_base};
 use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Trie<S: ReadWriteStorage + TrieWritePolicy> {
-    pub(crate) root: MapBase<S::HandleType>,
+    pub(crate) root: MapBase<S::Config>,
     storage: S,
 }
 
@@ -36,7 +36,7 @@ impl<S: ReadWriteStorage> Trie<S> {
         Ok(self)
     }
 
-    pub fn unwrap(self) -> MapBase<SlotBaseId> {
+    pub fn unwrap(self) -> MapBase<S::Config> {
         self.root
     }
 
@@ -55,7 +55,7 @@ impl<S: ReadWriteStorage + TrieWritePolicy> Trie<S> {
     pub async fn insert(
         mut self,
         key: i32,
-        value: TrieValue<S::HandleType>,
+        value: TrieValue<S::Config>,
     ) -> Result<Self, TrieInsertError> {
         let key = HashKey::new(key);
         let root = map_base::insert_kv(self.root, key, value, &mut self.storage).await?;
@@ -66,7 +66,7 @@ impl<S: ReadWriteStorage + TrieWritePolicy> Trie<S> {
     pub async fn deep_insert<const N: usize>(
         mut self,
         key: [i32; N],
-        value: impl Into<TrieValue<S::HandleType>>,
+        value: impl Into<TrieValue<S::Config>>,
         replace_tail: bool,
     ) -> Result<Self, TrieInsertError> {
         let deep_key = DeepKey::from(key);

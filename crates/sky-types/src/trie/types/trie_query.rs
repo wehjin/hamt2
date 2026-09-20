@@ -1,4 +1,5 @@
 use crate::trie::MapBase;
+use crate::trie::TrieConfig;
 use crate::trie::TrieQueryError;
 use crate::trie::TrieValue;
 use futures::Stream;
@@ -10,24 +11,24 @@ use futures::Stream;
 /// `subtrie_stream()` and `to_subtrie_from_value()` never need to name the
 /// concrete reader type or a storage type.
 #[allow(async_fn_in_trait)]
-pub trait  TrieQuery<H> {
+pub trait TrieQuery<C: TrieConfig> {
     /// The type of a queryable view over a sub-trie.
-    type Subtrie: TrieQuery<H>;
+    type Subtrie: TrieQuery<C>;
 
     /// The root map base of this trie.
-    fn root(&self) -> &MapBase<H>;
+    fn root(&self) -> &MapBase<C>;
 
     /// Returns the value stored at the given key or none if the key is absent.
-    async fn query_value(&self, key: i32) -> Result<Option<TrieValue<H>>, TrieQueryError>;
+    async fn query_value(&self, key: i32) -> Result<Option<TrieValue<C>>, TrieQueryError>;
 
     /// Returns all keys and values in this trie.
-    async fn query_keys_values(&self) -> Result<Vec<(i32, TrieValue<H>)>, TrieQueryError>;
+    async fn query_keys_values(&self) -> Result<Vec<(i32, TrieValue<C>)>, TrieQueryError>;
 
     /// Returns the value stored at the given deep key.
     async fn deep_query_value<const N: usize>(
         &self,
         key: [i32; N],
-    ) -> Result<Option<TrieValue<H>>, TrieQueryError>;
+    ) -> Result<Option<TrieValue<C>>, TrieQueryError>;
 
     /// A stream of all `U32` values in this trie, skipping map-base values.
     fn u32_stream(&self) -> impl Stream<Item = (i32, u32)>;
@@ -36,5 +37,5 @@ pub trait  TrieQuery<H> {
     fn subtrie_stream(&self) -> impl Stream<Item = (i32, Self::Subtrie)>;
 
     /// Converts a map-base value into a sub-trie.
-    fn to_subtrie_from_value(&self, value: TrieValue<H>) -> Option<Self::Subtrie>;
+    fn to_subtrie_from_value(&self, value: TrieValue<C>) -> Option<Self::Subtrie>;
 }

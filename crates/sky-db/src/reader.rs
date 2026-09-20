@@ -6,18 +6,18 @@ use crate::trie::prelude::*;
 
 /// A read-only snapshot of a [`Db`], for running queries only.
 #[derive(Debug)]
-pub struct DbReader<S: ReadStorage> {
+pub struct DbReader<S: ReadStorage + TrieReadPolicy<Config = HandleTrieConfig>> {
     schema: Schema,
     read_trie: TrieReader<S>,
 }
 
-impl<S: ReadStorage> DbReader<S> {
+impl<S: ReadStorage + TrieReadPolicy<Config = HandleTrieConfig>> DbReader<S> {
     /// Produces a read-only snapshot of the given `db`. The `db` remains fully
     /// usable afterward; writes made after this call are invisible to the
     /// reader.
     pub fn load<T>(db: &Db<T>) -> Self
     where
-        T: ReadWriteStorage<Snapshot = S>,
+        T: ReadWriteStorage<Snapshot = S> + TrieReadPolicy<Config = HandleTrieConfig>,
     {
         let schema = db.schema.clone();
         let read_trie = TrieReader::connect(db.trie.storage().snapshot());
@@ -30,7 +30,7 @@ impl<S: ReadStorage> DbReader<S> {
     }
 }
 
-impl<S: ReadStorage> DbQuery for DbReader<S> {
+impl<S: ReadStorage + TrieReadPolicy<Config = HandleTrieConfig>> DbQuery for DbReader<S> {
     fn find<F: Find>(&self, find: F) -> impl Future<Output = Vec<F::Output>> {
         find.apply(&self.read_trie, &self.schema)
     }

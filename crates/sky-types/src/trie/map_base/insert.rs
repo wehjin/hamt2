@@ -1,11 +1,11 @@
 use crate::trie::{HashKey, KvTest, MapBase, Slot, TrieInsertError, TrieValue, TrieWritePolicy};
 
 pub async fn insert_kv<P: TrieWritePolicy>(
-    map_base: MapBase<P::HandleType>,
+    map_base: MapBase<P::Config>,
     key: HashKey,
-    value: TrieValue<P::HandleType>,
+    value: TrieValue<P::Config>,
     policy: &mut P,
-) -> Result<MapBase<P::HandleType>, TrieInsertError> {
+) -> Result<MapBase<P::Config>, TrieInsertError> {
     let MapBase { map, base: base_id } = map_base;
     let post_map_base = match map.try_base_index(key) {
         Some(base_index) => {
@@ -38,8 +38,7 @@ pub async fn insert_kv<P: TrieWritePolicy>(
                 let kv_index = map.count_left(key);
                 base.as_ref().insert_slot(kv_index, kv_slot)
             };
-            let new_base = P::BaseType::from(post_slot_base);
-            let id = policy.commit_base(new_base).await.expect("append base");
+            let id = policy.commit_base(post_slot_base).await.expect("append base");
             let post_map = map.with_key(key);
             MapBase {
                 map: post_map,

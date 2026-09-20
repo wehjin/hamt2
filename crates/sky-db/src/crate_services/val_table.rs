@@ -6,10 +6,10 @@ use sky_types::db::Val;
 use sky_types::db::{QueryError, TransactError};
 use sky_types::storage::ReadWriteStorage;
 
-pub async fn insert<S: ReadWriteStorage>(
-    trie: Trie<S>,
-    val: Val,
-) -> Result<(Trie<S>, Vid), TransactError> {
+pub async fn insert<S>(trie: Trie<S>, val: Val) -> Result<(Trie<S>, Vid), TransactError>
+where
+    S: ReadWriteStorage + TrieReadPolicy<Config = HandleTrieConfig> + TrieReadPolicy<Config = HandleTrieConfig>,
+{
     let bytes = match &val {
         Val::U32(u) => &u.to_be_bytes(),
         Val::String(s) => s.as_bytes(),
@@ -44,7 +44,7 @@ pub async fn insert<S: ReadWriteStorage>(
 
 pub async fn query<T>(trie: &T, vid: Vid) -> Result<Option<Val>, QueryError>
 where
-    T: TrieQuery<SlotBaseId>,
+    T: TrieQuery<HandleTrieConfig>,
 {
     match find_hash_trie(trie, vid.to_id()).await? {
         None => Ok(None),
@@ -79,12 +79,10 @@ const SUBKEY_BYTES: i32 = 100;
 const VAL_TYPE_U32: u8 = 0;
 const VAL_TYPE_STRING: u8 = 1;
 
-async fn insert_bytes<S: ReadWriteStorage>(
-    mut trie: Trie<S>,
-    hash: i32,
-    bytes: &[u8],
-    bytes_type: u8,
-) -> Result<Trie<S>, TransactError> {
+async fn insert_bytes<S>(mut trie: Trie<S>, hash: i32, bytes: &[u8], bytes_type: u8) -> Result<Trie<S>, TransactError>
+where
+    S: ReadWriteStorage + TrieReadPolicy<Config = HandleTrieConfig> + TrieReadPolicy<Config = HandleTrieConfig>,
+{
     let u32_stream = u32::Stream::new(bytes, SUBKEY_BYTES);
     for (u32_subkey, u32_value) in u32_stream {
         trie = trie
@@ -112,7 +110,7 @@ async fn insert_bytes<S: ReadWriteStorage>(
     Ok(trie)
 }
 
-async fn is_equal_bytes<T: TrieQuery<SlotBaseId>>(
+async fn is_equal_bytes<T: TrieQuery<HandleTrieConfig>>(
     hash_trie: &T,
     bytes: &[u8],
     bytes_type: u8,
@@ -154,7 +152,7 @@ async fn is_equal_bytes<T: TrieQuery<SlotBaseId>>(
     }
 }
 
-async fn find_hash_trie<T: TrieQuery<SlotBaseId>>(
+async fn find_hash_trie<T: TrieQuery<HandleTrieConfig>>(
     trie: &T,
     hash: i32,
 ) -> Result<Option<T::Subtrie>, QueryError> {

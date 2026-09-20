@@ -1,17 +1,17 @@
-use crate::trie::{HashKey, MapBase, Slot, TrieQueryError, TrieReadPolicy, TrieValue};
+use crate::trie::{HashKey, MapBase, Slot, TrieConfig, TrieQueryError, TrieReadPolicy, TrieValue};
 use futures::Stream;
 use futures::stream;
 
 pub struct State<S: TrieReadPolicy> {
     storage: S,
-    jobs: Vec<Job<S::HandleType>>,
+    jobs: Vec<Job<<S::Config as TrieConfig>::HandleType>>,
 }
 
 pub async fn query_value<S: TrieReadPolicy>(
-    map_base: &MapBase<S::HandleType>,
+    map_base: &MapBase<S::Config>,
     key: HashKey,
     storage: &S,
-) -> Result<Option<TrieValue<S::HandleType>>, TrieQueryError> {
+) -> Result<Option<TrieValue<S::Config>>, TrieQueryError> {
     let MapBase { map, base: base_id } = map_base;
     let value = match map.try_base_index(key) {
         Some(base_index) => {
@@ -24,9 +24,9 @@ pub async fn query_value<S: TrieReadPolicy>(
 }
 
 pub fn kv_stream<S: TrieReadPolicy>(
-    map_base: MapBase<S::HandleType>,
+    map_base: MapBase<S::Config>,
     storage: S,
-) -> impl Stream<Item = (i32, TrieValue<S::HandleType>)> {
+) -> impl Stream<Item = (i32, TrieValue<S::Config>)> {
     let state = State {
         storage,
         jobs: Job::start(&map_base).into_iter().collect::<Vec<_>>(),
@@ -66,9 +66,9 @@ pub fn kv_stream<S: TrieReadPolicy>(
 }
 
 pub async fn query_keys_values<P: TrieReadPolicy>(
-    map_base: &MapBase<P::HandleType>,
+    map_base: &MapBase<P::Config>,
     storage: &P,
-) -> Result<Vec<(i32, TrieValue<P::HandleType>)>, TrieQueryError> {
+) -> Result<Vec<(i32, TrieValue<P::Config>)>, TrieQueryError> {
     let MapBase { map, base: base_id } = map_base;
     let mut out = Vec::new();
     let slot_count = map.slot_count();
@@ -88,7 +88,10 @@ struct Job<HandleType> {
     base: HandleType,
 }
 impl<HandleType: Clone> Job<HandleType> {
-    pub fn start(map_base: &MapBase<HandleType>) -> Option<Self> {
+    pub fn start<C>(map_base: &MapBase<C>) -> Option<Self>
+    where
+        C: TrieConfig<HandleType = HandleType>,
+    {
         let slot_count = map_base.map.slot_count();
         if slot_count == 0 {
             None

@@ -1,20 +1,24 @@
-use crate::trie::MapBase;
+use crate::trie::{MapBase, TrieConfig};
 use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Formatter};
 
 #[derive(Clone, Eq, PartialEq, Serialize, Deserialize)]
-pub enum TrieValue<H> {
+#[serde(bound(
+    serialize = "C::HandleType: Serialize",
+    deserialize = "C::HandleType: Deserialize<'de>"
+))]
+pub enum TrieValue<C: TrieConfig> {
     U32(u32),
-    SubTrie(MapBase<H>),
+    SubTrie(MapBase<C>),
 }
 
-impl<H> From<u32> for TrieValue<H> {
+impl<C: TrieConfig> From<u32> for TrieValue<C> {
     fn from(v: u32) -> Self {
         Self::U32(v)
     }
 }
 
-impl<H> Debug for TrieValue<H> {
+impl<C: TrieConfig> Debug for TrieValue<C> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             TrieValue::U32(v) => f

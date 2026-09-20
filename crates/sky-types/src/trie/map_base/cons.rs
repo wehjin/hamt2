@@ -3,9 +3,9 @@ use crate::trie::{HashKey, MapBase, Slot, SlotBase, SlotMap, TrieValue, TrieWrit
 #[cfg(test)]
 pub async fn one_kv<P: TrieWritePolicy>(
     key: HashKey,
-    value: TrieValue<P::HandleType>,
+    value: TrieValue<P::Config>,
     policy: &mut P,
-) -> MapBase<P::HandleType> {
+) -> MapBase<P::Config> {
     let id = policy
         .commit_single_slot_base(key, value)
         .await
@@ -18,11 +18,11 @@ pub async fn one_kv<P: TrieWritePolicy>(
 
 pub async fn two_kv<P: TrieWritePolicy>(
     key: HashKey,
-    value: TrieValue<P::HandleType>,
+    value: TrieValue<P::Config>,
     key2: HashKey,
-    value2: TrieValue<P::HandleType>,
+    value2: TrieValue<P::Config>,
     policy: &mut P,
-) -> MapBase<P::HandleType> {
+) -> MapBase<P::Config> {
     debug_assert!(key.i32() != key2.i32());
     debug_assert!(key.map_index() != key2.map_index());
     let map = SlotMap(key.to_map_bit() | key2.to_map_bit());
@@ -37,6 +37,6 @@ pub async fn two_kv<P: TrieWritePolicy>(
         }
         SlotBase { slots }
     };
-    let id = policy.commit_base(base.into()).await.expect("append base");
+    let id = policy.commit_base(base).await.expect("append base");
     MapBase { map, base: id }
 }

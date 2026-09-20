@@ -11,24 +11,25 @@ use crate::reader::DbReader;
 use crate::schema;
 pub use crate::types::*;
 use sky_trie::Trie;
+use sky_types::trie::{HandleTrieConfig, TrieReadPolicy};
 use sky_types::storage::ReadWriteStorage;
 pub use types::*;
 
 #[derive(Debug)]
-pub struct Db<S: ReadWriteStorage> {
+pub struct Db<S: ReadWriteStorage + TrieReadPolicy<Config = HandleTrieConfig>> {
     pub(crate) schema: Schema,
     pub(crate) trie: Trie<S>,
 }
 
 /// Production methods for Db
-impl<S: ReadWriteStorage> Db<S> {
+impl<S: ReadWriteStorage + TrieReadPolicy<Config = HandleTrieConfig>> Db<S> {
     pub fn to_reader(&self) -> DbReader<S::Snapshot> {
         DbReader::load(self)
     }
 }
 
 /// Construction methods for Db
-impl<S: ReadWriteStorage> Db<S> {
+impl<S: ReadWriteStorage + TrieReadPolicy<Config = HandleTrieConfig>> Db<S> {
     pub fn schema(&self) -> &Schema {
         &self.schema
     }
