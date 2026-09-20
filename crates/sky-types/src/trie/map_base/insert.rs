@@ -1,4 +1,4 @@
-use crate::trie::{HashKey, KvTest, MapBase, TrieInsertError, TrieValue, TrieWritePolicy};
+use crate::trie::{HashKey, KvTest, MapBase, TrieInsertError, TrieValue, TrieWritePolicy, base};
 
 pub async fn insert_kv<P: TrieWritePolicy>(
     map_base: MapBase<P::Config>,
@@ -13,18 +13,18 @@ pub async fn insert_kv<P: TrieWritePolicy>(
             match read_base.as_ref()[base_index].test_kv(&key, &value) {
                 KvTest::SameValue => MapBase { map, base: base_id },
                 KvTest::ValueConflict => {
-                    let post_base = P::swap_v(read_base, base_index, value);
+                    let post_base = base::swap_v(read_base, base_index, value);
                     let id = policy.commit_base(post_base).await.expect("commit base");
                     MapBase { map, base: id }
                 }
                 KvTest::KeyConflict => {
-                    let post_base = policy.kick_kv(read_base, base_index, key, value).await;
+                    let post_base = base::kick_kv(read_base, base_index, key, value, policy).await;
                     let id = policy.commit_base(post_base).await.expect("commit base");
                     MapBase { map, base: id }
                 }
                 KvTest::MapBaseConflict => {
                     let post_base =
-                        Box::pin(policy.merge_kv(read_base, base_index, key, value)).await?;
+                        Box::pin(base::merge_kv(read_base, base_index, key, value, policy)).await?;
                     let id = policy.commit_base(post_base).await.expect("commit base");
                     MapBase { map, base: id }
                 }
@@ -35,7 +35,7 @@ pub async fn insert_kv<P: TrieWritePolicy>(
             let post_slot_base = {
                 let base = policy.read_base(base_id).await.expect("read base");
                 let kv_index = map.count_left(key);
-                P::insert_kv(base, kv_index, key, value)
+                base::insert_kv(base, kv_index, key, value)
             };
             let id = policy
                 .commit_base(post_slot_base)
