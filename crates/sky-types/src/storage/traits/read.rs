@@ -1,12 +1,9 @@
 use crate::storage::{
     FileReadStorage, FileStorage, MemReadStorage, MemStorage, ReadStorageError, StorageHead,
-    WriteStorageError,
 };
 use crate::trie::{
-    HandleTrieConfig, MapBase, SlotBase, SlotBaseId, TrieConfig, TrieInsertError, TrieQueryError,
-    TrieBaseRead, TrieBaseCommit,
+    HandleTrieConfig, MapBase, SlotBase, SlotBaseId, TrieBaseRead, TrieConfig, TrieQueryError,
 };
-
 /// A trait for reading Bases from storage.
 ///
 /// Base id [`SlotBaseId::ZERO`] is reserved and always represents the empty base.
@@ -69,34 +66,3 @@ impl_handle_trie_read_policy!(MemStorage);
 impl_handle_trie_read_policy!(MemReadStorage);
 impl_handle_trie_read_policy!(FileStorage);
 impl_handle_trie_read_policy!(FileReadStorage);
-
-/// A trait for reading and writing Bases from storage.
-#[allow(async_fn_in_trait)]
-pub trait ReadWriteStorage: ReadStorage {
-    /// Read the next available base id. The value is 1 in an empty storage because base id 0 is reserved for the empty base.
-    fn next_id(&self) -> SlotBaseId {
-        self.max_id() + 1
-    }
-
-    /// Stores a base and assigns it the next available id. The id can be used to read back the base in `BaseStorageRead::read`.
-    async fn append(
-        &mut self,
-        base: &SlotBase<Self::Config>,
-    ) -> Result<<Self::Config as TrieConfig>::HandleType, WriteStorageError>;
-
-    /// Persists the given root map base. The root can be read back with `BaseStorageRead::read_root`.
-    async fn write_root(&mut self, root: MapBase<Self::Config>) -> Result<(), WriteStorageError>;
-}
-
-impl<T> TrieBaseCommit for T
-where
-    T: ReadWriteStorage,
-{
-    async fn commit_base(
-        &mut self,
-        base: SlotBase<Self::Config>,
-    ) -> Result<<Self::Config as TrieConfig>::HandleType, TrieInsertError> {
-        let id = self.append(&base).await?;
-        Ok(id)
-    }
-}
