@@ -37,7 +37,7 @@ async fn edit_works() {
 
     // Commit the edit. The change should persist.
     let list = edit.commit();
-    assert_eq!(list.max_id, first_base_id);
+    assert_eq!(list.max_id(), first_base_id);
 }
 
 #[tokio::test]
@@ -54,5 +54,5 @@ async fn rewind_works() {
     );
     // Rewind the edit. The change should disappear.
     let list = edit.commit();
-    assert_eq!(list.max_id, first_base_id);
+    assert_eq!(list.max_id(), first_base_id);
 }

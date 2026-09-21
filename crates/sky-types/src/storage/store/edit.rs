@@ -1,13 +1,13 @@
 use crate::storage::store::private::InternalStoreRead;
-use crate::storage::{Store, StoreConfig, StoreEditError, StoreRead};
-use crate::trie::{SlotBase, SlotBaseId};
+use crate::storage::{StorageHead, Store, StoreConfig, StoreEditError, StoreRead};
+use crate::trie::{MapBase, SlotBase, SlotBaseId};
 use std::sync::{Arc, RwLock};
 
 #[derive(Debug)]
 pub struct StoreMut<C: StoreConfig> {
     pub(crate) bases: Arc<RwLock<Vec<SlotBase<C::TrieConfig>>>>,
-    pub(crate) start_max: SlotBaseId,
-    pub(crate) max_id: SlotBaseId,
+    pub(crate) start_status: StorageHead<C::TrieConfig>,
+    pub(crate) status: StorageHead<C::TrieConfig>,
 }
 
 impl<C: StoreConfig> InternalStoreRead<C> for StoreMut<C> {
@@ -17,8 +17,8 @@ impl<C: StoreConfig> InternalStoreRead<C> for StoreMut<C> {
 }
 
 impl<C: StoreConfig> StoreRead<C> for StoreMut<C> {
-    fn max_id(&self) -> SlotBaseId {
-        self.max_id
+    fn status(&self) -> &StorageHead<C::TrieConfig> {
+        &self.status
     }
 }
 
@@ -27,32 +27,39 @@ impl<C: StoreConfig> StoreMut<C> {
         &mut self,
         base: SlotBase<C::TrieConfig>,
     ) -> Result<SlotBaseId, StoreEditError> {
-        if self.max_id.0 as usize == C::MAX {
+        if self.status.max_id.0 as usize == C::MAX {
             Err(StoreEditError::NoSlotsAvailable)
         } else {
-            let next_id = self.max_id + 1;
+            let next_id = self.status.max_id + 1;
             debug_assert_eq!(next_id.0 as usize, self.bases.read().unwrap().len());
             let mut write = self.bases.write().unwrap();
             write.push(base);
-            self.max_id = next_id;
+            self.status.max_id = next_id;
             Ok(next_id)
         }
+    }
+    pub fn write_root(&mut self, root: MapBase<C::TrieConfig>) -> Result<(), StoreEditError> {
+        self.status.root = root;
+        Ok(())
     }
     pub fn commit(self) -> Store<C> {
         Store {
             bases: self.bases,
-            max_id: self.max_id,
+            status: self.status,
         }
     }
     pub fn rewind(self) -> Store<C> {
-        let bases = self.bases;
-        {
-            let mut write = bases.write().unwrap();
-            write.truncate(self.start_max.0 as usize + 1);
-        }
+        let start_bases = {
+            let bases = self.bases;
+            {
+                let mut write = bases.write().unwrap();
+                write.truncate(self.start_status.max_id.0 as usize + 1);
+            }
+            bases
+        };
         Store {
-            bases,
-            max_id: self.start_max,
+            bases: start_bases,
+            status: self.start_status,
         }
     }
 }

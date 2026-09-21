@@ -1,7 +1,8 @@
+use crate::storage::StorageHead;
 use crate::storage::store::edit::StoreMut;
 use crate::storage::store::private::InternalStoreRead;
 use crate::storage::store::traits::{StoreConfig, StoreRead};
-use crate::trie::{SlotBase, SlotBaseId};
+use crate::trie::SlotBase;
 use std::sync::{Arc, RwLock};
 
 /// A basic reader for the store. It deliberately does not implement
@@ -9,7 +10,7 @@ use std::sync::{Arc, RwLock};
 #[derive(Debug)]
 pub struct Store<C: StoreConfig> {
     pub(crate) bases: Arc<RwLock<Vec<SlotBase<C::TrieConfig>>>>,
-    pub(crate) max_id: SlotBaseId,
+    pub(crate) status: StorageHead<C::TrieConfig>,
 }
 
 /// The default base list has an empty `SlotBase` at position
@@ -18,7 +19,7 @@ impl<C: StoreConfig> Default for Store<C> {
     fn default() -> Self {
         Self {
             bases: Arc::new(RwLock::new(vec![SlotBase::new()])),
-            max_id: SlotBaseId(0),
+            status: StorageHead::default(),
         }
     }
 }
@@ -28,19 +29,19 @@ impl<C: StoreConfig> InternalStoreRead<C> for Store<C> {
     }
 }
 impl<C: StoreConfig> StoreRead<C> for Store<C> {
-    fn max_id(&self) -> SlotBaseId {
-        self.max_id
+    fn status(&self) -> &StorageHead<C::TrieConfig> {
+        &self.status
     }
 }
 
 impl<C: StoreConfig> Store<C> {
     pub fn into_mut(self) -> StoreMut<C> {
-        let arc = self.bases.clone();
-        let start_max = self.max_id;
+        let Store { bases, status } = self;
+        let start_status = status.clone();
         StoreMut {
-            bases: arc,
-            start_max,
-            max_id: start_max,
+            bases,
+            start_status,
+            status,
         }
     }
 }
