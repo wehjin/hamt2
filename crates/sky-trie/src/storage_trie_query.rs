@@ -5,9 +5,9 @@ use crate::{Trie, TrieQuery};
 use futures::Stream;
 use futures::stream::StreamExt;
 use sky_types::storage::{ReadStorage, ReadWriteStorage};
-use sky_types::trie::TrieQueryError;
-use sky_types::trie::map_base::{kv_stream, query_keys_values};
-use sky_types::trie::{MapBase, TrieBaseRead, TrieValue, map_base};
+use sky_types::trie::map_base::kv_stream;
+use sky_types::trie::{MapBase, ShallowTrieQuery, TrieBaseRead, TrieValue, map_base};
+use sky_types::trie::{RootTrieQuery, TrieQueryError};
 
 /// The storage-backed query interface shared by [`Trie`] and
 /// [`TrieReader`](crate::TrieReader).
@@ -19,20 +19,24 @@ pub trait StorageTrieQuery<S: ReadStorage + TrieBaseRead>: TrieQuery<S::Config> 
     fn storage(&self) -> &S;
 }
 
-impl<S: ReadWriteStorage> TrieQuery<S::Config> for Trie<S> {
-    type Subtrie = TrieReader<S::Snapshot>;
-
+impl<S: ReadWriteStorage + TrieBaseRead> RootTrieQuery<S::Config> for Trie<S> {
     fn root(&self) -> &MapBase<S::Config> {
         &self.root
     }
+}
 
+impl<S: ReadWriteStorage + TrieBaseRead> ShallowTrieQuery<S::Config> for Trie<S> {
     async fn query_value(&self, key: i32) -> Result<Option<TrieValue<S::Config>>, TrieQueryError> {
         map_base::query_value(self.root(), HashKey::new(key), self.storage()).await
     }
 
     async fn query_keys_values(&self) -> Result<Vec<(i32, TrieValue<S::Config>)>, TrieQueryError> {
-        query_keys_values(self.root(), self.storage()).await
+        map_base::query_keys_values(self.root(), self.storage()).await
     }
+}
+
+impl<S: ReadWriteStorage> TrieQuery<S::Config> for Trie<S> {
+    type Subtrie = TrieReader<S::Snapshot>;
 
     async fn deep_query_value<const N: usize>(
         &self,
@@ -57,20 +61,26 @@ impl<S: ReadWriteStorage> TrieQuery<S::Config> for Trie<S> {
     }
 }
 
-impl<S: ReadStorage + TrieBaseRead> TrieQuery<S::Config> for TrieReader<S> {
-    type Subtrie = TrieReader<S::Snapshot>;
+//////////
 
+impl<S: ReadStorage + TrieBaseRead> RootTrieQuery<S::Config> for TrieReader<S> {
     fn root(&self) -> &MapBase<S::Config> {
         &self.root
     }
+}
 
+impl<S: ReadStorage + TrieBaseRead> ShallowTrieQuery<S::Config> for TrieReader<S> {
     async fn query_value(&self, key: i32) -> Result<Option<TrieValue<S::Config>>, TrieQueryError> {
         map_base::query_value(self.root(), HashKey::new(key), self.storage()).await
     }
 
     async fn query_keys_values(&self) -> Result<Vec<(i32, TrieValue<S::Config>)>, TrieQueryError> {
-        query_keys_values(self.root(), self.storage()).await
+        map_base::query_keys_values(self.root(), self.storage()).await
     }
+}
+
+impl<S: ReadStorage + TrieBaseRead> TrieQuery<S::Config> for TrieReader<S> {
+    type Subtrie = TrieReader<S::Snapshot>;
 
     async fn deep_query_value<const N: usize>(
         &self,

@@ -1,14 +1,12 @@
 use crate::storage::{
     FileReadStorage, FileStorage, MemReadStorage, MemStorage, ReadStorageError, StorageHead,
 };
-use crate::trie::{
-    HandleTrieConfig, MapBase, SlotBase, SlotBaseId, TrieBaseRead, TrieConfig, TrieQueryError,
-};
+use crate::trie::{HandleTrieConfig, MapBase, SlotBase, TrieBaseRead, TrieConfig, TrieQueryError};
 /// A trait for reading Bases from storage.
 ///
 /// Base id [`SlotBaseId::ZERO`] is reserved and always represents the empty base.
 #[allow(async_fn_in_trait)]
-pub trait ReadStorage: TrieBaseRead + Sync {
+pub trait ReadStorage: TrieBaseRead<Config = HandleTrieConfig> + Sync {
     /// The storage type of an owned read-only snapshot, produced by
     /// [`ReadStorage::snapshot`]. Writer storages use their read-only
     /// snapshot type; read-only snapshot types usually use `Self`.
@@ -33,7 +31,7 @@ pub trait ReadStorage: TrieBaseRead + Sync {
     /// Returns the highest base id in the storage. The empty base id
     /// ([`SlotBaseId::ZERO`]) counts, so an empty storage returns
     /// [`SlotBaseId::ZERO`].
-    fn max_id(&self) -> SlotBaseId;
+    fn max_id(&self) -> <Self::Config as TrieConfig>::HandleType;
 
     /// Reads the committed root map base, returning [`MapBase::empty()`] when
     /// no root has been committed yet. Every implementation holds the root in

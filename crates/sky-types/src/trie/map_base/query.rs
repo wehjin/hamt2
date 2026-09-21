@@ -1,4 +1,4 @@
-use crate::trie::{HashKey, MapBase, Slot, TrieConfig, TrieQueryError, TrieBaseRead, TrieValue};
+use crate::trie::{HashKey, MapBase, Slot, TrieBaseRead, TrieConfig, TrieQueryError, TrieValue};
 use futures::Stream;
 use futures::stream;
 

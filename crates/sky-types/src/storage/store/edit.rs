@@ -1,23 +1,25 @@
 use crate::storage::store::private::InternalStoreRead;
 use crate::storage::{StorageHead, Store, StoreConfig, StoreEditError, StoreRead};
-use crate::trie::{MapBase, SlotBase, SlotBaseId};
+use crate::trie::{HandleTrieConfig, MapBase, SlotBase, SlotBaseId};
+use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
 
 #[derive(Debug)]
 pub struct StoreMut<C: StoreConfig> {
-    pub(crate) bases: Arc<RwLock<Vec<SlotBase<C::TrieConfig>>>>,
-    pub(crate) start_status: StorageHead<C::TrieConfig>,
-    pub(crate) status: StorageHead<C::TrieConfig>,
+    pub(crate) bases: Arc<RwLock<Vec<SlotBase<HandleTrieConfig>>>>,
+    pub(crate) start_status: StorageHead<HandleTrieConfig>,
+    pub(crate) status: StorageHead<HandleTrieConfig>,
+    pub(crate) _phantom_data: PhantomData<C>,
 }
 
-impl<C: StoreConfig> InternalStoreRead<C> for StoreMut<C> {
-    fn bases(&self) -> &Arc<RwLock<Vec<SlotBase<C::TrieConfig>>>> {
+impl<C: StoreConfig> InternalStoreRead for StoreMut<C> {
+    fn bases(&self) -> &Arc<RwLock<Vec<SlotBase<HandleTrieConfig>>>> {
         &self.bases
     }
 }
 
-impl<C: StoreConfig> StoreRead<C> for StoreMut<C> {
-    fn status(&self) -> &StorageHead<C::TrieConfig> {
+impl<C: StoreConfig> StoreRead for StoreMut<C> {
+    fn status(&self) -> &StorageHead<HandleTrieConfig> {
         &self.status
     }
 }
@@ -25,7 +27,7 @@ impl<C: StoreConfig> StoreRead<C> for StoreMut<C> {
 impl<C: StoreConfig> StoreMut<C> {
     pub fn add_base(
         &mut self,
-        base: SlotBase<C::TrieConfig>,
+        base: SlotBase<HandleTrieConfig>,
     ) -> Result<SlotBaseId, StoreEditError> {
         if self.status.max_id.0 as usize == C::MAX {
             Err(StoreEditError::NoSlotsAvailable)
@@ -38,7 +40,7 @@ impl<C: StoreConfig> StoreMut<C> {
             Ok(next_id)
         }
     }
-    pub fn write_root(&mut self, root: MapBase<C::TrieConfig>) -> Result<(), StoreEditError> {
+    pub fn write_root(&mut self, root: MapBase<HandleTrieConfig>) -> Result<(), StoreEditError> {
         self.status.root = root;
         Ok(())
     }
@@ -46,6 +48,7 @@ impl<C: StoreConfig> StoreMut<C> {
         Store {
             bases: self.bases,
             status: self.status,
+            _phantom_data: self._phantom_data,
         }
     }
     pub fn rewind(self) -> Store<C> {
@@ -60,6 +63,7 @@ impl<C: StoreConfig> StoreMut<C> {
         Store {
             bases: start_bases,
             status: self.start_status,
+            _phantom_data: self._phantom_data,
         }
     }
 }

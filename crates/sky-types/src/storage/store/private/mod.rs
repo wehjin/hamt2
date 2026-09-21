@@ -1,8 +1,7 @@
-use crate::storage::StoreConfig;
-use crate::trie::SlotBase;
+use crate::trie::{HandleTrieConfig, SlotBase};
 use std::sync::{Arc, RwLock};
 
-pub trait InternalStoreRead<C: StoreConfig> {
+pub trait InternalStoreRead {
     /// Get reference to bases.
-    fn bases(&self) -> &Arc<RwLock<Vec<SlotBase<C::TrieConfig>>>>;
+    fn bases(&self) -> &Arc<RwLock<Vec<SlotBase<HandleTrieConfig>>>>;
 }

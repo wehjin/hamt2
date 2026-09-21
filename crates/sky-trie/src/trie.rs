@@ -16,7 +16,7 @@ pub struct Trie<S: ReadWriteStorage + TrieBaseCommit> {
     storage: S,
 }
 
-impl<S: ReadWriteStorage> StorageTrieQuery<S> for Trie<S> {
+impl<S: ReadWriteStorage + TrieBaseCommit> StorageTrieQuery<S> for Trie<S> {
     fn storage(&self) -> &S {
         &self.storage
     }

@@ -1,7 +1,7 @@
 use crate::trie::map_base::{query_keys_values, query_value, two_kv};
 use crate::trie::{
-    HashKey, MapBase, SlotBase, SlotMap, TrieConfig, TrieInsertError, TrieQueryError,
-    TrieBaseRead, TrieValue, TrieBaseCommit,
+    HashKey, MapBase, SlotBase, SlotMap, TrieBaseCommit, TrieBaseRead, TrieConfig, TrieInsertError,
+    TrieQueryError, TrieValue,
 };
 use serde::{Deserialize, Serialize};
 

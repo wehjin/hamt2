@@ -1,32 +1,47 @@
 use crate::storage::store::traits::{StoreConfig, StoreRead};
 use crate::storage::{Store, StoreEditError};
-use crate::trie::{HandleTrieConfig, SlotBase, SlotBaseId};
+use crate::trie::{ShallowTrieQuery, SlotBase, SlotBaseId, TrieBaseRead};
 use std::assert_matches;
 
-struct TinyList;
-impl StoreConfig for TinyList {
-    type TrieConfig = HandleTrieConfig;
+struct TinyStore;
+impl StoreConfig for TinyStore {
     const MAX: usize = 1;
+}
+
+struct BigStore;
+impl StoreConfig for BigStore {
+    const MAX: usize = 10000;
+}
+
+#[tokio::test]
+async fn inherits_trie_query() {
+    let store = Store::<BigStore>::default();
+    let value = store.query_value(33).await.expect("query value");
+    assert_eq!(value, None);
+
+    let edit = store.into_mut();
+    let value_while_editing = edit.query_value(12).await.expect("query value");
+    assert_eq!(value_while_editing, None);
 }
 
 #[tokio::test]
 async fn plain_default_has_empty_slot_base() {
-    let list = Store::<TinyList>::default();
+    let store = Store::<TinyStore>::default();
     assert_eq!(
-        list.read_base(SlotBaseId(0)).expect("read_base"),
+        store.read_base(SlotBaseId(0)).await.expect("read_base"),
         SlotBase::new(),
     );
 }
 #[tokio::test]
 async fn edit_works() {
-    let list = Store::<TinyList>::default();
-    let mut edit = list.into_mut();
+    let store = Store::<TinyStore>::default();
+    let mut edit = store.into_mut();
     // Add a slot_base.
     let first_base = SlotBase::new();
     let first_base_id = edit.add_base(first_base.clone()).expect("commit_base");
     assert_eq!(first_base_id, SlotBaseId(1),);
     assert_eq!(
-        edit.read_base(first_base_id).expect("read_base"),
+        edit.read_base(first_base_id).await.expect("read_base"),
         first_base
     );
 
@@ -36,23 +51,23 @@ async fn edit_works() {
     assert_matches!(result, Err(StoreEditError::NoSlotsAvailable));
 
     // Commit the edit. The change should persist.
-    let list = edit.commit();
-    assert_eq!(list.max_id(), first_base_id);
+    let back_to_store = edit.commit();
+    assert_eq!(back_to_store.max_id(), first_base_id);
 }
 
 #[tokio::test]
 async fn rewind_works() {
-    let list = Store::<TinyList>::default();
-    let mut edit = list.into_mut();
+    let store = Store::<TinyStore>::default();
+    let mut edit = store.into_mut();
     // Add a slot_base.
     let first_base = SlotBase::new();
     let first_base_id = edit.add_base(first_base.clone()).expect("commit_base");
     assert_eq!(first_base_id, SlotBaseId(1),);
     assert_eq!(
-        edit.read_base(first_base_id).expect("read_base"),
+        edit.read_base(first_base_id).await.expect("read_base"),
         first_base
     );
     // Rewind the edit. The change should disappear.
-    let list = edit.commit();
-    assert_eq!(list.max_id(), first_base_id);
+    let back_to_store = edit.commit();
+    assert_eq!(back_to_store.max_id(), first_base_id);
 }

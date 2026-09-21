@@ -1,8 +1,32 @@
-use crate::trie::MapBase;
 use crate::trie::TrieConfig;
 use crate::trie::TrieQueryError;
 use crate::trie::TrieValue;
+use crate::trie::{HashKey, MapBase, TrieBaseRead, map_base};
 use futures::Stream;
+
+pub trait RootTrieQuery<C: TrieConfig> {
+    /// The root map base of this trie.
+    fn root(&self) -> &MapBase<C>;
+}
+
+#[allow(async_fn_in_trait)]
+pub trait ShallowTrieQuery<C: TrieConfig>: RootTrieQuery<C> {
+    /// Returns the value stored at the given key or none if the key is absent.
+    async fn query_value(&self, key: i32) -> Result<Option<TrieValue<C>>, TrieQueryError>;
+
+    /// Returns all keys and values in this trie.
+    async fn query_keys_values(&self) -> Result<Vec<(i32, TrieValue<C>)>, TrieQueryError>;
+}
+
+impl<C: TrieConfig, T: RootTrieQuery<C> + TrieBaseRead<Config = C>> ShallowTrieQuery<C> for T {
+    async fn query_value(&self, key: i32) -> Result<Option<TrieValue<C>>, TrieQueryError> {
+        map_base::query_value(self.root(), HashKey::new(key), self).await
+    }
+
+    async fn query_keys_values(&self) -> Result<Vec<(i32, TrieValue<C>)>, TrieQueryError> {
+        map_base::query_keys_values(self.root(), self).await
+    }
+}
 
 /// The read-only query interface shared by every storage-backed trie.
 ///
@@ -11,18 +35,9 @@ use futures::Stream;
 /// `subtrie_stream()` and `to_subtrie_from_value()` never need to name the
 /// concrete reader type or a storage type.
 #[allow(async_fn_in_trait)]
-pub trait TrieQuery<C: TrieConfig> {
+pub trait TrieQuery<C: TrieConfig>: ShallowTrieQuery<C> {
     /// The type of a queryable view over a sub-trie.
     type Subtrie: TrieQuery<C>;
-
-    /// The root map base of this trie.
-    fn root(&self) -> &MapBase<C>;
-
-    /// Returns the value stored at the given key or none if the key is absent.
-    async fn query_value(&self, key: i32) -> Result<Option<TrieValue<C>>, TrieQueryError>;
-
-    /// Returns all keys and values in this trie.
-    async fn query_keys_values(&self) -> Result<Vec<(i32, TrieValue<C>)>, TrieQueryError>;
 
     /// Returns the value stored at the given deep key.
     async fn deep_query_value<const N: usize>(
