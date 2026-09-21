@@ -1,7 +1,7 @@
 use crate::storage::{
     ReadStorage, ReadStorageError, ReadWriteStorage, StorageHead, StoreRead, WriteStorageError,
 };
-use crate::trie::{MapBase, SlotBase, SlotBaseId};
+use crate::trie::{MapBase, SlotBase, SlotBaseId, TrieBaseRead, TrieQueryError};
 use std::future;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
@@ -17,6 +17,13 @@ use std::path::{Path, PathBuf};
 pub struct FileReadStorage {
     bases_dir: PathBuf,
     status: StorageHead,
+}
+
+impl TrieBaseRead for FileReadStorage {
+    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, TrieQueryError> {
+        let base = self.read(id).await?;
+        Ok(base)
+    }
 }
 
 impl StoreRead for FileReadStorage {
@@ -80,6 +87,12 @@ pub struct FileStorage {
 impl StoreRead for FileStorage {
     fn status(&self) -> StorageHead {
         self.inner.status()
+    }
+}
+
+impl TrieBaseRead for FileStorage {
+    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, TrieQueryError> {
+        self.inner.read_base(id).await
     }
 }
 

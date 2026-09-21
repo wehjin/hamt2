@@ -1,4 +1,4 @@
-use crate::storage::{FileReadStorage, FileStorage, ReadStorageError, StorageHead, StoreRead};
+use crate::storage::{ReadStorageError, StorageHead, StoreRead};
 use crate::trie::{SlotBase, SlotBaseId, TrieBaseRead, TrieQueryError};
 /// A trait for reading Bases from storage.
 ///
@@ -34,17 +34,3 @@ pub trait ReadStorage: StoreRead + TrieBaseRead + Sync {
         self.status().clone()
     }
 }
-
-macro_rules! impl_trie_base_read {
-    ($storage:ty) => {
-        impl TrieBaseRead for $storage {
-            async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, TrieQueryError> {
-                let base = self.read(id).await?;
-                Ok(base)
-            }
-        }
-    };
-}
-
-impl_trie_base_read!(FileStorage);
-impl_trie_base_read!(FileReadStorage);
