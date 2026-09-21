@@ -29,7 +29,7 @@ async fn plain_default_has_empty_slot_base() {
     let store = Store::<TinyStore>::default();
     assert_eq!(
         store.read_base(SlotBaseId(0)).await.expect("read_base"),
-        SlotBase::new(),
+        SlotBase::empty(),
     );
 }
 #[tokio::test]
@@ -37,7 +37,7 @@ async fn edit_works() {
     let store = Store::<TinyStore>::default();
     let mut edit = store.into_mut();
     // Add a slot_base.
-    let first_base = SlotBase::new();
+    let first_base = SlotBase::empty();
     let first_base_id = edit.add_base(first_base.clone()).expect("commit_base");
     assert_eq!(first_base_id, SlotBaseId(1),);
     assert_eq!(
@@ -46,7 +46,7 @@ async fn edit_works() {
     );
 
     // Add a second one. It should fail.
-    let second_base = SlotBase::new();
+    let second_base = SlotBase::empty();
     let result = edit.add_base(second_base.clone());
     assert_matches!(result, Err(StoreEditError::NoSlotsAvailable));
 
@@ -60,7 +60,7 @@ async fn rewind_works() {
     let store = Store::<TinyStore>::default();
     let mut edit = store.into_mut();
     // Add a slot_base.
-    let first_base = SlotBase::new();
+    let first_base = SlotBase::empty();
     let first_base_id = edit.add_base(first_base.clone()).expect("commit_base");
     assert_eq!(first_base_id, SlotBaseId(1),);
     assert_eq!(

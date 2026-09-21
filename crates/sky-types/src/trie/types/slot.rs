@@ -53,7 +53,7 @@ impl Slot {
     ) -> Result<Vec<(i32, TrieValue)>, TrieQueryError> {
         match self {
             Slot::KeyValue(key, value) => Ok(vec![(*key, value.clone())]),
-            Slot::MapBase(map_base) => query_keys_values(map_base, storage).await,
+            Slot::MapBase(map_base) => query_keys_values(*map_base, storage).await,
         }
     }
     pub async fn query_value<P: TrieBaseRead>(
@@ -69,7 +69,7 @@ impl Slot {
                     Ok(Some(v.clone()))
                 }
             }
-            Slot::MapBase(map_base) => query_value(map_base, key.next(), storage).await,
+            Slot::MapBase(map_base) => query_value(*map_base, key.next(), storage).await,
         }
     }
     pub fn test_kv(&self, key: &HashKey, value: &TrieValue) -> KvTest {

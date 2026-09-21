@@ -5,8 +5,8 @@ use crate::types::DeepKey;
 use crate::types::HashKey;
 use sky_types::storage::ReadWriteStorage;
 use sky_types::storage::error::WriteStorageError;
-use sky_types::trie::map_base::query_value;
 use sky_types::trie::MapBase;
+use sky_types::trie::map_base::query_value;
 use sky_types::trie::{TrieInsertError, map_base};
 use std::collections::HashMap;
 
@@ -52,11 +52,7 @@ impl<S: ReadWriteStorage> Trie<S> {
 
 /// Trie update methods.
 impl<S: ReadWriteStorage> Trie<S> {
-    pub async fn insert(
-        mut self,
-        key: i32,
-        value: TrieValue,
-    ) -> Result<Self, TrieInsertError> {
+    pub async fn insert(mut self, key: i32, value: TrieValue) -> Result<Self, TrieInsertError> {
         let key = HashKey::new(key);
         let root = map_base::insert_kv(self.root, key, value, &mut self.storage).await?;
         self.root = root;
@@ -80,7 +76,7 @@ impl<S: ReadWriteStorage> Trie<S> {
             let map_base_i = if replace_tail && subtrie_i == last_index {
                 MapBase::empty()
             } else {
-                match query_value(map_base, key, &self.storage).await? {
+                match query_value(*map_base, key, &self.storage).await? {
                     None => MapBase::empty(),
                     Some(TrieValue::SubTrie(map_base)) => map_base,
                     Some(TrieValue::U32(_)) => unreachable!("expected a sub-trie but found a u32"),

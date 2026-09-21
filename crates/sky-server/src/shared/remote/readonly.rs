@@ -1,10 +1,8 @@
 use crate::shared::remote::SpawnTask;
 use crate::shared::remote::client::requests::ClientRequest;
 use sky_types::db::DbStatus;
-use sky_types::storage::{ReadStorage, ReadStorageError};
-use sky_types::trie::{
-    MapBase, SlotBase, SlotBaseId, TrieQueryError, TrieBaseRead,
-};
+use sky_types::storage::{ReadStorage, ReadStorageError, StorageHead, StoreRead};
+use sky_types::trie::{SlotBase, SlotBaseId, TrieBaseRead, TrieQueryError};
 use std::marker::PhantomData;
 use tokio::sync::mpsc::Sender;
 use tokio::sync::oneshot;
@@ -16,12 +14,14 @@ pub struct RemoteClientReadStorage<T: SpawnTask> {
     pub(crate) _spawn_local: PhantomData<T>,
 }
 
-impl<T: SpawnTask> TrieBaseRead for RemoteClientReadStorage<T> {
+impl<T: SpawnTask> StoreRead for RemoteClientReadStorage<T> {
+    fn status(&self) -> StorageHead {
+        self.status.read().unwrap().head
+    }
+}
 
-    async fn read_base(
-        &self,
-        id: SlotBaseId,
-    ) -> Result<SlotBase, TrieQueryError> {
+impl<T: SpawnTask> TrieBaseRead for RemoteClientReadStorage<T> {
+    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, TrieQueryError> {
         let base = ReadStorage::read(self, id).await?;
         Ok(base)
     }
@@ -50,14 +50,6 @@ impl<T: SpawnTask> ReadStorage for RemoteClientReadStorage<T> {
             .expect("send request");
         let base = recv.await.expect("recv base").expect("base");
         Ok(base)
-    }
-
-    fn max_id(&self) -> SlotBaseId {
-        self.status.read().unwrap().head.max_id
-    }
-
-    fn read_root(&self) -> MapBase {
-        self.status.read().unwrap().head.root
     }
 }
 impl<T: SpawnTask> RemoteClientReadStorage<T> {

@@ -20,8 +20,8 @@ pub trait StorageTrieQuery<S: ReadStorage + TrieBaseRead>: TrieQuery {
 }
 
 impl<S: ReadWriteStorage + TrieBaseRead> RootTrieQuery for Trie<S> {
-    fn root(&self) -> &MapBase {
-        &self.root
+    fn root(&self) -> MapBase {
+        self.root
     }
 }
 
@@ -53,10 +53,7 @@ impl<S: ReadWriteStorage> TrieQuery for Trie<S> {
         subtrie_stream(self.root(), self.storage())
     }
 
-    fn to_subtrie_from_value(
-        &self,
-        value: TrieValue,
-    ) -> Option<TrieReader<S::Snapshot>> {
+    fn to_subtrie_from_value(&self, value: TrieValue) -> Option<TrieReader<S::Snapshot>> {
         TrieReader::subtrie_from_value(value, self.storage().snapshot())
     }
 }
@@ -64,8 +61,8 @@ impl<S: ReadWriteStorage> TrieQuery for Trie<S> {
 //////////
 
 impl<S: ReadStorage + TrieBaseRead> RootTrieQuery for TrieReader<S> {
-    fn root(&self) -> &MapBase {
-        &self.root
+    fn root(&self) -> MapBase {
+        self.root
     }
 }
 
@@ -97,16 +94,13 @@ impl<S: ReadStorage + TrieBaseRead> TrieQuery for TrieReader<S> {
         subtrie_stream(self.root(), self.storage())
     }
 
-    fn to_subtrie_from_value(
-        &self,
-        value: TrieValue,
-    ) -> Option<TrieReader<S::Snapshot>> {
+    fn to_subtrie_from_value(&self, value: TrieValue) -> Option<TrieReader<S::Snapshot>> {
         TrieReader::subtrie_from_value(value, self.storage().snapshot())
     }
 }
 
 async fn deep_query_value<const N: usize, S: ReadStorage + TrieBaseRead>(
-    root: &MapBase,
+    root: MapBase,
     storage: &S,
     key: [i32; N],
 ) -> Result<Option<TrieValue>, TrieQueryError> {
@@ -114,7 +108,7 @@ async fn deep_query_value<const N: usize, S: ReadStorage + TrieBaseRead>(
     let mut current_map_base = root.clone();
     let last_index = N - 1;
     for i in 0..=last_index {
-        match map_base::query_value(&current_map_base, deep_key[i].clone(), storage).await? {
+        match map_base::query_value(current_map_base, deep_key[i].clone(), storage).await? {
             None => {
                 return Ok(None);
             }
@@ -134,7 +128,7 @@ async fn deep_query_value<const N: usize, S: ReadStorage + TrieBaseRead>(
     unreachable!();
 }
 
-fn u32_stream<'a, S>(root: &'a MapBase, storage: &'a S) -> impl Stream<Item = (i32, u32)>
+fn u32_stream<'a, S>(root: MapBase, storage: &'a S) -> impl Stream<Item = (i32, u32)>
 where
     S: ReadStorage + TrieBaseRead,
 {
@@ -149,7 +143,7 @@ where
 }
 
 fn subtrie_stream<'a, S>(
-    root: &'a MapBase,
+    root: MapBase,
     storage: &'a S,
 ) -> impl Stream<Item = (i32, TrieReader<S::Snapshot>)>
 where

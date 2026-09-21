@@ -1,12 +1,10 @@
-use crate::storage::{
-    FileReadStorage, FileStorage, MemReadStorage, MemStorage, ReadStorageError, StorageHead,
-};
-use crate::trie::{MapBase, SlotBase, SlotBaseId, TrieBaseRead, TrieQueryError};
+use crate::storage::{FileReadStorage, FileStorage, ReadStorageError, StorageHead, StoreRead};
+use crate::trie::{SlotBase, SlotBaseId, TrieBaseRead, TrieQueryError};
 /// A trait for reading Bases from storage.
 ///
 /// Base id [`SlotBaseId::ZERO`] is reserved and always represents the empty base.
 #[allow(async_fn_in_trait)]
-pub trait ReadStorage: TrieBaseRead + Sync {
+pub trait ReadStorage: StoreRead + TrieBaseRead + Sync {
     /// The storage type of an owned read-only snapshot, produced by
     /// [`ReadStorage::snapshot`]. Writer storages use their read-only
     /// snapshot type; read-only snapshot types usually use `Self`.
@@ -23,32 +21,24 @@ pub trait ReadStorage: TrieBaseRead + Sync {
     /// for ids they have never assigned, and snapshot readers panic for ids
     /// beyond their captured `max_id`. Ids read from committed map bases are
     /// always valid.
-    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError>;
-
-    /// Returns the highest base id in the storage. The empty base id
-    /// ([`SlotBaseId::ZERO`]) counts, so an empty storage returns
-    /// [`SlotBaseId::ZERO`].
-    fn max_id(&self) -> SlotBaseId;
-
-    /// Reads the committed root map base, returning [`MapBase::empty()`] when
-    /// no root has been committed yet. Every implementation holds the root in
-    /// memory, so this never touches the backing medium.
-    fn read_root(&self) -> MapBase;
+    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
+        self.read_base(id).await.map_err(|e| {
+            let TrieQueryError::ReadStorage(rs_error) = e else {
+                unreachable!("non-read-storage error")
+            };
+            rs_error
+        })
+    }
 
     fn get_head(&self) -> StorageHead {
-        let max_id = self.max_id();
-        let root = self.read_root();
-        StorageHead { max_id, root }
+        self.status().clone()
     }
 }
 
 macro_rules! impl_trie_base_read {
     ($storage:ty) => {
         impl TrieBaseRead for $storage {
-            async fn read_base(
-                &self,
-                id: SlotBaseId,
-            ) -> Result<SlotBase, TrieQueryError> {
+            async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, TrieQueryError> {
                 let base = self.read(id).await?;
                 Ok(base)
             }
@@ -56,7 +46,5 @@ macro_rules! impl_trie_base_read {
     };
 }
 
-impl_trie_base_read!(MemStorage);
-impl_trie_base_read!(MemReadStorage);
 impl_trie_base_read!(FileStorage);
 impl_trie_base_read!(FileReadStorage);

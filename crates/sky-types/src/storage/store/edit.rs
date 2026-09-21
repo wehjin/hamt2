@@ -1,5 +1,4 @@
-use crate::storage::store::private::InternalStoreRead;
-use crate::storage::{StorageHead, Store, StoreConfig, StoreEditError, StoreRead};
+use crate::storage::{StorageHead, Store, StoreConfig, StoreEditError, StoreRead, VecBases};
 use crate::trie::{MapBase, SlotBase, SlotBaseId};
 use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
@@ -12,23 +11,20 @@ pub struct StoreMut<C: StoreConfig> {
     pub(crate) _phantom_data: PhantomData<C>,
 }
 
-impl<C: StoreConfig> InternalStoreRead for StoreMut<C> {
+impl<C: StoreConfig> VecBases for StoreMut<C> {
     fn bases(&self) -> &Arc<RwLock<Vec<SlotBase>>> {
         &self.bases
     }
 }
 
 impl<C: StoreConfig> StoreRead for StoreMut<C> {
-    fn status(&self) -> &StorageHead {
-        &self.status
+    fn status(&self) -> StorageHead {
+        self.status
     }
 }
 
 impl<C: StoreConfig> StoreMut<C> {
-    pub fn add_base(
-        &mut self,
-        base: SlotBase,
-    ) -> Result<SlotBaseId, StoreEditError> {
+    pub fn add_base(&mut self, base: SlotBase) -> Result<SlotBaseId, StoreEditError> {
         if self.status.max_id.0 as usize == C::MAX {
             Err(StoreEditError::NoSlotsAvailable)
         } else {

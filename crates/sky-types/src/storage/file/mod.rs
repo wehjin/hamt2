@@ -1,9 +1,58 @@
-use crate::storage::{ReadStorage, ReadStorageError, ReadWriteStorage, WriteStorageError};
+use crate::storage::{
+    ReadStorage, ReadStorageError, ReadWriteStorage, StorageHead, StoreRead, WriteStorageError,
+};
 use crate::trie::{MapBase, SlotBase, SlotBaseId};
 use std::future;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, RwLock};
+
+/// A read-only, immutable view of a [`FileStorage`] taken at
+/// [`ReadStorage::snapshot`] time.
+///
+/// `max_id` and `root` are captured into memory when the view is created, so
+/// later appends or commits on the writer are invisible through it. Bases are
+/// still read from disk: they are written once and never modified, so any id
+/// at or below the captured `max_id` stays readable.
+#[derive(Debug, Clone)]
+pub struct FileReadStorage {
+    bases_dir: PathBuf,
+    status: StorageHead,
+}
+
+impl StoreRead for FileReadStorage {
+    fn status(&self) -> StorageHead {
+        self.status
+    }
+}
+
+impl ReadStorage for FileReadStorage {
+    type Snapshot = FileReadStorage;
+
+    fn snapshot(&self) -> Self::Snapshot {
+        self.clone()
+    }
+
+    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
+        assert!(
+            id <= self.max_id(),
+            "base id {id} is beyond this snapshot's max_id"
+        );
+        self.read_base_unchecked(id)
+    }
+}
+
+impl FileReadStorage {
+    /// Reads and decodes the base file for `id`, without checking `max_id`.
+    /// Base id [`SlotBaseId::ZERO`] reads back the empty base.
+    fn read_base_unchecked(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
+        if id == SlotBaseId::EMPTY {
+            return Ok(SlotBase::empty());
+        }
+        let path = base_path(&self.bases_dir, id);
+        let bytes = std::fs::read(&path).map_err(|e| ReadStorageError::Io(id, e))?;
+        postcard::from_bytes::<SlotBase>(&bytes).map_err(|e| ReadStorageError::Decode(id, e))
+    }
+}
 
 /// A file-backed storage for Bases.
 ///
@@ -21,69 +70,16 @@ use std::sync::{Arc, RwLock};
 /// ```
 ///
 /// Base id [`SlotBaseId::ZERO`] is the reserved empty base and is never written to disk.
-///
-/// Clones share the same inner state (`Arc<RwLock<FileReadStorage>>`), so appends are
-/// serialized through a shared `max_id` counter and clones never assign
-/// duplicate ids or write stale state back to disk.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct FileStorage {
-    inner: Arc<RwLock<FileReadStorage>>,
+    inner: FileReadStorage,
     max_id_path: PathBuf,
     root_path: PathBuf,
 }
 
-/// A read-only, immutable view of a [`FileStorage`] taken at
-/// [`ReadStorage::snapshot`] time.
-///
-/// `max_id` and `root` are captured into memory when the view is created, so
-/// later appends or commits on the writer are invisible through it. Bases are
-/// still read from disk: they are written once and never modified, so any id
-/// at or below the captured `max_id` stays readable.
-#[derive(Debug, Clone)]
-pub struct FileReadStorage {
-    bases_dir: PathBuf,
-    max_id: i32,
-    root: MapBase,
-}
-
-impl FileReadStorage {
-    /// Reads and decodes the base file for `id`, without checking `max_id`.
-    /// Base id [`SlotBaseId::ZERO`] reads back the empty base.
-    fn read_base_unchecked(
-        &self,
-        id: SlotBaseId,
-    ) -> Result<SlotBase, ReadStorageError> {
-        if id.0 == 0 {
-            return Ok(SlotBase::new());
-        }
-        let path = base_path(&self.bases_dir, id);
-        let bytes = std::fs::read(&path).map_err(|e| ReadStorageError::Io(id, e))?;
-        postcard::from_bytes::<SlotBase>(&bytes)
-            .map_err(|e| ReadStorageError::Decode(id, e))
-    }
-}
-
-impl ReadStorage for FileReadStorage {
-    type Snapshot = FileReadStorage;
-
-    fn snapshot(&self) -> Self::Snapshot {
-        self.clone()
-    }
-
-    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
-        assert!(
-            id.0 <= self.max_id,
-            "base id {id} is beyond this snapshot's max_id"
-        );
-        self.read_base_unchecked(id)
-    }
-
-    fn max_id(&self) -> SlotBaseId {
-        SlotBaseId(self.max_id)
-    }
-
-    fn read_root(&self) -> MapBase {
-        self.root
+impl StoreRead for FileStorage {
+    fn status(&self) -> StorageHead {
+        self.inner.status()
     }
 }
 
@@ -99,15 +95,13 @@ impl FileStorage {
         let max_id_path = root.join(Self::MAX_ID_FILE);
         let root_path = root.join(Self::ROOT_FILE);
         std::fs::create_dir_all(&bases_dir)?;
-        write_max_id_file(&max_id_path, SlotBaseId::ZERO).map_err(write_to_io)?;
-        write_root_file(&root_path, &MapBase::empty()).map_err(write_to_io)?;
-        let inner = FileReadStorage {
-            bases_dir,
-            max_id: 0,
-            root: MapBase::empty(),
-        };
+        let status = StorageHead::default();
+
+        write_max_id_file(&max_id_path, status.max_id).map_err(write_to_io)?;
+        write_root_file(&root_path, &status.root).map_err(write_to_io)?;
+        let inner = FileReadStorage { bases_dir, status };
         Ok(Self {
-            inner: Arc::new(RwLock::new(inner)),
+            inner,
             max_id_path,
             root_path,
         })
@@ -128,13 +122,13 @@ impl FileStorage {
             Err(e) => return Err(e),
         };
         let root = read_root_file(&root_path).map_err(read_to_io)?;
-        let inner = FileReadStorage {
-            bases_dir,
-            max_id,
+        let status = StorageHead {
+            max_id: SlotBaseId(max_id),
             root,
         };
+        let inner = FileReadStorage { bases_dir, status };
         Ok(Self {
-            inner: Arc::new(RwLock::new(inner)),
+            inner,
             max_id_path,
             root_path,
         })
@@ -193,41 +187,29 @@ impl ReadStorage for FileStorage {
     type Snapshot = FileReadStorage;
 
     fn snapshot(&self) -> Self::Snapshot {
-        self.inner.read().expect("storage poisoned").snapshot()
+        self.inner.snapshot()
     }
 
     async fn read(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
-        let inner = self.inner.read().expect("storage poisoned");
-        assert!(id.0 <= inner.max_id, "base id {id} has not been written");
-        inner.read_base_unchecked(id)
-    }
-
-    fn max_id(&self) -> SlotBaseId {
-        self.inner.read().expect("storage poisoned").max_id()
-    }
-
-    fn read_root(&self) -> MapBase {
-        self.inner.read().expect("storage poisoned").read_root()
+        self.inner.read(id).await
     }
 }
 
 impl ReadWriteStorage for FileStorage {
     fn next_id(&self) -> SlotBaseId {
-        let inner = self.inner.read().expect("storage poisoned");
-        SlotBaseId(inner.max_id + 1)
+        self.max_id() + 1
     }
 
     fn append(
         &mut self,
         base: &SlotBase,
     ) -> impl Future<Output = Result<SlotBaseId, WriteStorageError>> {
-        let mut inner = self.inner.write().expect("storage poisoned");
-        let id = SlotBaseId(inner.max_id + 1);
+        let id = self.next_id();
         let bytes = match postcard::to_allocvec(base) {
             Ok(bytes) => bytes,
             Err(e) => return future::ready(Err(WriteStorageError::Encode(id, e))),
         };
-        let path = base_path(&inner.bases_dir, id);
+        let path = base_path(&self.inner.bases_dir, id);
         if let Err(e) = std::fs::create_dir_all(path.parent().expect("base path has parent")) {
             return future::ready(Err(WriteStorageError::Io(id, e)));
         }
@@ -237,18 +219,14 @@ impl ReadWriteStorage for FileStorage {
         if let Err(e) = write_max_id_file(&self.max_id_path, id) {
             return future::ready(Err(e));
         }
-        inner.max_id = id.0;
+        self.inner.status.max_id = id;
         future::ready(Ok(id))
     }
 
-    fn write_root(
-        &mut self,
-        root: MapBase,
-    ) -> impl Future<Output = Result<(), WriteStorageError>> {
-        let mut inner = self.inner.write().expect("storage poisoned");
+    fn write_root(&mut self, root: MapBase) -> impl Future<Output = Result<(), WriteStorageError>> {
         match write_root_file(&self.root_path, &root) {
             Ok(()) => {
-                inner.root = root;
+                self.inner.status.root = root;
                 future::ready(Ok(()))
             }
             Err(e) => future::ready(Err(e)),
@@ -269,7 +247,7 @@ mod tests {
         assert_eq!(SlotBaseId::ZERO, storage.max_id());
         assert_eq!(SlotBaseId(1), storage.next_id());
         assert_eq!(
-            SlotBase::new(),
+            SlotBase::empty(),
             storage.read_base(SlotBaseId::ZERO).await.expect("read")
         );
         Ok(())
@@ -331,21 +309,6 @@ mod tests {
         let id = storage.append(&base).await.expect("append");
         assert_eq!(SlotBaseId(2), id);
         assert_eq!(SlotBaseId(2), storage.max_id());
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn clones_share_the_same_id_counter() -> anyhow::Result<()> {
-        let dir = tempfile::tempdir()?;
-        let mut storage = FileStorage::new(dir.path())?;
-        let mut clone = storage.clone();
-        let base = SlotBase::new_kv(HashKey::new(7), TrieValue::U32(7));
-        let id0 = storage.append(&base).await.expect("append");
-        let id1 = clone.append(&base).await.expect("append");
-        assert_eq!(SlotBaseId(1), id0);
-        assert_eq!(SlotBaseId(2), id1);
-        assert_eq!(SlotBaseId(2), storage.max_id());
-        assert_eq!(SlotBaseId(2), clone.max_id());
         Ok(())
     }
 
@@ -422,7 +385,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "has not been written")]
+    #[should_panic(expected = "base id 1 is beyond this snapshot's max_id")]
     async fn read_panics_on_unwritten_id() {
         let dir = tempfile::tempdir().expect("tempdir");
         let storage = FileStorage::new(dir.path()).expect("new storage");

@@ -1,7 +1,6 @@
-use crate::storage::StorageHead;
 use crate::storage::store::edit::StoreMut;
-use crate::storage::store::private::InternalStoreRead;
 use crate::storage::store::traits::{StoreConfig, StoreRead};
+use crate::storage::{StorageHead, VecBases};
 use crate::trie::SlotBase;
 use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
@@ -20,20 +19,20 @@ pub struct Store<C: StoreConfig> {
 impl<C: StoreConfig> Default for Store<C> {
     fn default() -> Self {
         Self {
-            bases: Arc::new(RwLock::new(vec![SlotBase::new()])),
+            bases: Arc::new(RwLock::new(vec![SlotBase::empty()])),
             status: StorageHead::default(),
             _phantom_data: PhantomData,
         }
     }
 }
-impl<C: StoreConfig> InternalStoreRead for Store<C> {
+impl<C: StoreConfig> VecBases for Store<C> {
     fn bases(&self) -> &Arc<RwLock<Vec<SlotBase>>> {
         &self.bases
     }
 }
 impl<C: StoreConfig> StoreRead for Store<C> {
-    fn status(&self) -> &StorageHead {
-        &self.status
+    fn status(&self) -> StorageHead {
+        self.status
     }
 }
 

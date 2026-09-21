@@ -10,7 +10,7 @@ use crate::error::ConnectError;
 use crate::reader::DbReader;
 use crate::schema;
 pub use crate::types::*;
-use sky_trie::Trie;
+use sky_trie::{StorageTrieQuery, Trie};
 use sky_types::storage::ReadWriteStorage;
 pub use types::*;
 
@@ -31,6 +31,10 @@ impl<S: ReadWriteStorage> Db<S> {
 impl<S: ReadWriteStorage> Db<S> {
     pub fn schema(&self) -> &Schema {
         &self.schema
+    }
+
+    pub fn storage(&self) -> &S {
+        &self.trie.storage()
     }
 
     pub async fn new(storage: S, db_spec: impl Into<DbSpec>) -> Result<Self, ConnectError> {

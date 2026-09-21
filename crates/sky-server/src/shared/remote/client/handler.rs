@@ -13,7 +13,7 @@ pub async fn process_client_requests(
     db_status: Arc<RwLock<DbStatus>>,
 ) {
     let mut read_line: HashMap<SlotBaseId, Vec<oneshot::Sender<Option<SlotBase>>>> = HashMap::new();
-    let mut bases = HashMap::from([(SlotBaseId::ZERO, SlotBase::new())]);
+    let mut bases = HashMap::from([(SlotBaseId::ZERO, SlotBase::empty())]);
     let mut transact_line: Option<oneshot::Sender<Option<DbStatus>>> = None;
     loop {
         let event = recv_request.recv().await;

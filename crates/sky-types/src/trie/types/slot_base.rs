@@ -27,7 +27,7 @@ impl DerefMut for SlotBase {
 }
 
 impl SlotBase {
-    pub fn new() -> Self {
+    pub fn empty() -> Self {
         Self { slots: vec![] }
     }
     pub fn new_kv(key: HashKey, value: TrieValue) -> Self {

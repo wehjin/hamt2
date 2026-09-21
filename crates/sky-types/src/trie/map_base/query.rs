@@ -8,14 +8,14 @@ pub struct State<S: TrieBaseRead> {
 }
 
 pub async fn query_value<S: TrieBaseRead>(
-    map_base: &MapBase,
+    map_base: MapBase,
     key: HashKey,
     storage: &S,
 ) -> Result<Option<TrieValue>, TrieQueryError> {
     let MapBase { map, base: base_id } = map_base;
     let value = match map.try_base_index(key) {
         Some(base_index) => {
-            let base = storage.read_base(*base_id).await?;
+            let base = storage.read_base(base_id).await?;
             Box::pin(base.as_ref()[base_index].query_value(key, storage)).await?
         }
         None => None,
@@ -33,11 +33,7 @@ pub fn kv_stream<S: TrieBaseRead>(
     };
     stream::unfold(state, |mut state| async move {
         while let Some(mut job) = state.jobs.pop() {
-            let base = state
-                .storage
-                .read_base(job.base)
-                .await
-                .expect("read base");
+            let base = state.storage.read_base(job.base).await.expect("read base");
             match &base.as_ref()[job.slot_offset] {
                 Slot::KeyValue(key, value) => {
                     // Found a key and value. We finish by moving the current
@@ -66,13 +62,13 @@ pub fn kv_stream<S: TrieBaseRead>(
 }
 
 pub async fn query_keys_values<P: TrieBaseRead>(
-    map_base: &MapBase,
+    map_base: MapBase,
     storage: &P,
 ) -> Result<Vec<(i32, TrieValue)>, TrieQueryError> {
     let MapBase { map, base: base_id } = map_base;
     let mut out = Vec::new();
     let slot_count = map.slot_count();
-    let base = storage.read_base(*base_id).await?;
+    let base = storage.read_base(base_id).await?;
     let base_ref = base.as_ref();
     debug_assert_eq!(slot_count, base_ref.len());
     for base_index in 0..slot_count {

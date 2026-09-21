@@ -102,7 +102,7 @@ async fn remote_client_works() {
         assert_eq!(client_request_after_read, SocketRequest::ReadSlotBase(id1));
 
         // Deliver the read to the client and check it comes back out.
-        let fed_to_client = SlotBase::new().insert_slot(0, Slot::KeyValue(1, TrieValue::U32(15)));
+        let fed_to_client = SlotBase::empty().insert_slot(0, Slot::KeyValue(1, TrieValue::U32(15)));
         updater.update(SocketResponse::SlotBase(id1, Some(fed_to_client.clone())));
         let join_result = tokio::time::timeout(Duration::from_secs(1), join)
             .await

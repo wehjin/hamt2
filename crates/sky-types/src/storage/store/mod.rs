@@ -1,7 +1,6 @@
 mod basic;
 mod edit;
 mod errors;
-mod private;
 mod traits;
 
 pub use basic::*;

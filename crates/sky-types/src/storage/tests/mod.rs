@@ -1,5 +1,5 @@
 use crate::storage::mem::MemStorage;
-use crate::storage::{ReadStorage, ReadWriteStorage};
+use crate::storage::{ReadStorage, ReadWriteStorage, StoreRead};
 use crate::trie::map_base::one_kv;
 use crate::trie::{HashKey, MapBase, SlotBase, SlotBaseId, TrieValue};
 
@@ -14,7 +14,7 @@ async fn empty_storage_max_id_is_zero() {
 async fn base_id_zero_is_the_empty_base() {
     let storage = MemStorage::new();
     assert_eq!(
-        SlotBase::new(),
+        SlotBase::empty(),
         storage.read(SlotBaseId::ZERO).await.expect("read")
     );
 }
@@ -64,7 +64,7 @@ async fn mem_readonly_snapshot_does_not_see_new_bases() {
 }
 
 #[tokio::test]
-#[should_panic(expected = "beyond this snapshot's max_id")]
+#[should_panic(expected = "id out of bounds")]
 async fn mem_snapshot_panics_reading_beyond_max_id() {
     let mut storage = MemStorage::new();
     let base = SlotBase::new_kv(HashKey::new(7), TrieValue::U32(7));
@@ -75,7 +75,7 @@ async fn mem_snapshot_panics_reading_beyond_max_id() {
 }
 
 #[tokio::test]
-#[should_panic(expected = "has not been written")]
+#[should_panic(expected = "id out of bounds SlotBaseId(1)")]
 async fn read_panics_on_unwritten_id() {
     let storage = MemStorage::new();
     let _ = storage.read(SlotBaseId(1)).await;

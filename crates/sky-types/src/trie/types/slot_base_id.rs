@@ -31,4 +31,5 @@ impl Into<usize> for SlotBaseId {
 impl SlotBaseId {
     /// The reserved id of the empty base. It is never stored.
     pub const ZERO: SlotBaseId = SlotBaseId(0);
+    pub const EMPTY: SlotBaseId = SlotBaseId(0);
 }

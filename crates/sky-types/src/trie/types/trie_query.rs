@@ -5,7 +5,7 @@ use futures::Stream;
 
 pub trait RootTrieQuery {
     /// The root map base of this trie.
-    fn root(&self) -> &MapBase;
+    fn root(&self) -> MapBase;
 }
 
 #[allow(async_fn_in_trait)]

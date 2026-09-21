@@ -13,7 +13,7 @@ pub use mem::*;
 pub use store::*;
 pub use traits::*;
 
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageHead {
     pub max_id: SlotBaseId,
     pub root: MapBase,
