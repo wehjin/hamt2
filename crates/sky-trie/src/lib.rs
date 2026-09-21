@@ -3,7 +3,6 @@ pub mod prelude;
 pub mod storage_trie_query;
 mod trie;
 pub mod trie_reader;
-pub mod types;
 
 pub use sky_types::trie::TrieQuery;
 pub use storage_trie_query::StorageTrieQuery;

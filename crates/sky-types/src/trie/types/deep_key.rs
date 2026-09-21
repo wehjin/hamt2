@@ -1,4 +1,4 @@
-use crate::types::HashKey;
+use crate::trie::HashKey;
 use std::ops::Index;
 
 pub struct DeepKey<const N: usize> {

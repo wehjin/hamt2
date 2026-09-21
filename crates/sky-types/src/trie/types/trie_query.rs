@@ -15,6 +15,12 @@ pub trait ShallowTrieQuery: RootTrieQuery {
 
     /// Returns all keys and values in this trie.
     async fn query_keys_values(&self) -> Result<Vec<(i32, TrieValue)>, TrieQueryError>;
+
+    /// Returns the value stored at the given deep key.
+    async fn deep_query_value<const N: usize>(
+        &self,
+        key: [i32; N],
+    ) -> Result<Option<TrieValue>, TrieQueryError>;
 }
 
 impl<T: RootTrieQuery + TrieBaseRead> ShallowTrieQuery for T {
@@ -24,6 +30,13 @@ impl<T: RootTrieQuery + TrieBaseRead> ShallowTrieQuery for T {
 
     async fn query_keys_values(&self) -> Result<Vec<(i32, TrieValue)>, TrieQueryError> {
         map_base::query_keys_values(self.root(), self).await
+    }
+
+    async fn deep_query_value<const N: usize>(
+        &self,
+        key: [i32; N],
+    ) -> Result<Option<TrieValue>, TrieQueryError> {
+        map_base::deep_query_value(self.root(), key, self).await
     }
 }
 
@@ -37,12 +50,6 @@ impl<T: RootTrieQuery + TrieBaseRead> ShallowTrieQuery for T {
 pub trait TrieQuery: ShallowTrieQuery {
     /// The type of a queryable view over a sub-trie.
     type Subtrie: TrieQuery;
-
-    /// Returns the value stored at the given deep key.
-    async fn deep_query_value<const N: usize>(
-        &self,
-        key: [i32; N],
-    ) -> Result<Option<TrieValue>, TrieQueryError>;
 
     /// A stream of all `U32` values in this trie, skipping map-base values.
     fn u32_stream(&self) -> impl Stream<Item = (i32, u32)>;

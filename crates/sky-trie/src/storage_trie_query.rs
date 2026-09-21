@@ -1,12 +1,10 @@
 use crate::TrieReader;
-use crate::types::DeepKey;
-use crate::types::HashKey;
 use crate::{Trie, TrieQuery};
 use futures::Stream;
 use futures::stream::StreamExt;
 use sky_types::storage::{ReadStorage, ReadWriteStorage};
 use sky_types::trie::map_base::kv_stream;
-use sky_types::trie::{MapBase, ShallowTrieQuery, TrieBaseRead, TrieValue, map_base};
+use sky_types::trie::{HashKey, MapBase, ShallowTrieQuery, TrieBaseRead, TrieValue, map_base};
 use sky_types::trie::{RootTrieQuery, TrieQueryError};
 
 /// The storage-backed query interface shared by [`Trie`] and
@@ -33,17 +31,16 @@ impl<S: ReadWriteStorage + TrieBaseRead> ShallowTrieQuery for Trie<S> {
     async fn query_keys_values(&self) -> Result<Vec<(i32, TrieValue)>, TrieQueryError> {
         map_base::query_keys_values(self.root(), self.storage()).await
     }
-}
-
-impl<S: ReadWriteStorage> TrieQuery for Trie<S> {
-    type Subtrie = TrieReader<S::Snapshot>;
-
     async fn deep_query_value<const N: usize>(
         &self,
         key: [i32; N],
     ) -> Result<Option<TrieValue>, TrieQueryError> {
-        deep_query_value(self.root(), self.storage(), key).await
+        map_base::deep_query_value(self.root(), key, self.storage()).await
     }
+}
+
+impl<S: ReadWriteStorage> TrieQuery for Trie<S> {
+    type Subtrie = TrieReader<S::Snapshot>;
 
     fn u32_stream(&self) -> impl Stream<Item = (i32, u32)> {
         u32_stream(self.root(), self.storage())
@@ -74,17 +71,17 @@ impl<S: ReadStorage + TrieBaseRead> ShallowTrieQuery for TrieReader<S> {
     async fn query_keys_values(&self) -> Result<Vec<(i32, TrieValue)>, TrieQueryError> {
         map_base::query_keys_values(self.root(), self.storage()).await
     }
-}
-
-impl<S: ReadStorage + TrieBaseRead> TrieQuery for TrieReader<S> {
-    type Subtrie = TrieReader<S::Snapshot>;
 
     async fn deep_query_value<const N: usize>(
         &self,
         key: [i32; N],
     ) -> Result<Option<TrieValue>, TrieQueryError> {
-        deep_query_value(self.root(), self.storage(), key).await
+        map_base::deep_query_value(self.root(), key, self.storage()).await
     }
+}
+
+impl<S: ReadStorage + TrieBaseRead> TrieQuery for TrieReader<S> {
+    type Subtrie = TrieReader<S::Snapshot>;
 
     fn u32_stream(&self) -> impl Stream<Item = (i32, u32)> {
         u32_stream(self.root(), self.storage())
@@ -97,35 +94,6 @@ impl<S: ReadStorage + TrieBaseRead> TrieQuery for TrieReader<S> {
     fn to_subtrie_from_value(&self, value: TrieValue) -> Option<TrieReader<S::Snapshot>> {
         TrieReader::subtrie_from_value(value, self.storage().snapshot())
     }
-}
-
-async fn deep_query_value<const N: usize, S: ReadStorage + TrieBaseRead>(
-    root: MapBase,
-    storage: &S,
-    key: [i32; N],
-) -> Result<Option<TrieValue>, TrieQueryError> {
-    let deep_key = DeepKey::from(key);
-    let mut current_map_base = root.clone();
-    let last_index = N - 1;
-    for i in 0..=last_index {
-        match map_base::query_value(current_map_base, deep_key[i].clone(), storage).await? {
-            None => {
-                return Ok(None);
-            }
-            Some(value) => {
-                if i < last_index {
-                    let TrieValue::SubTrie(map_base) = value else {
-                        // A non-map value has no sub-trie below it.
-                        return Ok(None);
-                    };
-                    current_map_base = map_base;
-                } else {
-                    return Ok(Some(value));
-                }
-            }
-        }
-    }
-    unreachable!();
 }
 
 fn u32_stream<'a, S>(root: MapBase, storage: &'a S) -> impl Stream<Item = (i32, u32)>
