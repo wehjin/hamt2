@@ -1,8 +1,8 @@
-use sky_types::storage::{ReadStorage, ReadWriteStorage};
 use crate::db::{Db, Schema};
 use crate::traits::DbQuery;
 use crate::traits::Find;
 use crate::trie::prelude::*;
+use sky_types::storage::{ReadStorage, ReadWriteStorage, Storage};
 
 /// A read-only snapshot of a [`Db`], for running queries only.
 #[derive(Debug)]

@@ -10,8 +10,8 @@ use crate::error::ConnectError;
 use crate::reader::DbReader;
 use crate::schema;
 pub use crate::types::*;
-use sky_trie::{StorageTrieQuery, Trie};
-use sky_types::storage::ReadWriteStorage;
+use sky_trie::Trie;
+use sky_types::storage::{ReadWriteStorage, Storage};
 pub use types::*;
 
 #[derive(Debug)]
