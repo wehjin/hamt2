@@ -1,25 +1,25 @@
 use crate::storage::store::private::InternalStoreRead;
 use crate::storage::{StorageHead, Store, StoreConfig, StoreEditError, StoreRead};
-use crate::trie::{HandleTrieConfig, MapBase, SlotBase, SlotBaseId};
+use crate::trie::{MapBase, SlotBase, SlotBaseId};
 use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
 
 #[derive(Debug)]
 pub struct StoreMut<C: StoreConfig> {
-    pub(crate) bases: Arc<RwLock<Vec<SlotBase<HandleTrieConfig>>>>,
-    pub(crate) start_status: StorageHead<HandleTrieConfig>,
-    pub(crate) status: StorageHead<HandleTrieConfig>,
+    pub(crate) bases: Arc<RwLock<Vec<SlotBase>>>,
+    pub(crate) start_status: StorageHead,
+    pub(crate) status: StorageHead,
     pub(crate) _phantom_data: PhantomData<C>,
 }
 
 impl<C: StoreConfig> InternalStoreRead for StoreMut<C> {
-    fn bases(&self) -> &Arc<RwLock<Vec<SlotBase<HandleTrieConfig>>>> {
+    fn bases(&self) -> &Arc<RwLock<Vec<SlotBase>>> {
         &self.bases
     }
 }
 
 impl<C: StoreConfig> StoreRead for StoreMut<C> {
-    fn status(&self) -> &StorageHead<HandleTrieConfig> {
+    fn status(&self) -> &StorageHead {
         &self.status
     }
 }
@@ -27,7 +27,7 @@ impl<C: StoreConfig> StoreRead for StoreMut<C> {
 impl<C: StoreConfig> StoreMut<C> {
     pub fn add_base(
         &mut self,
-        base: SlotBase<HandleTrieConfig>,
+        base: SlotBase,
     ) -> Result<SlotBaseId, StoreEditError> {
         if self.status.max_id.0 as usize == C::MAX {
             Err(StoreEditError::NoSlotsAvailable)
@@ -40,7 +40,7 @@ impl<C: StoreConfig> StoreMut<C> {
             Ok(next_id)
         }
     }
-    pub fn write_root(&mut self, root: MapBase<HandleTrieConfig>) -> Result<(), StoreEditError> {
+    pub fn write_root(&mut self, root: MapBase) -> Result<(), StoreEditError> {
         self.status.root = root;
         Ok(())
     }

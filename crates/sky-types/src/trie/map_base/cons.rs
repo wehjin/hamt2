@@ -5,9 +5,9 @@ use crate::trie::{
 #[cfg(test)]
 pub async fn one_kv<P: TrieBaseCommit>(
     key: HashKey,
-    value: TrieValue<P::Config>,
+    value: TrieValue,
     policy: &mut P,
-) -> Result<MapBase<P::Config>, TrieInsertError> {
+) -> Result<MapBase, TrieInsertError> {
     use crate::trie::base;
     let base = base::form_kv(key, value);
     let id = policy.commit_base(base).await?;
@@ -20,11 +20,11 @@ pub async fn one_kv<P: TrieBaseCommit>(
 
 pub async fn two_kv<P: TrieBaseCommit>(
     key: HashKey,
-    value: TrieValue<P::Config>,
+    value: TrieValue,
     key2: HashKey,
-    value2: TrieValue<P::Config>,
+    value2: TrieValue,
     policy: &mut P,
-) -> Result<MapBase<P::Config>, TrieInsertError> {
+) -> Result<MapBase, TrieInsertError> {
     debug_assert!(key.i32() != key2.i32());
     debug_assert!(key.map_index() != key2.map_index());
     let map = SlotMap(key.to_map_bit() | key2.to_map_bit());

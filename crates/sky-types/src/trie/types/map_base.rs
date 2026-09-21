@@ -1,21 +1,17 @@
-use crate::trie::{SlotMap, TrieConfig};
+use crate::trie::{SlotBaseId, SlotMap};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize, Default)]
-#[serde(bound(
-    serialize = "C::HandleType: Serialize",
-    deserialize = "C::HandleType: Deserialize<'de>"
-))]
-pub struct MapBase<C: TrieConfig> {
+pub struct MapBase {
     pub map: SlotMap,
-    pub base: C::HandleType,
+    pub base: SlotBaseId,
 }
 
-impl<C: TrieConfig> MapBase<C> {
+impl MapBase {
     pub fn empty() -> Self {
         Self {
             map: SlotMap::empty(),
-            base: C::HandleType::default(),
+            base: SlotBaseId::ZERO,
         }
     }
 }

@@ -2,7 +2,7 @@ use crate::storage::StorageHead;
 use crate::storage::store::edit::StoreMut;
 use crate::storage::store::private::InternalStoreRead;
 use crate::storage::store::traits::{StoreConfig, StoreRead};
-use crate::trie::{HandleTrieConfig, SlotBase};
+use crate::trie::SlotBase;
 use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
 
@@ -10,8 +10,8 @@ use std::sync::{Arc, RwLock};
 /// clone because it can switch into a StoreMut and back.
 #[derive(Debug)]
 pub struct Store<C: StoreConfig> {
-    pub(crate) bases: Arc<RwLock<Vec<SlotBase<HandleTrieConfig>>>>,
-    pub(crate) status: StorageHead<HandleTrieConfig>,
+    pub(crate) bases: Arc<RwLock<Vec<SlotBase>>>,
+    pub(crate) status: StorageHead,
     pub(crate) _phantom_data: PhantomData<C>,
 }
 
@@ -27,12 +27,12 @@ impl<C: StoreConfig> Default for Store<C> {
     }
 }
 impl<C: StoreConfig> InternalStoreRead for Store<C> {
-    fn bases(&self) -> &Arc<RwLock<Vec<SlotBase<HandleTrieConfig>>>> {
+    fn bases(&self) -> &Arc<RwLock<Vec<SlotBase>>> {
         &self.bases
     }
 }
 impl<C: StoreConfig> StoreRead for Store<C> {
-    fn status(&self) -> &StorageHead<HandleTrieConfig> {
+    fn status(&self) -> &StorageHead {
         &self.status
     }
 }

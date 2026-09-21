@@ -1,13 +1,12 @@
 use crate::db::Db;
 use sky_types::db::schema::attr_spec::DbSpec;
 use sky_types::storage::{MemStorage, ReadWriteStorage};
-use sky_types::trie::{HandleTrieConfig, TrieBaseRead};
 
 pub trait DbRuntime {
     fn block_on<T>(main: impl Future<Output = T> + 'static) -> T;
 }
 
-pub struct LocalDb<S: ReadWriteStorage + TrieBaseRead<Config = HandleTrieConfig>> {
+pub struct LocalDb<S: ReadWriteStorage> {
     _db: Db<S>,
 }
 

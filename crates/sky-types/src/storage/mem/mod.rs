@@ -1,5 +1,5 @@
 use crate::storage::{ReadStorage, ReadStorageError, ReadWriteStorage, WriteStorageError};
-use crate::trie::{HandleTrieConfig, MapBase, SlotBase, SlotBaseId};
+use crate::trie::{MapBase, SlotBase, SlotBaseId};
 use std::sync::{Arc, RwLock};
 
 /// An in-memory storage for Bases backed by a `Vec<Base>`.
@@ -14,8 +14,8 @@ pub struct MemStorage {
 
 #[derive(Debug)]
 struct Inner {
-    bases: Vec<SlotBase<HandleTrieConfig>>,
-    root: MapBase<HandleTrieConfig>,
+    bases: Vec<SlotBase>,
+    root: MapBase,
 }
 
 impl Inner {
@@ -53,7 +53,7 @@ impl ReadStorage for MemStorage {
         }
     }
 
-    async fn read(&self, id: SlotBaseId) -> Result<SlotBase<HandleTrieConfig>, ReadStorageError> {
+    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
         let inner = self.inner.read().expect("storage poisoned");
         assert!(
             id.0 < inner.bases.len() as i32,
@@ -68,7 +68,7 @@ impl ReadStorage for MemStorage {
         SlotBaseId((inner.bases.len() - 1) as i32)
     }
 
-    fn read_root(&self) -> MapBase<HandleTrieConfig> {
+    fn read_root(&self) -> MapBase {
         self.inner.read().expect("storage poisoned").root
     }
 }
@@ -81,7 +81,7 @@ impl ReadStorage for MemStorage {
 pub struct MemReadStorage {
     inner: Arc<RwLock<Inner>>,
     max_id: i32,
-    root: MapBase<HandleTrieConfig>,
+    root: MapBase,
 }
 
 impl ReadStorage for MemReadStorage {
@@ -91,7 +91,7 @@ impl ReadStorage for MemReadStorage {
         self.clone()
     }
 
-    async fn read(&self, id: SlotBaseId) -> Result<SlotBase<HandleTrieConfig>, ReadStorageError> {
+    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
         if id.0 == 0 {
             return Ok(SlotBase::new());
         }
@@ -108,7 +108,7 @@ impl ReadStorage for MemReadStorage {
         SlotBaseId(self.max_id)
     }
 
-    fn read_root(&self) -> MapBase<HandleTrieConfig> {
+    fn read_root(&self) -> MapBase {
         self.root
     }
 }
@@ -121,7 +121,7 @@ impl ReadWriteStorage for MemStorage {
 
     async fn append(
         &mut self,
-        base: &SlotBase<HandleTrieConfig>,
+        base: &SlotBase,
     ) -> Result<SlotBaseId, WriteStorageError> {
         let mut inner = self.inner.write().expect("storage poisoned");
         let id = inner.bases.len() as i32;
@@ -129,7 +129,7 @@ impl ReadWriteStorage for MemStorage {
         Ok(SlotBaseId(id))
     }
 
-    async fn write_root(&mut self, root: MapBase<HandleTrieConfig>) -> Result<(), WriteStorageError> {
+    async fn write_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
         self.inner.write().expect("storage poisoned").root = root;
         Ok(())
     }

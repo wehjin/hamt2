@@ -52,41 +52,41 @@ crate::trie::prelude::*` internally. sky-db does not re-export any storage types
       storage is snapshottable — writers capture their read-only snapshot, read-only types use `Self` via `Clone`)
       and `ReadWriteStorage`
       (`next_id`/`append`/`write_root`, errors `WriteStorageError` (Io/Encode)).
-      `ReadStorage: TrieReadPolicy + Sync` — the link config comes from `TrieReadPolicy::Config` (a supertrait
-      item, not a second declaration), and `Snapshot: ReadStorage + TrieReadPolicy<Config = Self::Config>`.
+      `ReadStorage: TrieBaseRead + Sync` — the handle type is always `SlotBaseId` (the sole link type in the
+      project), and `Snapshot: ReadStorage + TrieBaseRead + Send + Clone`.
       Implementations: `mem::MemStorage` (a `Vec<SlotBase>` seeded with the empty base at index 0;
       `MemReadStorage` snapshots) and `file::FileStorage` (postcard-encoded base files in two-level subfolders
       under `<folder>/bases/`, with `max_id` and `root` files in the folder root; `FileReadStorage` snapshots).
     - `error.rs` — the trie's own error layer lives in `sky_types::trie`: `TrieQueryError` (`SystemError`) and
       `TrieInsertError` (`ExpectedMapBaseAtKey`, wraps `TrieQueryError`). Nothing in the trie produces sky-db's
       db-level errors.
-   - `types/` — `TrieConfig` (`type HandleType: Clone + Eq + PartialEq + Default + Debug`; the trie types are
-     generic over a config `C: TrieConfig`, not the raw handle type) and the handle-link config
-     `HandleTrieConfig { HandleType = SlotBaseId }`. `MapBase<C> { map: SlotMap, base: C::HandleType }` (a node:
-     bases are read from storage, never inline slots), `SlotBase<C> { slots: Vec<Slot<C>> }`,
-     `Slot<C>::KeyValue(i32, TrieValue<C>) | MapBase(MapBase<C>)`,
-     `TrieValue<C>::U32(u32) | SubTrie(MapBase<C>)`, plus `HashKey`/`DeepKey`. `SlotBaseId::ZERO` is the reserved
-     empty base. Serde derives on the config-generic types carry explicit `#[serde(bound(.. = "C::HandleType: ..
-     'de"))]` attributes (configs are marker structs; concrete `HandleTrieConfig` serializes over `SlotBaseId`).
+   - `types/` — all trie types are concrete over the single handle type `SlotBaseId` (the `TrieConfig`/`HandleType`
+     config abstraction was deleted; there is no generic parameter left). `MapBase { map: SlotMap, base: SlotBaseId }`
+     (a node: bases are read from storage, never inline slots), `SlotBase { slots: Vec<Slot> }`,
+     `Slot::KeyValue(i32, TrieValue) | MapBase(MapBase)`,
+     `TrieValue::U32(u32) | SubTrie(MapBase)`, plus `HashKey`/`DeepKey`. `SlotBaseId::ZERO` is the reserved
+     empty base.
     - `Trie<S: ReadWriteStorage>` — the persistent map: `connect(storage)` (sync, infallible) loads the
       persisted root, mutations (`insert`, `deep_insert`) consume and return a new `Trie` (`-> TrieInsertError`),
       `.commit()` (`-> WriteStorageError`) writes the root, `.view()` gives a `TrieReader<S::Snapshot>` snapshot.
      Queries live on
-     the config-generic `TrieQuery<C: TrieConfig>` trait (defined in `sky-types` under `sky_types::trie`,
-     alongside `TrieValue`; re-exported by the prelude; `root`, `query_value`, `query_keys_values`,
+     the `TrieQuery` trait (defined in `sky-types` under `sky_types::trie`,
+     alongside `TrieValue`; re-exported by the prelude; `root` (via `RootTrieQuery`), `query_value`,
+     `query_keys_values` (via `ShallowTrieQuery`, which has a blanket impl for `RootTrieQuery + TrieBaseRead`),
      `deep_query_value`,
      `u32_stream`,
-     `subtrie_stream`, `to_subtrie_from_value`, plus `type Subtrie: TrieQuery<C>`; `-> TrieQueryError`) — all
+     `subtrie_stream`, `to_subtrie_from_value`, plus `type Subtrie: TrieQuery`; `-> TrieQueryError`) — all
      methods
      required, no defaults, no storage types mentioned. `StorageTrieQuery<S: ReadStorage>` supertrait adds
-     `storage()`; `Trie` and `TrieReader<S>` implement `TrieQuery<S::Config>` (`type Subtrie =
-     TrieReader<S::Snapshot>`; root + all query methods come from the direct `TrieQuery` impls in
-     `storage_trie_query.rs`, which delegate to the free fns in `crate_services/map_base`). The read/write
-     policies `TrieReadPolicy { type Config: TrieConfig; read_base(&self, id: C::HandleType) -> SlotBase<C> }`
-     and `TrieWritePolicy: TrieReadPolicy` (with `kick_kv`/`merge_kv` default methods) live in
-     `sky_types::trie::traits`; every storage gets its policy impl (the four sky-types storages via a macro,
-     downstream storages implement `TrieReadPolicy`/`TrieWritePolicy` for themselves with
-     `Config = HandleTrieConfig`). `subtrie_stream()` and `to_subtrie_from_value()` yield `Self::Subtrie`, so
+     `storage()`; `Trie` and `TrieReader<S>` implement `TrieQuery` (`type Subtrie =
+     TrieReader<S::Snapshot>`; the direct `TrieQuery` impls live in
+     `storage_trie_query.rs`). The read/write link traits
+     `TrieBaseRead { read_base(&self, id: SlotBaseId) -> Result<SlotBase, TrieQueryError> }`
+     and `TrieBaseCommit: TrieBaseRead` (`commit_base(&mut self, base: SlotBase) -> Result<SlotBaseId,
+     TrieInsertError>`) live in
+     `sky_types::trie::traits`; every storage implements `TrieBaseRead` (the four sky-types storages via a macro,
+     downstream storages implement it directly), and every `ReadWriteStorage` gets `TrieBaseCommit` via a blanket
+     impl. `subtrie_stream()` and `to_subtrie_from_value()` yield `Self::Subtrie`, so
      callers never name `TrieReader`. The `prelude` re-exports all of the above.
 3. `crates/sky-db` — the Datomic layer plus error glue. Public modules in `src/lib.rs`: `db`, `find`,
    `handle`, `pull`, `query`, `reader`, `transact`, `types` (plus `pub(crate) crate_services`), with
@@ -151,7 +151,7 @@ crate::trie::prelude::*` internally. sky-db does not re-export any storage types
    - `src/pull/` — `Pull` trait (`Serialize + Deserialize`; `attrs()` / `into_datoms()` / `pull(&Db, eid)`),
      `errors::RegisterError::DuplicateAttr`, tests in `pull/tests/`.
   - The read-only query machinery (`find`, datalog, `ev_stream`, `val_table::query`) is generic over
-    `T: TrieQuery<HandleTrieConfig>`, so it works for `Trie` and `TrieReader` alike; it never needs
+    `T: TrieQuery`, so it works for `Trie` and `TrieReader` alike; it never needs
      `storage()`. Helpers that yield sub-tries return `T::Subtrie`. Unit tests are `#[cfg(test)]` beside the code (e.g. in
      `query.rs`, `find/mod.rs`, `crate_services/datalog/mod.rs`, `crate_services/val_table.rs`); integration tests in
       `crates/sky-db/tests/` (cardinality, db_reader, file_db, handle, mem_db, multiple_entities).
@@ -208,19 +208,19 @@ Within `crates/skybase/src`:
   `MaxEid`, which starts at `Ein::DB_MAX`.
 - **`Db` is immutable-value / consumed-ownership.** `Db::transact(...)` consumes `self` and returns a new `Db`. Get the
   underlying storage back with `db.close()` before re-`load`ing.
-- **Generic bounds are pervasive.** Any struct/fn mentioning `Trie<S>` or `Db<S>` needs `S: ReadWriteStorage` (plus
-  `TrieReadPolicy<Config = HandleTrieConfig>` where sky-db queries a handle trie). Because `ReadStorage:
-  TrieReadPolicy`, the config flows through `S::Config`.
+- **Generic bounds are pervasive, but the trie types are not.** Any struct/fn mentioning `Trie<S>` or `Db<S>`
+  needs `S: ReadWriteStorage`. `MapBase`/`SlotBase`/`Slot`/`TrieValue` are plain concrete types whose links are
+  `SlotBaseId`, and the query traits (`RootTrieQuery`/`ShallowTrieQuery`/`TrieQuery`) take no config parameter.
   Read-only sub-tries are owned `TrieReader` snapshots (`trie.view()`, `to_subtrie_from_value()`, `subtrie_stream()`);
   every `ReadStorage` provides `Snapshot`/`snapshot()`, which makes snapshots cheap: mem readers Arc-share the
   base pool and only capture `max_id`/`root`, file readers copy a `PathBuf`/`max_id`/`root`. Outside sky-db, use the
   traits and storages directly from `sky_types::storage` (`ReadStorage`/`ReadWriteStorage`, `MemStorage`/`FileStorage`).
-- **Query methods live on the config-generic `TrieQuery<C: TrieConfig>` trait** (in `sky_types::trie`; `root`,
-  `query_value`, `query_keys_values`, `deep_query_value`, `u32_stream`, `subtrie_stream`,
+- **Query methods live on the `TrieQuery` trait** (in `sky_types::trie`; `root` (via the `RootTrieQuery`
+  supertrait), `query_value`, `query_keys_values`, `deep_query_value`, `u32_stream`, `subtrie_stream`,
   `to_subtrie_from_value`, plus
-  `type Subtrie: TrieQuery<C>`) — all required,
+  `type Subtrie: TrieQuery`) — all required,
   no default bodies. Its supertrait `StorageTrieQuery<S>` adds `storage()` only (implementors provide `root()` via
-  `TrieQuery` and `storage()` via `StorageTrieQuery`). Calling a query method needs
+  `RootTrieQuery` and `storage()` via `StorageTrieQuery`). Calling a query method needs
   `TrieQuery` in scope (it comes with `use crate::trie::prelude::*`); mutation methods (`insert`,
   `deep_insert`, `commit`) stay inherent on `Trie`. `subtrie_stream`/`to_subtrie_from_value` yield
   `Self::Subtrie`. `TrieReader` connects to a `ReadStorage` only (e.g. `storage.snapshot()`).
@@ -241,8 +241,8 @@ Within `crates/skybase/src`:
 
 - Heavily async (`tokio`); most APIs return `impl Future` via `async fn` with `Result`.
 - Symbol-heavy internal types: `Val` (db user value, `U32`/`String`), `TrieValue` (`U32`/`SubTrie(MapBase)`),
-  `SlotBase` (a trie node's `Vec<Slot>`), `Slot` (`KeyValue`/`MapBase`), `MapBase` (`SlotMap` + handle),
-  `TrieConfig`/`HandleTrieConfig` (the link config; `HandleTrieConfig`'s handle is `SlotBaseId`),
+  `SlotBase` (a trie node's `Vec<Slot>`), `Slot` (`KeyValue`/`MapBase`), `MapBase` (`SlotMap` + `SlotBaseId`
+  handle),
   `HashKey`/`DeepKey`, plus the db layer's `Dat`/`Datom`/`Ent`/`Dir`, `Attr`/`AttrSpec`/`DbSpec`/`Schema`,
   `Ein`/`Txid`/`Vid`/`MaxEid`/`EntEid`/`AttrEin` — don't confuse the similar names despite the overlap.
 - `Dat::Val` vs `Dat::Ent` and `dir` (`Dir::In`/`Dir::Out`, i.e. add/delete) drive query semantics; see

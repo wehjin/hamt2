@@ -35,7 +35,7 @@ impl Find for AttrsOfEin {
     fn apply<T>(self, trie: &T, schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
     where
         Self: Sized,
-        T: TrieQuery<HandleTrieConfig>,
+        T: TrieQuery,
     {
         async move {
             // For now, use custom function `list_entity_attributes`. Later maybe make a program

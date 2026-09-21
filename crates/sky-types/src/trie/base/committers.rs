@@ -1,5 +1,5 @@
 use crate::trie::{
-    HashKey, Slot, SlotBase, TrieConfig, TrieInsertError, TrieValue, TrieBaseCommit, map_base,
+    HashKey, Slot, SlotBase, TrieInsertError, TrieValue, TrieBaseCommit, map_base,
 };
 
 /// Makes a copy of `base` where the kv already at `index` is moved into a new
@@ -7,16 +7,15 @@ use crate::trie::{
 ///
 /// #Effects
 /// This functions commits sub-bases into the write-policy.
-pub async fn kick_kv<C, P>(
-    base: SlotBase<C>,
+pub async fn kick_kv<P>(
+    base: SlotBase,
     index: usize,
     key: HashKey,
-    value: TrieValue<C>,
+    value: TrieValue,
     policy: &mut P,
-) -> Result<SlotBase<C>, TrieInsertError>
+) -> Result<SlotBase, TrieInsertError>
 where
-    C: TrieConfig,
-    P: TrieBaseCommit<Config = C>,
+    P: TrieBaseCommit,
 {
     let post_slot = {
         let Slot::KeyValue(b_key, b_value) = base[index].clone() else {
@@ -34,16 +33,15 @@ where
 ///
 /// #Effects
 /// This functions commits sub-bases into the write-policy.
-pub async fn merge_kv<C, P>(
-    base: SlotBase<C>,
+pub async fn merge_kv<P>(
+    base: SlotBase,
     index: usize,
     key: HashKey,
-    value: TrieValue<C>,
+    value: TrieValue,
     policy: &mut P,
-) -> Result<SlotBase<C>, TrieInsertError>
+) -> Result<SlotBase, TrieInsertError>
 where
-    C: TrieConfig,
-    P: TrieBaseCommit<Config = C>,
+    P: TrieBaseCommit,
 {
     let pre_slot = base[index].clone();
     let post_slot = {

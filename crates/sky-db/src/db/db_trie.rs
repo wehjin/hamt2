@@ -25,8 +25,8 @@ struct Value {
     pub id: Txid,
     pub dir: Dir,
 }
-impl Into<TrieValue<HandleTrieConfig>> for Value {
-    fn into(self) -> TrieValue<HandleTrieConfig> {
+impl Into<TrieValue> for Value {
+    fn into(self) -> TrieValue {
         debug_assert!(self.id.u32() <= 0x0FFF_FFFF);
         let id_part = 0x0FFF_FFFF & self.id.u32();
         let dir_part = match self.dir {
@@ -50,7 +50,7 @@ impl From<u32> for Value {
     }
 }
 
-pub(crate) async fn with_update<S: ReadWriteStorage + TrieBaseRead<Config = HandleTrieConfig>>(
+pub(crate) async fn with_update<S: ReadWriteStorage>(
     trie: Trie<S>,
     attr_map: &AttrTable,
     ein: Ein,
@@ -72,7 +72,7 @@ pub(crate) async fn with_update<S: ReadWriteStorage + TrieBaseRead<Config = Hand
     Ok(trie)
 }
 
-pub(crate) async fn set_max_tx<S: ReadWriteStorage + TrieBaseRead<Config = HandleTrieConfig>>(
+pub(crate) async fn set_max_tx<S: ReadWriteStorage>(
     mut trie: Trie<S>,
     max_tx: Txid,
 ) -> Result<Trie<S>, TransactError> {
@@ -89,7 +89,7 @@ pub async fn find<'a, T>(
     where_: impl Into<Vec<Atom>>,
 ) -> FindResult
 where
-    T: TrieQuery<HandleTrieConfig>,
+    T: TrieQuery,
 {
     let select = select.into();
     let query_terms = select.iter().map(|s| term(var(*s))).collect::<Vec<_>>();
@@ -120,7 +120,7 @@ pub fn ev_stream<'a, T>(
     schema: &'a Schema,
 ) -> impl futures::Stream<Item = (i32, Val)> + 'a
 where
-    T: TrieQuery<HandleTrieConfig> + 'a,
+    T: TrieQuery + 'a,
 {
     stream! {
         if let Some(evt_subtrie) = evt_subtrie(trie, a, schema).await {
@@ -136,7 +136,7 @@ where
 
 pub async fn list_entities<T>(trie: &T) -> Vec<Ein>
 where
-    T: TrieQuery<HandleTrieConfig>,
+    T: TrieQuery,
 {
     if let Some(root) = eavt_root(trie).await {
         root.query_keys_values()
@@ -166,7 +166,7 @@ impl From<i32> for AttrEin {
 
 pub async fn list_entity_attributes<T>(trie: &T, ein: Ein) -> Vec<AttrEin>
 where
-    T: TrieQuery<HandleTrieConfig>,
+    T: TrieQuery,
 {
     if let Some(root) = e_avt_subtrie(trie, ein).await {
         root.query_keys_values()
@@ -182,7 +182,7 @@ where
 
 async fn eavt_root<T>(trie: &T) -> Option<T::Subtrie>
 where
-    T: TrieQuery<HandleTrieConfig>,
+    T: TrieQuery,
 {
     let root_value = trie.deep_query_value([KEY_EAVT]).await.ok().flatten();
     root_value.and_then(|value| trie.to_subtrie_from_value(value))
@@ -190,7 +190,7 @@ where
 
 async fn e_avt_subtrie<T>(trie: &T, ein: Ein) -> Option<T::Subtrie>
 where
-    T: TrieQuery<HandleTrieConfig>,
+    T: TrieQuery,
 {
     let root_value = trie
         .deep_query_value([KEY_EAVT, ein.to_i32()])
@@ -202,7 +202,7 @@ where
 
 async fn evt_subtrie<T>(trie: &T, attr: Attr, schema: &Schema) -> Option<T::Subtrie>
 where
-    T: TrieQuery<HandleTrieConfig>,
+    T: TrieQuery,
 {
     let aid = schema[attr].ein().to_i32();
     let keys = [KEY_AEVT, aid];
@@ -210,7 +210,7 @@ where
     evt_value.and_then(|evt| trie.to_subtrie_from_value(evt))
 }
 
-fn evid_stream<T: TrieQuery<HandleTrieConfig>>(
+fn evid_stream<T: TrieQuery>(
     evt_subtrie: T,
 ) -> impl futures::Stream<Item = (i32, i32)> {
     stream! {

@@ -1,7 +1,7 @@
 use crate::shared::SocketRequest;
 use crate::shared::remote::requests::ClientRequest;
 use sky_types::db::DbStatus;
-use sky_types::trie::{HandleTrieConfig, SlotBase, SlotBaseId};
+use sky_types::trie::{SlotBase, SlotBaseId};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use tokio::sync::mpsc::Receiver;
@@ -12,7 +12,7 @@ pub async fn process_client_requests(
     task_send_socket: Arc<impl Fn(SocketRequest)>,
     db_status: Arc<RwLock<DbStatus>>,
 ) {
-    let mut read_line: HashMap<SlotBaseId, Vec<oneshot::Sender<Option<SlotBase<HandleTrieConfig>>>>> = HashMap::new();
+    let mut read_line: HashMap<SlotBaseId, Vec<oneshot::Sender<Option<SlotBase>>>> = HashMap::new();
     let mut bases = HashMap::from([(SlotBaseId::ZERO, SlotBase::new())]);
     let mut transact_line: Option<oneshot::Sender<Option<DbStatus>>> = None;
     loop {

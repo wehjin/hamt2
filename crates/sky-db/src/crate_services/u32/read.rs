@@ -1,6 +1,6 @@
 use crate::trie::prelude::*;
 
-pub struct Read<T: TrieQuery<HandleTrieConfig>> {
+pub struct Read<T: TrieQuery> {
     hash_trie: T,
     bytes_left: usize,
     start_key: i32,
@@ -8,7 +8,7 @@ pub struct Read<T: TrieQuery<HandleTrieConfig>> {
     current_u32: Option<(u32, usize)>,
 }
 
-impl<T: TrieQuery<HandleTrieConfig>> Read<T> {
+impl<T: TrieQuery> Read<T> {
     pub fn new(hash_trie: T, bytes_max: usize, start_key: i32) -> Self {
         Self {
             hash_trie,

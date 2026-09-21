@@ -1,29 +1,25 @@
 use crate::trie::map_base::{query_keys_values, query_value, two_kv};
 use crate::trie::{
-    HashKey, MapBase, SlotBase, SlotMap, TrieBaseCommit, TrieBaseRead, TrieConfig, TrieInsertError,
+    HashKey, MapBase, SlotBase, SlotMap, TrieBaseCommit, TrieBaseRead, TrieInsertError,
     TrieQueryError, TrieValue,
 };
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(bound(
-    serialize = "C::HandleType: Serialize",
-    deserialize = "C::HandleType: Deserialize<'de>"
-))]
-pub enum Slot<C: TrieConfig> {
-    KeyValue(i32, TrieValue<C>),
-    MapBase(MapBase<C>),
+pub enum Slot {
+    KeyValue(i32, TrieValue),
+    MapBase(MapBase),
 }
 
-impl<C: TrieConfig> Slot<C> {
-    pub fn one_kv(key: HashKey, value: TrieValue<C>) -> Self {
+impl Slot {
+    pub fn one_kv(key: HashKey, value: TrieValue) -> Self {
         Self::KeyValue(key.i32(), value)
     }
-    pub async fn two_kv<P: TrieBaseCommit<Config = C>>(
+    pub async fn two_kv<P: TrieBaseCommit>(
         a_key: HashKey,
-        a_value: TrieValue<C>,
+        a_value: TrieValue,
         b_key: HashKey,
-        b_value: TrieValue<C>,
+        b_value: TrieValue,
         policy: &mut P,
     ) -> Result<Self, TrieInsertError> {
         let (a_map_index, b_map_index) = (a_key.map_index(), b_key.map_index());
@@ -45,26 +41,26 @@ impl<C: TrieConfig> Slot<C> {
             Ok(Slot::MapBase(map_base))
         }
     }
-    pub fn replace_value(self, value: TrieValue<C>) -> Self {
+    pub fn replace_value(self, value: TrieValue) -> Self {
         let Slot::KeyValue(key, _value) = self else {
             unreachable!("Should be a key-value slot, not a map-base slot:")
         };
         Slot::KeyValue(key, value)
     }
-    pub async fn query_key_values<P: TrieBaseRead<Config = C>>(
+    pub async fn query_key_values<P: TrieBaseRead>(
         &self,
         storage: &P,
-    ) -> Result<Vec<(i32, TrieValue<C>)>, TrieQueryError> {
+    ) -> Result<Vec<(i32, TrieValue)>, TrieQueryError> {
         match self {
             Slot::KeyValue(key, value) => Ok(vec![(*key, value.clone())]),
             Slot::MapBase(map_base) => query_keys_values(map_base, storage).await,
         }
     }
-    pub async fn query_value<P: TrieBaseRead<Config = C>>(
+    pub async fn query_value<P: TrieBaseRead>(
         &self,
         key: HashKey,
         storage: &P,
-    ) -> Result<Option<TrieValue<C>>, TrieQueryError> {
+    ) -> Result<Option<TrieValue>, TrieQueryError> {
         match self {
             Slot::KeyValue(k, v) => {
                 if *k != key.i32() {
@@ -76,7 +72,7 @@ impl<C: TrieConfig> Slot<C> {
             Slot::MapBase(map_base) => query_value(map_base, key.next(), storage).await,
         }
     }
-    pub fn test_kv(&self, key: &HashKey, value: &TrieValue<C>) -> KvTest {
+    pub fn test_kv(&self, key: &HashKey, value: &TrieValue) -> KvTest {
         match self {
             Slot::KeyValue(slot_key, slot_value) => {
                 if key.i32() == *slot_key {

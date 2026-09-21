@@ -1,5 +1,5 @@
 use crate::storage::{ReadStorage, ReadStorageError, ReadWriteStorage, WriteStorageError};
-use crate::trie::{HandleTrieConfig, MapBase, SlotBase, SlotBaseId};
+use crate::trie::{MapBase, SlotBase, SlotBaseId};
 use std::future;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
@@ -43,7 +43,7 @@ pub struct FileStorage {
 pub struct FileReadStorage {
     bases_dir: PathBuf,
     max_id: i32,
-    root: MapBase<HandleTrieConfig>,
+    root: MapBase,
 }
 
 impl FileReadStorage {
@@ -52,13 +52,13 @@ impl FileReadStorage {
     fn read_base_unchecked(
         &self,
         id: SlotBaseId,
-    ) -> Result<SlotBase<HandleTrieConfig>, ReadStorageError> {
+    ) -> Result<SlotBase, ReadStorageError> {
         if id.0 == 0 {
             return Ok(SlotBase::new());
         }
         let path = base_path(&self.bases_dir, id);
         let bytes = std::fs::read(&path).map_err(|e| ReadStorageError::Io(id, e))?;
-        postcard::from_bytes::<SlotBase<HandleTrieConfig>>(&bytes)
+        postcard::from_bytes::<SlotBase>(&bytes)
             .map_err(|e| ReadStorageError::Decode(id, e))
     }
 }
@@ -70,7 +70,7 @@ impl ReadStorage for FileReadStorage {
         self.clone()
     }
 
-    async fn read(&self, id: SlotBaseId) -> Result<SlotBase<HandleTrieConfig>, ReadStorageError> {
+    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
         assert!(
             id.0 <= self.max_id,
             "base id {id} is beyond this snapshot's max_id"
@@ -82,7 +82,7 @@ impl ReadStorage for FileReadStorage {
         SlotBaseId(self.max_id)
     }
 
-    fn read_root(&self) -> MapBase<HandleTrieConfig> {
+    fn read_root(&self) -> MapBase {
         self.root
     }
 }
@@ -159,9 +159,9 @@ fn write_max_id_file(path: &Path, id: SlotBaseId) -> Result<(), WriteStorageErro
 
 /// Reads the committed root from the `root` file. A missing root file is
 /// treated as an empty root.
-fn read_root_file(path: &Path) -> Result<MapBase<HandleTrieConfig>, ReadStorageError> {
+fn read_root_file(path: &Path) -> Result<MapBase, ReadStorageError> {
     match std::fs::read(path) {
-        Ok(bytes) => postcard::from_bytes::<MapBase<HandleTrieConfig>>(&bytes)
+        Ok(bytes) => postcard::from_bytes::<MapBase>(&bytes)
             .map_err(|e| ReadStorageError::Decode(SlotBaseId::ZERO, e)),
         Err(e) if e.kind() == ErrorKind::NotFound => Ok(MapBase::empty()),
         Err(e) => Err(ReadStorageError::Io(SlotBaseId::ZERO, e)),
@@ -169,7 +169,7 @@ fn read_root_file(path: &Path) -> Result<MapBase<HandleTrieConfig>, ReadStorageE
 }
 
 /// Writes the committed root to the `root` file.
-fn write_root_file(path: &Path, root: &MapBase<HandleTrieConfig>) -> Result<(), WriteStorageError> {
+fn write_root_file(path: &Path, root: &MapBase) -> Result<(), WriteStorageError> {
     let bytes =
         postcard::to_allocvec(root).map_err(|e| WriteStorageError::Encode(SlotBaseId::ZERO, e))?;
     std::fs::write(path, bytes).map_err(|e| WriteStorageError::Io(SlotBaseId::ZERO, e))
@@ -196,7 +196,7 @@ impl ReadStorage for FileStorage {
         self.inner.read().expect("storage poisoned").snapshot()
     }
 
-    async fn read(&self, id: SlotBaseId) -> Result<SlotBase<HandleTrieConfig>, ReadStorageError> {
+    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
         let inner = self.inner.read().expect("storage poisoned");
         assert!(id.0 <= inner.max_id, "base id {id} has not been written");
         inner.read_base_unchecked(id)
@@ -206,7 +206,7 @@ impl ReadStorage for FileStorage {
         self.inner.read().expect("storage poisoned").max_id()
     }
 
-    fn read_root(&self) -> MapBase<HandleTrieConfig> {
+    fn read_root(&self) -> MapBase {
         self.inner.read().expect("storage poisoned").read_root()
     }
 }
@@ -219,7 +219,7 @@ impl ReadWriteStorage for FileStorage {
 
     fn append(
         &mut self,
-        base: &SlotBase<HandleTrieConfig>,
+        base: &SlotBase,
     ) -> impl Future<Output = Result<SlotBaseId, WriteStorageError>> {
         let mut inner = self.inner.write().expect("storage poisoned");
         let id = SlotBaseId(inner.max_id + 1);
@@ -243,7 +243,7 @@ impl ReadWriteStorage for FileStorage {
 
     fn write_root(
         &mut self,
-        root: MapBase<HandleTrieConfig>,
+        root: MapBase,
     ) -> impl Future<Output = Result<(), WriteStorageError>> {
         let mut inner = self.inner.write().expect("storage poisoned");
         match write_root_file(&self.root_path, &root) {

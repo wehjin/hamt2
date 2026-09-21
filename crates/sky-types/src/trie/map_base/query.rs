@@ -1,21 +1,21 @@
-use crate::trie::{HashKey, MapBase, Slot, TrieBaseRead, TrieConfig, TrieQueryError, TrieValue};
+use crate::trie::{HashKey, MapBase, Slot, SlotBaseId, TrieBaseRead, TrieQueryError, TrieValue};
 use futures::Stream;
 use futures::stream;
 
 pub struct State<S: TrieBaseRead> {
     storage: S,
-    jobs: Vec<Job<<S::Config as TrieConfig>::HandleType>>,
+    jobs: Vec<Job>,
 }
 
 pub async fn query_value<S: TrieBaseRead>(
-    map_base: &MapBase<S::Config>,
+    map_base: &MapBase,
     key: HashKey,
     storage: &S,
-) -> Result<Option<TrieValue<S::Config>>, TrieQueryError> {
+) -> Result<Option<TrieValue>, TrieQueryError> {
     let MapBase { map, base: base_id } = map_base;
     let value = match map.try_base_index(key) {
         Some(base_index) => {
-            let base = storage.read_base(base_id.clone()).await?;
+            let base = storage.read_base(*base_id).await?;
             Box::pin(base.as_ref()[base_index].query_value(key, storage)).await?
         }
         None => None,
@@ -24,9 +24,9 @@ pub async fn query_value<S: TrieBaseRead>(
 }
 
 pub fn kv_stream<S: TrieBaseRead>(
-    map_base: MapBase<S::Config>,
+    map_base: MapBase,
     storage: S,
-) -> impl Stream<Item = (i32, TrieValue<S::Config>)> {
+) -> impl Stream<Item = (i32, TrieValue)> {
     let state = State {
         storage,
         jobs: Job::start(&map_base).into_iter().collect::<Vec<_>>(),
@@ -35,7 +35,7 @@ pub fn kv_stream<S: TrieBaseRead>(
         while let Some(mut job) = state.jobs.pop() {
             let base = state
                 .storage
-                .read_base(job.base.clone())
+                .read_base(job.base)
                 .await
                 .expect("read base");
             match &base.as_ref()[job.slot_offset] {
@@ -66,13 +66,13 @@ pub fn kv_stream<S: TrieBaseRead>(
 }
 
 pub async fn query_keys_values<P: TrieBaseRead>(
-    map_base: &MapBase<P::Config>,
+    map_base: &MapBase,
     storage: &P,
-) -> Result<Vec<(i32, TrieValue<P::Config>)>, TrieQueryError> {
+) -> Result<Vec<(i32, TrieValue)>, TrieQueryError> {
     let MapBase { map, base: base_id } = map_base;
     let mut out = Vec::new();
     let slot_count = map.slot_count();
-    let base = storage.read_base(base_id.clone()).await?;
+    let base = storage.read_base(*base_id).await?;
     let base_ref = base.as_ref();
     debug_assert_eq!(slot_count, base_ref.len());
     for base_index in 0..slot_count {
@@ -82,16 +82,13 @@ pub async fn query_keys_values<P: TrieBaseRead>(
     Ok(out)
 }
 
-struct Job<HandleType> {
+struct Job {
     slot_offset: usize,
     slot_count: usize,
-    base: HandleType,
+    base: SlotBaseId,
 }
-impl<HandleType: Clone> Job<HandleType> {
-    pub fn start<C>(map_base: &MapBase<C>) -> Option<Self>
-    where
-        C: TrieConfig<HandleType = HandleType>,
-    {
+impl Job {
+    pub fn start(map_base: &MapBase) -> Option<Self> {
         let slot_count = map_base.map.slot_count();
         if slot_count == 0 {
             None
@@ -99,7 +96,7 @@ impl<HandleType: Clone> Job<HandleType> {
             Some(Self {
                 slot_offset: 0,
                 slot_count,
-                base: map_base.base.clone(),
+                base: map_base.base,
             })
         }
     }

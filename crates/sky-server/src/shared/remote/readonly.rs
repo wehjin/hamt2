@@ -3,7 +3,7 @@ use crate::shared::remote::client::requests::ClientRequest;
 use sky_types::db::DbStatus;
 use sky_types::storage::{ReadStorage, ReadStorageError};
 use sky_types::trie::{
-    HandleTrieConfig, MapBase, SlotBase, SlotBaseId, TrieQueryError, TrieBaseRead,
+    MapBase, SlotBase, SlotBaseId, TrieQueryError, TrieBaseRead,
 };
 use std::marker::PhantomData;
 use tokio::sync::mpsc::Sender;
@@ -17,12 +17,11 @@ pub struct RemoteClientReadStorage<T: SpawnTask> {
 }
 
 impl<T: SpawnTask> TrieBaseRead for RemoteClientReadStorage<T> {
-    type Config = HandleTrieConfig;
 
     async fn read_base(
         &self,
         id: SlotBaseId,
-    ) -> Result<SlotBase<HandleTrieConfig>, TrieQueryError> {
+    ) -> Result<SlotBase, TrieQueryError> {
         let base = ReadStorage::read(self, id).await?;
         Ok(base)
     }
@@ -40,7 +39,7 @@ impl<T: SpawnTask> ReadStorage for RemoteClientReadStorage<T> {
         clone
     }
 
-    async fn read(&self, id: SlotBaseId) -> Result<SlotBase<HandleTrieConfig>, ReadStorageError> {
+    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
         if id > self.max_id() {
             panic!("invalid base id");
         }
@@ -57,7 +56,7 @@ impl<T: SpawnTask> ReadStorage for RemoteClientReadStorage<T> {
         self.status.read().unwrap().head.max_id
     }
 
-    fn read_root(&self) -> MapBase<HandleTrieConfig> {
+    fn read_root(&self) -> MapBase {
         self.status.read().unwrap().head.root
     }
 }

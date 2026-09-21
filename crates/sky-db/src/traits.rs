@@ -5,7 +5,7 @@ use futures::FutureExt;
 use sky_types::db::schema::Schema;
 use sky_types::db::{Attr, Ein, FindResult, QueryError, Val};
 use sky_types::storage::ReadWriteStorage;
-use sky_types::trie::{HandleTrieConfig, TrieQuery, TrieBaseRead};
+use sky_types::trie::TrieQuery;
 
 pub trait DbQuery {
     fn find<F: Find>(&self, find: F) -> impl Future<Output = Vec<F::Output>>;
@@ -29,7 +29,7 @@ pub trait DbQuery {
     }
 }
 
-impl<S: ReadWriteStorage + TrieBaseRead<Config = HandleTrieConfig>> DbQuery for Db<S> {
+impl<S: ReadWriteStorage> DbQuery for Db<S> {
     fn find<F: Find>(&self, find: F) -> impl Future<Output = Vec<F::Output>> {
         find.apply(&self.trie, &self.schema)
     }
@@ -45,7 +45,7 @@ pub trait Find {
     fn apply<T>(self, trie: &T, schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
     where
         Self: Sized,
-        T: TrieQuery<HandleTrieConfig>,
+        T: TrieQuery,
     {
         async move {
             let select = self.select();

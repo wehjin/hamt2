@@ -7,13 +7,13 @@ use sky_types::trie::TrieValue;
 /// A read-only trie over an owned read-only storage, used only for queries.
 #[derive(Debug)]
 pub struct TrieReader<S: ReadStorage + TrieBaseRead> {
-    pub(crate) root: MapBase<S::Config>,
+    pub(crate) root: MapBase,
     storage: S,
 }
 
 impl<S: ReadStorage + TrieBaseRead> TrieReader<S> {
     /// Builds a reader over the given storage with the given root.
-    pub fn new(root: MapBase<S::Config>, storage: S) -> Self {
+    pub fn new(root: MapBase, storage: S) -> Self {
         Self { root, storage }
     }
 
@@ -23,7 +23,7 @@ impl<S: ReadStorage + TrieBaseRead> TrieReader<S> {
         Self { root, storage }
     }
 
-    pub fn subtrie_from_value(value: TrieValue<S::Config>, storage: S) -> Option<Self> {
+    pub fn subtrie_from_value(value: TrieValue, storage: S) -> Option<Self> {
         let root = match value {
             TrieValue::SubTrie(root) => root,
             TrieValue::U32(_) => return None,
