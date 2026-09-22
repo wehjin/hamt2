@@ -44,13 +44,7 @@ impl<S: ReadStorage + RootBaseRead + Clone + Send> RootBaseRead for TrieReader<S
 }
 
 impl<S: ReadStorage + RootBaseRead + Clone + Send> TrieReader<S> {
-    /// Builds a reader over the given storage with the given root.
     pub fn new(storage: S) -> Self {
-        Self { storage }
-    }
-
-    /// Connects to the storage, loading the persisted root.
-    pub fn connect(storage: S) -> Self {
         Self { storage }
     }
 }

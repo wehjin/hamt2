@@ -116,7 +116,7 @@ mod tests {
             trie.commit().await?.close()
         };
         let view_storage = storage.snapshot();
-        let read_trie = TrieReader::connect(view_storage);
+        let read_trie = TrieReader::new(view_storage);
         assert_eq!(Some(TrieValue::U32(42)), read_trie.query_value(1).await?);
         assert_eq!(
             Some(TrieValue::U32(242)),

@@ -25,7 +25,7 @@ impl<S: ReadStorage + Clone + Send> DbReader<S> {
     }
 
     pub fn start(schema: Schema, storage: &impl ReadStorage<Snapshot = S>) -> Self {
-        let read_trie: TrieReader<S> = TrieReader::connect(storage.snapshot());
+        let read_trie: TrieReader<S> = TrieReader::<S>::new(storage.snapshot());
         DbReader { schema, read_trie }
     }
 }
