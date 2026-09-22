@@ -1,5 +1,5 @@
 use crate::storage::{ReadStorage, ReadStorageError, StorageStatus};
-use crate::trie::{Base, BaseId, MapBase, RootBaseRead};
+use crate::trie::{Base, BaseId, MapBase, RootBaseRead, TrieStream};
 use std::sync::{Arc, RwLock};
 
 #[derive(Debug, Clone)]
@@ -13,6 +13,14 @@ impl MemReadStorage {
         let bases = Arc::new(RwLock::new(vec![Base::empty()]));
         let status = StorageStatus::default();
         Self { bases, status }
+    }
+}
+
+impl TrieStream for MemReadStorage {
+    type Subtrie = MemReadStorage;
+
+    fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
+        self.clone().with_new_root(Some(subtrie_root))
     }
 }
 
@@ -43,5 +51,20 @@ impl RootBaseRead for MemReadStorage {
 
     fn read_root(&self) -> MapBase {
         self.status().root
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::storage::MemReadStorage;
+    use crate::trie::TrieStream;
+    use futures::StreamExt;
+
+    #[tokio::test]
+    async fn stream_exists() {
+        let trie = MemReadStorage::empty();
+        let stream = trie.u32_stream();
+        let values: Vec<(i32, u32)> = stream.collect().await;
+        assert_eq!(values, vec![]);
     }
 }
