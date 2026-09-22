@@ -9,6 +9,12 @@ pub struct TrieReader<S: ReadStorage + RootBaseRead + Clone + Send> {
     storage: S,
 }
 
+impl<S: ReadStorage + RootBaseRead + Clone + Send> TrieReader<S> {
+    pub fn new(storage: S) -> Self {
+        Self { storage }
+    }
+}
+
 impl<S: ReadStorage + RootBaseRead + Clone + Send> TrieStream for TrieReader<S> {
     type Subtrie = TrieReader<S>;
 
@@ -40,11 +46,5 @@ impl<S: ReadStorage + RootBaseRead + Clone + Send> RootBaseRead for TrieReader<S
     }
     fn read_root(&self) -> MapBase {
         self.storage.read_root()
-    }
-}
-
-impl<S: ReadStorage + RootBaseRead + Clone + Send> TrieReader<S> {
-    pub fn new(storage: S) -> Self {
-        Self { storage }
     }
 }

@@ -6,7 +6,7 @@ use futures::{Stream, StreamExt};
 /// Implement this trait and provide `to_subtrie` to acquire streaming access
 /// to stored values.
 pub trait TrieStream: ReadStorage {
-    type Subtrie: TrieStream;
+    type Subtrie: TrieStream + ReadStorage;
 
     fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie;
 
