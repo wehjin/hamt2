@@ -1,4 +1,4 @@
-use crate::storage::StorageHead;
+use crate::storage::StorageStatus;
 use crate::trie::{MapBase, SlotBaseId, TrieRead};
 
 /// A trait for reading Bases from storage.
@@ -6,16 +6,14 @@ use crate::trie::{MapBase, SlotBaseId, TrieRead};
 /// Base id [`SlotBaseId::ZERO`] is reserved and always represents the empty base.
 #[allow(async_fn_in_trait)]
 pub trait ReadStorage: TrieRead + Sized {
-    /// The storage type of an owned read-only snapshot, produced by
-    /// [`ReadStorage::snapshot`]. Writer storages use their read-only
-    /// snapshot type; read-only snapshot types usually use `Self`.
     type Snapshot: ReadStorage + TrieRead + Send + Clone;
 
-    /// Returns an owned read-only snapshot of this storage. The snapshot does
-    /// not experience writes made after this call.
+    /// Returns an owned snapshot of this read-only storage that is also a read-only
+    /// storage. Future writes to the original MUST NOT affect the snapshot.
     fn snapshot(&self) -> Self::Snapshot;
 
-    fn status(&self) -> StorageHead;
+    /// Observes the status of the storage.
+    fn status(&self) -> StorageStatus;
 
     /// Convert the storage into one that reads starting at the new root. The new
     /// root should exist within the existing root's tree.

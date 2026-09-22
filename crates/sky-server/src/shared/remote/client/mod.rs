@@ -4,7 +4,7 @@ use crate::shared::remote::{RemoteClientReadStorage, SpawnTask};
 use crate::shared::{SocketRequest, SocketResponse};
 use sky_db::reader::DbReader;
 use sky_types::db::{Datom, DbStatus};
-use sky_types::storage::{ReadStorage, StorageHead};
+use sky_types::storage::{ReadStorage, StorageStatus};
 use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
 use tokio::sync::mpsc::Sender;
@@ -29,7 +29,7 @@ impl<T: SpawnTask> RemoteClient<T> {
         DbReader::start(schema, &self.inner)
     }
 
-    pub fn active_head(&self) -> StorageHead {
+    pub fn active_head(&self) -> StorageStatus {
         self.inner.status()
     }
 

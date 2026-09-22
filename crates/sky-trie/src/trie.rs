@@ -1,7 +1,7 @@
 use crate::TrieReader;
 use crate::prelude::TrieValue;
 use sky_types::storage::error::WriteStorageError;
-use sky_types::storage::{ReadStorage, ReadStorageError, ReadWriteStorage, StorageHead};
+use sky_types::storage::{ReadStorage, ReadStorageError, ReadWriteStorage, StorageStatus};
 use sky_types::trie::TrieStream;
 use sky_types::trie::map_base::query_value;
 use sky_types::trie::{DeepKey, HashKey, MapBase, SlotBase, SlotBaseId, TrieRead};
@@ -28,7 +28,7 @@ impl<S: ReadWriteStorage> ReadStorage for Trie<S> {
         TrieReader::new(snap_storage)
     }
 
-    fn status(&self) -> StorageHead {
+    fn status(&self) -> StorageStatus {
         self.storage.status()
     }
 

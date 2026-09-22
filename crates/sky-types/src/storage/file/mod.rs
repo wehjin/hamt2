@@ -1,5 +1,5 @@
 use crate::storage::{
-    ReadStorage, ReadStorageError, ReadWriteStorage, StorageHead, WriteStorageError,
+    ReadStorage, ReadStorageError, ReadWriteStorage, StorageStatus, WriteStorageError,
 };
 use crate::trie::{MapBase, SlotBase, SlotBaseId, TrieRead};
 use std::future;
@@ -16,7 +16,7 @@ use std::path::{Path, PathBuf};
 #[derive(Debug, Clone)]
 pub struct FileReadStorage {
     bases_dir: PathBuf,
-    status: StorageHead,
+    status: StorageStatus,
 }
 
 impl From<FileStorage> for FileReadStorage {
@@ -45,7 +45,7 @@ impl ReadStorage for FileReadStorage {
     fn snapshot(&self) -> Self::Snapshot {
         self.clone()
     }
-    fn status(&self) -> StorageHead {
+    fn status(&self) -> StorageStatus {
         self.status
     }
 
@@ -110,7 +110,7 @@ impl ReadStorage for FileStorage {
     fn snapshot(&self) -> Self::Snapshot {
         self.inner.snapshot()
     }
-    fn status(&self) -> StorageHead {
+    fn status(&self) -> StorageStatus {
         self.inner.status()
     }
 
@@ -132,7 +132,7 @@ impl FileStorage {
         let max_id_path = root.join(Self::MAX_ID_FILE);
         let root_path = root.join(Self::ROOT_FILE);
         std::fs::create_dir_all(&bases_dir)?;
-        let status = StorageHead::default();
+        let status = StorageStatus::default();
 
         write_max_id_file(&max_id_path, status.max_id).map_err(write_to_io)?;
         write_root_file(&root_path, &status.root).map_err(write_to_io)?;
@@ -159,7 +159,7 @@ impl FileStorage {
             Err(e) => return Err(e),
         };
         let root = read_root_file(&root_path).map_err(read_to_io)?;
-        let status = StorageHead {
+        let status = StorageStatus {
             max_id: SlotBaseId(max_id),
             root,
         };

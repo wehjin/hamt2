@@ -11,7 +11,7 @@ use crate::reader::DbReader;
 use crate::schema;
 pub use crate::types::*;
 use sky_trie::Trie;
-use sky_types::storage::{ReadStorage, ReadStorageError, ReadWriteStorage, StorageHead};
+use sky_types::storage::{ReadStorage, ReadStorageError, ReadWriteStorage, StorageStatus};
 use sky_types::trie::{SlotBase, SlotBaseId, TrieRead};
 pub use types::*;
 
@@ -34,7 +34,7 @@ impl<S: ReadWriteStorage> Db<S> {
         &self.schema
     }
 
-    pub fn status(&self) -> StorageHead {
+    pub fn status(&self) -> StorageStatus {
         self.trie.status()
     }
 

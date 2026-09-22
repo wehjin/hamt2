@@ -1,7 +1,7 @@
 use crate::shared::remote::SpawnTask;
 use crate::shared::remote::client::requests::ClientRequest;
 use sky_types::db::DbStatus;
-use sky_types::storage::{ReadStorage, ReadStorageError, StorageHead};
+use sky_types::storage::{ReadStorage, ReadStorageError, StorageStatus};
 use sky_types::trie::{MapBase, SlotBase, SlotBaseId, TrieRead};
 use std::marker::PhantomData;
 use tokio::sync::mpsc::Sender;
@@ -48,7 +48,7 @@ impl<T: SpawnTask> ReadStorage for RemoteClientReadStorage<T> {
         }
     }
 
-    fn status(&self) -> StorageHead {
+    fn status(&self) -> StorageStatus {
         self.status.read().unwrap().head
     }
 

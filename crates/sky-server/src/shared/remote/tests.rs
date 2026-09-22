@@ -4,7 +4,7 @@ use sky_db::traits::DbQuery;
 use sky_types::db;
 use sky_types::db::schema::Schema;
 use sky_types::db::{Attr, DbStatus, Transact, datom, val};
-use sky_types::storage::StorageHead;
+use sky_types::storage::StorageStatus;
 use sky_types::trie::{MapBase, Slot, SlotBase, SlotBaseId, SlotMap, TrieRead, TrieValue};
 use std::time::Duration;
 use tokio::task::spawn_local;
@@ -13,7 +13,7 @@ use tokio::task::spawn_local;
 async fn get_reader_works() {
     run_client_test(|mut client, mut socket_requests| async move {
         let db_status = DbStatus {
-            head: StorageHead {
+            head: StorageStatus {
                 max_id: SlotBaseId(10),
                 root: MapBase {
                     map: SlotMap(0xffffffff),
@@ -53,7 +53,7 @@ async fn transact_works() {
         // Transact waits for an acknowledgement before returning so we feed it one. After
         // that, the client should return from the transact call.
         let status = DbStatus {
-            head: StorageHead {
+            head: StorageStatus {
                 max_id: SlotBaseId(1),
                 root: MapBase {
                     map: Default::default(),
@@ -77,7 +77,7 @@ async fn remote_client_works() {
         // Update the client with the first response from the socket.
         let id1 = SlotBaseId(1);
         let first_socket_response = SocketResponse::DbStatus(DbStatus {
-            head: StorageHead {
+            head: StorageStatus {
                 max_id: id1,
                 root: MapBase {
                     map: SlotMap::empty(),

@@ -169,7 +169,7 @@ mod tests {
     use crate::server::storage::StorageService;
     use crate::server::storage::types::StorageBroadcastEvent;
     use sky_types::db::{Attr, DbStatus, datom};
-    use sky_types::storage::StorageHead;
+    use sky_types::storage::StorageStatus;
     use sky_types::trie::{MapBase, SlotBaseId};
 
     #[tokio::test]
@@ -184,7 +184,7 @@ mod tests {
             .transact([datom::add(100, attr(), 10)])
             .await
             .unwrap();
-        let StorageHead { max_id, root } = new_status.head;
+        let StorageStatus { max_id, root } = new_status.head;
         assert_ne!(SlotBaseId::ZERO, max_id);
         assert_ne!(MapBase::empty(), root);
 
@@ -192,7 +192,7 @@ mod tests {
         assert_eq!(
             broadcast,
             StorageBroadcastEvent::NewStatus(DbStatus {
-                head: StorageHead { max_id, root },
+                head: StorageStatus { max_id, root },
                 schema: status.schema.clone(),
             }),
         );

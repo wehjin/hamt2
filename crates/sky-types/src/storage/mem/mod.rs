@@ -1,5 +1,5 @@
 use crate::storage::{
-    ReadStorage, ReadStorageError, ReadWriteStorage, StorageHead, WriteStorageError,
+    ReadStorage, ReadStorageError, ReadWriteStorage, StorageStatus, WriteStorageError,
 };
 use crate::trie::{MapBase, SlotBase, SlotBaseId, TrieRead};
 use std::sync::{Arc, RwLock};
@@ -30,7 +30,7 @@ impl ReadStorage for MemStorage {
     fn snapshot(&self) -> Self::Snapshot {
         self.inner.snapshot()
     }
-    fn status(&self) -> StorageHead {
+    fn status(&self) -> StorageStatus {
         self.inner.status()
     }
 
@@ -75,7 +75,7 @@ impl ReadWriteStorage for MemStorage {
 #[derive(Debug, Clone)]
 pub struct MemReadStorage {
     bases: Arc<RwLock<Vec<SlotBase>>>,
-    status: StorageHead,
+    status: StorageStatus,
 }
 
 impl TrieRead for MemReadStorage {
@@ -98,7 +98,7 @@ impl ReadStorage for MemReadStorage {
     fn snapshot(&self) -> Self::Snapshot {
         self.clone()
     }
-    fn status(&self) -> StorageHead {
+    fn status(&self) -> StorageStatus {
         self.status
     }
 
@@ -111,7 +111,7 @@ impl ReadStorage for MemReadStorage {
 impl MemReadStorage {
     pub fn empty() -> Self {
         let bases = Arc::new(RwLock::new(vec![SlotBase::empty()]));
-        let status = StorageHead::default();
+        let status = StorageStatus::default();
         Self { bases, status }
     }
 }

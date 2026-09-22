@@ -1,4 +1,4 @@
-use sky_types::storage::{ReadStorage, ReadStorageError, StorageHead};
+use sky_types::storage::{ReadStorage, ReadStorageError, StorageStatus};
 use sky_types::trie::TrieStream;
 use sky_types::trie::MapBase;
 use sky_types::trie::{SlotBase, SlotBaseId, TrieRead};
@@ -24,7 +24,7 @@ impl<S: ReadStorage + TrieRead + Clone + Send> ReadStorage for TrieReader<S> {
         self.clone()
     }
 
-    fn status(&self) -> StorageHead {
+    fn status(&self) -> StorageStatus {
         self.storage.status()
     }
 

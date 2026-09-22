@@ -7,7 +7,7 @@ pub mod schema;
 mod val;
 
 use crate::db::schema::Schema;
-use crate::storage::StorageHead;
+use crate::storage::StorageStatus;
 pub use attr::*;
 pub use dat::*;
 pub use ein::*;
@@ -32,6 +32,6 @@ pub enum Dir {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct DbStatus {
-    pub head: StorageHead,
+    pub head: StorageStatus,
     pub schema: Schema,
 }
