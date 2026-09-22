@@ -4,7 +4,7 @@ use crate::trie::{BaseId, MapBase, RootBaseRead};
 /// These are the core functions of a read-only trie.
 #[allow(async_fn_in_trait)]
 pub trait ReadStorage: RootBaseRead + Sized {
-    type Snapshot: ReadStorage + RootBaseRead + Send + Clone;
+    type Snapshot: ReadStorage + Send + Clone;
 
     /// Observes the status of the storage.
     fn status(&self) -> StorageStatus;
