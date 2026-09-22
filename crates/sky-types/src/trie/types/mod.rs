@@ -6,7 +6,6 @@ mod slot;
 mod slot_base;
 mod slot_base_id;
 mod slot_map;
-mod trie_query;
 mod trie_value;
 
 pub use deep_key::*;
@@ -17,5 +16,4 @@ pub use slot::*;
 pub use slot_base::*;
 pub use slot_base_id::*;
 pub use slot_map::*;
-pub use trie_query::*;
 pub use trie_value::*;

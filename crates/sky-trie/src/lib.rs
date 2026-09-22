@@ -12,7 +12,7 @@ pub use trie_reader::TrieReader;
 mod tests {
     use crate::{Trie, TrieReader};
     use sky_types::storage::{FileStorage, MemStorage, ReadStorage};
-    use sky_types::trie::{ShallowTrieQuery, TrieValue};
+    use sky_types::trie::{TrieBasicQuery, TrieValue};
 
     #[tokio::test]
     async fn file_trie_works() -> anyhow::Result<()> {

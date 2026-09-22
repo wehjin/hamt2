@@ -4,7 +4,7 @@ use crate::trie::{HashKey, TrieRead, map_base};
 use futures::Stream;
 
 #[allow(async_fn_in_trait)]
-pub trait ShallowTrieQuery: TrieRead {
+pub trait TrieBasicQuery: TrieRead {
     /// Returns the value stored at the given key or none if the key is absent.
     async fn query_value(&self, key: i32) -> Result<Option<TrieValue>, TrieQueryError>;
 
@@ -18,7 +18,7 @@ pub trait ShallowTrieQuery: TrieRead {
     ) -> Result<Option<TrieValue>, TrieQueryError>;
 }
 
-impl<T: TrieRead> ShallowTrieQuery for T {
+impl<T: TrieRead> TrieBasicQuery for T {
     async fn query_value(&self, key: i32) -> Result<Option<TrieValue>, TrieQueryError> {
         map_base::query_value(self.read_root(), HashKey::new(key), self).await
     }
@@ -35,15 +35,9 @@ impl<T: TrieRead> ShallowTrieQuery for T {
     }
 }
 
-/// The read-only query interface shared by every storage-backed trie.
-///
-/// All methods are required; the storage-backed types implement this directly.
-/// `Subtrie` is the type of a queryable view over a sub-trie, so callers of
-/// `subtrie_stream()` and `to_subtrie_from_value()` never need to name the
-/// concrete reader type or a storage type.
 #[allow(async_fn_in_trait)]
-pub trait TrieQuery: ShallowTrieQuery {
-    /// The type of a queryable view over a sub-trie.
+pub trait TrieQuery: TrieBasicQuery {
+    /// Type produced when a sub-trie is reached in the key-value stream.
     type Subtrie: TrieQuery;
 
     /// A stream of all `U32` values in this trie, skipping map-base values.
