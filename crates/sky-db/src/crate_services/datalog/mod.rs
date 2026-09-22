@@ -47,19 +47,19 @@ impl Program {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::crate_services::datalog::atom::atom;
-    use crate::crate_services::datalog::rule::rule;
-    use crate::crate_services::datalog::term::term;
-    use crate::crate_services::datalog::var::var;
-    use crate::db::Db;
-    use sky_types::db::Transact;
-    use sky_types::db::datom;
-    use sky_types::db::{Attr, ent, val};
-    use sky_types::storage::MemStorage;
+	use super::*;
+	use crate::crate_services::datalog::atom::atom;
+	use crate::crate_services::datalog::rule::rule;
+	use crate::crate_services::datalog::term::term;
+	use crate::crate_services::datalog::var::var;
+	use crate::db::Db;
+	use sky_types::db::Transact;
+	use sky_types::db::datom;
+	use sky_types::db::{Attr, ent, val};
+	use sky_types::storage::MemStorage;
 
-    fn advisor() -> Attr {
-        Attr::from("member/advisor")
+	fn advisor() -> Attr {
+		Attr::from("member/advisor")
     }
     fn name() -> Attr {
         Attr::from("member/name")

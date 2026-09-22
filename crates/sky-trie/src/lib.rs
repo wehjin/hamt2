@@ -7,11 +7,11 @@ pub use trie_reader::TrieReader;
 
 #[cfg(test)]
 mod tests {
-    use crate::{Trie, TrieReader};
-    use sky_types::storage::{FileStorage, MemStorage, ReadStorage};
-    use sky_types::trie::{TrieQuery, TrieValue};
+	use crate::{Trie, TrieReader};
+	use sky_types::storage::{FileStorage, MemStorage, ReadStorage};
+	use sky_types::trie::{TrieQuery, TrieValue};
 
-    #[tokio::test]
+	#[tokio::test]
     async fn file_trie_works() -> anyhow::Result<()> {
         let dir = tempfile::tempdir()?;
         {
@@ -267,13 +267,14 @@ mod tests {
 
 #[cfg(test)]
 mod stream_tests {
-    use crate::Trie;
-    use futures::StreamExt;
-    use sky_types::storage::MemStorage;
-    use sky_types::trie::{TrieStream, TrieValue};
+	use crate::Trie;
+	use futures::StreamExt;
+	use sky_types::storage::MemStorage;
+	use sky_types::trie::TrieStream;
+	use sky_types::trie::TrieValue;
 
-    #[tokio::test]
-    async fn u32_stream() -> anyhow::Result<()> {
+	#[tokio::test]
+	async fn u32_stream() -> anyhow::Result<()> {
         let mut trie = Trie::connect(MemStorage::new());
         trie = trie.insert(1, TrieValue::U32(1)).await?;
         trie = trie.insert(2, TrieValue::U32(2)).await?;

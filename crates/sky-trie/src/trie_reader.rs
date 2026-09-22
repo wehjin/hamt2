@@ -1,5 +1,6 @@
 use sky_types::storage::{ReadStorage, ReadStorageError, StorageHead};
-use sky_types::trie::{MapBase, TrieStream};
+use sky_types::trie::TrieStream;
+use sky_types::trie::MapBase;
 use sky_types::trie::{SlotBase, SlotBaseId, TrieRead};
 
 /// A read-only trie over an owned read-only storage, used only for queries.

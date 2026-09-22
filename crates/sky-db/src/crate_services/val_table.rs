@@ -173,11 +173,11 @@ async fn find_hash_trie<T: TrieStream>(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use sky_types::db::{Val, val};
-    use sky_types::storage::MemStorage;
+	use super::*;
+	use sky_types::db::{Val, val};
+	use sky_types::storage::MemStorage;
 
-    #[tokio::test]
+	#[tokio::test]
     async fn insert_and_query() {
         let mut trie = Trie::connect(MemStorage::new());
         let mut vids = Vec::new();
