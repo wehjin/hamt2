@@ -1,11 +1,11 @@
-use crate::storage::MemStorage;
+use crate::storage::MemTrieEdit;
 use crate::trie::map_base::{kv_stream, one_kv};
 use crate::trie::{HashKey, MapBase, TrieValue, map_base};
 use futures::StreamExt;
 
 #[tokio::test]
 async fn test_stream_kvs_empty_map() {
-    let storage = MemStorage::new();
+    let storage = MemTrieEdit::new();
     let map_base = MapBase::empty();
     let stream = kv_stream(map_base, storage);
     let kvs = stream.collect::<Vec<_>>().await;
@@ -15,7 +15,7 @@ async fn test_stream_kvs_empty_map() {
 async fn test_stream_kvs_one_slot() {
     let key = HashKey::new(0);
     let value = TrieValue::from(11);
-    let mut storage = MemStorage::new();
+    let mut storage = MemTrieEdit::new();
     let map_base = one_kv(key, value.clone(), &mut storage)
         .await
         .expect("one_kv");
@@ -29,7 +29,7 @@ async fn test_stream_kvs_many_slots() -> anyhow::Result<()> {
     let test_kvs = (0..35)
         .map(|i| (i, TrieValue::from(i as u32)))
         .collect::<Vec<_>>();
-    let mut storage = MemStorage::new();
+    let mut storage = MemTrieEdit::new();
     let map_base = {
         let mut map_base = {
             let key = HashKey::new(test_kvs[0].0);

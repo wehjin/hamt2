@@ -3,12 +3,12 @@ use crate::trie::{Base, BaseId, MapBase, RootBaseRead, TrieStream};
 use std::sync::{Arc, RwLock};
 
 #[derive(Debug, Clone)]
-pub struct MemReadStorage {
+pub struct MemTrieView {
     pub(crate) bases: Arc<RwLock<Vec<Base>>>,
     pub(crate) status: StorageStatus,
 }
 
-impl MemReadStorage {
+impl MemTrieView {
     pub fn empty() -> Self {
         let bases = Arc::new(RwLock::new(vec![Base::empty()]));
         let status = StorageStatus::default();
@@ -16,16 +16,16 @@ impl MemReadStorage {
     }
 }
 
-impl TrieStream for MemReadStorage {
-    type Subtrie = MemReadStorage;
+impl TrieStream for MemTrieView {
+    type Subtrie = MemTrieView;
 
     fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
         self.clone().with_new_root(Some(subtrie_root))
     }
 }
 
-impl ReadStorage for MemReadStorage {
-    type Snapshot = MemReadStorage;
+impl ReadStorage for MemTrieView {
+    type Snapshot = MemTrieView;
 
     fn status(&self) -> StorageStatus {
         self.status
@@ -40,7 +40,7 @@ impl ReadStorage for MemReadStorage {
     }
 }
 
-impl RootBaseRead for MemReadStorage {
+impl RootBaseRead for MemTrieView {
     async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
         assert!(id <= self.max_id(), "id out of bounds {id:?}");
         let index = id.0 as usize;
@@ -56,13 +56,13 @@ impl RootBaseRead for MemReadStorage {
 
 #[cfg(test)]
 mod tests {
-    use crate::storage::MemReadStorage;
+    use crate::storage::MemTrieView;
     use crate::trie::TrieStream;
     use futures::StreamExt;
 
     #[tokio::test]
     async fn stream_exists() {
-        let trie = MemReadStorage::empty();
+        let trie = MemTrieView::empty();
         let stream = trie.u32_stream();
         let values: Vec<(i32, u32)> = stream.collect().await;
         assert_eq!(values, vec![]);

@@ -56,7 +56,7 @@ mod tests {
 	use sky_types::db::Transact;
 	use sky_types::db::datom;
 	use sky_types::db::{Attr, ent, val};
-	use sky_types::storage::MemStorage;
+	use sky_types::storage::MemTrieEdit;
 
 	fn advisor() -> Attr {
 		Attr::from("member/advisor")
@@ -77,9 +77,9 @@ mod tests {
     #[tokio::test]
     async fn program_test() -> anyhow::Result<()> {
         let schema = vec![advisor(), name()];
-        let storage: MemStorage;
+        let storage: MemTrieEdit;
         {
-            let mut db = Db::new(MemStorage::new(), schema.clone()).await?;
+            let mut db = Db::new(MemTrieEdit::new(), schema.clone()).await?;
             db = db
                 .transact([
                     datom::add("a", name(), val("Alice")),

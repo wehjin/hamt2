@@ -1,30 +1,29 @@
 use crate::storage::{
-    MemReadStorage, ReadStorage, ReadStorageError, ReadWriteStorage, StorageStatus,
-    WriteStorageError,
+    MemTrieView, ReadStorage, ReadStorageError, ReadWriteStorage, StorageStatus, WriteStorageError,
 };
 use crate::trie::{Base, BaseId, MapBase, RootBaseRead, TrieStream};
 
 #[derive(Debug)]
-pub struct MemStorage {
-    inner: MemReadStorage,
+pub struct MemTrieEdit {
+    inner: MemTrieView,
 }
 
-impl MemStorage {
+impl MemTrieEdit {
     pub fn new() -> Self {
-        let inner = MemReadStorage::empty();
+        let inner = MemTrieView::empty();
         Self { inner }
     }
 }
 
-impl TrieStream for MemStorage {
-    type Subtrie = MemReadStorage;
+impl TrieStream for MemTrieEdit {
+    type Subtrie = MemTrieView;
 
     fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
         self.inner.to_subtrie(subtrie_root)
     }
 }
 
-impl ReadWriteStorage for MemStorage {
+impl ReadWriteStorage for MemTrieEdit {
     fn next_id(&self) -> BaseId {
         self.max_id() + 1
     }
@@ -45,8 +44,8 @@ impl ReadWriteStorage for MemStorage {
     }
 }
 
-impl ReadStorage for MemStorage {
-    type Snapshot = MemReadStorage;
+impl ReadStorage for MemTrieEdit {
+    type Snapshot = MemTrieView;
 
     fn status(&self) -> StorageStatus {
         self.inner.status()
@@ -61,7 +60,7 @@ impl ReadStorage for MemStorage {
     }
 }
 
-impl RootBaseRead for MemStorage {
+impl RootBaseRead for MemTrieEdit {
     async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
         self.inner.read_base(id).await
     }
@@ -73,13 +72,13 @@ impl RootBaseRead for MemStorage {
 
 #[cfg(test)]
 mod tests {
-    use crate::storage::{MemStorage, ReadWriteStorage};
+    use crate::storage::{MemTrieEdit, ReadWriteStorage};
     use crate::trie::{HashKey, TrieStream, TrieValue, map_base};
     use futures::StreamExt;
 
     #[tokio::test]
     async fn mem_trie_mut_works() {
-        let mut m = MemStorage::new();
+        let mut m = MemTrieEdit::new();
         let map_base = map_base::one_kv(HashKey::new(27), TrieValue::U32(28), &mut m)
             .await
             .unwrap();

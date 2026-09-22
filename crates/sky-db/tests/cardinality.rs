@@ -3,7 +3,7 @@ use sky_db::db::attr_spec::AttrSpec;
 use sky_db::db::cardinality::Cardinality;
 use sky_db::find::ValsInSlot;
 use sky_db::traits::DbQuery;
-use sky_types::storage::MemStorage;
+use sky_types::storage::MemTrieEdit;
 use sky_types::db::Transact;
 use sky_types::db::datom;
 use sky_types::db::{Attr, val};
@@ -15,7 +15,7 @@ async fn test_cardinality_one() -> anyhow::Result<()> {
         attr: count(),
         cardinality: Cardinality::One,
     }];
-    let mut db = Db::new(MemStorage::new(), schema).await?;
+    let mut db = Db::new(MemTrieEdit::new(), schema).await?;
     db = db.transact([datom::add(100, count(), 100)]).await?;
     db = db.transact([datom::add(100, count(), 101)]).await?;
     db = db.transact([datom::add(100, count(), 102)]).await?;
@@ -35,7 +35,7 @@ async fn test_cardinality_many() -> anyhow::Result<()> {
         attr: count(),
         cardinality: Cardinality::Many,
     }];
-    let mut db = Db::new(MemStorage::new(), schema).await?;
+    let mut db = Db::new(MemTrieEdit::new(), schema).await?;
     db = db.transact([datom::add(100, count(), 100)]).await?;
     db = db.transact([datom::add(100, count(), 101)]).await?;
     db = db.transact([datom::add(100, count(), 102)]).await?;

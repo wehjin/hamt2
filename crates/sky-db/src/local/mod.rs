@@ -1,6 +1,6 @@
 use crate::db::Db;
 use sky_types::db::schema::attr_spec::DbSpec;
-use sky_types::storage::{MemStorage, ReadWriteStorage};
+use sky_types::storage::{MemTrieEdit, ReadWriteStorage};
 
 pub trait DbRuntime {
     fn block_on<T>(main: impl Future<Output = T> + 'static) -> T;
@@ -10,8 +10,8 @@ pub struct LocalDb<S: ReadWriteStorage> {
     _db: Db<S>,
 }
 
-pub fn new_in_memory<R: DbRuntime>(db_spec: impl Into<DbSpec>) -> LocalDb<MemStorage> {
-    let mem_storage = MemStorage::new();
+pub fn new_in_memory<R: DbRuntime>(db_spec: impl Into<DbSpec>) -> LocalDb<MemTrieEdit> {
+    let mem_storage = MemTrieEdit::new();
     let db_spec = db_spec.into();
     let Ok(db) = R::block_on(async move { Db::new(mem_storage, db_spec).await }) else {
         unreachable!("Building db from a mem-storage should not fail")

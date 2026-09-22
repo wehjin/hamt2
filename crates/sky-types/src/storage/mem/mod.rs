@@ -1,5 +1,5 @@
-mod mem_trie;
-mod mem_trie_mut;
+mod view;
+mod edit;
 
-pub use mem_trie::*;
-pub use mem_trie_mut::*;
+pub use view::*;
+pub use edit::*;

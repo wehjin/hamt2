@@ -4,7 +4,7 @@ use common::Basis;
 use sky_types::db::Transact;
 use sky_types::db::datom;
 use sky_types::db::{Attr, Ein, Ent, Val, dat};
-use sky_types::storage::MemStorage;
+use sky_types::storage::MemTrieEdit;
 
 pub mod common;
 
@@ -18,7 +18,7 @@ async fn pull_test() {
             direction: -1,
         };
         let ent = Ent::from(27);
-        let mut db = Db::new(MemStorage::new(), Basis::attrs())
+        let mut db = Db::new(MemTrieEdit::new(), Basis::attrs())
             .await
             .expect("Db::new");
         let datoms = basis.into_datoms(ent);
