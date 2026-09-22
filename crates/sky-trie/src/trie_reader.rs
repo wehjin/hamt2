@@ -1,53 +1,55 @@
-use sky_types::storage::{ReadStorage, Storage, StorageHead, StoreRead};
-use sky_types::trie::MapBase;
-use sky_types::trie::TrieValue;
-use sky_types::trie::{SlotBase, SlotBaseId, TrieQueryError, TrieRead};
+use sky_types::storage::{ReadStorage, ReadStorageError, StorageHead};
+use sky_types::trie::{MapBase, TrieStream};
+use sky_types::trie::{SlotBase, SlotBaseId, TrieRead};
 
 /// A read-only trie over an owned read-only storage, used only for queries.
-#[derive(Debug)]
-pub struct TrieReader<S: ReadStorage + TrieRead> {
-    pub(crate) root: MapBase,
+#[derive(Debug, Clone)]
+pub struct TrieReader<S: ReadStorage + TrieRead + Clone + Send> {
     storage: S,
 }
 
-impl<S: ReadStorage + TrieRead> StoreRead for TrieReader<S> {
+impl<S: ReadStorage + TrieRead + Clone + Send> TrieStream for TrieReader<S> {
+    type Subtrie = TrieReader<S>;
+
+    fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
+        self.clone().with_new_root(Some(subtrie_root))
+    }
+}
+
+impl<S: ReadStorage + TrieRead + Clone + Send> ReadStorage for TrieReader<S> {
+    type Snapshot = TrieReader<S>;
+
+    fn snapshot(&self) -> Self::Snapshot {
+        self.clone()
+    }
+
     fn status(&self) -> StorageHead {
         self.storage.status()
     }
+
+    fn with_new_root(self, new_root: Option<MapBase>) -> Self {
+        let storage = self.storage.with_new_root(new_root);
+        Self { storage }
+    }
 }
 
-impl<S: ReadStorage + TrieRead> TrieRead for TrieReader<S> {
-    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, TrieQueryError> {
+impl<S: ReadStorage + TrieRead + Clone + Send> TrieRead for TrieReader<S> {
+    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
         self.storage.read_base(id).await
     }
     fn read_root(&self) -> MapBase {
-        self.root
+        self.storage.read_root()
     }
 }
 
-impl<S: ReadStorage + TrieRead> Storage<S> for TrieReader<S> {
-    fn storage(&self) -> &S {
-        &self.storage
-    }
-}
-
-impl<S: ReadStorage + TrieRead> TrieReader<S> {
+impl<S: ReadStorage + TrieRead + Clone + Send> TrieReader<S> {
     /// Builds a reader over the given storage with the given root.
-    pub fn new(root: MapBase, storage: S) -> Self {
-        Self { root, storage }
+    pub fn new(storage: S) -> Self {
+        Self { storage }
     }
 
     /// Connects to the storage, loading the persisted root.
     pub fn connect(storage: S) -> Self {
-        let root = storage.read_root();
-        Self { root, storage }
-    }
-
-    pub fn subtrie_from_value(value: TrieValue, storage: S) -> Option<Self> {
-        let root = match value {
-            TrieValue::SubTrie(root) => root,
-            TrieValue::U32(_) => return None,
-        };
-        Some(Self { root, storage })
+        Self { storage }
     }
 }

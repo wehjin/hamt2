@@ -1,10 +1,7 @@
-pub mod local;
 pub mod prelude;
-pub mod storage_trie_query;
 mod trie;
 pub mod trie_reader;
 
-pub use sky_types::trie::TrieQuery;
 pub use trie::*;
 pub use trie_reader::TrieReader;
 
@@ -12,7 +9,7 @@ pub use trie_reader::TrieReader;
 mod tests {
     use crate::{Trie, TrieReader};
     use sky_types::storage::{FileStorage, MemStorage, ReadStorage};
-    use sky_types::trie::{TrieBasicQuery, TrieValue};
+    use sky_types::trie::{TrieQuery, TrieValue};
 
     #[tokio::test]
     async fn file_trie_works() -> anyhow::Result<()> {
@@ -265,5 +262,41 @@ mod tests {
     async fn deep_query_fails_for_invalid_key() {
         let trie = Trie::connect(MemStorage::new());
         let _result = trie.deep_query_value([4, 4, -1]).await;
+    }
+}
+
+#[cfg(test)]
+mod stream_tests {
+    use crate::Trie;
+    use futures::StreamExt;
+    use sky_types::storage::MemStorage;
+    use sky_types::trie::{TrieStream, TrieValue};
+
+    #[tokio::test]
+    async fn u32_stream() -> anyhow::Result<()> {
+        let mut trie = Trie::connect(MemStorage::new());
+        trie = trie.insert(1, TrieValue::U32(1)).await?;
+        trie = trie.insert(2, TrieValue::U32(2)).await?;
+        trie = trie.deep_insert([3, 4], TrieValue::U32(34), false).await?;
+        let mut u32s = trie.u32_stream().collect::<Vec<_>>().await;
+        u32s.sort_by_key(|(key, _u32)| *key);
+        // Map-base values are skipped by the u32 stream.
+        assert_eq!(vec![(1, 1), (2, 2)], u32s);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn subtrie_stream() -> anyhow::Result<()> {
+        let mut trie = Trie::connect(MemStorage::new());
+        trie = trie
+            .deep_insert([1, 101], TrieValue::U32(101), false)
+            .await?;
+        trie = trie
+            .deep_insert([2, 202], TrieValue::U32(202), false)
+            .await?;
+        trie = trie.insert(3, TrieValue::U32(33)).await?;
+        let subtries = trie.subtrie_stream().collect::<Vec<_>>().await;
+        assert_eq!(2, subtries.len());
+        Ok(())
     }
 }

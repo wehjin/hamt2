@@ -1,20 +1,14 @@
 use crate::shared::remote::{RemoteClient, RemoteClientReadStorage, SpawnTask};
-use sky_types::storage::{ReadStorage, ReadStorageError, StorageHead, StoreRead};
-use sky_types::trie::{MapBase, SlotBase, SlotBaseId, TrieQueryError, TrieRead};
+use sky_types::storage::{ReadStorage, ReadStorageError, StorageHead};
+use sky_types::trie::{MapBase, SlotBase, SlotBaseId, TrieRead};
 
 impl<T: SpawnTask> TrieRead for RemoteClient<T> {
-    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, TrieQueryError> {
+    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
         self.inner.read_base(id).await
     }
 
     fn read_root(&self) -> MapBase {
         self.inner.read_root()
-    }
-}
-
-impl<T: SpawnTask> StoreRead for RemoteClient<T> {
-    fn status(&self) -> StorageHead {
-        self.inner.status()
     }
 }
 
@@ -25,12 +19,12 @@ impl<T: SpawnTask> ReadStorage for RemoteClient<T> {
         self.inner.snapshot()
     }
 
-    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
-        self.inner.read_base(id).await.map_err(|err| {
-            let TrieQueryError::ReadStorage(read_storage_error) = err else {
-                unreachable!("inner.read_base() should a ReadStorage variant");
-            };
-            read_storage_error
-        })
+    fn status(&self) -> StorageHead {
+        self.inner.status()
+    }
+
+    fn with_new_root(self, new_root: Option<MapBase>) -> Self {
+        let inner = self.inner.with_new_root(new_root);
+        Self { inner, ..self }
     }
 }

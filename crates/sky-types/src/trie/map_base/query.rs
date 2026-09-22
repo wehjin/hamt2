@@ -25,10 +25,10 @@ pub async fn query_value<S: TrieRead>(
 
 pub fn kv_stream<S: TrieRead>(
     map_base: MapBase,
-    storage: S,
+    trie_read: S,
 ) -> impl Stream<Item = (i32, TrieValue)> {
     let state = State {
-        storage,
+        storage: trie_read,
         jobs: Job::start(&map_base).into_iter().collect::<Vec<_>>(),
     };
     stream::unfold(state, |mut state| async move {

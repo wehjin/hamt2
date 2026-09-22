@@ -19,5 +19,14 @@ pub struct StorageHead {
     pub root: MapBase,
 }
 
+impl StorageHead {
+    pub fn with_new_root(self, root: Option<MapBase>) -> Self {
+        match root {
+            None => self,
+            Some(root) => Self { root, ..self },
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests;

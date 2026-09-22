@@ -3,7 +3,6 @@ use sky_db::db::Db;
 use sky_db::db::attr_spec::DbSpec;
 use sky_types::db::{Datom, DbStatus, Transact};
 use sky_types::storage::MemStorage;
-use sky_types::storage::{ReadStorage, StoreRead};
 use sky_types::trie::{SlotBase, SlotBaseId};
 use tokio::sync::{broadcast, mpsc, oneshot};
 
@@ -125,7 +124,7 @@ async fn handle_storage(
     while let Some(event) = from_clients.recv().await {
         match event {
             StorageRequest::ReadStatus(response) => {
-                let head = db.storage().get_head();
+                let head = db.status();
                 let schema = db.schema().clone();
                 let status = DbStatus { head, schema };
                 if let Err(e) = response.send(status) {
@@ -135,10 +134,10 @@ async fn handle_storage(
             StorageRequest::ReadSlotBase(base_id, response) => {
                 // Guard against ids the storage has never assigned; reading
                 // them directly would panic the storage task.
-                let base = if base_id < SlotBaseId::ZERO || base_id > db.storage().max_id() {
+                let base = if base_id < SlotBaseId::ZERO || base_id > db.status().max_id {
                     None
                 } else {
-                    db.storage().read(base_id).await.ok()
+                    db.read_base(base_id).await.ok()
                 };
                 if let Err(e) = response.send(base) {
                     error!("ReadSlotBase response failed: {:?}", e);
@@ -151,7 +150,7 @@ async fn handle_storage(
                     return Err(StorageServiceError::TransactError(e));
                 }
                 Ok(new_db) => {
-                    let head = new_db.storage().get_head();
+                    let head = new_db.status();
                     let schema = new_db.schema().clone();
                     let status = DbStatus { head, schema };
                     let broadcast = StorageBroadcastEvent::NewStatus(status.clone());
@@ -167,14 +166,14 @@ async fn handle_storage(
 
 #[cfg(test)]
 mod tests {
-	use crate::server::storage::StorageService;
-	use crate::server::storage::types::StorageBroadcastEvent;
-	use sky_types::db::{Attr, DbStatus, datom};
-	use sky_types::storage::StorageHead;
-	use sky_types::trie::{MapBase, SlotBaseId};
+    use crate::server::storage::StorageService;
+    use crate::server::storage::types::StorageBroadcastEvent;
+    use sky_types::db::{Attr, DbStatus, datom};
+    use sky_types::storage::StorageHead;
+    use sky_types::trie::{MapBase, SlotBaseId};
 
-	#[tokio::test]
-	async fn it_works() {
+    #[tokio::test]
+    async fn it_works() {
         let attr = || Attr::from("Counter/count");
         let db_spec = [attr()];
         let storage = StorageService::start(db_spec).await.unwrap();

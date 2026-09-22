@@ -1,6 +1,7 @@
-use crate::storage::traits::VecBases;
-use crate::storage::{ReadStorage, ReadWriteStorage, StorageHead, StoreRead, WriteStorageError};
-use crate::trie::{MapBase, SlotBase, SlotBaseId};
+use crate::storage::{
+    ReadStorage, ReadStorageError, ReadWriteStorage, StorageHead, WriteStorageError,
+};
+use crate::trie::{MapBase, SlotBase, SlotBaseId, TrieRead};
 use std::sync::{Arc, RwLock};
 
 /// An in-memory storage for Bases backed by a `Vec<Base>`.
@@ -10,27 +11,16 @@ use std::sync::{Arc, RwLock};
 /// wasted storing it.
 #[derive(Debug)]
 pub struct MemStorage {
-    bases: Arc<RwLock<Vec<SlotBase>>>,
-    status: StorageHead,
+    inner: MemReadStorage,
 }
 
-impl VecBases for MemStorage {
-    fn bases(&self) -> &Arc<RwLock<Vec<SlotBase>>> {
-        &self.bases
+impl TrieRead for MemStorage {
+    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
+        self.inner.read_base(id).await
     }
-}
 
-impl StoreRead for MemStorage {
-    fn status(&self) -> StorageHead {
-        self.status
-    }
-}
-
-impl MemStorage {
-    pub fn new() -> Self {
-        let bases = Arc::new(RwLock::new(vec![SlotBase::empty()]));
-        let status = StorageHead::default();
-        Self { bases, status }
+    fn read_root(&self) -> MapBase {
+        self.inner.read_root()
     }
 }
 
@@ -38,29 +28,42 @@ impl ReadStorage for MemStorage {
     type Snapshot = MemReadStorage;
 
     fn snapshot(&self) -> Self::Snapshot {
-        MemReadStorage {
-            bases: Arc::clone(&self.bases),
-            status: self.status.clone(),
-        }
+        self.inner.snapshot()
+    }
+    fn status(&self) -> StorageHead {
+        self.inner.status()
+    }
+
+    fn with_new_root(self, new_root: Option<MapBase>) -> Self {
+        let inner = self.inner.with_new_root(new_root);
+        Self { inner }
+    }
+}
+
+impl MemStorage {
+    pub fn new() -> Self {
+        let inner = MemReadStorage::empty();
+        Self { inner }
     }
 }
 
 impl ReadWriteStorage for MemStorage {
     fn next_id(&self) -> SlotBaseId {
-        let inner = self.bases.read().unwrap();
-        SlotBaseId(inner.len() as i32)
+        self.max_id() + 1
     }
 
     async fn append(&mut self, base: &SlotBase) -> Result<SlotBaseId, WriteStorageError> {
         let id = self.next_id();
-        let mut inner = self.bases.write().unwrap();
-        inner.push(base.clone());
-        self.status.max_id = id;
+        {
+            let mut bases = self.inner.bases.write().unwrap();
+            bases.push(base.clone());
+        }
+        self.inner.status.max_id = id;
         Ok(id)
     }
 
     async fn write_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
-        self.status.root = root;
+        self.inner.status.root = root;
         Ok(())
     }
 }
@@ -75,15 +78,17 @@ pub struct MemReadStorage {
     status: StorageHead,
 }
 
-impl VecBases for MemReadStorage {
-    fn bases(&self) -> &Arc<RwLock<Vec<SlotBase>>> {
-        &self.bases
+impl TrieRead for MemReadStorage {
+    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
+        assert!(id <= self.max_id(), "id out of bounds {id:?}");
+        let index = id.0 as usize;
+        let read = self.bases.read().unwrap();
+        let base = read[index].clone();
+        Ok(base)
     }
-}
 
-impl StoreRead for MemReadStorage {
-    fn status(&self) -> StorageHead {
-        self.status
+    fn read_root(&self) -> MapBase {
+        self.status().root
     }
 }
 
@@ -92,5 +97,21 @@ impl ReadStorage for MemReadStorage {
 
     fn snapshot(&self) -> Self::Snapshot {
         self.clone()
+    }
+    fn status(&self) -> StorageHead {
+        self.status
+    }
+
+    fn with_new_root(self, new_root: Option<MapBase>) -> Self {
+        let status = self.status.with_new_root(new_root);
+        Self { status, ..self }
+    }
+}
+
+impl MemReadStorage {
+    pub fn empty() -> Self {
+        let bases = Arc::new(RwLock::new(vec![SlotBase::empty()]));
+        let status = StorageHead::default();
+        Self { bases, status }
     }
 }

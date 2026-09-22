@@ -89,7 +89,7 @@ pub async fn find<'a, T>(
     where_: impl Into<Vec<Atom>>,
 ) -> FindResult
 where
-    T: TrieQuery,
+    T: TrieStream,
 {
     let select = select.into();
     let query_terms = select.iter().map(|s| term(var(*s))).collect::<Vec<_>>();
@@ -120,7 +120,7 @@ pub fn ev_stream<'a, T>(
     schema: &'a Schema,
 ) -> impl futures::Stream<Item = (i32, Val)> + 'a
 where
-    T: TrieQuery + 'a,
+    T: TrieStream + 'a,
 {
     stream! {
         if let Some(evt_subtrie) = evt_subtrie(trie, a, schema).await {
@@ -136,7 +136,7 @@ where
 
 pub async fn list_entities<T>(trie: &T) -> Vec<Ein>
 where
-    T: TrieQuery,
+    T: TrieStream,
 {
     if let Some(root) = eavt_root(trie).await {
         root.query_keys_values()
@@ -166,7 +166,7 @@ impl From<i32> for AttrEin {
 
 pub async fn list_entity_attributes<T>(trie: &T, ein: Ein) -> Vec<AttrEin>
 where
-    T: TrieQuery,
+    T: TrieStream,
 {
     if let Some(root) = e_avt_subtrie(trie, ein).await {
         root.query_keys_values()
@@ -182,37 +182,35 @@ where
 
 async fn eavt_root<T>(trie: &T) -> Option<T::Subtrie>
 where
-    T: TrieQuery,
+    T: TrieStream,
 {
     let root_value = trie.deep_query_value([KEY_EAVT]).await.ok().flatten();
-    root_value.and_then(|value| trie.to_subtrie_from_value(value))
+    root_value.and_then(|value| trie.to_subtrie_in_value(value))
 }
 
 async fn e_avt_subtrie<T>(trie: &T, ein: Ein) -> Option<T::Subtrie>
 where
-    T: TrieQuery,
+    T: TrieStream,
 {
     let root_value = trie
         .deep_query_value([KEY_EAVT, ein.to_i32()])
         .await
         .ok()
         .flatten();
-    root_value.and_then(|value| trie.to_subtrie_from_value(value))
+    root_value.and_then(|value| trie.to_subtrie_in_value(value))
 }
 
 async fn evt_subtrie<T>(trie: &T, attr: Attr, schema: &Schema) -> Option<T::Subtrie>
 where
-    T: TrieQuery,
+    T: TrieStream,
 {
     let aid = schema[attr].ein().to_i32();
     let keys = [KEY_AEVT, aid];
     let evt_value = trie.deep_query_value(keys).await.ok().flatten();
-    evt_value.and_then(|evt| trie.to_subtrie_from_value(evt))
+    evt_value.and_then(|evt| trie.to_subtrie_in_value(evt))
 }
 
-fn evid_stream<T: TrieQuery>(
-    evt_subtrie: T,
-) -> impl futures::Stream<Item = (i32, i32)> {
+fn evid_stream<T: TrieStream>(evt_subtrie: T) -> impl futures::Stream<Item = (i32, i32)> {
     stream! {
         let evt_stream = evt_subtrie.subtrie_stream();
         pin_mut!(evt_stream);

@@ -75,7 +75,7 @@ crate::trie::prelude::*` internally. sky-db does not re-export any storage types
      `query_keys_values` (via `ShallowTrieQuery`, which has a blanket impl for `RootTrieQuery + TrieBaseRead`),
      `deep_query_value`,
      `u32_stream`,
-     `subtrie_stream`, `to_subtrie_from_value`, plus `type Subtrie: TrieQuery`; `-> TrieQueryError`) — all
+     `subtrie_stream`, `to_subtrie_in_value`, plus `type Subtrie: TrieQuery`; `-> TrieQueryError`) — all
      methods
      required, no defaults, no storage types mentioned. `StorageTrieQuery<S: ReadStorage>` supertrait adds
      `storage()`; `Trie` and `TrieReader<S>` implement `TrieQuery` (`type Subtrie =
@@ -86,7 +86,7 @@ crate::trie::prelude::*` internally. sky-db does not re-export any storage types
      TrieInsertError>`) live in
      `sky_types::trie::traits`; every storage implements `TrieBaseRead` (the four sky-types storages via a macro,
      downstream storages implement it directly), and every `ReadWriteStorage` gets `TrieBaseCommit` via a blanket
-     impl. `subtrie_stream()` and `to_subtrie_from_value()` yield `Self::Subtrie`, so
+     impl. `subtrie_stream()` and `to_subtrie_in_value()` yield `Self::Subtrie`, so
      callers never name `TrieReader`. The `prelude` re-exports all of the above.
 3. `crates/sky-db` — the Datomic layer plus error glue. Public modules in `src/lib.rs`: `db`, `find`,
    `handle`, `pull`, `query`, `reader`, `transact`, `types` (plus `pub(crate) crate_services`), with
@@ -211,18 +211,18 @@ Within `crates/skybase/src`:
 - **Generic bounds are pervasive, but the trie types are not.** Any struct/fn mentioning `Trie<S>` or `Db<S>`
   needs `S: ReadWriteStorage`. `MapBase`/`SlotBase`/`Slot`/`TrieValue` are plain concrete types whose links are
   `SlotBaseId`, and the query traits (`RootTrieQuery`/`ShallowTrieQuery`/`TrieQuery`) take no config parameter.
-  Read-only sub-tries are owned `TrieReader` snapshots (`trie.view()`, `to_subtrie_from_value()`, `subtrie_stream()`);
+  Read-only sub-tries are owned `TrieReader` snapshots (`trie.view()`, `to_subtrie_in_value()`, `subtrie_stream()`);
   every `ReadStorage` provides `Snapshot`/`snapshot()`, which makes snapshots cheap: mem readers Arc-share the
   base pool and only capture `max_id`/`root`, file readers copy a `PathBuf`/`max_id`/`root`. Outside sky-db, use the
   traits and storages directly from `sky_types::storage` (`ReadStorage`/`ReadWriteStorage`, `MemStorage`/`FileStorage`).
 - **Query methods live on the `TrieQuery` trait** (in `sky_types::trie`; `root` (via the `RootTrieQuery`
   supertrait), `query_value`, `query_keys_values`, `deep_query_value`, `u32_stream`, `subtrie_stream`,
-  `to_subtrie_from_value`, plus
+  `to_subtrie_in_value`, plus
   `type Subtrie: TrieQuery`) — all required,
   no default bodies. Its supertrait `StorageTrieQuery<S>` adds `storage()` only (implementors provide `root()` via
   `RootTrieQuery` and `storage()` via `StorageTrieQuery`). Calling a query method needs
   `TrieQuery` in scope (it comes with `use crate::trie::prelude::*`); mutation methods (`insert`,
-  `deep_insert`, `commit`) stay inherent on `Trie`. `subtrie_stream`/`to_subtrie_from_value` yield
+  `deep_insert`, `commit`) stay inherent on `Trie`. `subtrie_stream`/`to_subtrie_in_value` yield
   `Self::Subtrie`. `TrieReader` connects to a `ReadStorage` only (e.g. `storage.snapshot()`).
 - **Errors are layered.** sky-types owns the storage errors `ReadStorageError` (`Io`/`Decode`) and
   `WriteStorageError` (`Io`/`Encode`), plus the trie errors `TrieQueryError` (`SystemError`) and `TrieInsertError`

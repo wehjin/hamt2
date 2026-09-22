@@ -44,7 +44,7 @@ where
 
 pub async fn query<T>(trie: &T, vid: Vid) -> Result<Option<Val>, QueryError>
 where
-    T: TrieQuery,
+    T: TrieStream,
 {
     match find_hash_trie(trie, vid.to_id()).await? {
         None => Ok(None),
@@ -79,7 +79,12 @@ const SUBKEY_BYTES: i32 = 100;
 const VAL_TYPE_U32: u8 = 0;
 const VAL_TYPE_STRING: u8 = 1;
 
-async fn insert_bytes<S>(mut trie: Trie<S>, hash: i32, bytes: &[u8], bytes_type: u8) -> Result<Trie<S>, TransactError>
+async fn insert_bytes<S>(
+    mut trie: Trie<S>,
+    hash: i32,
+    bytes: &[u8],
+    bytes_type: u8,
+) -> Result<Trie<S>, TransactError>
 where
     S: ReadWriteStorage,
 {
@@ -152,7 +157,7 @@ async fn is_equal_bytes<T: TrieQuery>(
     }
 }
 
-async fn find_hash_trie<T: TrieQuery>(
+async fn find_hash_trie<T: TrieStream>(
     trie: &T,
     hash: i32,
 ) -> Result<Option<T::Subtrie>, QueryError> {
@@ -160,7 +165,7 @@ async fn find_hash_trie<T: TrieQuery>(
     match trie.deep_query_value(key).await? {
         None => Ok(None),
         Some(mem_value) => {
-            let bytes_trie = trie.to_subtrie_from_value(mem_value);
+            let bytes_trie = trie.to_subtrie_in_value(mem_value);
             Ok(bytes_trie)
         }
     }

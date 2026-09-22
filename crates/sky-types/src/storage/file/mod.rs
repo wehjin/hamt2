@@ -1,5 +1,7 @@
-use crate::storage::{ReadStorage, ReadStorageError, ReadWriteStorage, StorageHead, StoreRead, WriteStorageError};
-use crate::trie::{MapBase, SlotBase, SlotBaseId, TrieQueryError, TrieRead};
+use crate::storage::{
+    ReadStorage, ReadStorageError, ReadWriteStorage, StorageHead, WriteStorageError,
+};
+use crate::trie::{MapBase, SlotBase, SlotBaseId, TrieRead};
 use std::future;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
@@ -17,20 +19,23 @@ pub struct FileReadStorage {
     status: StorageHead,
 }
 
+impl From<FileStorage> for FileReadStorage {
+    fn from(storage: FileStorage) -> Self {
+        storage.inner.clone()
+    }
+}
+
 impl TrieRead for FileReadStorage {
-    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, TrieQueryError> {
-        let base = self.read(id).await?;
-        Ok(base)
+    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
+        assert!(
+            id <= self.max_id(),
+            "base id {id} is beyond this snapshot's max_id"
+        );
+        self.read_base_unchecked(id)
     }
 
     fn read_root(&self) -> MapBase {
         self.status.root
-    }
-}
-
-impl StoreRead for FileReadStorage {
-    fn status(&self) -> StorageHead {
-        self.status
     }
 }
 
@@ -40,13 +45,16 @@ impl ReadStorage for FileReadStorage {
     fn snapshot(&self) -> Self::Snapshot {
         self.clone()
     }
+    fn status(&self) -> StorageHead {
+        self.status
+    }
 
-    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
-        assert!(
-            id <= self.max_id(),
-            "base id {id} is beyond this snapshot's max_id"
-        );
-        self.read_base_unchecked(id)
+    fn with_new_root(self, new_root: Option<MapBase>) -> Self {
+        let snap_status = self.status.with_new_root(new_root);
+        Self {
+            status: snap_status,
+            ..self
+        }
     }
 }
 
@@ -86,19 +94,29 @@ pub struct FileStorage {
     root_path: PathBuf,
 }
 
-impl StoreRead for FileStorage {
-    fn status(&self) -> StorageHead {
-        self.inner.status()
-    }
-}
-
 impl TrieRead for FileStorage {
-    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, TrieQueryError> {
+    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
         self.inner.read_base(id).await
     }
 
     fn read_root(&self) -> MapBase {
         self.inner.read_root()
+    }
+}
+
+impl ReadStorage for FileStorage {
+    type Snapshot = FileReadStorage;
+
+    fn snapshot(&self) -> Self::Snapshot {
+        self.inner.snapshot()
+    }
+    fn status(&self) -> StorageHead {
+        self.inner.status()
+    }
+
+    fn with_new_root(self, new_root: Option<MapBase>) -> Self {
+        let inner = self.inner.with_new_root(new_root);
+        Self { inner, ..self }
     }
 }
 
@@ -199,18 +217,6 @@ fn read_to_io(e: ReadStorageError) -> std::io::Error {
     match e {
         ReadStorageError::Io(_, e) => e,
         ReadStorageError::Decode(_, e) => std::io::Error::new(ErrorKind::InvalidData, e),
-    }
-}
-
-impl ReadStorage for FileStorage {
-    type Snapshot = FileReadStorage;
-
-    fn snapshot(&self) -> Self::Snapshot {
-        self.inner.snapshot()
-    }
-
-    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
-        self.inner.read(id).await
     }
 }
 

@@ -1,35 +1,48 @@
 use crate::TrieReader;
 use crate::prelude::TrieValue;
 use sky_types::storage::error::WriteStorageError;
-use sky_types::storage::{ReadWriteStorage, Storage, StorageHead, StoreRead};
+use sky_types::storage::{ReadStorage, ReadStorageError, ReadWriteStorage, StorageHead};
 use sky_types::trie::map_base::query_value;
-use sky_types::trie::{DeepKey, HashKey, MapBase, SlotBase, SlotBaseId, TrieQueryError, TrieRead};
+use sky_types::trie::{DeepKey, HashKey, MapBase, SlotBase, SlotBaseId, TrieRead, TrieStream};
 use sky_types::trie::{TrieInsertError, map_base};
 use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Trie<S: ReadWriteStorage> {
-    pub(crate) root: MapBase,
-    storage: S,
+    pub(crate) storage: S,
 }
-impl<S: ReadWriteStorage> StoreRead for Trie<S> {
+
+impl<S: ReadWriteStorage> TrieStream for Trie<S> {
+    type Subtrie = TrieReader<S::Snapshot>;
+
+    fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
+        self.snapshot().to_subtrie(subtrie_root)
+    }
+}
+impl<S: ReadWriteStorage> ReadStorage for Trie<S> {
+    type Snapshot = TrieReader<S::Snapshot>;
+
+    fn snapshot(&self) -> Self::Snapshot {
+        let snap_storage = self.storage.snapshot();
+        TrieReader::new(snap_storage)
+    }
+
     fn status(&self) -> StorageHead {
         self.storage.status()
     }
+
+    fn with_new_root(self, new_root: Option<MapBase>) -> Self {
+        let storage = self.storage.with_new_root(new_root);
+        Self { storage }
+    }
 }
 impl<S: ReadWriteStorage> TrieRead for Trie<S> {
-    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, TrieQueryError> {
+    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
         self.storage.read_base(id).await
     }
 
     fn read_root(&self) -> MapBase {
-        self.root
-    }
-}
-
-impl<S: ReadWriteStorage> Storage<S> for Trie<S> {
-    fn storage(&self) -> &S {
-        &self.storage
+        self.storage.read_root()
     }
 }
 
@@ -37,27 +50,19 @@ impl<S: ReadWriteStorage> Storage<S> for Trie<S> {
 impl<S: ReadWriteStorage> Trie<S> {
     /// Connects to the storage, loading the persisted root.
     pub fn connect(storage: S) -> Self {
-        let root = storage.read_root();
-        Self { root, storage }
+        Self { storage }
     }
 
     /// Persists the current root map base to the storage.
-    pub async fn commit(mut self) -> Result<Self, WriteStorageError> {
-        self.storage.write_root(self.root.clone()).await?;
+    pub async fn commit(self) -> Result<Self, WriteStorageError> {
+        // We're writing directly as we go along so there is nothing
+        // to do here for now. We can do better by not writing directly
+        // to support rewind and compaction.
         Ok(self)
-    }
-
-    pub fn unwrap(self) -> MapBase {
-        self.root
     }
 
     pub fn close(self) -> S {
         self.storage
-    }
-
-    /// A read-only view of this trie over a snapshot of its storage.
-    pub fn view(&self) -> TrieReader<S::Snapshot> {
-        TrieReader::new(self.root.clone(), self.storage.snapshot())
     }
 }
 
@@ -65,8 +70,8 @@ impl<S: ReadWriteStorage> Trie<S> {
 impl<S: ReadWriteStorage> Trie<S> {
     pub async fn insert(mut self, key: i32, value: TrieValue) -> Result<Self, TrieInsertError> {
         let key = HashKey::new(key);
-        let root = map_base::insert_kv(self.root, key, value, &mut self.storage).await?;
-        self.root = root;
+        let root = map_base::insert_kv(self.read_root(), key, value, &mut self.storage).await?;
+        self.storage.write_root(root).await?;
         Ok(self)
     }
 
@@ -79,7 +84,7 @@ impl<S: ReadWriteStorage> Trie<S> {
         let deep_key = DeepKey::from(key);
         let last_index = N - 1;
         let mut map_bases = HashMap::new();
-        map_bases.insert(0, self.root.clone());
+        map_bases.insert(0, self.read_root().clone());
         for i in 0..last_index {
             let key = deep_key[i].clone();
             let map_base = map_bases.get(&i).expect("map_base should exist");
@@ -106,7 +111,7 @@ impl<S: ReadWriteStorage> Trie<S> {
         let TrieValue::SubTrie(root) = value else {
             panic!("value should be map_base")
         };
-        self.root = root;
+        self.storage.write_root(root).await?;
         Ok(self)
     }
 }

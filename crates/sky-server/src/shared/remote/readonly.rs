@@ -1,8 +1,8 @@
 use crate::shared::remote::SpawnTask;
 use crate::shared::remote::client::requests::ClientRequest;
 use sky_types::db::DbStatus;
-use sky_types::storage::{ReadStorage, ReadStorageError, StorageHead, StoreRead};
-use sky_types::trie::{MapBase, SlotBase, SlotBaseId, TrieQueryError, TrieRead};
+use sky_types::storage::{ReadStorage, ReadStorageError, StorageHead};
+use sky_types::trie::{MapBase, SlotBase, SlotBaseId, TrieRead};
 use std::marker::PhantomData;
 use tokio::sync::mpsc::Sender;
 use tokio::sync::oneshot;
@@ -14,36 +14,8 @@ pub struct RemoteClientReadStorage<T: SpawnTask> {
     pub(crate) _spawn_local: PhantomData<T>,
 }
 
-impl<T: SpawnTask> StoreRead for RemoteClientReadStorage<T> {
-    fn status(&self) -> StorageHead {
-        self.status.read().unwrap().head
-    }
-}
-
 impl<T: SpawnTask> TrieRead for RemoteClientReadStorage<T> {
-    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, TrieQueryError> {
-        let base = ReadStorage::read(self, id).await?;
-        Ok(base)
-    }
-
-    fn read_root(&self) -> MapBase {
-        self.status.read().unwrap().head.root
-    }
-}
-
-impl<T: SpawnTask> ReadStorage for RemoteClientReadStorage<T> {
-    type Snapshot = RemoteClientReadStorage<T>;
-
-    fn snapshot(&self) -> Self::Snapshot {
-        // Fix the status of the snapshot in a new Arc so that future changes
-        // in the processing loop do not affect the snapshot.
-        let status = self.status.read().unwrap().clone();
-        let mut clone = self.clone();
-        clone.status = std::sync::Arc::new(std::sync::RwLock::new(status));
-        clone
-    }
-
-    async fn read(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
+    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
         if id > self.max_id() {
             panic!("invalid base id");
         }
@@ -54,6 +26,38 @@ impl<T: SpawnTask> ReadStorage for RemoteClientReadStorage<T> {
             .expect("send request");
         let base = recv.await.expect("recv base").expect("base");
         Ok(base)
+    }
+
+    fn read_root(&self) -> MapBase {
+        // TODO We should wait for the status to arrive instead of return empty and
+        // giving the false impression that there is no data.
+        self.status.read().unwrap().head.root
+    }
+}
+
+impl<T: SpawnTask> ReadStorage for RemoteClientReadStorage<T> {
+    type Snapshot = RemoteClientReadStorage<T>;
+
+    fn snapshot(&self) -> Self::Snapshot {
+        // Deep-clone the status so that future changes in the processing loop do not affect the
+        // snapshot.
+        let deep_cloned_status = self.status.read().unwrap().clone();
+        Self {
+            status: std::sync::Arc::new(std::sync::RwLock::new(deep_cloned_status)),
+            ..self.clone()
+        }
+    }
+
+    fn status(&self) -> StorageHead {
+        self.status.read().unwrap().head
+    }
+
+    fn with_new_root(self, new_root: Option<MapBase>) -> Self {
+        if let Some(root) = new_root {
+            let mut write = self.status.write().unwrap();
+            write.head.root = root;
+        }
+        self
     }
 }
 impl<T: SpawnTask> RemoteClientReadStorage<T> {
