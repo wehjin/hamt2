@@ -1,7 +1,7 @@
 use crate::trie::{MapBase, SlotBase, SlotBaseId, TrieInsertError, TrieQueryError};
 
 #[allow(async_fn_in_trait)]
-pub trait TrieBaseCommit: TrieRead
+pub trait TrieCommit: TrieRead
 where
     Self: Sized,
 {

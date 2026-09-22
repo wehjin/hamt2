@@ -1,5 +1,5 @@
 use crate::storage::{ReadStorage, WriteStorageError};
-use crate::trie::{MapBase, SlotBase, SlotBaseId, TrieBaseCommit, TrieInsertError};
+use crate::trie::{MapBase, SlotBase, SlotBaseId, TrieCommit, TrieInsertError};
 
 /// A trait for reading and writing Bases from storage.
 #[allow(async_fn_in_trait)]
@@ -19,7 +19,7 @@ pub trait ReadWriteStorage: ReadStorage {
     async fn write_root(&mut self, root: MapBase) -> Result<(), WriteStorageError>;
 }
 
-impl<T> TrieBaseCommit for T
+impl<T> TrieCommit for T
 where
     T: ReadWriteStorage,
 {
