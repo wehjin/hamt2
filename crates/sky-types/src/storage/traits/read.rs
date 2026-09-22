@@ -5,7 +5,7 @@ use crate::trie::{MapBase, SlotBaseId, TrieRead};
 ///
 /// Base id [`SlotBaseId::ZERO`] is reserved and always represents the empty base.
 #[allow(async_fn_in_trait)]
-pub trait ReadStorage: TrieRead + Sync + Sized {
+pub trait ReadStorage: TrieRead + Sized {
     /// The storage type of an owned read-only snapshot, produced by
     /// [`ReadStorage::snapshot`]. Writer storages use their read-only
     /// snapshot type; read-only snapshot types usually use `Self`.
