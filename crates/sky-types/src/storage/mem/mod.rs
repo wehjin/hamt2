@@ -1,7 +1,7 @@
 use crate::storage::{
     ReadStorage, ReadStorageError, ReadWriteStorage, StorageStatus, WriteStorageError,
 };
-use crate::trie::{MapBase, Base, BaseId, TrieRead};
+use crate::trie::{MapBase, Base, BaseId, RootBaseRead};
 use std::sync::{Arc, RwLock};
 
 /// An in-memory storage for Bases backed by a `Vec<Base>`.
@@ -14,7 +14,7 @@ pub struct MemStorage {
     inner: MemReadStorage,
 }
 
-impl TrieRead for MemStorage {
+impl RootBaseRead for MemStorage {
     async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
         self.inner.read_base(id).await
     }
@@ -78,7 +78,7 @@ pub struct MemReadStorage {
     status: StorageStatus,
 }
 
-impl TrieRead for MemReadStorage {
+impl RootBaseRead for MemReadStorage {
     async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
         assert!(id <= self.max_id(), "id out of bounds {id:?}");
         let index = id.0 as usize;

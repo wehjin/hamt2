@@ -1,6 +1,6 @@
-use crate::trie::{DeepKey, MapBase, TrieRead, TrieQueryError, TrieValue, map_base};
+use crate::trie::{DeepKey, MapBase, RootBaseRead, TrieQueryError, TrieValue, map_base};
 
-pub async fn deep_query_value<const N: usize, S: TrieRead>(
+pub async fn deep_query_value<const N: usize, S: RootBaseRead>(
     root: MapBase,
     key: [i32; N],
     storage: &S,

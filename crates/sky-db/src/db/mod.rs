@@ -12,7 +12,7 @@ use crate::schema;
 pub use crate::types::*;
 use sky_trie::Trie;
 use sky_types::storage::{ReadStorage, ReadStorageError, ReadWriteStorage, StorageStatus};
-use sky_types::trie::{Base, BaseId, TrieRead};
+use sky_types::trie::{Base, BaseId, RootBaseRead};
 pub use types::*;
 
 #[derive(Debug)]
