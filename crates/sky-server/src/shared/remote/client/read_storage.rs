@@ -15,10 +15,6 @@ impl<T: SpawnTask> TrieRead for RemoteClient<T> {
 impl<T: SpawnTask> ReadStorage for RemoteClient<T> {
     type Snapshot = RemoteClientReadStorage<T>;
 
-    fn snapshot(&self) -> Self::Snapshot {
-        self.inner.snapshot()
-    }
-
     fn status(&self) -> StorageStatus {
         self.inner.status()
     }
@@ -26,5 +22,9 @@ impl<T: SpawnTask> ReadStorage for RemoteClient<T> {
     fn with_new_root(self, new_root: Option<MapBase>) -> Self {
         let inner = self.inner.with_new_root(new_root);
         Self { inner, ..self }
+    }
+
+    fn snapshot(&self) -> Self::Snapshot {
+        self.inner.snapshot()
     }
 }

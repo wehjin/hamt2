@@ -38,16 +38,6 @@ impl<T: SpawnTask> TrieRead for RemoteClientReadStorage<T> {
 impl<T: SpawnTask> ReadStorage for RemoteClientReadStorage<T> {
     type Snapshot = RemoteClientReadStorage<T>;
 
-    fn snapshot(&self) -> Self::Snapshot {
-        // Deep-clone the status so that future changes in the processing loop do not affect the
-        // snapshot.
-        let deep_cloned_status = self.status.read().unwrap().clone();
-        Self {
-            status: std::sync::Arc::new(std::sync::RwLock::new(deep_cloned_status)),
-            ..self.clone()
-        }
-    }
-
     fn status(&self) -> StorageStatus {
         self.status.read().unwrap().head
     }
@@ -58,6 +48,16 @@ impl<T: SpawnTask> ReadStorage for RemoteClientReadStorage<T> {
             write.head.root = root;
         }
         self
+    }
+
+    fn snapshot(&self) -> Self::Snapshot {
+        // Deep-clone the status so that future changes in the processing loop do not affect the
+        // snapshot.
+        let deep_cloned_status = self.status.read().unwrap().clone();
+        Self {
+            status: std::sync::Arc::new(std::sync::RwLock::new(deep_cloned_status)),
+            ..self.clone()
+        }
     }
 }
 impl<T: SpawnTask> RemoteClientReadStorage<T> {

@@ -23,11 +23,6 @@ impl<S: ReadWriteStorage> TrieStream for Trie<S> {
 impl<S: ReadWriteStorage> ReadStorage for Trie<S> {
     type Snapshot = TrieReader<S::Snapshot>;
 
-    fn snapshot(&self) -> Self::Snapshot {
-        let snap_storage = self.storage.snapshot();
-        TrieReader::new(snap_storage)
-    }
-
     fn status(&self) -> StorageStatus {
         self.storage.status()
     }
@@ -35,6 +30,11 @@ impl<S: ReadWriteStorage> ReadStorage for Trie<S> {
     fn with_new_root(self, new_root: Option<MapBase>) -> Self {
         let storage = self.storage.with_new_root(new_root);
         Self { storage }
+    }
+
+    fn snapshot(&self) -> Self::Snapshot {
+        let snap_storage = self.storage.snapshot();
+        TrieReader::new(snap_storage)
     }
 }
 impl<S: ReadWriteStorage> TrieRead for Trie<S> {

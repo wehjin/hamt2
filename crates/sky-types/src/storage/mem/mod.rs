@@ -27,16 +27,16 @@ impl TrieRead for MemStorage {
 impl ReadStorage for MemStorage {
     type Snapshot = MemReadStorage;
 
-    fn snapshot(&self) -> Self::Snapshot {
-        self.inner.snapshot()
-    }
     fn status(&self) -> StorageStatus {
         self.inner.status()
     }
-
     fn with_new_root(self, new_root: Option<MapBase>) -> Self {
         let inner = self.inner.with_new_root(new_root);
         Self { inner }
+    }
+
+    fn snapshot(&self) -> Self::Snapshot {
+        self.inner.snapshot()
     }
 }
 
@@ -95,16 +95,16 @@ impl TrieRead for MemReadStorage {
 impl ReadStorage for MemReadStorage {
     type Snapshot = MemReadStorage;
 
-    fn snapshot(&self) -> Self::Snapshot {
-        self.clone()
-    }
     fn status(&self) -> StorageStatus {
         self.status
     }
-
     fn with_new_root(self, new_root: Option<MapBase>) -> Self {
         let status = self.status.with_new_root(new_root);
         Self { status, ..self }
+    }
+
+    fn snapshot(&self) -> Self::Snapshot {
+        self.clone()
     }
 }
 

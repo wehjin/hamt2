@@ -42,19 +42,19 @@ impl TrieRead for FileReadStorage {
 impl ReadStorage for FileReadStorage {
     type Snapshot = FileReadStorage;
 
-    fn snapshot(&self) -> Self::Snapshot {
-        self.clone()
-    }
     fn status(&self) -> StorageStatus {
         self.status
     }
-
     fn with_new_root(self, new_root: Option<MapBase>) -> Self {
         let snap_status = self.status.with_new_root(new_root);
         Self {
             status: snap_status,
             ..self
         }
+    }
+
+    fn snapshot(&self) -> Self::Snapshot {
+        self.clone()
     }
 }
 
@@ -107,16 +107,16 @@ impl TrieRead for FileStorage {
 impl ReadStorage for FileStorage {
     type Snapshot = FileReadStorage;
 
-    fn snapshot(&self) -> Self::Snapshot {
-        self.inner.snapshot()
-    }
     fn status(&self) -> StorageStatus {
         self.inner.status()
     }
-
     fn with_new_root(self, new_root: Option<MapBase>) -> Self {
         let inner = self.inner.with_new_root(new_root);
         Self { inner, ..self }
+    }
+
+    fn snapshot(&self) -> Self::Snapshot {
+        self.inner.snapshot()
     }
 }
 
