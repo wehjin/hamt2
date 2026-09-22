@@ -6,9 +6,9 @@ use std::ops::Add;
 #[derive(
     Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize, Default,
 )]
-pub struct SlotBaseId(pub i32);
+pub struct BaseId(pub i32);
 
-impl Add<i32> for SlotBaseId {
+impl Add<i32> for BaseId {
     type Output = Self;
 
     fn add(self, rhs: i32) -> Self::Output {
@@ -16,20 +16,20 @@ impl Add<i32> for SlotBaseId {
     }
 }
 
-impl Display for SlotBaseId {
+impl Display for BaseId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         Display::fmt(&self.0, f)
     }
 }
 
-impl Into<usize> for SlotBaseId {
+impl Into<usize> for BaseId {
     fn into(self) -> usize {
         self.0 as usize
     }
 }
 
-impl SlotBaseId {
+impl BaseId {
     /// The reserved id of the empty base. It is never stored.
-    pub const ZERO: SlotBaseId = SlotBaseId(0);
-    pub const EMPTY: SlotBaseId = SlotBaseId(0);
+    pub const ZERO: BaseId = BaseId(0);
+    pub const EMPTY: BaseId = BaseId(0);
 }

@@ -1,4 +1,4 @@
-use crate::trie::{HashKey, MapBase, Slot, SlotBaseId, TrieRead, TrieQueryError, TrieValue};
+use crate::trie::{HashKey, MapBase, Slot, BaseId, TrieRead, TrieQueryError, TrieValue};
 use futures::Stream;
 use futures::stream;
 
@@ -81,7 +81,7 @@ pub async fn query_keys_values<P: TrieRead>(
 struct Job {
     slot_offset: usize,
     slot_count: usize,
-    base: SlotBaseId,
+    base: BaseId,
 }
 impl Job {
     pub fn start(map_base: &MapBase) -> Option<Self> {

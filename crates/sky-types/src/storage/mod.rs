@@ -5,7 +5,7 @@ mod file;
 mod mem;
 mod traits;
 
-use crate::trie::{MapBase, SlotBaseId};
+use crate::trie::{MapBase, BaseId};
 pub use error::*;
 pub use file::*;
 pub use mem::*;
@@ -13,7 +13,7 @@ pub use traits::*;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageStatus {
-    pub max_id: SlotBaseId,
+    pub max_id: BaseId,
     pub root: MapBase,
 }
 

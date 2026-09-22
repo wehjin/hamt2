@@ -1,5 +1,5 @@
 use crate::trie::{
-    HashKey, Slot, SlotBase, TrieInsertError, TrieValue, TrieCommit, map_base,
+	HashKey, Slot, Base, TrieInsertError, TrieValue, TrieCommit, map_base,
 };
 
 /// Makes a copy of `base` where the kv already at `index` is moved into a new
@@ -8,12 +8,12 @@ use crate::trie::{
 /// #Effects
 /// This functions commits sub-bases into the write-policy.
 pub async fn kick_kv<P>(
-    base: SlotBase,
-    index: usize,
-    key: HashKey,
-    value: TrieValue,
-    policy: &mut P,
-) -> Result<SlotBase, TrieInsertError>
+	base: Base,
+	index: usize,
+	key: HashKey,
+	value: TrieValue,
+	policy: &mut P,
+) -> Result<Base, TrieInsertError>
 where
     P: TrieCommit,
 {
@@ -34,12 +34,12 @@ where
 /// #Effects
 /// This functions commits sub-bases into the write-policy.
 pub async fn merge_kv<P>(
-    base: SlotBase,
-    index: usize,
-    key: HashKey,
-    value: TrieValue,
-    policy: &mut P,
-) -> Result<SlotBase, TrieInsertError>
+	base: Base,
+	index: usize,
+	key: HashKey,
+	value: TrieValue,
+	policy: &mut P,
+) -> Result<Base, TrieInsertError>
 where
     P: TrieCommit,
 {

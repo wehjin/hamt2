@@ -12,7 +12,7 @@ use crate::schema;
 pub use crate::types::*;
 use sky_trie::Trie;
 use sky_types::storage::{ReadStorage, ReadStorageError, ReadWriteStorage, StorageStatus};
-use sky_types::trie::{SlotBase, SlotBaseId, TrieRead};
+use sky_types::trie::{Base, BaseId, TrieRead};
 pub use types::*;
 
 #[derive(Debug)]
@@ -39,7 +39,7 @@ impl<S: ReadWriteStorage> Db<S> {
     }
 
     /// Keep until we figure out a better api for sky-server.
-    pub async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
+    pub async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
         self.trie.read_base(id).await
     }
 

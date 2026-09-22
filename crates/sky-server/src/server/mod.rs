@@ -56,7 +56,7 @@ mod tests {
     use crate::server::storage::StorageService;
     use crate::shared::{SocketRequest, SocketResponse};
     use sky_types::db::{Attr, datom};
-    use sky_types::trie::SlotBaseId;
+    use sky_types::trie::BaseId;
     use tokio::sync::mpsc;
     use tokio::sync::mpsc::{Receiver, Sender};
     use tokio::task::JoinHandle;
@@ -74,7 +74,7 @@ mod tests {
             let SocketResponse::DbStatus(status) = response.recv().await.unwrap() else {
                 panic!("Unexpected response received");
             };
-            assert_ne!(SlotBaseId::ZERO, status.head.max_id);
+            assert_ne!(BaseId::ZERO, status.head.max_id);
             status
         };
 
@@ -120,7 +120,7 @@ mod tests {
         assert_eq!(1, result_heads.len());
         assert_eq!(1, status_heads.len());
         assert_eq!(result_heads[0], status_heads[0]);
-        assert_ne!(SlotBaseId::ZERO, result_heads[0].max_id);
+        assert_ne!(BaseId::ZERO, result_heads[0].max_id);
     }
 
     fn spawn_socket_task(

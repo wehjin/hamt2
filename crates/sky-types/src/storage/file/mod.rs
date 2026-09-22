@@ -1,7 +1,7 @@
 use crate::storage::{
     ReadStorage, ReadStorageError, ReadWriteStorage, StorageStatus, WriteStorageError,
 };
-use crate::trie::{MapBase, SlotBase, SlotBaseId, TrieRead};
+use crate::trie::{MapBase, Base, BaseId, TrieRead};
 use std::future;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
@@ -26,7 +26,7 @@ impl From<FileStorage> for FileReadStorage {
 }
 
 impl TrieRead for FileReadStorage {
-    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
+    async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
         assert!(
             id <= self.max_id(),
             "base id {id} is beyond this snapshot's max_id"
@@ -60,14 +60,14 @@ impl ReadStorage for FileReadStorage {
 
 impl FileReadStorage {
     /// Reads and decodes the base file for `id`, without checking `max_id`.
-    /// Base id [`SlotBaseId::ZERO`] reads back the empty base.
-    fn read_base_unchecked(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
-        if id == SlotBaseId::EMPTY {
-            return Ok(SlotBase::empty());
+    /// Base id [`BaseId::ZERO`] reads back the empty base.
+    fn read_base_unchecked(&self, id: BaseId) -> Result<Base, ReadStorageError> {
+        if id == BaseId::EMPTY {
+            return Ok(Base::empty());
         }
         let path = base_path(&self.bases_dir, id);
         let bytes = std::fs::read(&path).map_err(|e| ReadStorageError::Io(id, e))?;
-        postcard::from_bytes::<SlotBase>(&bytes).map_err(|e| ReadStorageError::Decode(id, e))
+        postcard::from_bytes::<Base>(&bytes).map_err(|e| ReadStorageError::Decode(id, e))
     }
 }
 
@@ -86,7 +86,7 @@ impl FileReadStorage {
 ///         <id>.postcard
 /// ```
 ///
-/// Base id [`SlotBaseId::ZERO`] is the reserved empty base and is never written to disk.
+/// Base id [`BaseId::ZERO`] is the reserved empty base and is never written to disk.
 #[derive(Debug)]
 pub struct FileStorage {
     inner: FileReadStorage,
@@ -95,7 +95,7 @@ pub struct FileStorage {
 }
 
 impl TrieRead for FileStorage {
-    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
+    async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
         self.inner.read_base(id).await
     }
 
@@ -160,7 +160,7 @@ impl FileStorage {
         };
         let root = read_root_file(&root_path).map_err(read_to_io)?;
         let status = StorageStatus {
-            max_id: SlotBaseId(max_id),
+            max_id: BaseId(max_id),
             root,
         };
         let inner = FileReadStorage { bases_dir, status };
@@ -173,7 +173,7 @@ impl FileStorage {
 }
 
 /// The two-level subfolder layout of a base file under a `bases` dir.
-fn base_path(bases_dir: &Path, id: SlotBaseId) -> PathBuf {
+fn base_path(bases_dir: &Path, id: BaseId) -> PathBuf {
     let level_1 = id.0 >> 8;
     let level_2 = id.0 & 0xff;
     bases_dir
@@ -183,7 +183,7 @@ fn base_path(bases_dir: &Path, id: SlotBaseId) -> PathBuf {
 }
 
 /// Writes the highest written base id to the `max_id` file.
-fn write_max_id_file(path: &Path, id: SlotBaseId) -> Result<(), WriteStorageError> {
+fn write_max_id_file(path: &Path, id: BaseId) -> Result<(), WriteStorageError> {
     let bytes = postcard::to_allocvec(&id.0).map_err(|e| WriteStorageError::Encode(id, e))?;
     std::fs::write(path, bytes).map_err(|e| WriteStorageError::Io(id, e))
 }
@@ -193,17 +193,17 @@ fn write_max_id_file(path: &Path, id: SlotBaseId) -> Result<(), WriteStorageErro
 fn read_root_file(path: &Path) -> Result<MapBase, ReadStorageError> {
     match std::fs::read(path) {
         Ok(bytes) => postcard::from_bytes::<MapBase>(&bytes)
-            .map_err(|e| ReadStorageError::Decode(SlotBaseId::ZERO, e)),
+            .map_err(|e| ReadStorageError::Decode(BaseId::ZERO, e)),
         Err(e) if e.kind() == ErrorKind::NotFound => Ok(MapBase::empty()),
-        Err(e) => Err(ReadStorageError::Io(SlotBaseId::ZERO, e)),
+        Err(e) => Err(ReadStorageError::Io(BaseId::ZERO, e)),
     }
 }
 
 /// Writes the committed root to the `root` file.
 fn write_root_file(path: &Path, root: &MapBase) -> Result<(), WriteStorageError> {
     let bytes =
-        postcard::to_allocvec(root).map_err(|e| WriteStorageError::Encode(SlotBaseId::ZERO, e))?;
-    std::fs::write(path, bytes).map_err(|e| WriteStorageError::Io(SlotBaseId::ZERO, e))
+        postcard::to_allocvec(root).map_err(|e| WriteStorageError::Encode(BaseId::ZERO, e))?;
+    std::fs::write(path, bytes).map_err(|e| WriteStorageError::Io(BaseId::ZERO, e))
 }
 
 fn write_to_io(e: WriteStorageError) -> std::io::Error {
@@ -221,14 +221,14 @@ fn read_to_io(e: ReadStorageError) -> std::io::Error {
 }
 
 impl ReadWriteStorage for FileStorage {
-    fn next_id(&self) -> SlotBaseId {
+    fn next_id(&self) -> BaseId {
         self.max_id() + 1
     }
 
     fn append(
         &mut self,
-        base: &SlotBase,
-    ) -> impl Future<Output = Result<SlotBaseId, WriteStorageError>> {
+        base: &Base,
+    ) -> impl Future<Output = Result<BaseId, WriteStorageError>> {
         let id = self.next_id();
         let bytes = match postcard::to_allocvec(base) {
             Ok(bytes) => bytes,
@@ -269,11 +269,11 @@ mod tests {
     async fn empty_storage_max_id_is_zero() -> anyhow::Result<()> {
         let dir = tempfile::tempdir()?;
         let storage = FileStorage::new(dir.path())?;
-        assert_eq!(SlotBaseId::ZERO, storage.max_id());
-        assert_eq!(SlotBaseId(1), storage.next_id());
+        assert_eq!(BaseId::ZERO, storage.max_id());
+        assert_eq!(BaseId(1), storage.next_id());
         assert_eq!(
-            SlotBase::empty(),
-            storage.read_base(SlotBaseId::ZERO).await.expect("read")
+            Base::empty(),
+            storage.read_base(BaseId::ZERO).await.expect("read")
         );
         Ok(())
     }
@@ -282,24 +282,24 @@ mod tests {
     async fn append_and_reload_works() -> anyhow::Result<()> {
         let dir = tempfile::tempdir()?;
         let bases = (1..=10)
-            .map(|i| SlotBase::new_kv(HashKey::new(i), TrieValue::U32(i as u32)))
+            .map(|i| Base::new_kv(HashKey::new(i), TrieValue::U32(i as u32)))
             .collect::<Vec<_>>();
         {
             let mut storage = FileStorage::new(dir.path())?;
             for base in &bases {
                 storage.append(base).await.expect("append");
             }
-            assert_eq!(SlotBaseId(10), storage.max_id());
-            assert_eq!(SlotBaseId(11), storage.next_id());
+            assert_eq!(BaseId(10), storage.max_id());
+            assert_eq!(BaseId(11), storage.next_id());
             for (i, base) in bases.iter().enumerate() {
-                let id = SlotBaseId(i as i32 + 1);
+                let id = BaseId(i as i32 + 1);
                 assert_eq!(base, &storage.read_base(id).await.expect("read"));
             }
         }
         let storage = FileStorage::load(dir.path())?;
-        assert_eq!(SlotBaseId(10), storage.max_id());
+        assert_eq!(BaseId(10), storage.max_id());
         for (i, base) in bases.iter().enumerate() {
-            let id = SlotBaseId(i as i32 + 1);
+            let id = BaseId(i as i32 + 1);
             assert_eq!(base, &storage.read_base(id).await.expect("read"));
         }
         Ok(())
@@ -325,15 +325,15 @@ mod tests {
     #[tokio::test]
     async fn appending_continues_after_reload() -> anyhow::Result<()> {
         let dir = tempfile::tempdir()?;
-        let base = SlotBase::new_kv(HashKey::new(7), TrieValue::U32(7));
+        let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7));
         {
             let mut storage = FileStorage::new(dir.path())?;
             storage.append(&base).await.expect("append");
         }
         let mut storage = FileStorage::load(dir.path())?;
         let id = storage.append(&base).await.expect("append");
-        assert_eq!(SlotBaseId(2), id);
-        assert_eq!(SlotBaseId(2), storage.max_id());
+        assert_eq!(BaseId(2), id);
+        assert_eq!(BaseId(2), storage.max_id());
         Ok(())
     }
 
@@ -341,7 +341,7 @@ mod tests {
     async fn bases_are_spread_over_two_level_subfolders() -> anyhow::Result<()> {
         let dir = tempfile::tempdir()?;
         let mut storage = FileStorage::new(dir.path())?;
-        let base = SlotBase::new_kv(HashKey::new(7), TrieValue::U32(7));
+        let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7));
         for _ in 0..300 {
             storage.append(&base).await.expect("append");
         }
@@ -368,7 +368,7 @@ mod tests {
     #[tokio::test]
     async fn readonly_snapshot_freezes_max_id_and_root() -> anyhow::Result<()> {
         let dir = tempfile::tempdir()?;
-        let base = SlotBase::new_kv(HashKey::new(7), TrieValue::U32(7));
+        let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7));
         let mut storage = FileStorage::new(dir.path())?;
         let id = storage.append(&base).await.expect("append");
         let root = one_kv(HashKey::new(7), TrieValue::U32(7), &mut storage)
@@ -390,8 +390,8 @@ mod tests {
         .expect("two_kv");
         storage.write_root(new_root).await.expect("write root");
 
-        assert_eq!(SlotBaseId(4), storage.max_id());
-        assert_eq!(SlotBaseId(2), view.max_id());
+        assert_eq!(BaseId(4), storage.max_id());
+        assert_eq!(BaseId(2), view.max_id());
         assert_eq!(root, view.read_root());
         assert_eq!(base, view.read_base(id).await.expect("read"));
         Ok(())
@@ -401,7 +401,7 @@ mod tests {
     #[should_panic(expected = "beyond this snapshot's max_id")]
     async fn readonly_snapshot_panics_reading_beyond_max_id() {
         let dir = tempfile::tempdir().expect("tempdir");
-        let base = SlotBase::new_kv(HashKey::new(7), TrieValue::U32(7));
+        let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7));
         let mut storage = FileStorage::new(dir.path()).expect("new storage");
         storage.append(&base).await.expect("append");
         let view = storage.snapshot();
@@ -414,6 +414,6 @@ mod tests {
     async fn read_panics_on_unwritten_id() {
         let dir = tempfile::tempdir().expect("tempdir");
         let storage = FileStorage::new(dir.path()).expect("new storage");
-        let _ = storage.read_base(SlotBaseId(1)).await;
+        let _ = storage.read_base(BaseId(1)).await;
     }
 }

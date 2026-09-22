@@ -1,7 +1,7 @@
 use sky_types::storage::{ReadStorage, ReadStorageError, StorageStatus};
 use sky_types::trie::MapBase;
 use sky_types::trie::TrieStream;
-use sky_types::trie::{SlotBase, SlotBaseId, TrieRead};
+use sky_types::trie::{Base, BaseId, TrieRead};
 
 /// A read-only trie over an owned read-only storage, used only for queries.
 #[derive(Debug, Clone)]
@@ -35,7 +35,7 @@ impl<S: ReadStorage + TrieRead + Clone + Send> ReadStorage for TrieReader<S> {
 }
 
 impl<S: ReadStorage + TrieRead + Clone + Send> TrieRead for TrieReader<S> {
-    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
+    async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
         self.storage.read_base(id).await
     }
     fn read_root(&self) -> MapBase {

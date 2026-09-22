@@ -1,13 +1,13 @@
 use crate::storage::{
     ReadStorage, ReadStorageError, ReadWriteStorage, StorageStatus, WriteStorageError,
 };
-use crate::trie::{MapBase, SlotBase, SlotBaseId, TrieRead};
+use crate::trie::{MapBase, Base, BaseId, TrieRead};
 use std::sync::{Arc, RwLock};
 
 /// An in-memory storage for Bases backed by a `Vec<Base>`.
 ///
 /// The vec is seeded with the empty base at index 0 so that
-/// [`SlotBaseId::ZERO`] always reads back the empty base and no storage is
+/// [`BaseId::ZERO`] always reads back the empty base and no storage is
 /// wasted storing it.
 #[derive(Debug)]
 pub struct MemStorage {
@@ -15,7 +15,7 @@ pub struct MemStorage {
 }
 
 impl TrieRead for MemStorage {
-    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
+    async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
         self.inner.read_base(id).await
     }
 
@@ -48,11 +48,11 @@ impl MemStorage {
 }
 
 impl ReadWriteStorage for MemStorage {
-    fn next_id(&self) -> SlotBaseId {
+    fn next_id(&self) -> BaseId {
         self.max_id() + 1
     }
 
-    async fn append(&mut self, base: &SlotBase) -> Result<SlotBaseId, WriteStorageError> {
+    async fn append(&mut self, base: &Base) -> Result<BaseId, WriteStorageError> {
         let id = self.next_id();
         {
             let mut bases = self.inner.bases.write().unwrap();
@@ -74,12 +74,12 @@ impl ReadWriteStorage for MemStorage {
 /// through it; the base pool itself is shared read-only.
 #[derive(Debug, Clone)]
 pub struct MemReadStorage {
-    bases: Arc<RwLock<Vec<SlotBase>>>,
+    bases: Arc<RwLock<Vec<Base>>>,
     status: StorageStatus,
 }
 
 impl TrieRead for MemReadStorage {
-    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
+    async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
         assert!(id <= self.max_id(), "id out of bounds {id:?}");
         let index = id.0 as usize;
         let read = self.bases.read().unwrap();
@@ -110,7 +110,7 @@ impl ReadStorage for MemReadStorage {
 
 impl MemReadStorage {
     pub fn empty() -> Self {
-        let bases = Arc::new(RwLock::new(vec![SlotBase::empty()]));
+        let bases = Arc::new(RwLock::new(vec![Base::empty()]));
         let status = StorageStatus::default();
         Self { bases, status }
     }

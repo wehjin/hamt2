@@ -1,5 +1,5 @@
 use crate::trie::{
-    HashKey, MapBase, Slot, SlotBase, SlotMap, TrieInsertError, TrieValue, TrieCommit,
+	HashKey, MapBase, Slot, Base, SlotMap, TrieInsertError, TrieValue, TrieCommit,
 };
 
 #[cfg(test)]
@@ -37,7 +37,7 @@ pub async fn two_kv<P: TrieCommit>(
             slots.push(Slot::one_kv(key2, value2));
             slots.push(Slot::one_kv(key, value));
         }
-        SlotBase { slots }
+        Base { slots }
     };
     let id = policy.commit_base(base).await?;
     Ok(MapBase { map, base: id })

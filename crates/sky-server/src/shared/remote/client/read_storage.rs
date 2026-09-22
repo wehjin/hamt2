@@ -1,9 +1,9 @@
 use crate::shared::remote::{RemoteClient, RemoteClientReadStorage, SpawnTask};
 use sky_types::storage::{ReadStorage, ReadStorageError, StorageStatus};
-use sky_types::trie::{MapBase, SlotBase, SlotBaseId, TrieRead};
+use sky_types::trie::{MapBase, Base, BaseId, TrieRead};
 
 impl<T: SpawnTask> TrieRead for RemoteClient<T> {
-    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, ReadStorageError> {
+    async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
         self.inner.read_base(id).await
     }
 

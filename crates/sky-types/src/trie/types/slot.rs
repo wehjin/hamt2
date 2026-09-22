@@ -1,7 +1,7 @@
 use crate::trie::map_base::{query_keys_values, query_value, two_kv};
 use crate::trie::{
-    HashKey, MapBase, SlotBase, SlotMap, TrieCommit, TrieRead, TrieInsertError,
-    TrieQueryError, TrieValue,
+	HashKey, MapBase, Base, SlotMap, TrieCommit, TrieRead, TrieInsertError,
+	TrieQueryError, TrieValue,
 };
 use serde::{Deserialize, Serialize};
 
@@ -33,7 +33,7 @@ impl Slot {
                 policy,
             ))
             .await?;
-            let base = SlotBase { slots: vec![slot] };
+            let base = Base { slots: vec![slot] };
             let id = policy.commit_base(base).await?;
             Ok(Slot::MapBase(MapBase { map, base: id }))
         } else {

@@ -1,9 +1,9 @@
 use crate::storage::StorageStatus;
-use crate::trie::{MapBase, SlotBaseId, TrieRead};
+use crate::trie::{MapBase, BaseId, TrieRead};
 
 /// A trait for reading Bases from storage.
 ///
-/// Base id [`SlotBaseId::ZERO`] is reserved and always represents the empty base.
+/// Base id [`BaseId::ZERO`] is reserved and always represents the empty base.
 #[allow(async_fn_in_trait)]
 pub trait ReadStorage: TrieRead + Sized {
     type Snapshot: ReadStorage + TrieRead + Send + Clone;
@@ -20,7 +20,7 @@ pub trait ReadStorage: TrieRead + Sized {
     fn snapshot(&self) -> Self::Snapshot;
 
     /// Get the maximum reading id.
-    fn max_id(&self) -> SlotBaseId {
+    fn max_id(&self) -> BaseId {
         self.status().max_id
     }
 }

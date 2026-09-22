@@ -3,7 +3,7 @@ use sky_db::db::Db;
 use sky_db::db::attr_spec::DbSpec;
 use sky_types::db::{Datom, DbStatus, Transact};
 use sky_types::storage::MemStorage;
-use sky_types::trie::{SlotBase, SlotBaseId};
+use sky_types::trie::{Base, BaseId};
 use tokio::sync::{broadcast, mpsc, oneshot};
 
 mod types;
@@ -54,7 +54,7 @@ impl StorageService {
 
     /// Reads a slot base from the storage service. Returns `None` for ids
     /// outside the current head (negative or beyond `max_id`).
-    pub async fn read_slot_base(&self, slot_base_id: SlotBaseId) -> Option<SlotBase> {
+    pub async fn read_slot_base(&self, slot_base_id: BaseId) -> Option<Base> {
         let (send, receive) = oneshot::channel();
         let request = StorageRequest::ReadSlotBase(slot_base_id, send);
         self.request_sender
@@ -88,7 +88,7 @@ impl StorageService {
 #[derive(Debug)]
 enum StorageRequest {
     ReadStatus(oneshot::Sender<DbStatus>),
-    ReadSlotBase(SlotBaseId, oneshot::Sender<Option<SlotBase>>),
+    ReadSlotBase(BaseId, oneshot::Sender<Option<Base>>),
     Transact(Vec<Datom>, oneshot::Sender<DbStatus>),
 }
 
@@ -134,7 +134,7 @@ async fn handle_storage(
             StorageRequest::ReadSlotBase(base_id, response) => {
                 // Guard against ids the storage has never assigned; reading
                 // them directly would panic the storage task.
-                let base = if base_id < SlotBaseId::ZERO || base_id > db.status().max_id {
+                let base = if base_id < BaseId::ZERO || base_id > db.status().max_id {
                     None
                 } else {
                     db.read_base(base_id).await.ok()
@@ -170,7 +170,7 @@ mod tests {
     use crate::server::storage::types::StorageBroadcastEvent;
     use sky_types::db::{Attr, DbStatus, datom};
     use sky_types::storage::StorageStatus;
-    use sky_types::trie::{MapBase, SlotBaseId};
+    use sky_types::trie::{MapBase, BaseId};
 
     #[tokio::test]
     async fn it_works() {
@@ -185,7 +185,7 @@ mod tests {
             .await
             .unwrap();
         let StorageStatus { max_id, root } = new_status.head;
-        assert_ne!(SlotBaseId::ZERO, max_id);
+        assert_ne!(BaseId::ZERO, max_id);
         assert_ne!(MapBase::empty(), root);
 
         let broadcast = broadcasts.recv().await.unwrap();
@@ -200,7 +200,7 @@ mod tests {
         let slot_base = storage.read_slot_base(max_id).await;
         assert_ne!(None, slot_base);
 
-        let out_of_range = storage.read_slot_base(SlotBaseId(10_000)).await;
+        let out_of_range = storage.read_slot_base(BaseId(10_000)).await;
         assert_eq!(None, out_of_range);
     }
 }

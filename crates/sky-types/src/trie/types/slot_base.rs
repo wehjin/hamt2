@@ -3,30 +3,30 @@ use serde::{Deserialize, Serialize};
 use std::ops::{Deref, DerefMut, Index};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
-pub struct SlotBase {
+pub struct Base {
     pub slots: Vec<Slot>,
 }
 
-impl AsRef<SlotBase> for SlotBase {
-    fn as_ref(&self) -> &SlotBase {
+impl AsRef<Base> for Base {
+    fn as_ref(&self) -> &Base {
         &self
     }
 }
 
-impl Deref for SlotBase {
+impl Deref for Base {
     type Target = Vec<Slot>;
 
     fn deref(&self) -> &Self::Target {
         &self.slots
     }
 }
-impl DerefMut for SlotBase {
+impl DerefMut for Base {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.slots
     }
 }
 
-impl SlotBase {
+impl Base {
     pub fn empty() -> Self {
         Self { slots: vec![] }
     }
@@ -52,7 +52,7 @@ impl SlotBase {
     }
 }
 
-impl Index<usize> for SlotBase {
+impl Index<usize> for Base {
     type Output = Slot;
     fn index(&self, index: usize) -> &Self::Output {
         &self.slots[index]

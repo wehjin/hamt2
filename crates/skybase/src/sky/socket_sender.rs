@@ -1,5 +1,5 @@
 use sky_server::shared::SocketRequest;
-use sky_types::trie::SlotBaseId;
+use sky_types::trie::BaseId;
 use std::sync::Arc;
 
 #[derive(Clone)]
@@ -11,7 +11,7 @@ impl SocketSender {
     pub fn new(send: Arc<dyn Fn(&String)>) -> Self {
         Self { send }
     }
-    pub fn send_read(&self, id: SlotBaseId) {
+    pub fn send_read(&self, id: BaseId) {
         self.send_request(SocketRequest::ReadSlotBase(id));
     }
     pub fn send_request(&self, request: SocketRequest) {

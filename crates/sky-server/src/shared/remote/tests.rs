@@ -5,7 +5,7 @@ use sky_types::db;
 use sky_types::db::schema::Schema;
 use sky_types::db::{Attr, DbStatus, Transact, datom, val};
 use sky_types::storage::StorageStatus;
-use sky_types::trie::{MapBase, Slot, SlotBase, SlotBaseId, SlotMap, TrieRead, TrieValue};
+use sky_types::trie::{MapBase, Slot, Base, BaseId, SlotMap, TrieRead, TrieValue};
 use std::time::Duration;
 use tokio::task::spawn_local;
 
@@ -14,10 +14,10 @@ async fn get_reader_works() {
     run_client_test(|mut client, mut socket_requests| async move {
         let db_status = DbStatus {
             head: StorageStatus {
-                max_id: SlotBaseId(10),
+                max_id: BaseId(10),
                 root: MapBase {
                     map: SlotMap(0xffffffff),
-                    base: SlotBaseId(1),
+                    base: BaseId(1),
                 },
             },
             schema: Schema::default(),
@@ -31,7 +31,7 @@ async fn get_reader_works() {
         while let Ok(msg) = socket_requests.try_recv() {
             contents.push(msg);
         }
-        assert_eq!(SocketRequest::ReadSlotBase(SlotBaseId(1)), contents[0]);
+        assert_eq!(SocketRequest::ReadSlotBase(BaseId(1)), contents[0]);
     })
     .await;
 }
@@ -54,7 +54,7 @@ async fn transact_works() {
         // that, the client should return from the transact call.
         let status = DbStatus {
             head: StorageStatus {
-                max_id: SlotBaseId(1),
+                max_id: BaseId(1),
                 root: MapBase {
                     map: Default::default(),
                     base: Default::default(),
@@ -75,7 +75,7 @@ async fn transact_works() {
 async fn remote_client_works() {
     run_client_test(|mut client, mut requests_from_client| async move {
         // Update the client with the first response from the socket.
-        let id1 = SlotBaseId(1);
+        let id1 = BaseId(1);
         let first_socket_response = SocketResponse::DbStatus(DbStatus {
             head: StorageStatus {
                 max_id: id1,
@@ -101,7 +101,7 @@ async fn remote_client_works() {
         assert_eq!(client_request_after_read, SocketRequest::ReadSlotBase(id1));
 
         // Deliver the read to the client and check it comes back out.
-        let fed_to_client = SlotBase::empty().insert_slot(0, Slot::KeyValue(1, TrieValue::U32(15)));
+        let fed_to_client = Base::empty().insert_slot(0, Slot::KeyValue(1, TrieValue::U32(15)));
         updater.update(SocketResponse::SlotBase(id1, Some(fed_to_client.clone())));
         let join_result = tokio::time::timeout(Duration::from_secs(1), join)
             .await
