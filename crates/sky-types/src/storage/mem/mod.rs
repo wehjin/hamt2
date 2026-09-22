@@ -1,6 +1,5 @@
-use crate::storage::{
-    ReadStorage, ReadWriteStorage, StorageHead, StoreRead, VecBases, WriteStorageError,
-};
+use crate::storage::traits::VecBases;
+use crate::storage::{ReadStorage, ReadWriteStorage, StorageHead, StoreRead, WriteStorageError};
 use crate::trie::{MapBase, SlotBase, SlotBaseId};
 use std::sync::{Arc, RwLock};
 

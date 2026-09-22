@@ -1,4 +1,5 @@
-use crate::storage::{StorageHead, Store, StoreConfig, StoreEditError, StoreRead, VecBases};
+use crate::storage::traits::VecBases;
+use crate::storage::{StorageHead, Store, StoreConfig, StoreEditError, StoreRead};
 use crate::trie::{MapBase, SlotBase, SlotBaseId};
 use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};

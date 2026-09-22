@@ -1,5 +1,14 @@
-use crate::storage::{ReadStorageError, StorageHead, StoreRead};
-use crate::trie::{SlotBase, SlotBaseId, TrieRead, TrieQueryError};
+use crate::storage::{ReadStorageError, StorageHead};
+use crate::trie::{SlotBase, SlotBaseId, TrieQueryError, TrieRead};
+pub trait StoreRead {
+    fn status(&self) -> StorageHead;
+
+    /// Get the maximum reading id.
+    fn max_id(&self) -> SlotBaseId {
+        self.status().max_id
+    }
+}
+
 /// A trait for reading Bases from storage.
 ///
 /// Base id [`SlotBaseId::ZERO`] is reserved and always represents the empty base.

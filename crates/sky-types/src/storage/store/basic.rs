@@ -1,6 +1,7 @@
 use crate::storage::store::edit::StoreMut;
-use crate::storage::store::traits::{StoreConfig, StoreRead};
-use crate::storage::{StorageHead, VecBases};
+use crate::storage::store::traits::StoreConfig;
+use crate::storage::traits::VecBases;
+use crate::storage::{StorageHead, StoreRead};
 use crate::trie::SlotBase;
 use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};

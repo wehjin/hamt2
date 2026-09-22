@@ -1,6 +1,6 @@
-use crate::storage::store::traits::{StoreConfig, StoreRead};
-use crate::storage::{Store, StoreEditError};
-use crate::trie::{TrieBasicQuery, SlotBase, SlotBaseId, TrieRead};
+use crate::storage::store::traits::StoreConfig;
+use crate::storage::{Store, StoreEditError, StoreRead};
+use crate::trie::{SlotBase, SlotBaseId, TrieBasicQuery, TrieRead};
 use std::assert_matches;
 
 struct TinyStore;

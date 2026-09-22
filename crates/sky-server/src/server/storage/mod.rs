@@ -2,8 +2,8 @@ use log::error;
 use sky_db::db::Db;
 use sky_db::db::attr_spec::DbSpec;
 use sky_types::db::{Datom, DbStatus, Transact};
-use sky_types::storage::ReadStorage;
-use sky_types::storage::{MemStorage, StoreRead};
+use sky_types::storage::MemStorage;
+use sky_types::storage::{ReadStorage, StoreRead};
 use sky_types::trie::{SlotBase, SlotBaseId};
 use tokio::sync::{broadcast, mpsc, oneshot};
 
@@ -167,14 +167,14 @@ async fn handle_storage(
 
 #[cfg(test)]
 mod tests {
-    use crate::server::storage::StorageService;
-    use crate::server::storage::types::StorageBroadcastEvent;
-    use sky_types::db::{Attr, DbStatus, datom};
-    use sky_types::storage::StorageHead;
-    use sky_types::trie::{MapBase, SlotBaseId};
+	use crate::server::storage::StorageService;
+	use crate::server::storage::types::StorageBroadcastEvent;
+	use sky_types::db::{Attr, DbStatus, datom};
+	use sky_types::storage::StorageHead;
+	use sky_types::trie::{MapBase, SlotBaseId};
 
-    #[tokio::test]
-    async fn it_works() {
+	#[tokio::test]
+	async fn it_works() {
         let attr = || Attr::from("Counter/count");
         let db_spec = [attr()];
         let storage = StorageService::start(db_spec).await.unwrap();

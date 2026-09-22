@@ -1,6 +1,4 @@
-use crate::storage::{
-    ReadStorage, ReadStorageError, ReadWriteStorage, StorageHead, StoreRead, WriteStorageError,
-};
+use crate::storage::{ReadStorage, ReadStorageError, ReadWriteStorage, StorageHead, StoreRead, WriteStorageError};
 use crate::trie::{MapBase, SlotBase, SlotBaseId, TrieQueryError, TrieRead};
 use std::future;
 use std::io::ErrorKind;

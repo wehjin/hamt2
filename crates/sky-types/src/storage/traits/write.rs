@@ -10,23 +10,14 @@ pub trait ReadWriteStorage: ReadStorage {
     }
 
     /// Stores a base and assigns it the next available id. The id can be used to read back the base in `BaseStorageRead::read`.
-    async fn append(
-        &mut self,
-        base: &SlotBase,
-    ) -> Result<SlotBaseId, WriteStorageError>;
+    async fn append(&mut self, base: &SlotBase) -> Result<SlotBaseId, WriteStorageError>;
 
     /// Persists the given root map base. The root can be read back with `BaseStorageRead::read_root`.
     async fn write_root(&mut self, root: MapBase) -> Result<(), WriteStorageError>;
 }
 
-impl<T> TrieCommit for T
-where
-    T: ReadWriteStorage,
-{
-    async fn commit_base(
-        &mut self,
-        base: SlotBase,
-    ) -> Result<SlotBaseId, TrieInsertError> {
+impl<T: ReadWriteStorage> TrieCommit for T {
+    async fn commit_base(&mut self, base: SlotBase) -> Result<SlotBaseId, TrieInsertError> {
         let id = self.append(&base).await?;
         Ok(id)
     }
