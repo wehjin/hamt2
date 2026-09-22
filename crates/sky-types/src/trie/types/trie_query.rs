@@ -1,15 +1,10 @@
 use crate::trie::TrieQueryError;
 use crate::trie::TrieValue;
-use crate::trie::{HashKey, MapBase, TrieBaseRead, map_base};
+use crate::trie::{HashKey, TrieRead, map_base};
 use futures::Stream;
 
-pub trait RootTrieQuery {
-    /// The root map base of this trie.
-    fn root(&self) -> MapBase;
-}
-
 #[allow(async_fn_in_trait)]
-pub trait ShallowTrieQuery: RootTrieQuery {
+pub trait ShallowTrieQuery: TrieRead {
     /// Returns the value stored at the given key or none if the key is absent.
     async fn query_value(&self, key: i32) -> Result<Option<TrieValue>, TrieQueryError>;
 
@@ -23,20 +18,20 @@ pub trait ShallowTrieQuery: RootTrieQuery {
     ) -> Result<Option<TrieValue>, TrieQueryError>;
 }
 
-impl<T: RootTrieQuery + TrieBaseRead> ShallowTrieQuery for T {
+impl<T: TrieRead> ShallowTrieQuery for T {
     async fn query_value(&self, key: i32) -> Result<Option<TrieValue>, TrieQueryError> {
-        map_base::query_value(self.root(), HashKey::new(key), self).await
+        map_base::query_value(self.read_root(), HashKey::new(key), self).await
     }
 
     async fn query_keys_values(&self) -> Result<Vec<(i32, TrieValue)>, TrieQueryError> {
-        map_base::query_keys_values(self.root(), self).await
+        map_base::query_keys_values(self.read_root(), self).await
     }
 
     async fn deep_query_value<const N: usize>(
         &self,
         key: [i32; N],
     ) -> Result<Option<TrieValue>, TrieQueryError> {
-        map_base::deep_query_value(self.root(), key, self).await
+        map_base::deep_query_value(self.read_root(), key, self).await
     }
 }
 

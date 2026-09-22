@@ -3,9 +3,7 @@ use crate::prelude::TrieValue;
 use sky_types::storage::error::WriteStorageError;
 use sky_types::storage::{ReadWriteStorage, Storage, StorageHead, StoreRead};
 use sky_types::trie::map_base::query_value;
-use sky_types::trie::{
-    DeepKey, HashKey, MapBase, SlotBase, SlotBaseId, TrieBaseRead, TrieQueryError,
-};
+use sky_types::trie::{DeepKey, HashKey, MapBase, SlotBase, SlotBaseId, TrieQueryError, TrieRead};
 use sky_types::trie::{TrieInsertError, map_base};
 use std::collections::HashMap;
 
@@ -18,14 +16,14 @@ impl<S: ReadWriteStorage> StoreRead for Trie<S> {
     fn status(&self) -> StorageHead {
         self.storage.status()
     }
+}
+impl<S: ReadWriteStorage> TrieRead for Trie<S> {
+    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, TrieQueryError> {
+        self.storage.read_base(id).await
+    }
 
     fn read_root(&self) -> MapBase {
         self.root
-    }
-}
-impl<S: ReadWriteStorage> TrieBaseRead for Trie<S> {
-    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, TrieQueryError> {
-        self.storage.read_base(id).await
     }
 }
 

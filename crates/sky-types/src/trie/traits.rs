@@ -1,7 +1,7 @@
-use crate::trie::{SlotBase, SlotBaseId, TrieInsertError, TrieQueryError};
+use crate::trie::{MapBase, SlotBase, SlotBaseId, TrieInsertError, TrieQueryError};
 
 #[allow(async_fn_in_trait)]
-pub trait TrieBaseCommit: TrieBaseRead
+pub trait TrieBaseCommit: TrieRead
 where
     Self: Sized,
 {
@@ -10,9 +10,7 @@ where
 }
 
 #[allow(async_fn_in_trait)]
-pub trait TrieBaseRead {
-    async fn read_base(
-        &self,
-        id: SlotBaseId,
-    ) -> Result<SlotBase, TrieQueryError>;
+pub trait TrieRead {
+    async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, TrieQueryError>;
+    fn read_root(&self) -> MapBase;
 }

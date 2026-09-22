@@ -1,7 +1,7 @@
 use crate::storage::mem::MemStorage;
 use crate::storage::{ReadStorage, ReadWriteStorage, StoreRead};
 use crate::trie::map_base::one_kv;
-use crate::trie::{HashKey, MapBase, SlotBase, SlotBaseId, TrieValue};
+use crate::trie::{HashKey, MapBase, SlotBase, SlotBaseId, TrieRead, TrieValue};
 
 #[tokio::test]
 async fn empty_storage_max_id_is_zero() {

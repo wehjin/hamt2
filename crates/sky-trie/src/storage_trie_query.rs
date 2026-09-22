@@ -3,19 +3,18 @@ use crate::{Trie, TrieQuery};
 use futures::Stream;
 use futures::stream::StreamExt;
 use sky_types::storage::{ReadStorage, ReadWriteStorage, Storage};
-use sky_types::trie::RootTrieQuery;
 use sky_types::trie::map_base::kv_stream;
-use sky_types::trie::{MapBase, TrieBaseRead, TrieValue};
+use sky_types::trie::{MapBase, TrieRead, TrieValue};
 
 impl<S: ReadWriteStorage> TrieQuery for Trie<S> {
     type Subtrie = TrieReader<S::Snapshot>;
 
     fn u32_stream(&self) -> impl Stream<Item = (i32, u32)> {
-        u32_stream(self.root(), self.storage())
+        u32_stream(self.read_root(), self.storage())
     }
 
     fn subtrie_stream(&self) -> impl Stream<Item = (i32, TrieReader<S::Snapshot>)> {
-        subtrie_stream(self.root(), self.storage())
+        subtrie_stream(self.read_root(), self.storage())
     }
 
     fn to_subtrie_from_value(&self, value: TrieValue) -> Option<TrieReader<S::Snapshot>> {
@@ -23,15 +22,15 @@ impl<S: ReadWriteStorage> TrieQuery for Trie<S> {
     }
 }
 
-impl<S: ReadStorage + TrieBaseRead> TrieQuery for TrieReader<S> {
+impl<S: ReadStorage + TrieRead> TrieQuery for TrieReader<S> {
     type Subtrie = TrieReader<S::Snapshot>;
 
     fn u32_stream(&self) -> impl Stream<Item = (i32, u32)> {
-        u32_stream(self.root(), self.storage())
+        u32_stream(self.read_root(), self.storage())
     }
 
     fn subtrie_stream(&self) -> impl Stream<Item = (i32, TrieReader<S::Snapshot>)> {
-        subtrie_stream(self.root(), self.storage())
+        subtrie_stream(self.read_root(), self.storage())
     }
 
     fn to_subtrie_from_value(&self, value: TrieValue) -> Option<TrieReader<S::Snapshot>> {
@@ -39,9 +38,9 @@ impl<S: ReadStorage + TrieBaseRead> TrieQuery for TrieReader<S> {
     }
 }
 
-fn u32_stream<'a, S>(root: MapBase, storage: &'a S) -> impl Stream<Item = (i32, u32)>
+fn u32_stream<S>(root: MapBase, storage: &S) -> impl Stream<Item = (i32, u32)>
 where
-    S: ReadStorage + TrieBaseRead,
+    S: ReadStorage + TrieRead,
 {
     let stream = kv_stream(root.clone(), storage.snapshot());
     stream.filter_map(|(key, value)| async move {
@@ -53,17 +52,16 @@ where
     })
 }
 
-fn subtrie_stream<'a, S>(
+fn subtrie_stream<S>(
     root: MapBase,
-    storage: &'a S,
+    storage: &S,
 ) -> impl Stream<Item = (i32, TrieReader<S::Snapshot>)>
 where
-    S: ReadStorage + TrieBaseRead,
+    S: ReadStorage + TrieRead,
 {
-    let storage = storage.snapshot();
-    let stream = kv_stream(root.clone(), storage.clone());
+    let stream = kv_stream(root.clone(), storage.snapshot());
     stream.filter_map(move |(key, value)| {
-        let storage = storage.clone();
+        let storage = storage.snapshot();
         async move { TrieReader::subtrie_from_value(value, storage).map(|subtrie| (key, subtrie)) }
     })
 }

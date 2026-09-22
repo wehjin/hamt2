@@ -1,7 +1,7 @@
 use crate::storage::{
     ReadStorage, ReadStorageError, ReadWriteStorage, StorageHead, StoreRead, WriteStorageError,
 };
-use crate::trie::{MapBase, SlotBase, SlotBaseId, TrieBaseRead, TrieQueryError};
+use crate::trie::{MapBase, SlotBase, SlotBaseId, TrieQueryError, TrieRead};
 use std::future;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
@@ -19,10 +19,14 @@ pub struct FileReadStorage {
     status: StorageHead,
 }
 
-impl TrieBaseRead for FileReadStorage {
+impl TrieRead for FileReadStorage {
     async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, TrieQueryError> {
         let base = self.read(id).await?;
         Ok(base)
+    }
+
+    fn read_root(&self) -> MapBase {
+        self.status.root
     }
 }
 
@@ -90,9 +94,13 @@ impl StoreRead for FileStorage {
     }
 }
 
-impl TrieBaseRead for FileStorage {
+impl TrieRead for FileStorage {
     async fn read_base(&self, id: SlotBaseId) -> Result<SlotBase, TrieQueryError> {
         self.inner.read_base(id).await
+    }
+
+    fn read_root(&self) -> MapBase {
+        self.inner.read_root()
     }
 }
 
@@ -251,7 +259,7 @@ impl ReadWriteStorage for FileStorage {
 mod tests {
     use super::*;
     use crate::trie::map_base::{one_kv, two_kv};
-    use crate::trie::{HashKey, TrieBaseRead, TrieValue};
+    use crate::trie::{HashKey, TrieRead, TrieValue};
 
     #[tokio::test]
     async fn empty_storage_max_id_is_zero() -> anyhow::Result<()> {

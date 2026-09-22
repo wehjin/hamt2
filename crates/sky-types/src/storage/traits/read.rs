@@ -1,14 +1,14 @@
 use crate::storage::{ReadStorageError, StorageHead, StoreRead};
-use crate::trie::{SlotBase, SlotBaseId, TrieBaseRead, TrieQueryError};
+use crate::trie::{SlotBase, SlotBaseId, TrieRead, TrieQueryError};
 /// A trait for reading Bases from storage.
 ///
 /// Base id [`SlotBaseId::ZERO`] is reserved and always represents the empty base.
 #[allow(async_fn_in_trait)]
-pub trait ReadStorage: StoreRead + TrieBaseRead + Sync {
+pub trait ReadStorage: StoreRead + TrieRead + Sync {
     /// The storage type of an owned read-only snapshot, produced by
     /// [`ReadStorage::snapshot`]. Writer storages use their read-only
     /// snapshot type; read-only snapshot types usually use `Self`.
-    type Snapshot: ReadStorage + TrieBaseRead + Send + Clone;
+    type Snapshot: ReadStorage + TrieRead + Send + Clone;
 
     /// Returns an owned read-only snapshot of this storage. The snapshot does
     /// not observe writes made after this call.
