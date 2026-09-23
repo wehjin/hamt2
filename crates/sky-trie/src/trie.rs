@@ -34,12 +34,12 @@ impl<S: TrieEdit> TrieView for Trie<S> {
     }
 }
 impl<S: TrieEdit> BaseRead for Trie<S> {
-    async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
-        self.storage.read_base(id).await
-    }
-
     fn read_root(&self) -> MapBase {
         self.storage.read_root()
+    }
+
+    async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
+        self.storage.read_base(id).await
     }
 }
 

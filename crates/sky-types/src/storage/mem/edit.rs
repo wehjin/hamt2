@@ -1,5 +1,5 @@
 use crate::storage::{
-    MemTrieView, TrieView, ReadStorageError, TrieEdit, StorageStatus, WriteStorageError,
+    MemTrieView, ReadStorageError, StorageStatus, TrieEdit, TrieView, WriteStorageError,
 };
 use crate::trie::{Base, BaseCommit, BaseId, BaseRead, MapBase, TrieStream};
 
@@ -63,12 +63,12 @@ impl TrieView for MemTrieEdit {
 }
 
 impl BaseRead for MemTrieEdit {
-    async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
-        self.inner.read_base(id).await
-    }
-
     fn read_root(&self) -> MapBase {
         self.inner.read_root()
+    }
+
+    async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
+        self.inner.read_base(id).await
     }
 }
 

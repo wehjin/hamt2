@@ -1,8 +1,8 @@
 use crate::shared::remote::SpawnTask;
 use crate::shared::remote::client::requests::ClientRequest;
 use sky_types::db::DbStatus;
-use sky_types::storage::{TrieView, ReadStorageError, StorageStatus};
-use sky_types::trie::{MapBase, Base, BaseId, BaseRead};
+use sky_types::storage::{ReadStorageError, StorageStatus, TrieView};
+use sky_types::trie::{Base, BaseId, BaseRead, MapBase};
 use std::marker::PhantomData;
 use tokio::sync::mpsc::Sender;
 use tokio::sync::oneshot;
@@ -15,6 +15,12 @@ pub struct RemoteClientReadStorage<T: SpawnTask> {
 }
 
 impl<T: SpawnTask> BaseRead for RemoteClientReadStorage<T> {
+    fn read_root(&self) -> MapBase {
+        // TODO We should wait for the status to arrive instead of return empty and
+        // giving the false impression that there is no data.
+        self.status.read().unwrap().head.root
+    }
+
     async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
         if id > self.max_id() {
             panic!("invalid base id");
@@ -26,12 +32,6 @@ impl<T: SpawnTask> BaseRead for RemoteClientReadStorage<T> {
             .expect("send request");
         let base = recv.await.expect("recv base").expect("base");
         Ok(base)
-    }
-
-    fn read_root(&self) -> MapBase {
-        // TODO We should wait for the status to arrive instead of return empty and
-        // giving the false impression that there is no data.
-        self.status.read().unwrap().head.root
     }
 }
 

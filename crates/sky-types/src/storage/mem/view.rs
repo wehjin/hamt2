@@ -1,5 +1,5 @@
-use crate::storage::{TrieView, ReadStorageError, StorageStatus};
-use crate::trie::{Base, BaseId, MapBase, BaseRead, TrieStream};
+use crate::storage::{ReadStorageError, StorageStatus, TrieView};
+use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieStream};
 use std::sync::{Arc, RwLock};
 
 #[derive(Debug, Clone)]
@@ -41,16 +41,16 @@ impl TrieView for MemTrieView {
 }
 
 impl BaseRead for MemTrieView {
+    fn read_root(&self) -> MapBase {
+        self.status().root
+    }
+
     async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
         assert!(id <= self.max_id(), "id out of bounds {id:?}");
         let index = id.0 as usize;
         let read = self.bases.read().unwrap();
         let base = read[index].clone();
         Ok(base)
-    }
-
-    fn read_root(&self) -> MapBase {
-        self.status().root
     }
 }
 

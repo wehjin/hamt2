@@ -1,4 +1,4 @@
-use sky_types::storage::{TrieView, ReadStorageError, StorageStatus};
+use sky_types::storage::{ReadStorageError, StorageStatus, TrieView};
 use sky_types::trie::MapBase;
 use sky_types::trie::TrieStream;
 use sky_types::trie::{Base, BaseId, BaseRead};
@@ -41,10 +41,10 @@ impl<S: TrieView + BaseRead + Clone + Send> TrieView for TrieReader<S> {
 }
 
 impl<S: TrieView + BaseRead + Clone + Send> BaseRead for TrieReader<S> {
-    async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
-        self.storage.read_base(id).await
-    }
     fn read_root(&self) -> MapBase {
         self.storage.read_root()
+    }
+    async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
+        self.storage.read_base(id).await
     }
 }

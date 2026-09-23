@@ -7,15 +7,15 @@ impl<T: BaseRead> TrieQuery for T {
         map_base::query_value(self.read_root(), HashKey::new(key), self).await
     }
 
-    async fn query_all(&self) -> Result<Vec<(i32, TrieValue)>, TrieQueryError> {
-        map_base::query_keys_values(self.read_root(), self).await
-    }
-
     async fn deep_query<const N: usize>(
         &self,
         key: [i32; N],
     ) -> Result<Option<TrieValue>, TrieQueryError> {
         map_base::deep_query_value(self.read_root(), key, self).await
+    }
+
+    async fn query_all(&self) -> Result<Vec<(i32, TrieValue)>, TrieQueryError> {
+        map_base::query_keys_values(self.read_root(), self).await
     }
 }
 

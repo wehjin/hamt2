@@ -1,7 +1,5 @@
-use crate::storage::{
-    TrieView, ReadStorageError, TrieEdit, StorageStatus, WriteStorageError,
-};
-use crate::trie::{Base, BaseId, MapBase, BaseRead, BaseCommit};
+use crate::storage::{ReadStorageError, StorageStatus, TrieEdit, TrieView, WriteStorageError};
+use crate::trie::{Base, BaseCommit, BaseId, BaseRead, MapBase};
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
@@ -25,16 +23,16 @@ impl From<FileStorage> for FileReadStorage {
 }
 
 impl BaseRead for FileReadStorage {
+    fn read_root(&self) -> MapBase {
+        self.status.root
+    }
+
     async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
         assert!(
             id <= self.max_id(),
             "base id {id} is beyond this snapshot's max_id"
         );
         self.read_base_unchecked(id)
-    }
-
-    fn read_root(&self) -> MapBase {
-        self.status.root
     }
 }
 
@@ -94,12 +92,12 @@ pub struct FileStorage {
 }
 
 impl BaseRead for FileStorage {
-    async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
-        self.inner.read_base(id).await
-    }
-
     fn read_root(&self) -> MapBase {
         self.inner.read_root()
+    }
+
+    async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
+        self.inner.read_base(id).await
     }
 }
 
@@ -261,7 +259,7 @@ impl BaseCommit for FileStorage {
 mod tests {
     use super::*;
     use crate::trie::map_base::{one_kv, two_kv};
-    use crate::trie::{HashKey, BaseRead, TrieValue};
+    use crate::trie::{BaseRead, HashKey, TrieValue};
 
     #[tokio::test]
     async fn empty_storage_max_id_is_zero() -> anyhow::Result<()> {
