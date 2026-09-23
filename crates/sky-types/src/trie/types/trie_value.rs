@@ -2,7 +2,7 @@ use crate::trie::MapBase;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Formatter};
 
-#[derive(Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub enum TrieValue {
     U32(u32),
     SubTrie(MapBase),
