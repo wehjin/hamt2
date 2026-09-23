@@ -1,12 +1,8 @@
 use crate::TrieReader;
-use crate::prelude::TrieValue;
 use sky_types::storage::error::WriteStorageError;
 use sky_types::storage::{ReadStorage, ReadStorageError, ReadWriteStorage, StorageStatus};
-use sky_types::trie::map_base::query_value;
-use sky_types::trie::{Base, BaseId, BaseRead, DeepKey, MapBase};
+use sky_types::trie::{Base, BaseId, BaseRead, MapBase};
 use sky_types::trie::{BaseCommit, TrieStream};
-use sky_types::trie::{TrieInsertError, map_base};
-use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Trie<S: ReadWriteStorage> {
@@ -78,46 +74,3 @@ impl<S: ReadWriteStorage> BaseCommit for Trie<S> {
 }
 
 impl<S: ReadWriteStorage> ReadWriteStorage for Trie<S> {}
-
-/// Trie update methods.
-impl<S: ReadWriteStorage> Trie<S> {
-    pub async fn deep_insert<const N: usize>(
-        mut self,
-        key: [i32; N],
-        value: impl Into<TrieValue>,
-        replace_tail: bool,
-    ) -> Result<Self, TrieInsertError> {
-        let deep_key = DeepKey::from(key);
-        let last_index = N - 1;
-        let mut map_bases = HashMap::new();
-        map_bases.insert(0, self.read_root().clone());
-        for i in 0..last_index {
-            let key = deep_key[i].clone();
-            let map_base = map_bases.get(&i).expect("map_base should exist");
-            let subtrie_i = i + 1;
-            let map_base_i = if replace_tail && subtrie_i == last_index {
-                MapBase::empty()
-            } else {
-                match query_value(*map_base, key, &self.storage).await? {
-                    None => MapBase::empty(),
-                    Some(TrieValue::SubTrie(map_base)) => map_base,
-                    Some(TrieValue::U32(_)) => unreachable!("expected a sub-trie but found a u32"),
-                }
-            };
-            map_bases.insert(subtrie_i, map_base_i);
-        }
-        let mut value = value.into();
-        for i in (0..=last_index).rev() {
-            let key = deep_key[i].clone();
-            let pre_map_base = map_bases.get(&i).expect("map_base should exist");
-            let post_map_base =
-                map_base::insert_kv(pre_map_base.clone(), key, value, &mut self.storage).await?;
-            value = TrieValue::SubTrie(post_map_base);
-        }
-        let TrieValue::SubTrie(root) = value else {
-            panic!("value should be map_base")
-        };
-        self.storage.commit_root(root).await?;
-        Ok(self)
-    }
-}

@@ -93,4 +93,12 @@ mod tests {
         let v = m.u32_stream().collect::<Vec<_>>().await;
         assert_eq!(v, vec![(27, 28)]);
     }
+
+    #[tokio::test]
+    async fn deep_insert_and_query_works() {
+        let mut m = MemTrieEdit::new();
+        m.deep_insert([1, 2, 3], 45, false).await.unwrap();
+        let v = m.deep_query_value([1, 2, 3]).await.unwrap();
+        assert_eq!(v, Some(TrieValue::U32(45)));
+    }
 }

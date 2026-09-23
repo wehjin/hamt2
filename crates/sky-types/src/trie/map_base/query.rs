@@ -10,13 +10,13 @@ pub struct State<S: BaseRead> {
 pub async fn query_value<S: BaseRead>(
     map_base: MapBase,
     key: HashKey,
-    storage: &S,
+    base_read: &S,
 ) -> Result<Option<TrieValue>, TrieQueryError> {
     let MapBase { map, base: base_id } = map_base;
     let value = match map.try_base_index(key) {
         Some(base_index) => {
-            let base = storage.read_base(base_id).await?;
-            Box::pin(base.as_ref()[base_index].query_value(key, storage)).await?
+            let base = base_read.read_base(base_id).await?;
+            Box::pin(base.as_ref()[base_index].query_value(key, base_read)).await?
         }
         None => None,
     };

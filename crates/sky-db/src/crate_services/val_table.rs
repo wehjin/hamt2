@@ -90,28 +90,25 @@ where
 {
     let u32_stream = u32::Stream::new(bytes, SUBKEY_BYTES);
     for (u32_subkey, u32_value) in u32_stream {
-        trie = trie
-            .deep_insert(
-                [KEY_VAL_TABLE, hash, u32_subkey],
-                TrieValue::U32(u32_value),
-                false,
-            )
-            .await?;
+        trie.deep_insert(
+            [KEY_VAL_TABLE, hash, u32_subkey],
+            TrieValue::U32(u32_value),
+            false,
+        )
+        .await?;
     }
-    trie = trie
-        .deep_insert(
-            [KEY_VAL_TABLE, hash, SUBKEY_LEN],
-            TrieValue::U32(bytes.len() as u32),
-            false,
-        )
-        .await?;
-    trie = trie
-        .deep_insert(
-            [KEY_VAL_TABLE, hash, SUBKEY_VAL_TYPE],
-            TrieValue::U32(bytes_type as u32),
-            false,
-        )
-        .await?;
+    trie.deep_insert(
+        [KEY_VAL_TABLE, hash, SUBKEY_LEN],
+        TrieValue::U32(bytes.len() as u32),
+        false,
+    )
+    .await?;
+    trie.deep_insert(
+        [KEY_VAL_TABLE, hash, SUBKEY_VAL_TYPE],
+        TrieValue::U32(bytes_type as u32),
+        false,
+    )
+    .await?;
     Ok(trie)
 }
 
@@ -173,11 +170,11 @@ async fn find_hash_trie<T: TrieStream>(
 
 #[cfg(test)]
 mod tests {
-	use super::*;
-	use sky_types::db::{Val, val};
-	use sky_types::storage::MemTrieEdit;
+    use super::*;
+    use sky_types::db::{Val, val};
+    use sky_types::storage::MemTrieEdit;
 
-	#[tokio::test]
+    #[tokio::test]
     async fn insert_and_query() {
         let mut trie = Trie::connect(MemTrieEdit::new());
         let mut vids = Vec::new();

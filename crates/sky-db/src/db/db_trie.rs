@@ -66,8 +66,8 @@ pub(crate) async fn with_update<S: ReadWriteStorage>(
     let aevt_key = [KEY_AEVT, aid, eid, vid.to_id()];
     let replace_tail = attribute.cardinality() == Cardinality::One;
     let tx_value = Value { id: *txid, dir };
-    trie = trie.deep_insert(eavt_key, tx_value, replace_tail).await?;
-    trie = trie.deep_insert(aevt_key, tx_value, replace_tail).await?;
+    trie.deep_insert(eavt_key, tx_value, replace_tail).await?;
+    trie.deep_insert(aevt_key, tx_value, replace_tail).await?;
     Ok(trie)
 }
 

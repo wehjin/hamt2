@@ -81,8 +81,7 @@ mod tests {
         let storage = {
             let mut trie = Trie::connect(MemTrieEdit::new());
             trie.insert(1, TrieValue::U32(42)).await.unwrap();
-            trie = trie
-                .deep_insert([2, 42], TrieValue::U32(242), false)
+            trie.deep_insert([2, 42], TrieValue::U32(242), false)
                 .await
                 .unwrap();
             trie = trie.commit().await.unwrap();
@@ -111,8 +110,7 @@ mod tests {
         let storage = {
             let mut trie = Trie::connect(MemTrieEdit::new());
             trie.insert(1, TrieValue::U32(42)).await?;
-            trie = trie
-                .deep_insert([2, 42], TrieValue::U32(242), false)
+            trie.deep_insert([2, 42], TrieValue::U32(242), false)
                 .await?;
             trie.commit().await?.close()
         };
@@ -133,8 +131,7 @@ mod tests {
             let mut trie = Trie::connect(MemTrieEdit::new());
             trie.insert(100, TrieValue::U32(42)).await.unwrap();
             for a in 0..=32 {
-                trie = trie
-                    .deep_insert([3, a], TrieValue::U32(a as u32), false)
+                trie.deep_insert([3, a], TrieValue::U32(a as u32), false)
                     .await
                     .unwrap();
             }
@@ -162,23 +159,20 @@ mod tests {
             // Use at least 33 keys so that the root blook in the first trie is saturated.
             for i in 0..35 {
                 let e = 5 + i;
-                trie = trie
-                    .deep_insert([e, 0], TrieValue::U32(e as u32), false)
+                trie.deep_insert([e, 0], TrieValue::U32(e as u32), false)
                     .await
                     .unwrap();
             }
             // Use at least 33 keys so that the root block in the second trie is saturated.
             for i in 0..35 {
                 let a = 3 + i;
-                trie = trie
-                    .deep_insert([4, a], TrieValue::U32(a as u32), false)
+                trie.deep_insert([4, a], TrieValue::U32(a as u32), false)
                     .await
                     .unwrap();
             }
             // 3.x should be saturated.  So adding more should trigger at least on hybrid merge.
             for a in 32..=64 {
-                trie = trie
-                    .deep_insert([3, a], TrieValue::U32(a as u32), false)
+                trie.deep_insert([3, a], TrieValue::U32(a as u32), false)
                     .await
                     .unwrap();
             }
@@ -232,8 +226,7 @@ mod tests {
     async fn deep_insert_and_query_works() {
         let mut trie = Trie::connect(MemTrieEdit::new());
         for e in 0..=33 {
-            trie = trie
-                .deep_insert([e, e], TrieValue::U32(e as u32), false)
+            trie.deep_insert([e, e], TrieValue::U32(e as u32), false)
                 .await
                 .unwrap();
         }
@@ -279,7 +272,7 @@ mod stream_tests {
         let mut trie = Trie::connect(MemTrieEdit::new());
         trie.insert(1, TrieValue::U32(1)).await?;
         trie.insert(2, TrieValue::U32(2)).await?;
-        trie = trie.deep_insert([3, 4], TrieValue::U32(34), false).await?;
+        trie.deep_insert([3, 4], TrieValue::U32(34), false).await?;
         let mut u32s = trie.u32_stream().collect::<Vec<_>>().await;
         u32s.sort_by_key(|(key, _u32)| *key);
         // Map-base values are skipped by the u32 stream.
@@ -290,11 +283,9 @@ mod stream_tests {
     #[tokio::test]
     async fn subtrie_stream() -> anyhow::Result<()> {
         let mut trie = Trie::connect(MemTrieEdit::new());
-        trie = trie
-            .deep_insert([1, 101], TrieValue::U32(101), false)
+        trie.deep_insert([1, 101], TrieValue::U32(101), false)
             .await?;
-        trie = trie
-            .deep_insert([2, 202], TrieValue::U32(202), false)
+        trie.deep_insert([2, 202], TrieValue::U32(202), false)
             .await?;
         trie.insert(3, TrieValue::U32(33)).await?;
         let subtries = trie.subtrie_stream().collect::<Vec<_>>().await;
