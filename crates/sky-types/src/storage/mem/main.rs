@@ -11,10 +11,10 @@ impl MemTrie {
     where
         F: AsyncFnOnce(&mut MemTrieEdit) -> anyhow::Result<Out>,
     {
-        let mut edit = MemTrieEdit::new();
+        let mut edit = MemTrieEdit::extend(&self.inner.clone());
         let result = f(&mut edit).await;
         if let Ok(out) = result {
-            self.inner = edit.inner;
+            self.inner.merge(edit.inner).await;
             Ok(out)
         } else {
             result

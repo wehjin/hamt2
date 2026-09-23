@@ -13,6 +13,11 @@ impl MemTrieEdit {
         let inner = MemTrieView::empty();
         Self { inner }
     }
+
+    pub fn extend(past: &MemTrieView) -> Self {
+        let inner = MemTrieView::extend(past);
+        Self { inner }
+    }
 }
 
 impl TrieEdit for MemTrieEdit {
@@ -23,17 +28,17 @@ impl TrieEdit for MemTrieEdit {
 
 impl BaseCommit for MemTrieEdit {
     async fn commit_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
-        self.inner.status.root = root;
+        self.inner.root = root;
         Ok(())
     }
 
     async fn commit_base(&mut self, base: Base) -> Result<BaseId, WriteStorageError> {
         let id = self.next_id();
         {
-            let mut bases = self.inner.bases.write().unwrap();
-            bases.push(base.clone());
+            let mut bases = self.inner.bases.write().await;
+            bases.push(base);
         }
-        self.inner.status.max_id = id;
+        self.inner.max_id = id;
         Ok(id)
     }
 }

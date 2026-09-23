@@ -1,5 +1,6 @@
 use crate::storage::ReadStorageError;
 use crate::trie::{Base, BaseId, MapBase};
+
 #[allow(async_fn_in_trait)]
 pub trait BaseRead {
     /// Reads the trie's root.

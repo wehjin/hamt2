@@ -1,7 +1,7 @@
 use crate::storage::mem::MemTrieEdit;
-use crate::storage::{TrieView, TrieEdit};
+use crate::storage::{TrieEdit, TrieView};
 use crate::trie::map_base::one_kv;
-use crate::trie::{Base, BaseId, HashKey, MapBase, BaseRead, BaseCommit, TrieValue};
+use crate::trie::{Base, BaseCommit, BaseId, BaseRead, HashKey, MapBase, TrieValue};
 
 #[tokio::test]
 async fn empty_storage_max_id_is_zero() {
@@ -64,19 +64,19 @@ async fn mem_readonly_snapshot_does_not_see_new_bases() {
 }
 
 #[tokio::test]
-#[should_panic(expected = "id out of bounds")]
-async fn mem_snapshot_panics_reading_beyond_max_id() {
+async fn reading_beyond_max_id_produces_empty() {
     let mut storage = MemTrieEdit::new();
     let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7));
     storage.commit_base(base.clone()).await.expect("append");
     let view = storage.snapshot();
     let new_id = storage.commit_base(base.clone()).await.expect("append");
-    let _ = view.read_base(new_id).await;
+    let base = view.read_base(new_id).await.expect("read");
+    assert_eq!(base, Base::empty())
 }
 
 #[tokio::test]
-#[should_panic(expected = "id out of bounds")]
-async fn read_panics_on_unwritten_id() {
+async fn reading_unwritten_id_produces_empty() {
     let storage = MemTrieEdit::new();
-    let _ = storage.read_base(BaseId(1)).await;
+    let base = storage.read_base(BaseId(1)).await.expect("read");
+    assert_eq!(base, Base::empty())
 }
