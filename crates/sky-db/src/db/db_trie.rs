@@ -137,7 +137,7 @@ where
     T: TrieStream,
 {
     if let Some(root) = eavt_root(trie).await {
-        root.query_keys_values()
+        root.query_all()
             .await
             .expect("read keys and values from evt root")
             .into_iter()
@@ -167,7 +167,7 @@ where
     T: TrieStream,
 {
     if let Some(root) = e_avt_subtrie(trie, ein).await {
-        root.query_keys_values()
+        root.query_all()
             .await
             .expect("read keys and values from trie")
             .into_iter()
@@ -182,7 +182,7 @@ async fn eavt_root<T>(trie: &T) -> Option<T::Subtrie>
 where
     T: TrieStream,
 {
-    let root_value = trie.deep_query_value([KEY_EAVT]).await.ok().flatten();
+    let root_value = trie.deep_query([KEY_EAVT]).await.ok().flatten();
     root_value.and_then(|value| trie.to_subtrie_in_value(value))
 }
 
@@ -191,7 +191,7 @@ where
     T: TrieStream,
 {
     let root_value = trie
-        .deep_query_value([KEY_EAVT, ein.to_i32()])
+        .deep_query([KEY_EAVT, ein.to_i32()])
         .await
         .ok()
         .flatten();
@@ -204,7 +204,7 @@ where
 {
     let aid = schema[attr].ein().to_i32();
     let keys = [KEY_AEVT, aid];
-    let evt_value = trie.deep_query_value(keys).await.ok().flatten();
+    let evt_value = trie.deep_query(keys).await.ok().flatten();
     evt_value.and_then(|evt| trie.to_subtrie_in_value(evt))
 }
 

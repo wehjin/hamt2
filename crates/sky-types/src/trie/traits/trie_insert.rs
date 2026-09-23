@@ -52,8 +52,11 @@ impl<T: BaseCommit> TrieInsert for T {
 
 #[allow(async_fn_in_trait)]
 pub trait TrieInsert: BaseCommit {
+    /// Inserts `value` into the trie at position `key`.
     async fn insert(&mut self, key: i32, value: TrieValue) -> Result<&mut Self, TrieInsertError>;
 
+    /// Inserts `value` several levels deep into the trie. Each element in `key` indexes
+    /// into the sub-trie found a the previous element.
     async fn deep_insert<const N: usize>(
         &mut self,
         key: [i32; N],

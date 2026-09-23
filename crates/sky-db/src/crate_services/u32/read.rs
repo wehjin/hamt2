@@ -21,7 +21,7 @@ impl<T: TrieQuery> Read<T> {
 
     async fn next_u32(&mut self) -> u32 {
         let key = self.start_key + self.u32_index;
-        let Ok(Some(TrieValue::U32(u32))) = self.hash_trie.query_value(key).await else {
+        let Ok(Some(TrieValue::U32(u32))) = self.hash_trie.query(key).await else {
             panic!("Unexpected MemValue variant")
         };
         self.u32_index += 1;

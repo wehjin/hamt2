@@ -8,7 +8,7 @@ use sky_types::storage::ReadWriteStorage;
 
 impl<S: ReadWriteStorage> Db<S> {
     pub async fn max_tx(&self) -> Result<Txid, QueryError> {
-        let Some(TrieValue::U32(value)) = self.trie.query_value(KEY_MAX_TXID).await? else {
+        let Some(TrieValue::U32(value)) = self.trie.query(KEY_MAX_TXID).await? else {
             panic!("max_tx not found");
         };
         Ok(Txid::from(value))

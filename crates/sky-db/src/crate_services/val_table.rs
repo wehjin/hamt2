@@ -49,10 +49,10 @@ where
     match find_hash_trie(trie, vid.to_id()).await? {
         None => Ok(None),
         Some(val_trie) => {
-            let Some(TrieValue::U32(bytes_len)) = val_trie.query_value(SUBKEY_LEN).await? else {
+            let Some(TrieValue::U32(bytes_len)) = val_trie.query(SUBKEY_LEN).await? else {
                 panic!("Unexpected MemValue variant")
             };
-            let Some(TrieValue::U32(val_type)) = val_trie.query_value(SUBKEY_VAL_TYPE).await?
+            let Some(TrieValue::U32(val_type)) = val_trie.query(SUBKEY_VAL_TYPE).await?
             else {
                 panic!("Unexpected MemValue variant")
             };
@@ -117,13 +117,13 @@ async fn is_equal_bytes<T: TrieQuery>(
     bytes: &[u8],
     bytes_type: u8,
 ) -> Result<bool, QueryError> {
-    let Some(TrieValue::U32(len)) = hash_trie.query_value(SUBKEY_LEN).await? else {
+    let Some(TrieValue::U32(len)) = hash_trie.query(SUBKEY_LEN).await? else {
         panic!("Unexpected MemValue variant")
     };
     if len as usize != bytes.len() {
         return Ok(false);
     }
-    let Some(TrieValue::U32(val_type)) = hash_trie.query_value(SUBKEY_VAL_TYPE).await? else {
+    let Some(TrieValue::U32(val_type)) = hash_trie.query(SUBKEY_VAL_TYPE).await? else {
         panic!("Unexpected MemValue variant")
     };
     if val_type as u8 != bytes_type {
@@ -133,7 +133,7 @@ async fn is_equal_bytes<T: TrieQuery>(
     loop {
         match u32_stream.next() {
             Some((u32_subkey, u32_value)) => {
-                let saved = hash_trie.query_value(u32_subkey).await?;
+                let saved = hash_trie.query(u32_subkey).await?;
                 match saved {
                     None => return Ok(false),
                     Some(saved_mem_value) => {
@@ -159,7 +159,7 @@ async fn find_hash_trie<T: TrieStream>(
     hash: i32,
 ) -> Result<Option<T::Subtrie>, QueryError> {
     let key = [KEY_VAL_TABLE, hash];
-    match trie.deep_query_value(key).await? {
+    match trie.deep_query(key).await? {
         None => Ok(None),
         Some(mem_value) => {
             let bytes_trie = trie.to_subtrie_in_value(mem_value);

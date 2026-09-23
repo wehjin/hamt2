@@ -23,7 +23,7 @@ mod tests {
         {
             let storage = FileStorage::load(dir.path())?;
             let trie = Trie::connect(storage);
-            let value = trie.query_value(1).await?;
+            let value = trie.query(1).await?;
             assert_eq!(Some(TrieValue::U32(1)), value);
         }
         Ok(())
@@ -35,7 +35,7 @@ mod tests {
         trie.insert(1, TrieValue::U32(u32::MAX)).await?;
         assert_eq!(
             vec![(1, TrieValue::U32(u32::MAX))],
-            trie.query_keys_values().await?
+            trie.query_all().await?
         );
         trie = trie.commit().await?;
         {
@@ -43,7 +43,7 @@ mod tests {
             let trie = Trie::connect(storage);
             assert_eq!(
                 vec![(1, TrieValue::U32(u32::MAX))],
-                trie.query_keys_values().await?
+                trie.query_all().await?
             );
         }
         Ok(())
@@ -61,7 +61,7 @@ mod tests {
         let mut trie = Trie::connect(MemTrieEdit::new());
         trie.insert(1, TrieValue::U32(1)).await.expect("insert");
         trie.insert(2, TrieValue::U32(2)).await.expect("insert");
-        let key_values = trie.query_keys_values().await.expect("all_keys_values");
+        let key_values = trie.query_all().await.expect("all_keys_values");
         let mut key_values = key_values
             .into_iter()
             .map(|kv| {
@@ -97,10 +97,10 @@ mod tests {
         // Query from both commits.
         {
             let trie = Trie::connect(storage);
-            assert_eq!(Some(TrieValue::U32(84)), trie.query_value(1).await.unwrap());
+            assert_eq!(Some(TrieValue::U32(84)), trie.query(1).await.unwrap());
             assert_eq!(
                 Some(TrieValue::U32(242)),
-                trie.deep_query_value([2, 42]).await.unwrap()
+                trie.deep_query([2, 42]).await.unwrap()
             );
         }
     }
@@ -116,10 +116,10 @@ mod tests {
         };
         let view_storage = storage.snapshot();
         let read_trie = TrieReader::new(view_storage);
-        assert_eq!(Some(TrieValue::U32(42)), read_trie.query_value(1).await?);
+        assert_eq!(Some(TrieValue::U32(42)), read_trie.query(1).await?);
         assert_eq!(
             Some(TrieValue::U32(242)),
-            read_trie.deep_query_value([2, 42]).await?
+            read_trie.deep_query([2, 42]).await?
         );
         Ok(())
     }
@@ -143,12 +143,12 @@ mod tests {
             let trie = Trie::connect(storage);
             assert_eq!(
                 Some(TrieValue::U32(42)),
-                trie.query_value(100).await.unwrap()
+                trie.query(100).await.unwrap()
             );
             for a in 0..=32 {
                 assert_eq!(
                     Some(TrieValue::U32(a as u32)),
-                    trie.deep_query_value([3, a]).await.unwrap()
+                    trie.deep_query([3, a]).await.unwrap()
                 );
             }
             trie.close()
@@ -180,7 +180,7 @@ mod tests {
             for a in 0..=64 {
                 assert_eq!(
                     Some(TrieValue::U32(a as u32)),
-                    trie.deep_query_value([3, a]).await.unwrap()
+                    trie.deep_query([3, a]).await.unwrap()
                 );
             }
         }
@@ -195,7 +195,7 @@ mod tests {
             .insert(1, TrieValue::U32(43))
             .await
             .unwrap();
-        let value = trie.query_value(1).await.unwrap();
+        let value = trie.query(1).await.unwrap();
         assert_eq!(Some(TrieValue::U32(43)), value);
     }
 
@@ -210,7 +210,7 @@ mod tests {
         let mut values = Vec::new();
         for i in &keys {
             let value = trie
-                .query_value(*i)
+                .query(*i)
                 .await
                 .expect(&format!("query for key: {}", i));
             values.push(value);
@@ -231,22 +231,22 @@ mod tests {
                 .unwrap();
         }
         {
-            let value = trie.deep_query_value([4]).await.unwrap();
+            let value = trie.deep_query([4]).await.unwrap();
             let Some(TrieValue::SubTrie(map_base)) = value else {
                 panic!("expected map_base");
             };
             assert_eq!(1, map_base.map.slot_count());
         }
         {
-            let value = trie.deep_query_value([4, 4]).await.unwrap();
+            let value = trie.deep_query([4, 4]).await.unwrap();
             assert_eq!(Some(TrieValue::U32(4)), value);
         }
         {
-            let value = trie.deep_query_value([4, 1]).await.unwrap();
+            let value = trie.deep_query([4, 1]).await.unwrap();
             assert_eq!(None, value);
         }
         {
-            let value = trie.deep_query_value([5, 2]).await.unwrap();
+            let value = trie.deep_query([5, 2]).await.unwrap();
             assert_eq!(None, value);
         }
     }
@@ -255,7 +255,7 @@ mod tests {
     #[should_panic(expected = "assertion failed: value >= 0")]
     async fn deep_query_fails_for_invalid_key() {
         let trie = Trie::connect(MemTrieEdit::new());
-        let _result = trie.deep_query_value([4, 4, -1]).await;
+        let _result = trie.deep_query([4, 4, -1]).await;
     }
 }
 
