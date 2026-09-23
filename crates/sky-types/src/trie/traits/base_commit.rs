@@ -1,7 +1,7 @@
 use crate::storage::WriteStorageError;
-use crate::trie::{Base, BaseId, MapBase, RootBaseRead};
+use crate::trie::{Base, BaseId, BaseRead, MapBase};
 #[allow(async_fn_in_trait)]
-pub trait TrieCommit: RootBaseRead
+pub trait BaseCommit: BaseRead
 where
     Self: Sized,
 {

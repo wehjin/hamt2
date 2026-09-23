@@ -2,7 +2,7 @@ use crate::shared::remote::SpawnTask;
 use crate::shared::remote::client::requests::ClientRequest;
 use sky_types::db::DbStatus;
 use sky_types::storage::{ReadStorage, ReadStorageError, StorageStatus};
-use sky_types::trie::{MapBase, Base, BaseId, RootBaseRead};
+use sky_types::trie::{MapBase, Base, BaseId, BaseRead};
 use std::marker::PhantomData;
 use tokio::sync::mpsc::Sender;
 use tokio::sync::oneshot;
@@ -14,7 +14,7 @@ pub struct RemoteClientReadStorage<T: SpawnTask> {
     pub(crate) _spawn_local: PhantomData<T>,
 }
 
-impl<T: SpawnTask> RootBaseRead for RemoteClientReadStorage<T> {
+impl<T: SpawnTask> BaseRead for RemoteClientReadStorage<T> {
     async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
         if id > self.max_id() {
             panic!("invalid base id");

@@ -5,7 +5,7 @@ use sky_types::db;
 use sky_types::db::schema::Schema;
 use sky_types::db::{Attr, DbStatus, Transact, datom, val};
 use sky_types::storage::StorageStatus;
-use sky_types::trie::{MapBase, Slot, Base, BaseId, SlotMap, RootBaseRead, TrieValue};
+use sky_types::trie::{MapBase, Slot, Base, BaseId, SlotMap, BaseRead, TrieValue};
 use std::time::Duration;
 use tokio::task::spawn_local;
 

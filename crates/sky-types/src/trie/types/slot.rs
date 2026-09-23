@@ -1,6 +1,6 @@
 use crate::trie::map_base::{query_keys_values, query_value, two_kv};
 use crate::trie::{
-    HashKey, MapBase, Base, SlotMap, TrieCommit, RootBaseRead, TrieInsertError,
+    HashKey, MapBase, Base, SlotMap, BaseCommit, BaseRead, TrieInsertError,
     TrieQueryError, TrieValue,
 };
 use serde::{Deserialize, Serialize};
@@ -15,7 +15,7 @@ impl Slot {
     pub fn one_kv(key: HashKey, value: TrieValue) -> Self {
         Self::KeyValue(key.i32(), value)
     }
-    pub async fn two_kv<P: TrieCommit>(
+    pub async fn two_kv<P: BaseCommit>(
         a_key: HashKey,
         a_value: TrieValue,
         b_key: HashKey,
@@ -47,7 +47,7 @@ impl Slot {
         };
         Slot::KeyValue(key, value)
     }
-    pub async fn query_key_values<P: RootBaseRead>(
+    pub async fn query_key_values<P: BaseRead>(
         &self,
         storage: &P,
     ) -> Result<Vec<(i32, TrieValue)>, TrieQueryError> {
@@ -56,7 +56,7 @@ impl Slot {
             Slot::MapBase(map_base) => query_keys_values(*map_base, storage).await,
         }
     }
-    pub async fn query_value<P: RootBaseRead>(
+    pub async fn query_value<P: BaseRead>(
         &self,
         key: HashKey,
         storage: &P,

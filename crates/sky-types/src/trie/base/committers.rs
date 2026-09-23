@@ -1,5 +1,5 @@
 use crate::trie::{
-	HashKey, Slot, Base, TrieInsertError, TrieValue, TrieCommit, map_base,
+	HashKey, Slot, Base, TrieInsertError, TrieValue, BaseCommit, map_base,
 };
 
 /// Makes a copy of `base` where the kv already at `index` is moved into a new
@@ -15,7 +15,7 @@ pub async fn kick_kv<P>(
 	policy: &mut P,
 ) -> Result<Base, TrieInsertError>
 where
-    P: TrieCommit,
+    P: BaseCommit,
 {
     let post_slot = {
         let Slot::KeyValue(b_key, b_value) = base[index].clone() else {
@@ -41,7 +41,7 @@ pub async fn merge_kv<P>(
 	policy: &mut P,
 ) -> Result<Base, TrieInsertError>
 where
-    P: TrieCommit,
+    P: BaseCommit,
 {
     let pre_slot = base[index].clone();
     let post_slot = {

@@ -4,7 +4,7 @@ use sky_types::storage::error::WriteStorageError;
 use sky_types::storage::{ReadStorage, ReadStorageError, ReadWriteStorage, StorageStatus};
 use sky_types::trie::TrieStream;
 use sky_types::trie::map_base::query_value;
-use sky_types::trie::{Base, BaseId, DeepKey, HashKey, MapBase, RootBaseRead};
+use sky_types::trie::{Base, BaseId, DeepKey, HashKey, MapBase, BaseRead};
 use sky_types::trie::{TrieInsertError, map_base};
 use std::collections::HashMap;
 
@@ -37,7 +37,7 @@ impl<S: ReadWriteStorage> ReadStorage for Trie<S> {
         TrieReader::new(snap_storage)
     }
 }
-impl<S: ReadWriteStorage> RootBaseRead for Trie<S> {
+impl<S: ReadWriteStorage> BaseRead for Trie<S> {
     async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
         self.storage.read_base(id).await
     }

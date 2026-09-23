@@ -1,9 +1,9 @@
 use crate::trie::TrieQueryError;
 use crate::trie::TrieValue;
-use crate::trie::{HashKey, RootBaseRead, map_base};
+use crate::trie::{BaseRead, HashKey, map_base};
 
 #[allow(async_fn_in_trait)]
-pub trait TrieQuery: RootBaseRead {
+pub trait TrieQuery: BaseRead {
     /// Returns the value stored at the given key or none if the key is absent.
     async fn query_value(&self, key: i32) -> Result<Option<TrieValue>, TrieQueryError>;
 
@@ -17,7 +17,7 @@ pub trait TrieQuery: RootBaseRead {
     ) -> Result<Option<TrieValue>, TrieQueryError>;
 }
 
-impl<T: RootBaseRead> TrieQuery for T {
+impl<T: BaseRead> TrieQuery for T {
     async fn query_value(&self, key: i32) -> Result<Option<TrieValue>, TrieQueryError> {
         map_base::query_value(self.read_root(), HashKey::new(key), self).await
     }
