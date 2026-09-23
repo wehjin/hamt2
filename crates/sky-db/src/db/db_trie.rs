@@ -15,8 +15,7 @@ use async_stream::stream;
 use futures::{StreamExt, pin_mut};
 use serde::{Deserialize, Serialize};
 use sky_types::db;
-use sky_types::db::TransactError;
-use sky_types::db::*;
+use sky_types::db::{Attr, Dir, Ein, FindResult, TransactError, Val};
 use sky_types::storage::ReadWriteStorage;
 use std::collections::HashMap;
 
@@ -76,8 +75,7 @@ pub(crate) async fn set_max_tx<S: ReadWriteStorage>(
     mut trie: Trie<S>,
     max_tx: Txid,
 ) -> Result<Trie<S>, TransactError> {
-    trie = trie
-        .insert(KEY_MAX_TXID, TrieValue::from(max_tx.u32()))
+    trie.insert(KEY_MAX_TXID, TrieValue::from(max_tx.u32()))
         .await?;
     Ok(trie)
 }

@@ -7,17 +7,18 @@ pub use trie_reader::TrieReader;
 
 #[cfg(test)]
 mod tests {
-	use crate::{Trie, TrieReader};
-	use sky_types::storage::{FileStorage, MemTrieEdit, ReadStorage};
-	use sky_types::trie::{TrieQuery, TrieValue};
+    use crate::{Trie, TrieReader};
+    use sky_types::storage::{FileStorage, MemTrieEdit, ReadStorage};
+    use sky_types::trie::{TrieInsert, TrieQuery, TrieValue};
 
-	#[tokio::test]
+    #[tokio::test]
     async fn file_trie_works() -> anyhow::Result<()> {
         let dir = tempfile::tempdir()?;
         {
             let storage = FileStorage::new(dir.path())?;
-            let trie = Trie::connect(storage);
-            trie.insert(1, TrieValue::U32(1)).await?.commit().await?;
+            let mut trie = Trie::connect(storage);
+            trie.insert(1, TrieValue::U32(1)).await?;
+            trie.commit().await?;
         }
         {
             let storage = FileStorage::load(dir.path())?;
@@ -31,7 +32,7 @@ mod tests {
     #[tokio::test]
     async fn max_u32_works_as_value() -> anyhow::Result<()> {
         let mut trie = Trie::connect(MemTrieEdit::new());
-        trie = trie.insert(1, TrieValue::U32(u32::MAX)).await?;
+        trie.insert(1, TrieValue::U32(u32::MAX)).await?;
         assert_eq!(
             vec![(1, TrieValue::U32(u32::MAX))],
             trie.query_keys_values().await?
@@ -51,15 +52,15 @@ mod tests {
     #[tokio::test]
     #[should_panic(expected = "assertion failed: value >= 0")]
     async fn negative_i32_does_not_work_as_key() {
-        let trie = Trie::connect(MemTrieEdit::new());
-        let _trie = trie.insert(-1, TrieValue::U32(10)).await.expect("insert");
+        let mut trie = Trie::connect(MemTrieEdit::new());
+        trie.insert(-1, TrieValue::U32(10)).await.expect("insert");
     }
 
     #[tokio::test]
     async fn query_key_values_works() {
         let mut trie = Trie::connect(MemTrieEdit::new());
-        trie = trie.insert(1, TrieValue::U32(1)).await.expect("insert");
-        trie = trie.insert(2, TrieValue::U32(2)).await.expect("insert");
+        trie.insert(1, TrieValue::U32(1)).await.expect("insert");
+        trie.insert(2, TrieValue::U32(2)).await.expect("insert");
         let key_values = trie.query_keys_values().await.expect("all_keys_values");
         let mut key_values = key_values
             .into_iter()
@@ -79,7 +80,7 @@ mod tests {
         // Commit once.
         let storage = {
             let mut trie = Trie::connect(MemTrieEdit::new());
-            trie = trie.insert(1, TrieValue::U32(42)).await.unwrap();
+            trie.insert(1, TrieValue::U32(42)).await.unwrap();
             trie = trie
                 .deep_insert([2, 42], TrieValue::U32(242), false)
                 .await
@@ -90,7 +91,7 @@ mod tests {
         // Commit again.
         let storage = {
             let mut trie = Trie::connect(storage);
-            trie = trie.insert(1, TrieValue::U32(84)).await.unwrap();
+            trie.insert(1, TrieValue::U32(84)).await.unwrap();
             trie = trie.commit().await.expect("commit");
             trie.close()
         };
@@ -109,7 +110,7 @@ mod tests {
     async fn read_trie_queries_work() -> anyhow::Result<()> {
         let storage = {
             let mut trie = Trie::connect(MemTrieEdit::new());
-            trie = trie.insert(1, TrieValue::U32(42)).await?;
+            trie.insert(1, TrieValue::U32(42)).await?;
             trie = trie
                 .deep_insert([2, 42], TrieValue::U32(242), false)
                 .await?;
@@ -130,7 +131,7 @@ mod tests {
         // Commit some values.
         let storage = {
             let mut trie = Trie::connect(MemTrieEdit::new());
-            trie = trie.insert(100, TrieValue::U32(42)).await.unwrap();
+            trie.insert(100, TrieValue::U32(42)).await.unwrap();
             for a in 0..=32 {
                 trie = trie
                     .deep_insert([3, a], TrieValue::U32(a as u32), false)
@@ -193,8 +194,8 @@ mod tests {
 
     #[tokio::test]
     async fn later_insertion_overwrites_earlier_insertion() {
-        let trie = Trie::connect(MemTrieEdit::new())
-            .insert(1, TrieValue::U32(42))
+        let mut trie = Trie::connect(MemTrieEdit::new());
+        trie.insert(1, TrieValue::U32(42))
             .await
             .unwrap()
             .insert(1, TrieValue::U32(43))
@@ -210,7 +211,7 @@ mod tests {
         // 33 keys will saturate the root block.
         let keys = (0..=32).collect::<Vec<_>>();
         for i in &keys {
-            trie = trie.insert(*i, TrieValue::U32(*i as u32)).await.unwrap();
+            trie.insert(*i, TrieValue::U32(*i as u32)).await.unwrap();
         }
         let mut values = Vec::new();
         for i in &keys {
@@ -267,17 +268,17 @@ mod tests {
 
 #[cfg(test)]
 mod stream_tests {
-	use crate::Trie;
-	use futures::StreamExt;
-	use sky_types::storage::MemTrieEdit;
-	use sky_types::trie::TrieStream;
-	use sky_types::trie::TrieValue;
+    use crate::Trie;
+    use futures::StreamExt;
+    use sky_types::storage::MemTrieEdit;
+    use sky_types::trie::TrieValue;
+    use sky_types::trie::{TrieInsert, TrieStream};
 
-	#[tokio::test]
-	async fn u32_stream() -> anyhow::Result<()> {
+    #[tokio::test]
+    async fn u32_stream() -> anyhow::Result<()> {
         let mut trie = Trie::connect(MemTrieEdit::new());
-        trie = trie.insert(1, TrieValue::U32(1)).await?;
-        trie = trie.insert(2, TrieValue::U32(2)).await?;
+        trie.insert(1, TrieValue::U32(1)).await?;
+        trie.insert(2, TrieValue::U32(2)).await?;
         trie = trie.deep_insert([3, 4], TrieValue::U32(34), false).await?;
         let mut u32s = trie.u32_stream().collect::<Vec<_>>().await;
         u32s.sort_by_key(|(key, _u32)| *key);
@@ -295,7 +296,7 @@ mod stream_tests {
         trie = trie
             .deep_insert([2, 202], TrieValue::U32(202), false)
             .await?;
-        trie = trie.insert(3, TrieValue::U32(33)).await?;
+        trie.insert(3, TrieValue::U32(33)).await?;
         let subtries = trie.subtrie_stream().collect::<Vec<_>>().await;
         assert_eq!(2, subtries.len());
         Ok(())

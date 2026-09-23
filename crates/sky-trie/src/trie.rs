@@ -2,9 +2,9 @@ use crate::TrieReader;
 use crate::prelude::TrieValue;
 use sky_types::storage::error::WriteStorageError;
 use sky_types::storage::{ReadStorage, ReadStorageError, ReadWriteStorage, StorageStatus};
-use sky_types::trie::TrieStream;
 use sky_types::trie::map_base::query_value;
-use sky_types::trie::{Base, BaseId, DeepKey, HashKey, MapBase, BaseRead};
+use sky_types::trie::{Base, BaseId, BaseRead, DeepKey, MapBase};
+use sky_types::trie::{BaseCommit, TrieStream};
 use sky_types::trie::{TrieInsertError, map_base};
 use std::collections::HashMap;
 
@@ -67,15 +67,20 @@ impl<S: ReadWriteStorage> Trie<S> {
     }
 }
 
-/// Trie update methods.
-impl<S: ReadWriteStorage> Trie<S> {
-    pub async fn insert(mut self, key: i32, value: TrieValue) -> Result<Self, TrieInsertError> {
-        let key = HashKey::new(key);
-        let root = map_base::insert_kv(self.read_root(), key, value, &mut self.storage).await?;
-        self.storage.commit_root(root).await?;
-        Ok(self)
+impl<S: ReadWriteStorage> BaseCommit for Trie<S> {
+    async fn commit_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
+        self.storage.commit_root(root).await
     }
 
+    async fn commit_base(&mut self, base: Base) -> Result<BaseId, WriteStorageError> {
+        self.storage.commit_base(base).await
+    }
+}
+
+impl<S: ReadWriteStorage> ReadWriteStorage for Trie<S> {}
+
+/// Trie update methods.
+impl<S: ReadWriteStorage> Trie<S> {
     pub async fn deep_insert<const N: usize>(
         mut self,
         key: [i32; N],
