@@ -1,7 +1,7 @@
 use crate::storage::{
     MemTrieView, ReadStorage, ReadStorageError, ReadWriteStorage, StorageStatus, WriteStorageError,
 };
-use crate::trie::{Base, BaseId, MapBase, BaseRead, BaseCommit, TrieStream};
+use crate::trie::{Base, BaseCommit, BaseId, BaseRead, MapBase, TrieStream};
 
 #[derive(Debug)]
 pub struct MemTrieEdit {
@@ -15,19 +15,12 @@ impl MemTrieEdit {
     }
 }
 
-impl TrieStream for MemTrieEdit {
-    type Subtrie = MemTrieView;
-
-    fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
-        self.inner.to_subtrie(subtrie_root)
-    }
-}
-
 impl ReadWriteStorage for MemTrieEdit {
     fn next_id(&self) -> BaseId {
         self.max_id() + 1
     }
 }
+
 impl BaseCommit for MemTrieEdit {
     async fn commit_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
         self.inner.status.root = root;
@@ -42,6 +35,14 @@ impl BaseCommit for MemTrieEdit {
         }
         self.inner.status.max_id = id;
         Ok(id)
+    }
+}
+
+impl TrieStream for MemTrieEdit {
+    type Subtrie = MemTrieView;
+
+    fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
+        self.inner.to_subtrie(subtrie_root)
     }
 }
 
@@ -74,17 +75,22 @@ impl BaseRead for MemTrieEdit {
 #[cfg(test)]
 mod tests {
     use crate::storage::MemTrieEdit;
-    use crate::trie::{map_base, HashKey, BaseCommit, TrieStream, TrieValue};
+    use crate::trie::{TrieInsert, TrieQuery, TrieStream, TrieValue};
     use futures::StreamExt;
 
     #[tokio::test]
-    async fn mem_trie_mut_works() {
+    async fn query_value_exists_works() {
         let mut m = MemTrieEdit::new();
-        let map_base = map_base::one_kv(HashKey::new(27), TrieValue::U32(28), &mut m)
-            .await
-            .unwrap();
-        m.commit_root(map_base).await.unwrap();
-        let values = m.u32_stream().collect::<Vec<_>>().await;
-        assert_eq!(values, vec![(27, 28)]);
+        m.insert(32, TrieValue::U32(33)).await.unwrap();
+        let v = m.query_value(32).await.unwrap();
+        assert_eq!(v, Some(TrieValue::U32(33)));
+    }
+
+    #[tokio::test]
+    async fn u32_stream_exists_works() {
+        let mut m = MemTrieEdit::new();
+        m.insert(27, TrieValue::U32(28)).await.unwrap();
+        let v = m.u32_stream().collect::<Vec<_>>().await;
+        assert_eq!(v, vec![(27, 28)]);
     }
 }
