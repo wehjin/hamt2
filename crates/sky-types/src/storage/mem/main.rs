@@ -1,4 +1,4 @@
-use crate::storage::{MemTrieView, ReadStorageError, StorageStatus, TrieView};
+use crate::storage::{MemTrieEdit, MemTrieView, ReadStorageError, StorageStatus, TrieView};
 use crate::trie::{Base, BaseId, BaseRead, MapBase};
 
 #[derive(Debug)]
@@ -7,6 +7,20 @@ pub struct MemTrie {
 }
 
 impl MemTrie {
+    pub async fn edit<F, Out>(&mut self, f: F) -> anyhow::Result<Out>
+    where
+        F: AsyncFnOnce(&mut MemTrieEdit) -> anyhow::Result<Out>,
+    {
+        let mut edit = MemTrieEdit::new();
+        let result = f(&mut edit).await;
+        if let Ok(out) = result {
+            self.inner = edit.inner;
+            Ok(out)
+        } else {
+            result
+        }
+    }
+
     pub fn new() -> Self {
         let inner = MemTrieView::empty();
         Self { inner }

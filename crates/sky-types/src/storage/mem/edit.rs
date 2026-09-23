@@ -5,7 +5,7 @@ use crate::trie::{Base, BaseCommit, BaseId, BaseRead, MapBase, TrieStream};
 
 #[derive(Debug)]
 pub struct MemTrieEdit {
-    inner: MemTrieView,
+    pub(crate) inner: MemTrieView,
 }
 
 impl MemTrieEdit {
