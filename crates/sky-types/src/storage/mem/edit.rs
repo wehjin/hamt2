@@ -1,5 +1,5 @@
 use crate::storage::{
-    MemTrieView, ReadStorage, ReadStorageError, ReadWriteStorage, StorageStatus, WriteStorageError,
+    MemTrieView, TrieView, ReadStorageError, TrieEdit, StorageStatus, WriteStorageError,
 };
 use crate::trie::{Base, BaseCommit, BaseId, BaseRead, MapBase, TrieStream};
 
@@ -15,7 +15,7 @@ impl MemTrieEdit {
     }
 }
 
-impl ReadWriteStorage for MemTrieEdit {
+impl TrieEdit for MemTrieEdit {
     fn next_id(&self) -> BaseId {
         self.max_id() + 1
     }
@@ -46,7 +46,7 @@ impl TrieStream for MemTrieEdit {
     }
 }
 
-impl ReadStorage for MemTrieEdit {
+impl TrieView for MemTrieEdit {
     type Snapshot = MemTrieView;
 
     fn status(&self) -> StorageStatus {

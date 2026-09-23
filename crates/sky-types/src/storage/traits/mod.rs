@@ -1,5 +1,5 @@
-mod read;
-mod write;
+mod trie_view;
+mod trie_edit;
 
-pub use read::*;
-pub use write::*;
+pub use trie_view::*;
+pub use trie_edit::*;

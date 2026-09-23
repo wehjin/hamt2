@@ -1,4 +1,4 @@
-use crate::storage::{ReadStorage, ReadStorageError, StorageStatus};
+use crate::storage::{TrieView, ReadStorageError, StorageStatus};
 use crate::trie::{Base, BaseId, MapBase, BaseRead, TrieStream};
 use std::sync::{Arc, RwLock};
 
@@ -24,7 +24,7 @@ impl TrieStream for MemTrieView {
     }
 }
 
-impl ReadStorage for MemTrieView {
+impl TrieView for MemTrieView {
     type Snapshot = MemTrieView;
 
     fn status(&self) -> StorageStatus {

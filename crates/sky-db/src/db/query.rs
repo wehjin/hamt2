@@ -4,9 +4,9 @@ use crate::db::{Db, Txid};
 use crate::trie::prelude::*;
 use sky_types::db::QueryError;
 use sky_types::db::{Attr, Val};
-use sky_types::storage::ReadWriteStorage;
+use sky_types::storage::TrieEdit;
 
-impl<S: ReadWriteStorage> Db<S> {
+impl<S: TrieEdit> Db<S> {
     pub async fn max_tx(&self) -> Result<Txid, QueryError> {
         let Some(TrieValue::U32(value)) = self.trie.query(KEY_MAX_TXID).await? else {
             panic!("max_tx not found");

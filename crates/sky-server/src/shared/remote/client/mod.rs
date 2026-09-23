@@ -4,7 +4,7 @@ use crate::shared::remote::{RemoteClientReadStorage, SpawnTask};
 use crate::shared::{SocketRequest, SocketResponse};
 use sky_db::reader::DbReader;
 use sky_types::db::{Datom, DbStatus};
-use sky_types::storage::{ReadStorage, StorageStatus};
+use sky_types::storage::{TrieView, StorageStatus};
 use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
 use tokio::sync::mpsc::Sender;

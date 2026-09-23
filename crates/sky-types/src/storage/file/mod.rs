@@ -1,12 +1,12 @@
 use crate::storage::{
-    ReadStorage, ReadStorageError, ReadWriteStorage, StorageStatus, WriteStorageError,
+    TrieView, ReadStorageError, TrieEdit, StorageStatus, WriteStorageError,
 };
 use crate::trie::{Base, BaseId, MapBase, BaseRead, BaseCommit};
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
 /// A read-only, immutable view of a [`FileStorage`] taken at
-/// [`ReadStorage::snapshot`] time.
+/// [`TrieView::snapshot`] time.
 ///
 /// `max_id` and `root` are captured into memory when the view is created, so
 /// later appends or commits on the writer are invisible through it. Bases are
@@ -38,7 +38,7 @@ impl BaseRead for FileReadStorage {
     }
 }
 
-impl ReadStorage for FileReadStorage {
+impl TrieView for FileReadStorage {
     type Snapshot = FileReadStorage;
 
     fn status(&self) -> StorageStatus {
@@ -103,7 +103,7 @@ impl BaseRead for FileStorage {
     }
 }
 
-impl ReadStorage for FileStorage {
+impl TrieView for FileStorage {
     type Snapshot = FileReadStorage;
 
     fn status(&self) -> StorageStatus {
@@ -219,7 +219,7 @@ fn read_to_io(e: ReadStorageError) -> std::io::Error {
     }
 }
 
-impl ReadWriteStorage for FileStorage {
+impl TrieEdit for FileStorage {
     fn next_id(&self) -> BaseId {
         self.max_id() + 1
     }

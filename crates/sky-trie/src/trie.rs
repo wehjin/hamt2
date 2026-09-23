@@ -1,22 +1,22 @@
 use crate::TrieReader;
 use sky_types::storage::error::WriteStorageError;
-use sky_types::storage::{ReadStorage, ReadStorageError, ReadWriteStorage, StorageStatus};
+use sky_types::storage::{TrieView, ReadStorageError, TrieEdit, StorageStatus};
 use sky_types::trie::{Base, BaseId, BaseRead, MapBase};
 use sky_types::trie::{BaseCommit, TrieStream};
 
 #[derive(Debug)]
-pub struct Trie<S: ReadWriteStorage> {
+pub struct Trie<S: TrieEdit> {
     pub(crate) storage: S,
 }
 
-impl<S: ReadWriteStorage> TrieStream for Trie<S> {
+impl<S: TrieEdit> TrieStream for Trie<S> {
     type Subtrie = TrieReader<S::Snapshot>;
 
     fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
         self.snapshot().to_subtrie(subtrie_root)
     }
 }
-impl<S: ReadWriteStorage> ReadStorage for Trie<S> {
+impl<S: TrieEdit> TrieView for Trie<S> {
     type Snapshot = TrieReader<S::Snapshot>;
 
     fn status(&self) -> StorageStatus {
@@ -33,7 +33,7 @@ impl<S: ReadWriteStorage> ReadStorage for Trie<S> {
         TrieReader::new(snap_storage)
     }
 }
-impl<S: ReadWriteStorage> BaseRead for Trie<S> {
+impl<S: TrieEdit> BaseRead for Trie<S> {
     async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
         self.storage.read_base(id).await
     }
@@ -44,7 +44,7 @@ impl<S: ReadWriteStorage> BaseRead for Trie<S> {
 }
 
 /// Trie construction methods.
-impl<S: ReadWriteStorage> Trie<S> {
+impl<S: TrieEdit> Trie<S> {
     /// Connects to the storage, loading the persisted root.
     pub fn connect(storage: S) -> Self {
         Self { storage }
@@ -63,7 +63,7 @@ impl<S: ReadWriteStorage> Trie<S> {
     }
 }
 
-impl<S: ReadWriteStorage> BaseCommit for Trie<S> {
+impl<S: TrieEdit> BaseCommit for Trie<S> {
     async fn commit_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
         self.storage.commit_root(root).await
     }
@@ -73,4 +73,4 @@ impl<S: ReadWriteStorage> BaseCommit for Trie<S> {
     }
 }
 
-impl<S: ReadWriteStorage> ReadWriteStorage for Trie<S> {}
+impl<S: TrieEdit> TrieEdit for Trie<S> {}

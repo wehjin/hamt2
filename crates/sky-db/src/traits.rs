@@ -4,7 +4,7 @@ use crate::find::ValsInSlot;
 use futures::FutureExt;
 use sky_types::db::schema::Schema;
 use sky_types::db::{Attr, Ein, FindResult, QueryError, Val};
-use sky_types::storage::ReadWriteStorage;
+use sky_types::storage::TrieEdit;
 use sky_types::trie::TrieStream;
 
 pub trait DbQuery {
@@ -29,7 +29,7 @@ pub trait DbQuery {
     }
 }
 
-impl<S: ReadWriteStorage> DbQuery for Db<S> {
+impl<S: TrieEdit> DbQuery for Db<S> {
     fn find<F: Find>(&self, find: F) -> impl Future<Output = Vec<F::Output>> {
         find.apply(&self.trie, &self.schema)
     }

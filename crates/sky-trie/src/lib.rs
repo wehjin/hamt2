@@ -8,7 +8,7 @@ pub use trie_reader::TrieReader;
 #[cfg(test)]
 mod tests {
     use crate::{Trie, TrieReader};
-    use sky_types::storage::{FileStorage, MemTrieEdit, ReadStorage};
+    use sky_types::storage::{FileStorage, MemTrieEdit, TrieView};
     use sky_types::trie::{TrieInsert, TrieQuery, TrieValue};
 
     #[tokio::test]
