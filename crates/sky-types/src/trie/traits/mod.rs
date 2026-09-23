@@ -1,9 +1,9 @@
 mod base_commit;
-mod query;
+mod trie_query;
 mod base_read;
-mod stream;
+mod trie_stream;
 
 pub use base_commit::*;
-pub use query::*;
+pub use trie_query::*;
 pub use base_read::*;
-pub use stream::*;
+pub use trie_stream::*;
