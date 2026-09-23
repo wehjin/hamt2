@@ -1,7 +1,7 @@
 use crate::storage::{
     MemTrieView, ReadStorage, ReadStorageError, ReadWriteStorage, StorageStatus, WriteStorageError,
 };
-use crate::trie::{Base, BaseId, MapBase, RootBaseRead, TrieStream};
+use crate::trie::{Base, BaseId, MapBase, RootBaseRead, TrieCommit, TrieStream};
 
 #[derive(Debug)]
 pub struct MemTrieEdit {
@@ -27,8 +27,14 @@ impl ReadWriteStorage for MemTrieEdit {
     fn next_id(&self) -> BaseId {
         self.max_id() + 1
     }
+}
+impl TrieCommit for MemTrieEdit {
+    async fn commit_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
+        self.inner.status.root = root;
+        Ok(())
+    }
 
-    async fn append(&mut self, base: &Base) -> Result<BaseId, WriteStorageError> {
+    async fn commit_base(&mut self, base: Base) -> Result<BaseId, WriteStorageError> {
         let id = self.next_id();
         {
             let mut bases = self.inner.bases.write().unwrap();
@@ -36,11 +42,6 @@ impl ReadWriteStorage for MemTrieEdit {
         }
         self.inner.status.max_id = id;
         Ok(id)
-    }
-
-    async fn write_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
-        self.inner.status.root = root;
-        Ok(())
     }
 }
 
@@ -72,8 +73,8 @@ impl RootBaseRead for MemTrieEdit {
 
 #[cfg(test)]
 mod tests {
-    use crate::storage::{MemTrieEdit, ReadWriteStorage};
-    use crate::trie::{HashKey, TrieStream, TrieValue, map_base};
+    use crate::storage::MemTrieEdit;
+    use crate::trie::{map_base, HashKey, TrieCommit, TrieStream, TrieValue};
     use futures::StreamExt;
 
     #[tokio::test]
@@ -82,7 +83,7 @@ mod tests {
         let map_base = map_base::one_kv(HashKey::new(27), TrieValue::U32(28), &mut m)
             .await
             .unwrap();
-        m.write_root(map_base).await.unwrap();
+        m.commit_root(map_base).await.unwrap();
         let values = m.u32_stream().collect::<Vec<_>>().await;
         assert_eq!(values, vec![(27, 28)]);
     }

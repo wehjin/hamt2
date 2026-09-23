@@ -1,8 +1,7 @@
 use crate::storage::{
     ReadStorage, ReadStorageError, ReadWriteStorage, StorageStatus, WriteStorageError,
 };
-use crate::trie::{MapBase, Base, BaseId, RootBaseRead};
-use std::future;
+use crate::trie::{Base, BaseId, MapBase, RootBaseRead, TrieCommit};
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
@@ -224,38 +223,37 @@ impl ReadWriteStorage for FileStorage {
     fn next_id(&self) -> BaseId {
         self.max_id() + 1
     }
+}
 
-    fn append(
-        &mut self,
-        base: &Base,
-    ) -> impl Future<Output = Result<BaseId, WriteStorageError>> {
-        let id = self.next_id();
-        let bytes = match postcard::to_allocvec(base) {
-            Ok(bytes) => bytes,
-            Err(e) => return future::ready(Err(WriteStorageError::Encode(id, e))),
-        };
-        let path = base_path(&self.inner.bases_dir, id);
-        if let Err(e) = std::fs::create_dir_all(path.parent().expect("base path has parent")) {
-            return future::ready(Err(WriteStorageError::Io(id, e)));
-        }
-        if let Err(e) = std::fs::write(&path, bytes) {
-            return future::ready(Err(WriteStorageError::Io(id, e)));
-        }
-        if let Err(e) = write_max_id_file(&self.max_id_path, id) {
-            return future::ready(Err(e));
-        }
-        self.inner.status.max_id = id;
-        future::ready(Ok(id))
-    }
-
-    fn write_root(&mut self, root: MapBase) -> impl Future<Output = Result<(), WriteStorageError>> {
+impl TrieCommit for FileStorage {
+    async fn commit_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
         match write_root_file(&self.root_path, &root) {
             Ok(()) => {
                 self.inner.status.root = root;
-                future::ready(Ok(()))
+                Ok(())
             }
-            Err(e) => future::ready(Err(e)),
+            Err(e) => Err(e),
         }
+    }
+
+    async fn commit_base(&mut self, base: Base) -> Result<BaseId, WriteStorageError> {
+        let id = self.next_id();
+        let bytes = match postcard::to_allocvec(&base) {
+            Ok(bytes) => bytes,
+            Err(e) => return Err(WriteStorageError::Encode(id, e)),
+        };
+        let path = base_path(&self.inner.bases_dir, id);
+        if let Err(e) = std::fs::create_dir_all(path.parent().expect("base path has parent")) {
+            return Err(WriteStorageError::Io(id, e));
+        }
+        if let Err(e) = std::fs::write(&path, bytes) {
+            return Err(WriteStorageError::Io(id, e));
+        }
+        if let Err(e) = write_max_id_file(&self.max_id_path, id) {
+            return Err(e);
+        }
+        self.inner.status.max_id = id;
+        Ok(id)
     }
 }
 
@@ -287,7 +285,7 @@ mod tests {
         {
             let mut storage = FileStorage::new(dir.path())?;
             for base in &bases {
-                storage.append(base).await.expect("append");
+                storage.commit_base(base.clone()).await.expect("append");
             }
             assert_eq!(BaseId(10), storage.max_id());
             assert_eq!(BaseId(11), storage.next_id());
@@ -315,7 +313,7 @@ mod tests {
             root = one_kv(HashKey::new(7), TrieValue::U32(7), &mut storage)
                 .await
                 .expect("one_kv");
-            storage.write_root(root.clone()).await.expect("write root");
+            storage.commit_root(root.clone()).await.expect("write root");
         }
         let storage = FileStorage::load(dir.path())?;
         assert_eq!(root, storage.read_root());
@@ -328,10 +326,10 @@ mod tests {
         let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7));
         {
             let mut storage = FileStorage::new(dir.path())?;
-            storage.append(&base).await.expect("append");
+            storage.commit_base(base.clone()).await.expect("append");
         }
         let mut storage = FileStorage::load(dir.path())?;
-        let id = storage.append(&base).await.expect("append");
+        let id = storage.commit_base(base).await.expect("append");
         assert_eq!(BaseId(2), id);
         assert_eq!(BaseId(2), storage.max_id());
         Ok(())
@@ -343,7 +341,7 @@ mod tests {
         let mut storage = FileStorage::new(dir.path())?;
         let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7));
         for _ in 0..300 {
-            storage.append(&base).await.expect("append");
+            storage.commit_base(base.clone()).await.expect("append");
         }
         let bases_dir = dir.path().join(FileStorage::BASES_DIR);
         // Id 1 lives in <bases>/0000/0001/00000001.postcard.
@@ -370,15 +368,15 @@ mod tests {
         let dir = tempfile::tempdir()?;
         let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7));
         let mut storage = FileStorage::new(dir.path())?;
-        let id = storage.append(&base).await.expect("append");
+        let id = storage.commit_base(base.clone()).await.expect("append");
         let root = one_kv(HashKey::new(7), TrieValue::U32(7), &mut storage)
             .await
             .expect("one_kv");
-        storage.write_root(root.clone()).await.expect("write root");
+        storage.commit_root(root.clone()).await.expect("write root");
         let view = storage.snapshot();
 
         // Writes after the snapshot are invisible to the view.
-        storage.append(&base).await.expect("append");
+        storage.commit_base(base.clone()).await.expect("append");
         let new_root = two_kv(
             HashKey::new(7),
             TrieValue::U32(7),
@@ -388,7 +386,7 @@ mod tests {
         )
         .await
         .expect("two_kv");
-        storage.write_root(new_root).await.expect("write root");
+        storage.commit_root(new_root).await.expect("write root");
 
         assert_eq!(BaseId(4), storage.max_id());
         assert_eq!(BaseId(2), view.max_id());
@@ -403,9 +401,9 @@ mod tests {
         let dir = tempfile::tempdir().expect("tempdir");
         let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7));
         let mut storage = FileStorage::new(dir.path()).expect("new storage");
-        storage.append(&base).await.expect("append");
+        storage.commit_base(base.clone()).await.expect("append");
         let view = storage.snapshot();
-        let new_id = storage.append(&base).await.expect("append");
+        let new_id = storage.commit_base(base).await.expect("append");
         let _ = view.read_base(new_id).await;
     }
 

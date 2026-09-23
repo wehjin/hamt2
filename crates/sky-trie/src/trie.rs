@@ -4,7 +4,7 @@ use sky_types::storage::error::WriteStorageError;
 use sky_types::storage::{ReadStorage, ReadStorageError, ReadWriteStorage, StorageStatus};
 use sky_types::trie::TrieStream;
 use sky_types::trie::map_base::query_value;
-use sky_types::trie::{DeepKey, HashKey, MapBase, Base, BaseId, RootBaseRead};
+use sky_types::trie::{Base, BaseId, DeepKey, HashKey, MapBase, RootBaseRead};
 use sky_types::trie::{TrieInsertError, map_base};
 use std::collections::HashMap;
 
@@ -72,7 +72,7 @@ impl<S: ReadWriteStorage> Trie<S> {
     pub async fn insert(mut self, key: i32, value: TrieValue) -> Result<Self, TrieInsertError> {
         let key = HashKey::new(key);
         let root = map_base::insert_kv(self.read_root(), key, value, &mut self.storage).await?;
-        self.storage.write_root(root).await?;
+        self.storage.commit_root(root).await?;
         Ok(self)
     }
 
@@ -112,7 +112,7 @@ impl<S: ReadWriteStorage> Trie<S> {
         let TrieValue::SubTrie(root) = value else {
             panic!("value should be map_base")
         };
-        self.storage.write_root(root).await?;
+        self.storage.commit_root(root).await?;
         Ok(self)
     }
 }

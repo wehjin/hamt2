@@ -1,7 +1,7 @@
 use crate::storage::mem::MemTrieEdit;
 use crate::storage::{ReadStorage, ReadWriteStorage};
 use crate::trie::map_base::one_kv;
-use crate::trie::{HashKey, MapBase, Base, BaseId, RootBaseRead, TrieValue};
+use crate::trie::{Base, BaseId, HashKey, MapBase, RootBaseRead, TrieCommit, TrieValue};
 
 #[tokio::test]
 async fn empty_storage_max_id_is_zero() {
@@ -14,8 +14,8 @@ async fn empty_storage_max_id_is_zero() {
 async fn base_id_zero_is_the_empty_base() {
     let storage = MemTrieEdit::new();
     assert_eq!(
-	    Base::empty(),
-	    storage.read_base(BaseId::ZERO).await.expect("read")
+        Base::empty(),
+        storage.read_base(BaseId::ZERO).await.expect("read")
     );
 }
 
@@ -31,7 +31,7 @@ async fn root_round_trip_works() {
     let root = one_kv(HashKey::new(7), TrieValue::U32(7), &mut storage)
         .await
         .expect("root");
-    storage.write_root(root).await.expect("write root");
+    storage.commit_root(root).await.expect("write root");
     let view = storage.snapshot();
     assert_eq!(root, storage.read_root());
     assert_eq!(root, view.read_root());
@@ -41,8 +41,8 @@ async fn root_round_trip_works() {
 async fn append_assigns_sequential_ids() {
     let mut storage = MemTrieEdit::new();
     let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7));
-    let id0 = storage.append(&base).await.expect("append");
-    let id1 = storage.append(&base).await.expect("append");
+    let id0 = storage.commit_base(base.clone()).await.expect("append");
+    let id1 = storage.commit_base(base.clone()).await.expect("append");
     assert_eq!(BaseId(1), id0);
     assert_eq!(BaseId(2), id1);
     assert_eq!(BaseId(2), storage.max_id());
@@ -55,9 +55,9 @@ async fn append_assigns_sequential_ids() {
 async fn mem_readonly_snapshot_does_not_see_new_bases() {
     let mut storage = MemTrieEdit::new();
     let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7));
-    let id = storage.append(&base).await.expect("append");
+    let id = storage.commit_base(base.clone()).await.expect("append");
     let view = storage.snapshot();
-    storage.append(&base).await.expect("append");
+    storage.commit_base(base.clone()).await.expect("append");
     assert_eq!(BaseId(2), storage.max_id());
     assert_eq!(id, view.max_id());
     assert_eq!(base, view.read_base(id).await.expect("read"));
@@ -68,9 +68,9 @@ async fn mem_readonly_snapshot_does_not_see_new_bases() {
 async fn mem_snapshot_panics_reading_beyond_max_id() {
     let mut storage = MemTrieEdit::new();
     let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7));
-    storage.append(&base).await.expect("append");
+    storage.commit_base(base.clone()).await.expect("append");
     let view = storage.snapshot();
-    let new_id = storage.append(&base).await.expect("append");
+    let new_id = storage.commit_base(base.clone()).await.expect("append");
     let _ = view.read_base(new_id).await;
 }
 
