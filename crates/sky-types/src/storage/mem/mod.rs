@@ -1,5 +1,10 @@
-mod view;
 mod edit;
+mod main;
+mod view;
 
-pub use view::*;
 pub use edit::*;
+pub use main::*;
+pub use view::*;
+
+#[cfg(test)]
+mod tests;
