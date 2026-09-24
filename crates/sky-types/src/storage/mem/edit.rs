@@ -9,12 +9,13 @@ pub struct MemTrieEdit {
 }
 
 impl MemTrieEdit {
+    /// Make the pub(crate) after moving usage out of local.
     pub fn new() -> Self {
         let inner = MemTrieView::empty();
         Self { inner }
     }
 
-    pub fn extend(past: &MemTrieView) -> Self {
+    pub(crate) fn extend(past: &MemTrieView) -> Self {
         let inner = MemTrieView::extend(past);
         Self { inner }
     }

@@ -12,7 +12,7 @@ pub struct MemTrieView {
 }
 
 impl MemTrieView {
-    pub fn empty() -> Self {
+    pub(crate) fn empty() -> Self {
         Self {
             past: None,
             bases: Arc::new(RwLock::new(vec![Base::empty()])),
@@ -20,7 +20,7 @@ impl MemTrieView {
             root: MapBase::empty(),
         }
     }
-    pub fn extend(past: &MemTrieView) -> Self {
+    pub(crate) fn extend(past: &MemTrieView) -> Self {
         Self {
             past: Some(Arc::new(past.clone())),
             bases: Arc::new(RwLock::new(vec![])),
@@ -28,7 +28,7 @@ impl MemTrieView {
             root: past.read_root(),
         }
     }
-    pub async fn merge(&mut self, extension: MemTrieView) {
+    pub(crate) async fn merge(&mut self, extension: MemTrieView) {
         //! This is a simple merge. Advanced merge would first remove the
         //! unused bases from the extension and re-assign base ids to fill
         //! the vacancies in the bases vec.
