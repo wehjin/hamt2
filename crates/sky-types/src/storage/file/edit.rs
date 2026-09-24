@@ -1,6 +1,6 @@
 use crate::storage::file::internal;
 use crate::storage::{
-    FileReadStorage, ReadStorageError, StorageStatus, TrieEdit, TrieView, WriteStorageError,
+    FileView, ReadStorageError, StorageStatus, TrieEdit, TrieView, WriteStorageError,
 };
 use crate::trie::{Base, BaseCommit, BaseId, BaseRead, MapBase};
 use std::io::ErrorKind;
@@ -24,7 +24,7 @@ use std::path::{Path, PathBuf};
 /// Base id [`BaseId::ZERO`] is the reserved empty base and is never written to disk.
 #[derive(Debug)]
 pub struct FileStorage {
-    pub(crate) inner: FileReadStorage,
+    pub(crate) inner: FileView,
     max_id_path: PathBuf,
     root_path: PathBuf,
 }
@@ -40,7 +40,7 @@ impl BaseRead for FileStorage {
 }
 
 impl TrieView for FileStorage {
-    type Snapshot = FileReadStorage;
+    type Snapshot = FileView;
 
     fn status(&self) -> StorageStatus {
         self.inner.status()
@@ -71,7 +71,7 @@ impl FileStorage {
 
         internal::write_max_id_file(&max_id_path, status.max_id).map_err(internal::write_to_io)?;
         internal::write_root_file(&root_path, &status.root).map_err(internal::write_to_io)?;
-        let inner = FileReadStorage { bases_dir, status };
+        let inner = FileView { bases_dir, status };
         Ok(Self {
             inner,
             max_id_path,
@@ -98,7 +98,7 @@ impl FileStorage {
             max_id: BaseId(max_id),
             root,
         };
-        let inner = FileReadStorage { bases_dir, status };
+        let inner = FileView { bases_dir, status };
         Ok(Self {
             inner,
             max_id_path,

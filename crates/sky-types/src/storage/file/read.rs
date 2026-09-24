@@ -5,18 +5,18 @@ use crate::trie::{Base, BaseId, BaseRead, MapBase};
 use std::path::PathBuf;
 
 #[derive(Debug, Clone)]
-pub struct FileReadStorage {
+pub struct FileView {
     pub(crate) bases_dir: PathBuf,
     pub(crate) status: StorageStatus,
 }
 
-impl From<FileStorage> for FileReadStorage {
+impl From<FileStorage> for FileView {
     fn from(storage: FileStorage) -> Self {
         storage.inner.clone()
     }
 }
 
-impl BaseRead for FileReadStorage {
+impl BaseRead for FileView {
     fn read_root(&self) -> MapBase {
         self.status.root
     }
@@ -30,8 +30,8 @@ impl BaseRead for FileReadStorage {
     }
 }
 
-impl TrieView for FileReadStorage {
-    type Snapshot = FileReadStorage;
+impl TrieView for FileView {
+    type Snapshot = FileView;
 
     fn status(&self) -> StorageStatus {
         self.status
@@ -49,7 +49,7 @@ impl TrieView for FileReadStorage {
     }
 }
 
-impl FileReadStorage {
+impl FileView {
     /// Reads and decodes the base file for `id`, without checking `max_id`.
     /// Base id [`BaseId::ZERO`] reads back the empty base.
     fn read_base_unchecked(&self, id: BaseId) -> Result<Base, ReadStorageError> {
