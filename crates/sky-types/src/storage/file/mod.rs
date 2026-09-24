@@ -1,9 +1,9 @@
 mod edit;
 mod internal;
-mod read;
+mod view;
 
 pub use edit::*;
-pub use read::*;
+pub use view::*;
 
 #[cfg(test)]
 mod tests;
