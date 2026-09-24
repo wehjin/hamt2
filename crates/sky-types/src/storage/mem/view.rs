@@ -62,11 +62,7 @@ impl TrieView for MemTrieView {
         }
     }
     fn with_new_root(self, new_root: Option<MapBase>) -> Self {
-        let root = if let Some(new_root) = new_root {
-            new_root
-        } else {
-            self.root
-        };
+        let root = new_root.unwrap_or(self.root);
         Self { root, ..self }
     }
     fn snapshot(&self) -> Self::Snapshot {
@@ -92,6 +88,7 @@ impl BaseRead for MemTrieView {
             };
             return Ok(base);
         };
+        // yes past
         if id <= past.max_id {
             Box::pin(past.read_base(id)).await
         } else {

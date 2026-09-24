@@ -1,47 +1,60 @@
-use crate::storage::file::edit::FileStorage;
-use crate::storage::file::internal;
+use crate::storage::file::internal::{bases_dir, init_bases_dir_with_empty_base, read_base};
 use crate::storage::{ReadStorageError, StorageStatus, TrieView};
-use crate::trie::{Base, BaseId, BaseRead, MapBase};
-use std::path::PathBuf;
+use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieStream};
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 #[derive(Debug, Clone)]
-pub struct FileView {
+pub struct FileTrieView {
+    pub(crate) past: Option<Arc<FileTrieView>>,
     pub(crate) bases_dir: PathBuf,
-    pub(crate) status: StorageStatus,
+    pub(crate) max_id: BaseId,
+    pub(crate) root: MapBase,
 }
 
-impl From<FileStorage> for FileView {
-    fn from(storage: FileStorage) -> Self {
-        storage.inner.clone()
+impl FileTrieView {
+    pub(crate) async fn empty(frame_dir: impl AsRef<Path>) -> Self {
+        let bases_dir = init_bases_dir_with_empty_base(frame_dir)
+            .await
+            .expect("initialize bases dir");
+        Self {
+            past: None,
+            bases_dir,
+            max_id: BaseId::ZERO,
+            root: MapBase::empty(),
+        }
+    }
+    pub(crate) fn load(frame_dir: impl AsRef<Path>, max_id: BaseId, root: MapBase) -> Self {
+        let bases_dir = bases_dir(frame_dir);
+        Self {
+            past: None,
+            bases_dir,
+            max_id,
+            root,
+        }
     }
 }
 
-impl BaseRead for FileView {
-    fn read_root(&self) -> MapBase {
-        self.status.root
-    }
+impl TrieStream for FileTrieView {
+    type Subtrie = FileTrieView;
 
-    async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
-        assert!(
-            id <= self.max_id(),
-            "base id {id} is beyond this snapshot's max_id"
-        );
-        self.read_base_unchecked(id)
+    fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
+        self.clone().with_new_root(Some(subtrie_root))
     }
 }
 
-impl TrieView for FileView {
-    type Snapshot = FileView;
+impl TrieView for FileTrieView {
+    type Snapshot = FileTrieView;
 
     fn status(&self) -> StorageStatus {
-        self.status
+        StorageStatus {
+            max_id: self.max_id,
+            root: self.root,
+        }
     }
     fn with_new_root(self, new_root: Option<MapBase>) -> Self {
-        let snap_status = self.status.with_new_root(new_root);
-        Self {
-            status: snap_status,
-            ..self
-        }
+        let root = new_root.unwrap_or(self.root);
+        Self { root, ..self }
     }
 
     fn snapshot(&self) -> Self::Snapshot {
@@ -49,15 +62,29 @@ impl TrieView for FileView {
     }
 }
 
-impl FileView {
-    /// Reads and decodes the base file for `id`, without checking `max_id`.
-    /// Base id [`BaseId::ZERO`] reads back the empty base.
-    fn read_base_unchecked(&self, id: BaseId) -> Result<Base, ReadStorageError> {
-        if id == BaseId::EMPTY {
+impl BaseRead for FileTrieView {
+    fn read_root(&self) -> MapBase {
+        self.root
+    }
+
+    async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
+        if id <= BaseId::ZERO {
             return Ok(Base::empty());
         }
-        let path = internal::base_path(&self.bases_dir, id);
-        let bytes = std::fs::read(&path).map_err(|e| ReadStorageError::Io(id, e))?;
-        postcard::from_bytes::<Base>(&bytes).map_err(|e| ReadStorageError::Decode(id, e))
+        let Some(past) = &self.past else {
+            // no past
+            let base = if id > self.max_id {
+                Base::empty()
+            } else {
+                read_base(&self.bases_dir, id).await?
+            };
+            return Ok(base);
+        };
+        // yes past
+        if id <= past.max_id {
+            Box::pin(past.read_base(id)).await
+        } else {
+            read_base(&self.bases_dir, id).await
+        }
     }
 }

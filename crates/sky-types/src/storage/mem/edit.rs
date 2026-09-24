@@ -9,7 +9,7 @@ pub struct MemTrieEdit {
 }
 
 impl MemTrieEdit {
-    /// Make the pub(crate) after moving usage out of local.
+    /// Make this pub(crate) after moving usage out of local.
     pub fn new() -> Self {
         let inner = MemTrieView::empty();
         Self { inner }
@@ -60,7 +60,7 @@ impl TrieView for MemTrieEdit {
     }
     fn with_new_root(self, new_root: Option<MapBase>) -> Self {
         let inner = self.inner.with_new_root(new_root);
-        Self { inner }
+        Self { inner, ..self }
     }
 
     fn snapshot(&self) -> Self::Snapshot {

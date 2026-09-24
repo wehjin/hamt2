@@ -4,7 +4,7 @@ use sky_types::db::Attr;
 use sky_types::db::Transact;
 use sky_types::db::datom;
 use sky_types::db::val;
-use sky_types::storage::FileStorage;
+use sky_types::storage::FileTrieEdit;
 
 pub fn attr_count() -> Attr {
     Attr::from("counter/count")
@@ -17,14 +17,14 @@ pub fn attr_greeting() -> Attr {
 async fn file_db_works() -> anyhow::Result<()> {
     let dir = tempfile::tempdir()?;
     {
-        let storage = FileStorage::new(dir.path())?;
+        let storage = FileTrieEdit::new(dir.path()).await?;
         let db = Db::new(storage, [attr_count()]).await?;
         let db = db.transact([datom::add(1, attr_count(), 1)]).await?;
         assert_eq!(Some(val(1)), db.find_val(1, attr_count()).await?);
         db.close();
     }
     {
-        let storage = FileStorage::load(dir.path())?;
+        let storage = FileTrieEdit::load(dir.path()).await?;
         let db = Db::load(storage).await;
         assert_eq!(Some(val(1)), db.find_val(1, attr_count()).await?);
     }
@@ -35,7 +35,7 @@ async fn file_db_works() -> anyhow::Result<()> {
 async fn file_db_strings_work() -> anyhow::Result<()> {
     let dir = tempfile::tempdir()?;
     {
-        let storage = FileStorage::new(dir.path())?;
+        let storage = FileTrieEdit::new(dir.path()).await?;
         let db = Db::new(storage, [attr_greeting()]).await?;
         let db = db
             .transact([datom::add(1, attr_greeting(), "hello")])
@@ -44,7 +44,7 @@ async fn file_db_strings_work() -> anyhow::Result<()> {
         db.close();
     }
     {
-        let storage = FileStorage::load(dir.path())?;
+        let storage = FileTrieEdit::load(dir.path()).await?;
         let db = Db::load(storage).await;
         assert_eq!(Some(val("hello")), db.find_val(1, attr_greeting()).await?);
     }

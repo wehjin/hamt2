@@ -1,46 +1,88 @@
 use crate::storage::file::internal;
+use crate::storage::file::internal::{read_max_id_file, write_base};
 use crate::storage::{
-    FileView, ReadStorageError, StorageStatus, TrieEdit, TrieView, WriteStorageError,
+    FileTrieView, ReadStorageError, StorageStatus, TrieEdit, TrieView, WriteStorageError,
 };
-use crate::trie::{Base, BaseCommit, BaseId, BaseRead, MapBase};
-use std::io::ErrorKind;
+use crate::trie::{Base, BaseCommit, BaseId, BaseRead, MapBase, TrieStream};
+use internal::{read_root_file, write_max_id_file, write_root_file};
 use std::path::{Path, PathBuf};
+use tokio::fs;
 
-/// A file-backed storage for Bases.
-///
-/// Bases are stored in a `bases` subfolder of the given folder, spread over a
-/// two-level subfolder structure so no directory grows unbounded:
-///
-/// ```text
-/// <folder>/
-///   max_id          (file holding the highest written base id)
-///   root            (file holding the committed root map base)
-///   bases/
-///     <level-1>/
-///       <level-2>/
-///         <id>.postcard
-/// ```
-///
-/// Base id [`BaseId::ZERO`] is the reserved empty base and is never written to disk.
 #[derive(Debug)]
-pub struct FileStorage {
-    pub(crate) inner: FileView,
+pub struct FileTrieEdit {
+    pub(crate) inner: FileTrieView,
     max_id_path: PathBuf,
     root_path: PathBuf,
 }
 
-impl BaseRead for FileStorage {
-    fn read_root(&self) -> MapBase {
-        self.inner.read_root()
+impl FileTrieEdit {
+    pub(crate) const MAX_ID_FILE: &'static str = "max_id";
+    pub(crate) const ROOT_FILE: &'static str = "root";
+
+    pub async fn new(path: impl AsRef<Path>) -> Result<Self, WriteStorageError> {
+        let frame_dir = path.as_ref();
+        fs::create_dir_all(frame_dir)
+            .await
+            .map_err(|e| WriteStorageError::Io("frame".to_string(), e))?;
+        let max_id_path = frame_dir.join(Self::MAX_ID_FILE);
+        let root_path = frame_dir.join(Self::ROOT_FILE);
+        let inner = FileTrieView::empty(path).await;
+        write_max_id_file(&max_id_path, inner.max_id()).await?;
+        write_root_file(&root_path, &inner.read_root()).await?;
+        Ok(Self {
+            inner,
+            max_id_path,
+            root_path,
+        })
     }
 
-    async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
-        self.inner.read_base(id).await
+    pub async fn load(path: impl AsRef<Path>) -> Result<Self, ReadStorageError> {
+        let frame_dir = path.as_ref();
+        let max_id_path = frame_dir.join(Self::MAX_ID_FILE);
+        let root_path = frame_dir.join(Self::ROOT_FILE);
+        let max_id = read_max_id_file(&max_id_path).await?;
+        let root = read_root_file(&root_path).await?;
+        let inner = FileTrieView::load(frame_dir, max_id, root);
+        Ok(Self {
+            inner,
+            max_id_path,
+            root_path,
+        })
     }
 }
 
-impl TrieView for FileStorage {
-    type Snapshot = FileView;
+impl TrieEdit for FileTrieEdit {
+    fn next_id(&self) -> BaseId {
+        self.max_id() + 1
+    }
+}
+
+impl BaseCommit for FileTrieEdit {
+    async fn commit_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
+        write_root_file(&self.root_path, &root).await?;
+        self.inner.root = root;
+        Ok(())
+    }
+
+    async fn commit_base(&mut self, base: Base) -> Result<BaseId, WriteStorageError> {
+        let id = self.next_id();
+        write_base(&self.inner.bases_dir, id, base).await?;
+        write_max_id_file(&self.max_id_path, id).await?;
+        self.inner.max_id = id;
+        Ok(id)
+    }
+}
+
+impl TrieStream for FileTrieEdit {
+    type Subtrie = FileTrieView;
+
+    fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
+        self.inner.to_subtrie(subtrie_root)
+    }
+}
+
+impl TrieView for FileTrieEdit {
+    type Snapshot = FileTrieView;
 
     fn status(&self) -> StorageStatus {
         self.inner.status()
@@ -55,92 +97,12 @@ impl TrieView for FileStorage {
     }
 }
 
-impl FileStorage {
-    pub(crate) const BASES_DIR: &'static str = "bases";
-    pub(crate) const MAX_ID_FILE: &'static str = "max_id";
-    pub(crate) const ROOT_FILE: &'static str = "root";
-
-    /// Creates a fresh empty storage in the given folder.
-    pub fn new(path: impl AsRef<Path>) -> Result<Self, std::io::Error> {
-        let root = path.as_ref();
-        let bases_dir = root.join(Self::BASES_DIR);
-        let max_id_path = root.join(Self::MAX_ID_FILE);
-        let root_path = root.join(Self::ROOT_FILE);
-        std::fs::create_dir_all(&bases_dir)?;
-        let status = StorageStatus::default();
-
-        internal::write_max_id_file(&max_id_path, status.max_id).map_err(internal::write_to_io)?;
-        internal::write_root_file(&root_path, &status.root).map_err(internal::write_to_io)?;
-        let inner = FileView { bases_dir, status };
-        Ok(Self {
-            inner,
-            max_id_path,
-            root_path,
-        })
+impl BaseRead for FileTrieEdit {
+    fn read_root(&self) -> MapBase {
+        self.inner.read_root()
     }
 
-    /// Opens an existing storage. A missing folder or max id file is treated
-    /// as an empty storage.
-    pub fn load(path: impl AsRef<Path>) -> Result<Self, std::io::Error> {
-        let root = path.as_ref();
-        let bases_dir = root.join(Self::BASES_DIR);
-        let max_id_path = root.join(Self::MAX_ID_FILE);
-        let root_path = root.join(Self::ROOT_FILE);
-        std::fs::create_dir_all(&bases_dir)?;
-        let max_id = match std::fs::read(&max_id_path) {
-            Ok(bytes) => postcard::from_bytes::<i32>(&bytes)
-                .map_err(|e| std::io::Error::new(ErrorKind::InvalidData, e))?,
-            Err(e) if e.kind() == ErrorKind::NotFound => 0,
-            Err(e) => return Err(e),
-        };
-        let root = internal::read_root_file(&root_path).map_err(internal::read_to_io)?;
-        let status = StorageStatus {
-            max_id: BaseId(max_id),
-            root,
-        };
-        let inner = FileView { bases_dir, status };
-        Ok(Self {
-            inner,
-            max_id_path,
-            root_path,
-        })
-    }
-}
-
-impl TrieEdit for FileStorage {
-    fn next_id(&self) -> BaseId {
-        self.max_id() + 1
-    }
-}
-
-impl BaseCommit for FileStorage {
-    async fn commit_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
-        match internal::write_root_file(&self.root_path, &root) {
-            Ok(()) => {
-                self.inner.status.root = root;
-                Ok(())
-            }
-            Err(e) => Err(e),
-        }
-    }
-
-    async fn commit_base(&mut self, base: Base) -> Result<BaseId, WriteStorageError> {
-        let id = self.next_id();
-        let bytes = match postcard::to_allocvec(&base) {
-            Ok(bytes) => bytes,
-            Err(e) => return Err(WriteStorageError::Encode(id, e)),
-        };
-        let path = internal::base_path(&self.inner.bases_dir, id);
-        if let Err(e) = std::fs::create_dir_all(path.parent().expect("base path has parent")) {
-            return Err(WriteStorageError::Io(id, e));
-        }
-        if let Err(e) = std::fs::write(&path, bytes) {
-            return Err(WriteStorageError::Io(id, e));
-        }
-        if let Err(e) = internal::write_max_id_file(&self.max_id_path, id) {
-            return Err(e);
-        }
-        self.inner.status.max_id = id;
-        Ok(id)
+    async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
+        self.inner.read_base(id).await
     }
 }
