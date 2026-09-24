@@ -1,0 +1,5 @@
+[profile.default]
+# Show captured stdout/stderr immediately if a test fails
+# failure-output = "immediate"
+# Options: "immediate", "immediate-all", "final", "never"
+

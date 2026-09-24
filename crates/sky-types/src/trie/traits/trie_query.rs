@@ -7,15 +7,25 @@ impl<T: BaseRead> TrieQuery for T {
         map_base::query_value(self.read_root(), HashKey::new(key), self).await
     }
 
+    async fn query_u32(&self, key: i32) -> Result<Option<u32>, TrieQueryError> {
+        self.query(key).await.map(|value| {
+            if let Some(TrieValue::U32(value)) = value {
+                Some(value)
+            } else {
+                None
+            }
+        })
+    }
+
+    async fn query_all(&self) -> Result<Vec<(i32, TrieValue)>, TrieQueryError> {
+        map_base::query_keys_values(self.read_root(), self).await
+    }
+
     async fn deep_query<const N: usize>(
         &self,
         key: [i32; N],
     ) -> Result<Option<TrieValue>, TrieQueryError> {
         map_base::deep_query_value(self.read_root(), key, self).await
-    }
-
-    async fn query_all(&self) -> Result<Vec<(i32, TrieValue)>, TrieQueryError> {
-        map_base::query_keys_values(self.read_root(), self).await
     }
 }
 
@@ -24,12 +34,14 @@ pub trait TrieQuery: BaseRead {
     /// Returns the value stored at the given key or none if the key is absent.
     async fn query(&self, key: i32) -> Result<Option<TrieValue>, TrieQueryError>;
 
+    async fn query_u32(&self, key: i32) -> Result<Option<u32>, TrieQueryError>;
+
+    /// Returns all keys and values in this trie.
+    async fn query_all(&self) -> Result<Vec<(i32, TrieValue)>, TrieQueryError>;
+
     /// Returns the value stored at the given deep key.
     async fn deep_query<const N: usize>(
         &self,
         key: [i32; N],
     ) -> Result<Option<TrieValue>, TrieQueryError>;
-
-    /// Returns all keys and values in this trie.
-    async fn query_all(&self) -> Result<Vec<(i32, TrieValue)>, TrieQueryError>;
 }

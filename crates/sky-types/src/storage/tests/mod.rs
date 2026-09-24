@@ -3,6 +3,8 @@ use crate::storage::{TrieEdit, TrieView};
 use crate::trie::map_base::one_kv;
 use crate::trie::{Base, BaseCommit, BaseId, BaseRead, HashKey, MapBase, TrieValue};
 
+mod mem_insert;
+
 #[tokio::test]
 async fn empty_storage_max_id_is_zero() {
     let storage = MemTrieEdit::new();

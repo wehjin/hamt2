@@ -3,7 +3,12 @@ use crate::trie::{BaseCommit, DeepKey, HashKey, MapBase, TrieInsertError, TrieVa
 use std::collections::HashMap;
 
 impl<T: BaseCommit> TrieInsert for T {
-    async fn insert(&mut self, key: i32, value: TrieValue) -> Result<&mut Self, TrieInsertError> {
+    async fn insert(
+        &mut self,
+        key: i32,
+        value: impl Into<TrieValue>,
+    ) -> Result<&mut Self, TrieInsertError> {
+        let value = value.into();
         let key = HashKey::new(key);
         let root = map_base::insert_kv(self.read_root(), key, value, self).await?;
         self.commit_root(root).await?;
@@ -53,7 +58,11 @@ impl<T: BaseCommit> TrieInsert for T {
 #[allow(async_fn_in_trait)]
 pub trait TrieInsert: BaseCommit {
     /// Inserts `value` into the trie at position `key`.
-    async fn insert(&mut self, key: i32, value: TrieValue) -> Result<&mut Self, TrieInsertError>;
+    async fn insert(
+        &mut self,
+        key: i32,
+        value: impl Into<TrieValue>,
+    ) -> Result<&mut Self, TrieInsertError>;
 
     /// Inserts `value` several levels deep into the trie. Each element in `key` indexes
     /// into the sub-trie found a the previous element.

@@ -1,5 +1,5 @@
 use crate::storage::{MemTrieEdit, MemTrieView, ReadStorageError, StorageStatus, TrieView};
-use crate::trie::{Base, BaseId, BaseRead, MapBase};
+use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieStream};
 
 #[derive(Debug)]
 pub struct MemTrie {
@@ -24,6 +24,14 @@ impl MemTrie {
     pub fn new() -> Self {
         let inner = MemTrieView::empty();
         Self { inner }
+    }
+}
+
+impl TrieStream for MemTrie {
+    type Subtrie = MemTrieView;
+
+    fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
+        self.snapshot().to_subtrie(subtrie_root)
     }
 }
 
