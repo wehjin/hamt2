@@ -1,5 +1,6 @@
 use crate::storage::file::edit::FileStorage;
-use crate::storage::{ReadStorageError, StorageStatus, TrieView, file};
+use crate::storage::file::internal;
+use crate::storage::{ReadStorageError, StorageStatus, TrieView};
 use crate::trie::{Base, BaseId, BaseRead, MapBase};
 use std::path::PathBuf;
 
@@ -55,7 +56,7 @@ impl FileReadStorage {
         if id == BaseId::EMPTY {
             return Ok(Base::empty());
         }
-        let path = file::base_path(&self.bases_dir, id);
+        let path = internal::base_path(&self.bases_dir, id);
         let bytes = std::fs::read(&path).map_err(|e| ReadStorageError::Io(id, e))?;
         postcard::from_bytes::<Base>(&bytes).map_err(|e| ReadStorageError::Decode(id, e))
     }

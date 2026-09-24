@@ -1,5 +1,6 @@
+use crate::storage::file::internal;
 use crate::storage::{
-    FileReadStorage, ReadStorageError, StorageStatus, TrieEdit, TrieView, WriteStorageError, file,
+    FileReadStorage, ReadStorageError, StorageStatus, TrieEdit, TrieView, WriteStorageError,
 };
 use crate::trie::{Base, BaseCommit, BaseId, BaseRead, MapBase};
 use std::io::ErrorKind;
@@ -68,8 +69,8 @@ impl FileStorage {
         std::fs::create_dir_all(&bases_dir)?;
         let status = StorageStatus::default();
 
-        file::write_max_id_file(&max_id_path, status.max_id).map_err(file::write_to_io)?;
-        file::write_root_file(&root_path, &status.root).map_err(file::write_to_io)?;
+        internal::write_max_id_file(&max_id_path, status.max_id).map_err(internal::write_to_io)?;
+        internal::write_root_file(&root_path, &status.root).map_err(internal::write_to_io)?;
         let inner = FileReadStorage { bases_dir, status };
         Ok(Self {
             inner,
@@ -92,7 +93,7 @@ impl FileStorage {
             Err(e) if e.kind() == ErrorKind::NotFound => 0,
             Err(e) => return Err(e),
         };
-        let root = file::read_root_file(&root_path).map_err(file::read_to_io)?;
+        let root = internal::read_root_file(&root_path).map_err(internal::read_to_io)?;
         let status = StorageStatus {
             max_id: BaseId(max_id),
             root,
@@ -114,7 +115,7 @@ impl TrieEdit for FileStorage {
 
 impl BaseCommit for FileStorage {
     async fn commit_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
-        match file::write_root_file(&self.root_path, &root) {
+        match internal::write_root_file(&self.root_path, &root) {
             Ok(()) => {
                 self.inner.status.root = root;
                 Ok(())
@@ -129,14 +130,14 @@ impl BaseCommit for FileStorage {
             Ok(bytes) => bytes,
             Err(e) => return Err(WriteStorageError::Encode(id, e)),
         };
-        let path = file::base_path(&self.inner.bases_dir, id);
+        let path = internal::base_path(&self.inner.bases_dir, id);
         if let Err(e) = std::fs::create_dir_all(path.parent().expect("base path has parent")) {
             return Err(WriteStorageError::Io(id, e));
         }
         if let Err(e) = std::fs::write(&path, bytes) {
             return Err(WriteStorageError::Io(id, e));
         }
-        if let Err(e) = file::write_max_id_file(&self.max_id_path, id) {
+        if let Err(e) = internal::write_max_id_file(&self.max_id_path, id) {
             return Err(e);
         }
         self.inner.status.max_id = id;
