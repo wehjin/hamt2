@@ -13,20 +13,26 @@ pub fn enable_socket_responses(
     client_connected: WriteSignal<bool>,
 ) {
     Effect::new(move |_| {
-        client.update_value(|stored_client| {
-            if stored_client.is_none() {
-                log!("set up sky client");
-                let socket_sender = socket.sender.clone();
-                let send_socket = move |req| {
-                    log!("got request: {:?}", req);
-                    socket_sender.send_request(req);
-                };
-                let client = RemoteClient::<LeptosSpawnTask>::connect(send_socket);
-                *stored_client = Some(client);
-                client_connected.set(true);
-                log!("sky client stored");
-            }
-        });
+        if let ConnectionReadyState::Open = socket.state.get() {
+            client.update_value(|opt_client| {
+                if opt_client.is_none() {
+                    log!("set up sky client");
+                    let socket_sender = socket.sender.clone();
+                    let send_socket = move |req| {
+                        log!("got request: {:?}", req);
+                        socket_sender.send_request(req);
+                    };
+                    let client = RemoteClient::<LeptosSpawnTask>::connect(send_socket);
+                    *opt_client = Some(client);
+                    client_connected.set(true);
+                    log!("sky client stored");
+                }
+            });
+        } else {
+            client.update_value(|opt_client| {
+                *opt_client = None;
+            })
+        }
     });
 }
 pub fn enable_client_requests(

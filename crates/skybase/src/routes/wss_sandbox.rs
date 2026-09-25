@@ -9,14 +9,6 @@ use sky_types::db::{Attr, datom, val};
 #[component]
 pub fn WebSocketSandbox() -> impl IntoView {
     let sky = sky::use_sky();
-    {
-        let sky = sky.clone();
-        Effect::new(move |_| {
-            if sky.ready.get() {
-                sky.reconnect();
-            }
-        });
-    }
     let local = {
         let sky = sky.clone();
         LocalResource::new(move || {
@@ -31,18 +23,15 @@ pub fn WebSocketSandbox() -> impl IntoView {
         })
     };
 
-    let max_id = {
-        let socket_receiver = sky.socket.receiver.clone();
-        Memo::new(move |_| match socket_receiver.get() {
-            Some(response) => match response {
-                SocketResponse::DbStatus(status) | SocketResponse::TransactResult(status) => {
-                    Some(status.head.max_id)
-                }
-                _ => None,
-            },
-            None => None,
-        })
-    };
+    let max_id = Memo::new(move |_| match sky.socket.receiver.clone().get() {
+        Some(response) => match response {
+            SocketResponse::DbStatus(status) | SocketResponse::TransactResult(status) => {
+                Some(status.head.max_id)
+            }
+            _ => None,
+        },
+        None => None,
+    });
     let last_response = {
         let socket_receiver = sky.socket.receiver.clone();
         Memo::new(move |_| {
