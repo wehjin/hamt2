@@ -1,10 +1,10 @@
 use crate::shared::remote::requests::ClientRequest;
 use crate::shared::remote::{RemoteClient, SpawnTask};
 use anyhow::anyhow;
-use sky_types::db::{Datom, Transact, TransactError};
+use sky_types::db::{Datom, TransactError};
 
-impl<T: SpawnTask> Transact for RemoteClient<T> {
-    async fn transact(self, datoms: impl Into<Vec<Datom>>) -> Result<Self, TransactError>
+impl<T: SpawnTask> RemoteClient<T> {
+    pub async fn transact(self, datoms: impl Into<Vec<Datom>>) -> Result<Self, TransactError>
     where
         Self: Sized,
     {

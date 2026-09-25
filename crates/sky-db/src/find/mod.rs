@@ -27,9 +27,10 @@ mod tests {
     async fn find_with_reader() {
         let attr = Attr::from("Counter/count");
         let store = Mem::new();
-        let db = Db::new(store, [attr.clone()]).await.unwrap();
-        let txn = [datom::add(10, attr.clone(), 42)];
-        let db = db.transact(txn).await.unwrap();
+        let mut db = Db::new(store, [attr.clone()]).await.unwrap();
+        db.transact([datom::add(10, attr.clone(), 42)])
+            .await
+            .unwrap();
         let reader = db.to_reader();
         let found = reader.find(BindsForAttr::new(attr)).await;
         assert_eq!(&[(ein(10), val(42))], found.as_slice());

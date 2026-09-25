@@ -19,8 +19,9 @@ async fn pull_test() {
         };
         let ent = Ent::from(27);
         let mut db = Db::new(Mem::new(), Basis::attrs()).await.expect("Db::new");
-        let datoms = basis.into_datoms(ent);
-        db = db.transact(datoms).await.expect("db.transact");
+        db.transact(basis.into_datoms(ent))
+            .await
+            .expect("db.transact");
         db.close()
     };
     {

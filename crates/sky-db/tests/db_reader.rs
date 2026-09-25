@@ -13,14 +13,13 @@ fn attr_count() -> Attr {
 
 #[tokio::test]
 async fn db_reader_works() -> anyhow::Result<()> {
-    let db = Db::new(Mem::new(), [attr_count()]).await?;
-    let db = db
-        .transact([
-            datom::add(1, attr_count(), val(10)),
-            datom::add(2, attr_count(), val(20)),
-            datom::add(3, attr_count(), val(30)),
-        ])
-        .await?;
+    let mut db = Db::new(Mem::new(), [attr_count()]).await?;
+    db.transact([
+        datom::add(1, attr_count(), val(10)),
+        datom::add(2, attr_count(), val(20)),
+        datom::add(3, attr_count(), val(30)),
+    ])
+    .await?;
 
     let mut eins = db.find(EinsWithAttr::new(attr_count())).await;
     eins.sort();
@@ -42,10 +41,8 @@ async fn db_reader_works() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn db_reader_finds_entities() {
-    let db = Db::new(Mem::new(), [attr_count()])
-        .await
-        .unwrap()
-        .transact([datom::add(100, attr_count(), val(100))])
+    let mut db = Db::new(Mem::new(), [attr_count()]).await.unwrap();
+    db.transact([datom::add(100, attr_count(), val(100))])
         .await
         .unwrap();
 
@@ -57,10 +54,8 @@ async fn db_reader_finds_entities() {
 
 #[tokio::test]
 async fn db_reader_lists_entity_attributes() {
-    let db = Db::new(Mem::new(), [attr_count()])
-        .await
-        .unwrap()
-        .transact([datom::add(100, attr_count(), val(100))])
+    let mut db = Db::new(Mem::new(), [attr_count()]).await.unwrap();
+    db.transact([datom::add(100, attr_count(), val(100))])
         .await
         .unwrap();
     let reader = db.to_reader();

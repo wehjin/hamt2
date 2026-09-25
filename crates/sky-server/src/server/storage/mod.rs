@@ -156,7 +156,6 @@ async fn handle_storage(
                     let broadcast = StorageBroadcastEvent::NewStatus(status.clone());
                     let _ = to_clients.send(broadcast);
                     let _ = response.send(status);
-                    db = new_db;
                 }
             },
         }

@@ -1,10 +1,10 @@
 use crate::db::db_trie;
 use crate::db::types::key::KEY_MAX_TXID;
 use crate::db::{Db, Txid};
-use sky_types::trie::*;
 use sky_types::db::QueryError;
 use sky_types::db::{Attr, Val};
 use sky_types::storage::BaseStore;
+use sky_types::trie::*;
 
 impl<S: BaseStore + Send + Sync> Db<S> {
     pub async fn max_tx(&self) -> Result<Txid, QueryError> {
@@ -34,12 +34,11 @@ mod tests {
         let schema = vec![count()];
         let storage = Mem::new();
         let mut db = Db::new(storage, schema.clone()).await?;
-        db = db
-            .transact(vec![
-                datom::add(ent(10), count(), dat(Val::from(10))),
-                datom::add(ent(11), count(), dat(Val::from(11))),
-            ])
-            .await?;
+        db.transact(vec![
+            datom::add(ent(10), count(), dat(Val::from(10))),
+            datom::add(ent(11), count(), dat(Val::from(11))),
+        ])
+        .await?;
 
         let ev_stream = db.ev_stream(count());
         let mut ev_vec = ev_stream.collect::<Vec<_>>().await;
