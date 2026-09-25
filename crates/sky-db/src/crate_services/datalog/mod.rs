@@ -2,7 +2,7 @@ use crate::db::Schema;
 use atom::Atom;
 use kb::KnowledgeBase;
 use rule::Rule;
-use sky_trie::prelude::*;
+use sky_types::trie::*;
 
 pub mod atom;
 pub mod kb;

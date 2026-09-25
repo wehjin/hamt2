@@ -1,7 +1,7 @@
 use crate::crate_services::datalog::atom::Atom;
 use crate::crate_services::datalog::kb::KnowledgeBase;
 use crate::crate_services::datalog::sub::Substitution;
-use crate::trie::prelude::*;
+use sky_types::trie::*;
 use std::collections::HashSet;
 
 pub fn rule(head: impl Into<Atom>, body: impl Into<Vec<Atom>>) -> Rule {

@@ -1,7 +1,7 @@
 use crate::crate_services::u32;
 use crate::db::types::key::KEY_VAL_TABLE;
 use crate::db::vid::Vid;
-use crate::trie::prelude::*;
+use sky_types::trie::*;
 use sky_types::db::Val;
 use sky_types::db::{QueryError, TransactError};
 use sky_types::storage::{BaseStore, TrieEdit};

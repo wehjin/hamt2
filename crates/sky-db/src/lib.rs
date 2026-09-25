@@ -9,6 +9,4 @@ pub mod schema;
 pub mod traits;
 pub mod types;
 
-use sky_trie as trie;
-
 pub use error::*;

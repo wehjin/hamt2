@@ -1,5 +1,5 @@
 use crate::db::types::key::KEY_MAX_EID;
-use crate::trie::prelude::*;
+use sky_types::trie::*;
 use sky_types::db::Ein;
 use sky_types::db::{QueryError, TransactError};
 use sky_types::storage::{BaseStore, TrieEdit, TrieLoad};

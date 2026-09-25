@@ -26,7 +26,6 @@ tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net"], opt
 sky-db.workspace = true
 serde.workspace = true
 sky-types.workspace = true
-sky-trie.workspace = true
 sky-server = { path = "../sky-server", default-features = false }
 serde_json.workspace = true
 

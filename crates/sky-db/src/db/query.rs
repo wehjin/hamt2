@@ -1,7 +1,7 @@
 use crate::db::db_trie;
 use crate::db::types::key::KEY_MAX_TXID;
 use crate::db::{Db, Txid};
-use crate::trie::prelude::*;
+use sky_types::trie::*;
 use sky_types::db::QueryError;
 use sky_types::db::{Attr, Val};
 use sky_types::storage::BaseStore;

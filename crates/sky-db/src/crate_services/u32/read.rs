@@ -1,4 +1,4 @@
-use crate::trie::prelude::*;
+use sky_types::trie::*;
 
 pub struct Read<T: TrieQuery> {
     hash_trie: T,

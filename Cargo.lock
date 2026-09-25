@@ -2328,7 +2328,6 @@ dependencies = [
  "async-stream",
  "futures",
  "serde",
- "sky-trie",
  "sky-types",
  "tempfile",
  "thiserror 2.0.20",
@@ -2347,22 +2346,11 @@ dependencies = [
  "serde",
  "serde_json",
  "sky-db",
- "sky-trie",
  "sky-types",
  "thiserror 2.0.20",
  "tokio",
  "tokio-stream",
  "tokio-util",
-]
-
-[[package]]
-name = "sky-trie"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "sky-types",
- "tempfile",
- "tokio",
 ]
 
 [[package]]
@@ -2397,7 +2385,6 @@ dependencies = [
  "serde_json",
  "sky-db",
  "sky-server",
- "sky-trie",
  "sky-types",
  "tokio",
  "wasm-bindgen",

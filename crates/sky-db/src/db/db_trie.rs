@@ -10,7 +10,7 @@ use crate::db::cardinality::Cardinality;
 use crate::db::types::key::{KEY_AEVT, KEY_EAVT, KEY_MAX_TXID};
 use crate::db::vid::Vid;
 use crate::db::{Txid, txid};
-use crate::trie::prelude::*;
+use sky_types::trie::*;
 use async_stream::stream;
 use futures::{StreamExt, pin_mut};
 use serde::{Deserialize, Serialize};

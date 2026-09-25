@@ -4,7 +4,7 @@ use crate::crate_services::datalog::sub::Substitution;
 use crate::crate_services::datalog::term::Term;
 use crate::db::Schema;
 use crate::db::db_trie;
-use crate::trie::prelude::*;
+use sky_types::trie::*;
 use async_stream::stream;
 use futures::{StreamExt, pin_mut};
 use sky_types::db::{Attr, Val};
