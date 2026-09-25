@@ -16,7 +16,7 @@ use futures::{StreamExt, pin_mut};
 use serde::{Deserialize, Serialize};
 use sky_types::db;
 use sky_types::db::{Attr, Dir, Ein, FindResult, TransactError, Val};
-use sky_types::storage::TrieEdit;
+use sky_types::storage::BaseEdit;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -49,7 +49,7 @@ impl From<u32> for Value {
     }
 }
 
-pub(crate) async fn with_update<S: TrieEdit>(
+pub(crate) async fn with_update<S: BaseEdit>(
     trie: Trie<S>,
     attr_map: &AttrTable,
     ein: Ein,
@@ -71,7 +71,7 @@ pub(crate) async fn with_update<S: TrieEdit>(
     Ok(trie)
 }
 
-pub(crate) async fn set_max_tx<S: TrieEdit>(
+pub(crate) async fn set_max_tx<S: BaseEdit>(
     mut trie: Trie<S>,
     max_tx: Txid,
 ) -> Result<Trie<S>, TransactError> {

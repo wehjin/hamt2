@@ -1,6 +1,6 @@
 use crate::storage::mem::edit::MemTrieEdit;
 use crate::storage::{
-    BaseStore, MemBaseStore, MemTrieView, ReadStorageError, StorageStatus, TrieView,
+    BaseStore, MemBaseStore, MemTrieView, ReadStorageError, StorageStatus, BaseView,
 };
 use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieStream};
 
@@ -41,7 +41,7 @@ impl<S: BaseStore + Send + Sync> TrieStream for MemTrie<S> {
     }
 }
 
-impl<S: BaseStore + Send + Sync> TrieView for MemTrie<S> {
+impl<S: BaseStore + Send + Sync> BaseView for MemTrie<S> {
     type Snapshot = MemTrieView<S>;
 
     fn status(&self) -> StorageStatus {

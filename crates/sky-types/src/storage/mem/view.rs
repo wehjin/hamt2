@@ -1,4 +1,4 @@
-use crate::storage::{BaseStore, ReadStorageError, StorageStatus, TrieView};
+use crate::storage::{BaseStore, ReadStorageError, StorageStatus, BaseView};
 use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieStream};
 use std::sync::Arc;
 
@@ -33,7 +33,7 @@ impl<S: BaseStore + Send + Sync> TrieStream for MemTrieView<S> {
     }
 }
 
-impl<S: BaseStore + Send + Sync> TrieView for MemTrieView<S> {
+impl<S: BaseStore + Send + Sync> BaseView for MemTrieView<S> {
     type Snapshot = MemTrieView<S>;
 
     fn status(&self) -> StorageStatus {

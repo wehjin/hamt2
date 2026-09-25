@@ -1,5 +1,5 @@
 use crate::shared::remote::{RemoteClient, RemoteClientReadStorage, SpawnTask};
-use sky_types::storage::{ReadStorageError, StorageStatus, TrieView};
+use sky_types::storage::{ReadStorageError, StorageStatus, BaseView};
 use sky_types::trie::{Base, BaseId, BaseRead, MapBase};
 
 impl<T: SpawnTask> BaseRead for RemoteClient<T> {
@@ -12,7 +12,7 @@ impl<T: SpawnTask> BaseRead for RemoteClient<T> {
     }
 }
 
-impl<T: SpawnTask> TrieView for RemoteClient<T> {
+impl<T: SpawnTask> BaseView for RemoteClient<T> {
     type Snapshot = RemoteClientReadStorage<T>;
 
     fn status(&self) -> StorageStatus {

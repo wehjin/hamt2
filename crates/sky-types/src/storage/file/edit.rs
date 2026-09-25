@@ -1,7 +1,7 @@
 use crate::storage::file::internal;
 use crate::storage::file::internal::{read_max_id_file, write_base};
 use crate::storage::{
-    FileTrieView, ReadStorageError, StorageStatus, TrieEdit, TrieView, WriteStorageError,
+    FileTrieView, ReadStorageError, StorageStatus, BaseEdit, BaseView, WriteStorageError,
 };
 use crate::trie::{Base, BaseCommit, BaseId, BaseRead, MapBase, TrieStream};
 use internal::{read_root_file, write_max_id_file, write_root_file};
@@ -51,7 +51,7 @@ impl FileTrieEdit {
     }
 }
 
-impl TrieEdit for FileTrieEdit {
+impl BaseEdit for FileTrieEdit {
     fn next_id(&self) -> BaseId {
         self.max_id() + 1
     }
@@ -81,7 +81,7 @@ impl TrieStream for FileTrieEdit {
     }
 }
 
-impl TrieView for FileTrieEdit {
+impl BaseView for FileTrieEdit {
     type Snapshot = FileTrieView;
 
     fn status(&self) -> StorageStatus {

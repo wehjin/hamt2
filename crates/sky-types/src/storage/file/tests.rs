@@ -1,6 +1,6 @@
 use super::*;
 use crate::storage::file::internal::bases_dir;
-use crate::storage::{TrieEdit, TrieView};
+use crate::storage::{BaseEdit, BaseView};
 use crate::trie::map_base::{one_kv, two_kv};
 use crate::trie::{Base, BaseCommit, BaseId, BaseRead, HashKey, MapBase, TrieValue};
 

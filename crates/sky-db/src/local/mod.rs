@@ -1,12 +1,12 @@
 use crate::db::Db;
 use sky_types::db::schema::attr_spec::DbSpec;
-use sky_types::storage::{MemBaseStore, MemTrieEdit, TrieEdit, mem_edit_new};
+use sky_types::storage::{MemBaseStore, MemTrieEdit, BaseEdit, mem_edit_new};
 
 pub trait DbRuntime {
     fn block_on<T>(main: impl Future<Output = T> + 'static) -> T;
 }
 
-pub struct LocalDb<S: TrieEdit> {
+pub struct LocalDb<S: BaseEdit> {
     _db: Db<S>,
 }
 

@@ -1,5 +1,5 @@
 use crate::storage::{
-    BaseStore, MemBaseStore, MemTrieView, ReadStorageError, StorageStatus, TrieEdit, TrieView,
+    BaseStore, MemBaseStore, MemTrieView, ReadStorageError, StorageStatus, BaseEdit, BaseView,
     WriteStorageError,
 };
 use crate::trie::{Base, BaseCommit, BaseId, BaseRead, MapBase, TrieStream};
@@ -40,7 +40,7 @@ impl<S: BaseStore> MemTrieEdit<S> {
     }
 }
 
-impl<S: BaseStore + Send + Sync> TrieEdit for MemTrieEdit<S> {}
+impl<S: BaseStore + Send + Sync> BaseEdit for MemTrieEdit<S> {}
 
 impl<S: BaseStore> BaseCommit for MemTrieEdit<S> {
     async fn commit_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
@@ -60,7 +60,7 @@ impl<S: BaseStore + Send + Sync> TrieStream for MemTrieEdit<S> {
     }
 }
 
-impl<S: BaseStore + Send + Sync> TrieView for MemTrieEdit<S> {
+impl<S: BaseStore + Send + Sync> BaseView for MemTrieEdit<S> {
     type Snapshot = MemTrieView<S>;
 
     fn status(&self) -> StorageStatus {

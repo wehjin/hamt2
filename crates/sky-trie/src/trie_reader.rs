@@ -1,21 +1,21 @@
-use sky_types::storage::{ReadStorageError, StorageStatus, TrieView};
+use sky_types::storage::{ReadStorageError, StorageStatus, BaseView};
 use sky_types::trie::MapBase;
 use sky_types::trie::TrieStream;
 use sky_types::trie::{Base, BaseId, BaseRead};
 
 /// A read-only trie over an owned read-only storage, used only for queries.
 #[derive(Debug, Clone)]
-pub struct TrieReader<S: TrieView + BaseRead + Clone + Send> {
+pub struct TrieReader<S: BaseView + BaseRead + Clone + Send> {
     storage: S,
 }
 
-impl<S: TrieView + BaseRead + Clone + Send> TrieReader<S> {
+impl<S: BaseView + BaseRead + Clone + Send> TrieReader<S> {
     pub fn new(storage: S) -> Self {
         Self { storage }
     }
 }
 
-impl<S: TrieView + BaseRead + Clone + Send> TrieStream for TrieReader<S> {
+impl<S: BaseView + BaseRead + Clone + Send> TrieStream for TrieReader<S> {
     type Subtrie = TrieReader<S>;
 
     fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
@@ -23,7 +23,7 @@ impl<S: TrieView + BaseRead + Clone + Send> TrieStream for TrieReader<S> {
     }
 }
 
-impl<S: TrieView + BaseRead + Clone + Send> TrieView for TrieReader<S> {
+impl<S: BaseView + BaseRead + Clone + Send> BaseView for TrieReader<S> {
     type Snapshot = TrieReader<S>;
 
     fn status(&self) -> StorageStatus {
@@ -40,7 +40,7 @@ impl<S: TrieView + BaseRead + Clone + Send> TrieView for TrieReader<S> {
     }
 }
 
-impl<S: TrieView + BaseRead + Clone + Send> BaseRead for TrieReader<S> {
+impl<S: BaseView + BaseRead + Clone + Send> BaseRead for TrieReader<S> {
     fn read_root(&self) -> MapBase {
         self.storage.read_root()
     }

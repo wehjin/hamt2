@@ -1,4 +1,4 @@
-use crate::storage::{TrieEdit, TrieView, mem_edit_new};
+use crate::storage::{BaseEdit, BaseView, mem_edit_new};
 use crate::trie::map_base::one_kv;
 use crate::trie::{Base, BaseCommit, BaseId, BaseRead, HashKey, MapBase, TrieValue};
 

@@ -2,7 +2,7 @@ use crate::db::types::key::KEY_MAX_EID;
 use crate::trie::prelude::*;
 use sky_types::db::Ein;
 use sky_types::db::{QueryError, TransactError};
-use sky_types::storage::TrieEdit;
+use sky_types::storage::BaseEdit;
 
 pub struct MaxEid {
     start: Ein,
@@ -16,7 +16,7 @@ impl MaxEid {
             current: eid,
         }
     }
-    pub async fn read<S: TrieEdit>(trie: &Trie<S>) -> Result<Self, QueryError> {
+    pub async fn read<S: BaseEdit>(trie: &Trie<S>) -> Result<Self, QueryError> {
         if let Some(TrieValue::U32(value)) = trie.query(KEY_MAX_EID).await? {
             Ok(Self::new(Ein(value as i32)))
         } else {
@@ -31,7 +31,7 @@ impl MaxEid {
         }
         taken
     }
-    pub async fn write<S: TrieEdit>(
+    pub async fn write<S: BaseEdit>(
         self,
         mut trie: Trie<S>,
     ) -> Result<Trie<S>, TransactError> {

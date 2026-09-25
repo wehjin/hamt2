@@ -1,22 +1,22 @@
 use crate::TrieReader;
 use sky_types::storage::error::WriteStorageError;
-use sky_types::storage::{ReadStorageError, StorageStatus, TrieEdit, TrieView};
+use sky_types::storage::{ReadStorageError, StorageStatus, BaseEdit, BaseView};
 use sky_types::trie::{Base, BaseId, BaseRead, MapBase};
 use sky_types::trie::{BaseCommit, TrieStream};
 
 #[derive(Debug)]
-pub struct Trie<S: TrieEdit> {
+pub struct Trie<S: BaseEdit> {
     pub(crate) storage: S,
 }
 
-impl<S: TrieEdit> TrieStream for Trie<S> {
+impl<S: BaseEdit> TrieStream for Trie<S> {
     type Subtrie = TrieReader<S::Snapshot>;
 
     fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
         self.snapshot().to_subtrie(subtrie_root)
     }
 }
-impl<S: TrieEdit> TrieView for Trie<S> {
+impl<S: BaseEdit> BaseView for Trie<S> {
     type Snapshot = TrieReader<S::Snapshot>;
 
     fn status(&self) -> StorageStatus {
@@ -33,7 +33,7 @@ impl<S: TrieEdit> TrieView for Trie<S> {
         TrieReader::new(snap_storage)
     }
 }
-impl<S: TrieEdit> BaseRead for Trie<S> {
+impl<S: BaseEdit> BaseRead for Trie<S> {
     fn read_root(&self) -> MapBase {
         self.storage.read_root()
     }
@@ -44,7 +44,7 @@ impl<S: TrieEdit> BaseRead for Trie<S> {
 }
 
 /// Trie construction methods.
-impl<S: TrieEdit> Trie<S> {
+impl<S: BaseEdit> Trie<S> {
     /// Connects to the storage, loading the persisted root.
     pub fn connect(storage: S) -> Self {
         Self { storage }
@@ -63,7 +63,7 @@ impl<S: TrieEdit> Trie<S> {
     }
 }
 
-impl<S: TrieEdit> BaseCommit for Trie<S> {
+impl<S: BaseEdit> BaseCommit for Trie<S> {
     async fn commit_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
         self.storage.commit_root(root).await
     }
@@ -73,4 +73,4 @@ impl<S: TrieEdit> BaseCommit for Trie<S> {
     }
 }
 
-impl<S: TrieEdit> TrieEdit for Trie<S> {}
+impl<S: BaseEdit> BaseEdit for Trie<S> {}

@@ -1,5 +1,5 @@
-mod trie_view;
-mod trie_edit;
+mod base_view;
+mod base_edit;
 
-pub use trie_view::*;
-pub use trie_edit::*;
+pub use base_view::*;
+pub use base_edit::*;

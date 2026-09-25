@@ -3,8 +3,8 @@ use crate::trie::{BaseId, BaseRead, MapBase};
 
 /// These are the core functions of a read-only trie.
 #[allow(async_fn_in_trait)]
-pub trait TrieView: BaseRead + Sized {
-    type Snapshot: TrieView + Send + Clone;
+pub trait BaseView: BaseRead + Sized {
+    type Snapshot: BaseView + Send + Clone;
 
     /// Observes the status of the storage.
     fn status(&self) -> StorageStatus;

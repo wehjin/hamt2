@@ -4,11 +4,11 @@ use crate::db::vid::Vid;
 use crate::trie::prelude::*;
 use sky_types::db::Val;
 use sky_types::db::{QueryError, TransactError};
-use sky_types::storage::TrieEdit;
+use sky_types::storage::BaseEdit;
 
 pub async fn insert<S>(trie: Trie<S>, val: Val) -> Result<(Trie<S>, Vid), TransactError>
 where
-    S: TrieEdit,
+    S: BaseEdit,
 {
     let bytes = match &val {
         Val::U32(u) => &u.to_be_bytes(),
@@ -85,7 +85,7 @@ async fn insert_bytes<S>(
     bytes_type: u8,
 ) -> Result<Trie<S>, TransactError>
 where
-    S: TrieEdit,
+    S: BaseEdit,
 {
     let u32_stream = u32::Stream::new(bytes, SUBKEY_BYTES);
     for (u32_subkey, u32_value) in u32_stream {
