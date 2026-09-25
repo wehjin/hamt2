@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fmt::Display;
-use std::ops::Add;
+use std::ops::{Add, Sub};
 
 #[derive(
     Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize, Default,
@@ -13,6 +13,21 @@ impl Add<i32> for BaseId {
 
     fn add(self, rhs: i32) -> Self::Output {
         Self(self.0 + rhs)
+    }
+}
+
+impl Sub<i32> for BaseId {
+    type Output = Self;
+
+    fn sub(self, rhs: i32) -> Self::Output {
+        Self(self.0 - rhs)
+    }
+}
+
+impl Add<usize> for BaseId {
+    type Output = Self;
+    fn add(self, rhs: usize) -> Self::Output {
+        Self(self.0 + rhs as i32)
     }
 }
 

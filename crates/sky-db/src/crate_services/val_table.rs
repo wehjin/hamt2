@@ -52,8 +52,7 @@ where
             let Some(TrieValue::U32(bytes_len)) = val_trie.query(SUBKEY_LEN).await? else {
                 panic!("Unexpected MemValue variant")
             };
-            let Some(TrieValue::U32(val_type)) = val_trie.query(SUBKEY_VAL_TYPE).await?
-            else {
+            let Some(TrieValue::U32(val_type)) = val_trie.query(SUBKEY_VAL_TYPE).await? else {
                 panic!("Unexpected MemValue variant")
             };
             let builder = u32::Read::new(val_trie, bytes_len as usize, SUBKEY_BYTES);
@@ -172,11 +171,11 @@ async fn find_hash_trie<T: TrieStream>(
 mod tests {
     use super::*;
     use sky_types::db::{Val, val};
-    use sky_types::storage::MemTrieEdit;
+    use sky_types::storage::mem_edit_new;
 
     #[tokio::test]
     async fn insert_and_query() {
-        let mut trie = Trie::connect(MemTrieEdit::new());
+        let mut trie = Trie::connect(mem_edit_new());
         let mut vids = Vec::new();
         let mut vals = Vec::new();
         for i in 0..100 {
@@ -194,7 +193,7 @@ mod tests {
 
     #[tokio::test]
     async fn negative_numbers() {
-        let trie = Trie::connect(MemTrieEdit::new());
+        let trie = Trie::connect(mem_edit_new());
         let (trie, vid) = insert(trie, val(-1)).await.expect("Failed to insert");
         let table_val = query(&trie, vid).await.expect("Failed to query");
         assert_eq!(Some(val(-1)), table_val);
@@ -202,7 +201,7 @@ mod tests {
 
     #[tokio::test]
     async fn same_value_inserted_twice() {
-        let trie = Trie::connect(MemTrieEdit::new());
+        let trie = Trie::connect(mem_edit_new());
 
         let (trie, vid) = insert(trie, val(101)).await.expect("Failed to insert");
         let (trie, vid2) = insert(trie, val(101)).await.expect("Failed to insert");
@@ -213,7 +212,7 @@ mod tests {
 
     #[tokio::test]
     async fn string_insert_and_query() {
-        let trie = Trie::connect(MemTrieEdit::new());
+        let trie = Trie::connect(mem_edit_new());
         let (trie, vid) = insert(trie, Val::String("hello".into()))
             .await
             .expect("Failed to insert");

@@ -26,13 +26,13 @@ mod tests {
     use sky_types::db::Transact;
     use sky_types::db::datom;
     use sky_types::db::{dat, ent};
-    use sky_types::storage::MemTrieEdit;
+    use sky_types::storage::mem_edit_new;
 
     #[tokio::test]
     async fn ev_stream_test() -> anyhow::Result<()> {
         let count = || Attr::from("counter/count");
         let schema = vec![count()];
-        let storage = MemTrieEdit::new();
+        let storage = mem_edit_new();
         let mut db = Db::new(storage, schema.clone()).await?;
         db = db
             .transact(vec![
