@@ -1,4 +1,4 @@
-use crate::storage::BaseView;
+use crate::trie::BaseView;
 use crate::trie::{BaseCommit, BaseId};
 
 /// A trait for reading and writing Bases from storage.

@@ -4,8 +4,8 @@ use crate::find::ValsInSlot;
 use futures::FutureExt;
 use sky_types::db::schema::Schema;
 use sky_types::db::{Attr, Ein, FindResult, QueryError, Val};
-use sky_types::storage::BaseEdit;
 use sky_types::trie::TrieStream;
+use sky_types::trie::BaseEdit;
 
 pub trait DbQuery {
     fn find<F: Find>(&self, find: F) -> impl Future<Output = Vec<F::Output>>;

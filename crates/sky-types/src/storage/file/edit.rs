@@ -1,8 +1,10 @@
 use crate::storage::file::internal;
 use crate::storage::file::internal::{read_max_id_file, write_base};
 use crate::storage::{
-    FileTrieView, ReadStorageError, StorageStatus, BaseEdit, BaseView, WriteStorageError,
+    FileTrieView, ReadStorageError, StorageStatus, WriteStorageError,
 };
+use crate::trie::BaseEdit;
+use crate::trie::BaseView;
 use crate::trie::{Base, BaseCommit, BaseId, BaseRead, MapBase, TrieStream};
 use internal::{read_root_file, write_max_id_file, write_root_file};
 use std::path::{Path, PathBuf};

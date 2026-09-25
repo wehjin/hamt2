@@ -1,4 +1,6 @@
-use crate::storage::{BaseStore, ReadStorageError, StorageStatus, BaseView};
+use crate::storage::traits::BaseStore;
+use crate::storage::{ReadStorageError, StorageStatus};
+use crate::trie::BaseView;
 use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieStream};
 use std::sync::Arc;
 

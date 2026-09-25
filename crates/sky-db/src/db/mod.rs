@@ -11,7 +11,9 @@ use crate::reader::DbReader;
 use crate::schema;
 pub use crate::types::*;
 use sky_trie::Trie;
-use sky_types::storage::{BaseView, ReadStorageError, BaseEdit, StorageStatus};
+use sky_types::storage::{ReadStorageError, StorageStatus};
+use sky_types::trie::BaseEdit;
+use sky_types::trie::BaseView;
 use sky_types::trie::{Base, BaseId, BaseRead};
 pub use types::*;
 

@@ -1,7 +1,9 @@
 use crate::storage::mem::edit::MemTrieEdit;
+use crate::storage::traits::BaseStore;
 use crate::storage::{
-    BaseStore, MemBaseStore, MemTrieView, ReadStorageError, StorageStatus, BaseView,
+    MemBaseStore, MemTrieView, ReadStorageError, StorageStatus,
 };
+use crate::trie::BaseView;
 use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieStream};
 
 pub fn mem_trie_new() -> MemTrie<MemBaseStore> {

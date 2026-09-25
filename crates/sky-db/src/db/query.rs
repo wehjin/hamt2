@@ -4,7 +4,7 @@ use crate::db::{Db, Txid};
 use crate::trie::prelude::*;
 use sky_types::db::QueryError;
 use sky_types::db::{Attr, Val};
-use sky_types::storage::BaseEdit;
+use sky_types::trie::BaseEdit;
 
 impl<S: BaseEdit> Db<S> {
     pub async fn max_tx(&self) -> Result<Txid, QueryError> {

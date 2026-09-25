@@ -1,7 +1,8 @@
 use crate::shared::remote::SpawnTask;
 use crate::shared::remote::client::requests::ClientRequest;
 use sky_types::db::DbStatus;
-use sky_types::storage::{ReadStorageError, StorageStatus, BaseView};
+use sky_types::storage::{ReadStorageError, StorageStatus};
+use sky_types::trie::BaseView;
 use sky_types::trie::{Base, BaseId, BaseRead, MapBase};
 use std::marker::PhantomData;
 use tokio::sync::mpsc::Sender;

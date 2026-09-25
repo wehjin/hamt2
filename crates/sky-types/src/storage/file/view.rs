@@ -1,5 +1,6 @@
 use crate::storage::file::internal::{bases_dir, init_bases_dir_with_empty_base, read_base};
-use crate::storage::{ReadStorageError, StorageStatus, BaseView};
+use crate::storage::{ReadStorageError, StorageStatus};
+use crate::trie::BaseView;
 use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieStream};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;

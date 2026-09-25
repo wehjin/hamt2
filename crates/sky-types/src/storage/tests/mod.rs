@@ -1,5 +1,7 @@
-use crate::storage::{BaseEdit, BaseView, mem_edit_new};
+use crate::storage::mem_edit_new;
+use crate::trie::BaseEdit;
 use crate::trie::map_base::one_kv;
+use crate::trie::BaseView;
 use crate::trie::{Base, BaseCommit, BaseId, BaseRead, HashKey, MapBase, TrieValue};
 
 mod mem_insert;

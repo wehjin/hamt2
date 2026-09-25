@@ -1,7 +1,9 @@
+use crate::storage::traits::BaseStore;
 use crate::storage::{
-    BaseStore, MemBaseStore, MemTrieView, ReadStorageError, StorageStatus, BaseEdit, BaseView,
-    WriteStorageError,
+    MemBaseStore, MemTrieView, ReadStorageError, StorageStatus, WriteStorageError,
 };
+use crate::trie::BaseEdit;
+use crate::trie::BaseView;
 use crate::trie::{Base, BaseCommit, BaseId, BaseRead, MapBase, TrieStream};
 use std::sync::Arc;
 

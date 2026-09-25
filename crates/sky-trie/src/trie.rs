@@ -1,6 +1,8 @@
 use crate::TrieReader;
 use sky_types::storage::error::WriteStorageError;
-use sky_types::storage::{ReadStorageError, StorageStatus, BaseEdit, BaseView};
+use sky_types::storage::{ReadStorageError, StorageStatus};
+use sky_types::trie::BaseEdit;
+use sky_types::trie::BaseView;
 use sky_types::trie::{Base, BaseId, BaseRead, MapBase};
 use sky_types::trie::{BaseCommit, TrieStream};
 

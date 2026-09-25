@@ -6,7 +6,7 @@ use sky_trie::Trie;
 use sky_types::db;
 use sky_types::db::schema::Schema;
 use sky_types::db::{Dir, TransactError};
-use sky_types::storage::BaseEdit;
+use sky_types::trie::BaseEdit;
 
 pub mod schema_loader;
 

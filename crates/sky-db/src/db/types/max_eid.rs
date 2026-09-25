@@ -2,7 +2,7 @@ use crate::db::types::key::KEY_MAX_EID;
 use crate::trie::prelude::*;
 use sky_types::db::Ein;
 use sky_types::db::{QueryError, TransactError};
-use sky_types::storage::BaseEdit;
+use sky_types::trie::BaseEdit;
 
 pub struct MaxEid {
     start: Ein,

@@ -1,6 +1,7 @@
-use sky_types::storage::{ReadStorageError, StorageStatus, BaseView};
+use sky_types::storage::{ReadStorageError, StorageStatus};
 use sky_types::trie::MapBase;
 use sky_types::trie::TrieStream;
+use sky_types::trie::BaseView;
 use sky_types::trie::{Base, BaseId, BaseRead};
 
 /// A read-only trie over an owned read-only storage, used only for queries.

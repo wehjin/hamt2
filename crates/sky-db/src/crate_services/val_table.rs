@@ -4,7 +4,7 @@ use crate::db::vid::Vid;
 use crate::trie::prelude::*;
 use sky_types::db::Val;
 use sky_types::db::{QueryError, TransactError};
-use sky_types::storage::BaseEdit;
+use sky_types::trie::BaseEdit;
 
 pub async fn insert<S>(trie: Trie<S>, val: Val) -> Result<(Trie<S>, Vid), TransactError>
 where

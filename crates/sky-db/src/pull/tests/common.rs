@@ -6,7 +6,7 @@ use sky_types::db::Datom;
 use sky_types::db::QueryError;
 use sky_types::db::datom;
 use sky_types::db::{Attr, Ein, Ent};
-use sky_types::storage::BaseEdit;
+use sky_types::trie::BaseEdit;
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename = "basis")]

@@ -1,4 +1,5 @@
-use crate::storage::{BaseView, mem_trie_new};
+use crate::storage::mem_trie_new;
+use crate::trie::BaseView;
 use crate::trie::{TrieInsert, TrieQuery, TrieStream, TrieValue};
 use futures::StreamExt;
 use std::collections::HashMap;
