@@ -1,13 +1,18 @@
-use crate::sky::LeptosSpawnTask;
-use leptos::prelude::{ReadSignal, StoredValue, WithValue};
+use crate::sky::{LeptosSpawnTask, SocketSender};
+use leptos::prelude::{Memo, ReadSignal, Signal, StoredValue, WithValue};
+use leptos_use::core::ConnectionReadyState;
 use sky_db::reader::DbReader;
-use sky_server::shared::remote::{RemoteClient, Remote};
+use sky_server::shared::protocol::SocketResponse;
+use sky_server::shared::remote::{Remote, RemoteClient};
 use sky_types::db::Datom;
 
 #[derive(Clone)]
 pub struct SkyClient {
     pub(crate) stored_client: StoredValue<Option<RemoteClient<LeptosSpawnTask>>>,
     pub ready: ReadSignal<bool>,
+    pub socket_sender: SocketSender,
+    pub socket_receiver: Memo<Option<SocketResponse>>,
+    pub socket_ready: Signal<ConnectionReadyState>,
 }
 
 impl SkyClient {

@@ -1,42 +1,14 @@
 use crate::sky;
-use crate::sky::SocketSender;
-use codee::string::FromToStringCodec;
-use leptos::logging::{error, log};
+use leptos::logging::log;
 use leptos::prelude::*;
-use leptos_use::{UseWebSocketReturn, use_websocket};
 use sky_db::traits::DbQuery;
 use sky_server::shared::protocol::SocketResponse;
 use sky_types::db;
 use sky_types::db::{Attr, datom, val};
-use std::sync::Arc;
 
 #[component]
 pub fn WebSocketSandbox() -> impl IntoView {
-    let UseWebSocketReturn {
-        ready_state,
-        message,
-        send,
-        ..
-    } = use_websocket::<String, String, FromToStringCodec>("/ws");
-    let socket_sender = SocketSender::new(Arc::new(send.clone()));
-    let socket_receiver = Memo::new(move |_| match message.get() {
-        None => None,
-        Some(json) => {
-            let result = serde_json::from_str::<SocketResponse>(&json);
-            match result {
-                Ok(response) => Some(response),
-                Err(e) => {
-                    error!("message parse error: {:?}", e);
-                    None
-                }
-            }
-        }
-    });
-    let sky = sky::use_sky(
-        socket_sender.clone(),
-        socket_receiver.into(),
-        ready_state.clone(),
-    );
+    let sky = sky::use_sky();
     {
         let sky = sky.clone();
         Effect::new(move |_| {
@@ -59,26 +31,32 @@ pub fn WebSocketSandbox() -> impl IntoView {
         })
     };
 
-    let max_id = Memo::new(move |_| match socket_receiver.get() {
-        Some(response) => match response {
-            SocketResponse::DbStatus(status) | SocketResponse::TransactResult(status) => {
-                Some(status.head.max_id)
-            }
-            _ => None,
-        },
-        None => None,
-    });
-    let last_response = Memo::new(move |_| {
-        socket_receiver
-            .get()
-            .map(|response| serde_json::to_string_pretty(&response).expect("serialize response"))
-    });
+    let max_id = {
+        let socket_receiver = sky.socket_receiver.clone();
+        Memo::new(move |_| match socket_receiver.get() {
+            Some(response) => match response {
+                SocketResponse::DbStatus(status) | SocketResponse::TransactResult(status) => {
+                    Some(status.head.max_id)
+                }
+                _ => None,
+            },
+            None => None,
+        })
+    };
+    let last_response = {
+        let socket_receiver = sky.socket_receiver.clone();
+        Memo::new(move |_| {
+            socket_receiver.get().map(|response| {
+                serde_json::to_string_pretty(&response).expect("serialize response")
+            })
+        })
+    };
     let send_connect = {
         let sky = sky.clone();
         move |_| sky.reconnect()
     };
     let send_read_slot_base = {
-        let sender = socket_sender.clone();
+        let sender = sky.socket_sender.clone().clone();
         move |_| {
             if let Some(id) = max_id.get() {
                 sender.send_read(id);
@@ -100,6 +78,7 @@ pub fn WebSocketSandbox() -> impl IntoView {
         }
     };
 
+    let socket_ready = sky.socket_ready.clone();
     view! {
         <section class="box">
             <h1 class="title is-4">"Play with the web socket"</h1>
@@ -111,7 +90,7 @@ pub fn WebSocketSandbox() -> impl IntoView {
             </div>
             <p>
                 "Ready state: "
-                <strong>{move || format!("{:?}", ready_state.get())}</strong>
+                <strong>{move || format!("{:?}", socket_ready.get())}</strong>
                 {move || format!(" · max_id: {:?}", max_id.get())}
             </p>
             <pre class="is-size-7">{move || last_response.get()}</pre>
