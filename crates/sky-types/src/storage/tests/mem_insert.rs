@@ -1,4 +1,4 @@
-use crate::storage::mem_trie_new;
+use crate::storage::mem_load_new;
 use crate::trie::BaseView;
 use crate::trie::{TrieInsert, TrieQuery, TrieStream, TrieValue};
 use futures::StreamExt;
@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 #[tokio::test]
 async fn max_u32_value_insertions_works() -> anyhow::Result<()> {
-    let mut trie = mem_trie_new();
+    let mut trie = mem_load_new();
     trie.edit(async |edit| {
         edit.insert(100, u32::MAX).await?;
         Ok(())
@@ -20,7 +20,7 @@ async fn max_u32_value_insertions_works() -> anyhow::Result<()> {
 #[tokio::test]
 #[should_panic(expected = "assertion failed: value >= 0")]
 async fn negative_key_insertions_panic() {
-    let mut trie = mem_trie_new();
+    let mut trie = mem_load_new();
     let _ = trie
         .edit(async |edit| {
             edit.insert(-1, 100).await?;
@@ -31,7 +31,7 @@ async fn negative_key_insertions_panic() {
 
 #[tokio::test]
 async fn multiple_insertions_work() {
-    let mut trie = mem_trie_new();
+    let mut trie = mem_load_new();
     trie.edit(async |edit| {
         edit.insert(1, 1).await?;
         let values = edit.u32_stream().collect::<HashMap<i32, u32>>().await;
@@ -52,7 +52,7 @@ async fn multiple_insertions_work() {
 
 #[tokio::test]
 async fn snapshot_queries_work() {
-    let mut trie = mem_trie_new();
+    let mut trie = mem_load_new();
     trie.edit(async |trie| {
         trie.insert(1, TrieValue::U32(42)).await?;
         trie.deep_insert([2, 42], TrieValue::U32(242), false)
@@ -73,7 +73,7 @@ async fn snapshot_queries_work() {
 #[tokio::test]
 async fn multi_depth_saturation_in_multiple_edits_work() {
     // Insert values past root saturation.
-    let mut trie = mem_trie_new();
+    let mut trie = mem_load_new();
     trie.edit(async |trie| {
         trie.insert(100, TrieValue::U32(42)).await.unwrap();
         for a in 0..=32 {
@@ -139,7 +139,7 @@ async fn multi_depth_saturation_in_multiple_edits_work() {
 
 #[tokio::test]
 async fn later_insertion_overwrites_earlier_insertion() {
-    let mut trie = mem_trie_new();
+    let mut trie = mem_load_new();
     trie.edit(async |trie| {
         trie.insert(1, 42)
             .await?
@@ -157,7 +157,7 @@ async fn later_insertion_overwrites_earlier_insertion() {
 async fn different_keys_store_different_values() {
     // 33 keys will saturate the root block.
     let keys = (0..=32).collect::<Vec<_>>();
-    let mut trie = mem_trie_new();
+    let mut trie = mem_load_new();
     trie.edit(async |trie| {
         for i in &keys {
             trie.insert(*i, *i as u32).await?;
@@ -176,7 +176,7 @@ async fn different_keys_store_different_values() {
 
 #[tokio::test]
 async fn deep_insertions_work_basic() {
-    let mut trie = mem_trie_new();
+    let mut trie = mem_load_new();
     trie.edit(async |edit| {
         edit.deep_insert([2, 42], 242, false).await?;
         Ok(())
@@ -191,7 +191,7 @@ async fn deep_insertions_work_basic() {
 
 #[tokio::test]
 async fn deep_insertions_work_with_saturated_root() {
-    let mut trie = mem_trie_new();
+    let mut trie = mem_load_new();
     trie.edit(async |trie| {
         for e in 0..=33 {
             trie.deep_insert([e, e], TrieValue::U32(e as u32), false)
@@ -225,6 +225,6 @@ async fn deep_insertions_work_with_saturated_root() {
 #[tokio::test]
 #[should_panic(expected = "assertion failed: value >= 0")]
 async fn deep_queries_panic_for_invalid_key() {
-    let trie = mem_trie_new();
+    let trie = mem_load_new();
     trie.deep_query([4, 4, -1]).await.unwrap();
 }

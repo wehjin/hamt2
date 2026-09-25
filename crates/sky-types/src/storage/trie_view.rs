@@ -5,13 +5,13 @@ use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieStream};
 use std::sync::Arc;
 
 #[derive(Debug)]
-pub struct MemTrieView<S: BaseStore> {
-    pub(crate) past: Option<Arc<MemTrieView<S>>>,
+pub struct TrieView<S: BaseStore> {
+    pub(crate) past: Option<Arc<TrieView<S>>>,
     pub(crate) store: Arc<S>,
 }
 
-impl<S: BaseStore> MemTrieView<S> {
-    pub fn load(store: S) -> Self {
+impl<S: BaseStore> TrieView<S> {
+    pub(crate) fn load(store: S) -> Self {
         Self {
             past: None,
             store: Arc::new(store),
@@ -19,7 +19,7 @@ impl<S: BaseStore> MemTrieView<S> {
     }
 }
 
-impl<S: BaseStore> Clone for MemTrieView<S> {
+impl<S: BaseStore> Clone for TrieView<S> {
     fn clone(&self) -> Self {
         let past = self.past.clone();
         let store = self.store.clone();
@@ -27,16 +27,16 @@ impl<S: BaseStore> Clone for MemTrieView<S> {
     }
 }
 
-impl<S: BaseStore + Send + Sync> TrieStream for MemTrieView<S> {
-    type Subtrie = MemTrieView<S>;
+impl<S: BaseStore + Send + Sync> TrieStream for TrieView<S> {
+    type Subtrie = TrieView<S>;
 
     fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
         self.clone().with_new_root(Some(subtrie_root))
     }
 }
 
-impl<S: BaseStore + Send + Sync> BaseView for MemTrieView<S> {
-    type Snapshot = MemTrieView<S>;
+impl<S: BaseStore + Send + Sync> BaseView for TrieView<S> {
+    type Snapshot = TrieView<S>;
 
     fn status(&self) -> StorageStatus {
         StorageStatus {
@@ -53,7 +53,7 @@ impl<S: BaseStore + Send + Sync> BaseView for MemTrieView<S> {
     }
 }
 
-impl<S: BaseStore> BaseRead for MemTrieView<S> {
+impl<S: BaseStore> BaseRead for TrieView<S> {
     fn read_root(&self) -> MapBase {
         self.store.root()
     }
@@ -71,13 +71,13 @@ impl<S: BaseStore> BaseRead for MemTrieView<S> {
 
 #[cfg(test)]
 mod tests {
-    use crate::storage::{MemBaseStore, MemTrieView};
+    use crate::storage::{Mem, TrieView};
     use crate::trie::TrieStream;
     use futures::StreamExt;
 
     #[tokio::test]
     async fn stream_exists() {
-        let trie = MemTrieView::load(MemBaseStore::new());
+        let trie = TrieView::load(Mem::new());
         let stream = trie.u32_stream();
         let values: Vec<(i32, u32)> = stream.collect().await;
         assert_eq!(values, vec![]);

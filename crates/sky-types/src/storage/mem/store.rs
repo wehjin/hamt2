@@ -5,13 +5,13 @@ use std::ops::Deref;
 use std::sync::Arc;
 
 #[derive(Debug, Clone)]
-pub struct MemBaseStore {
+pub struct Mem {
     pub(crate) start_id: BaseId,
     pub(crate) bases: Vec<Arc<Base>>,
     pub(crate) root: MapBase,
 }
 
-impl MemBaseStore {
+impl Mem {
     pub fn new() -> Self {
         let new = Self {
             start_id: BaseId::ZERO,
@@ -26,7 +26,7 @@ impl MemBaseStore {
     }
 }
 
-impl BaseStore for MemBaseStore {
+impl BaseStore for Mem {
     fn max_id(&self) -> BaseId {
         self.start_id + self.bases.len() - 1
     }

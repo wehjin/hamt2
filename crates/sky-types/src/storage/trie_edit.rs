@@ -1,29 +1,25 @@
 use crate::storage::traits::BaseStore;
-use crate::storage::{
-    MemBaseStore, MemTrieView, ReadStorageError, StorageStatus, WriteStorageError,
-};
+use crate::storage::{Mem, ReadStorageError, StorageStatus, TrieView, WriteStorageError};
 use crate::trie::BaseEdit;
 use crate::trie::BaseView;
 use crate::trie::{Base, BaseCommit, BaseId, BaseRead, MapBase, TrieStream};
 use std::sync::Arc;
 
-pub fn mem_edit_new() -> MemTrieEdit<MemBaseStore> {
-    let store = MemBaseStore::new();
-    let edit = MemTrieEdit::load(store);
-    edit
+pub fn mem_edit_new() -> TrieEdit<Mem> {
+    TrieEdit::load(Mem::new())
 }
 
 #[derive(Debug)]
-pub struct MemTrieEdit<S: BaseStore> {
-    past: Option<Arc<MemTrieView<S>>>,
+pub struct TrieEdit<S: BaseStore> {
+    past: Option<Arc<TrieView<S>>>,
     store: S,
 }
 
-impl<S: BaseStore> MemTrieEdit<S> {
+impl<S: BaseStore> TrieEdit<S> {
     pub(crate) fn load(store: S) -> Self {
         Self { past: None, store }
     }
-    pub(crate) async fn extend(past: &MemTrieView<S>) -> Result<Self, WriteStorageError> {
+    pub(crate) async fn extend(past: &TrieView<S>) -> Result<Self, WriteStorageError> {
         let extension = Self {
             past: Some(Arc::new(past.clone())),
             store: past.store.extend().await?,
@@ -42,9 +38,9 @@ impl<S: BaseStore> MemTrieEdit<S> {
     }
 }
 
-impl<S: BaseStore + Send + Sync> BaseEdit for MemTrieEdit<S> {}
+impl<S: BaseStore + Send + Sync> BaseEdit for TrieEdit<S> {}
 
-impl<S: BaseStore> BaseCommit for MemTrieEdit<S> {
+impl<S: BaseStore> BaseCommit for TrieEdit<S> {
     async fn commit_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
         self.store.set_root(root).await
     }
@@ -54,16 +50,16 @@ impl<S: BaseStore> BaseCommit for MemTrieEdit<S> {
     }
 }
 
-impl<S: BaseStore + Send + Sync> TrieStream for MemTrieEdit<S> {
-    type Subtrie = MemTrieView<S>;
+impl<S: BaseStore + Send + Sync> TrieStream for TrieEdit<S> {
+    type Subtrie = TrieView<S>;
 
     fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
         self.snapshot().to_subtrie(subtrie_root)
     }
 }
 
-impl<S: BaseStore + Send + Sync> BaseView for MemTrieEdit<S> {
-    type Snapshot = MemTrieView<S>;
+impl<S: BaseStore + Send + Sync> BaseView for TrieEdit<S> {
+    type Snapshot = TrieView<S>;
 
     fn status(&self) -> StorageStatus {
         StorageStatus {
@@ -79,14 +75,14 @@ impl<S: BaseStore + Send + Sync> BaseView for MemTrieEdit<S> {
     }
 
     fn snapshot(&self) -> Self::Snapshot {
-        MemTrieView {
+        TrieView {
             past: self.past.clone(),
             store: Arc::new(self.store.snapshot()),
         }
     }
 }
 
-impl<S: BaseStore> BaseRead for MemTrieEdit<S> {
+impl<S: BaseStore> BaseRead for TrieEdit<S> {
     fn read_root(&self) -> MapBase {
         self.store.root()
     }

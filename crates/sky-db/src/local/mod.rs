@@ -1,6 +1,6 @@
 use crate::db::Db;
 use sky_types::db::schema::attr_spec::DbSpec;
-use sky_types::storage::{MemBaseStore, MemTrieEdit, mem_edit_new};
+use sky_types::storage::{Mem, TrieEdit, mem_edit_new};
 use sky_types::trie::BaseEdit;
 
 pub trait DbRuntime {
@@ -13,7 +13,7 @@ pub struct LocalDb<S: BaseEdit> {
 
 pub fn new_in_memory<R: DbRuntime>(
     db_spec: impl Into<DbSpec>,
-) -> LocalDb<MemTrieEdit<MemBaseStore>> {
+) -> LocalDb<TrieEdit<Mem>> {
     let mem_storage = mem_edit_new();
     let db_spec = db_spec.into();
     let Ok(db) = R::block_on(async move { Db::new(mem_storage, db_spec).await }) else {

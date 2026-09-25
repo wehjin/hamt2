@@ -43,18 +43,18 @@ async fn main_rejects_second_err_edit() {
 }
 
 mod fixtures {
-    use crate::storage::{MemBaseStore, MemTrie, mem_trie_new};
+    use crate::storage::{Mem, TrieLoad, mem_load_new};
     use crate::trie::{TrieInsert, TrieQuery, TrieValue};
     use anyhow::anyhow;
 
-    pub async fn start_assert_trie() -> MemTrie<MemBaseStore> {
-        let trie = mem_trie_new();
+    pub async fn start_assert_trie() -> TrieLoad<Mem> {
+        let trie = mem_load_new();
         let values = trie.query_all().await.unwrap();
         assert_eq!(values.len(), 0);
         trie
     }
 
-    pub async fn edit_assert_trie(trie: &mut MemTrie<MemBaseStore>, tag: i32) {
+    pub async fn edit_assert_trie(trie: &mut TrieLoad<Mem>, tag: i32) {
         let out = trie
             .edit(async |edit| {
                 let value = TrieValue::U32(tag as u32 + 1);
@@ -68,7 +68,7 @@ mod fixtures {
         assert_eq!(out, tag + 2);
     }
 
-    pub async fn error_edit_assert_trie(trie: &mut MemTrie<MemBaseStore>, tag: i32) {
+    pub async fn error_edit_assert_trie(trie: &mut TrieLoad<Mem>, tag: i32) {
         let out = trie
             .edit::<_, ()>(async |edit| {
                 let value = TrieValue::U32(tag as u32 + 1);

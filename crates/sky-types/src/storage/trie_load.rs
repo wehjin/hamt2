@@ -1,33 +1,29 @@
-use crate::storage::mem::edit::MemTrieEdit;
 use crate::storage::traits::BaseStore;
-use crate::storage::{
-    MemBaseStore, MemTrieView, ReadStorageError, StorageStatus,
-};
+use crate::storage::trie_edit::TrieEdit;
+use crate::storage::{Mem, ReadStorageError, StorageStatus, TrieView};
 use crate::trie::BaseView;
 use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieStream};
 
-pub fn mem_trie_new() -> MemTrie<MemBaseStore> {
-    let store = MemBaseStore::new();
-    let trie = MemTrie::load(store);
-    trie
+pub fn mem_load_new() -> TrieLoad<Mem> {
+    TrieLoad::load(Mem::new())
 }
 
 #[derive(Debug)]
-pub struct MemTrie<S: BaseStore> {
-    inner: MemTrieView<S>,
+pub struct TrieLoad<S: BaseStore> {
+    inner: TrieView<S>,
 }
 
-impl<S: BaseStore + Send + Sync> MemTrie<S> {
+impl<S: BaseStore + Send + Sync> TrieLoad<S> {
     pub fn load(store: S) -> Self {
-        let inner = MemTrieView::load(store);
+        let inner = TrieView::load(store);
         Self { inner }
     }
 
     pub async fn edit<F, Out>(&mut self, f: F) -> anyhow::Result<Out>
     where
-        F: AsyncFnOnce(&mut MemTrieEdit<S>) -> anyhow::Result<Out>,
+        F: AsyncFnOnce(&mut TrieEdit<S>) -> anyhow::Result<Out>,
     {
-        let mut edit = MemTrieEdit::extend(&self.inner).await?;
+        let mut edit = TrieEdit::extend(&self.inner).await?;
         let out = f(&mut edit).await?;
         let committed = edit.commit().await?;
         self.inner = committed.snapshot();
@@ -35,16 +31,16 @@ impl<S: BaseStore + Send + Sync> MemTrie<S> {
     }
 }
 
-impl<S: BaseStore + Send + Sync> TrieStream for MemTrie<S> {
-    type Subtrie = MemTrieView<S>;
+impl<S: BaseStore + Send + Sync> TrieStream for TrieLoad<S> {
+    type Subtrie = TrieView<S>;
 
     fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
         self.inner.to_subtrie(subtrie_root)
     }
 }
 
-impl<S: BaseStore + Send + Sync> BaseView for MemTrie<S> {
-    type Snapshot = MemTrieView<S>;
+impl<S: BaseStore + Send + Sync> BaseView for TrieLoad<S> {
+    type Snapshot = TrieView<S>;
 
     fn status(&self) -> StorageStatus {
         self.inner.status()
@@ -60,7 +56,7 @@ impl<S: BaseStore + Send + Sync> BaseView for MemTrie<S> {
     }
 }
 
-impl<S: BaseStore> BaseRead for MemTrie<S> {
+impl<S: BaseStore> BaseRead for TrieLoad<S> {
     fn read_root(&self) -> MapBase {
         self.inner.read_root()
     }

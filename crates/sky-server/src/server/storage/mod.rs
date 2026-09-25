@@ -2,7 +2,7 @@ use log::error;
 use sky_db::db::Db;
 use sky_db::db::attr_spec::DbSpec;
 use sky_types::db::{Datom, DbStatus, Transact};
-use sky_types::storage::{MemTrieEdit, mem_edit_new};
+use sky_types::storage::mem_edit_new;
 use sky_types::trie::{Base, BaseId};
 use tokio::sync::{broadcast, mpsc, oneshot};
 
