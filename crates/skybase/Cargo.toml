@@ -25,7 +25,7 @@ anyhow = { workspace = true, optional = true }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net"], optional = true }
 sky-db.workspace = true
 serde.workspace = true
-sky-types.workspace = true
+sky-types = { path = "../sky-types", default-features = false }
 sky-server = { path = "../sky-server", default-features = false }
 serde_json.workspace = true
 
@@ -45,6 +45,7 @@ ssr = [
     "dep:anyhow",
     "dep:tokio",
     "sky-server/axum-ws",
+    "sky-types/fs",
 ]
 
 [package.metadata.leptos]
