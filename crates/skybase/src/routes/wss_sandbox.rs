@@ -78,7 +78,7 @@ pub fn WebSocketSandbox() -> impl IntoView {
         }
     };
 
-    let socket_ready = sky.socket.ready.clone();
+    let socket_ready = sky.socket.state.clone();
     view! {
         <section class="box">
             <h1 class="title is-4">"Play with the web socket"</h1>

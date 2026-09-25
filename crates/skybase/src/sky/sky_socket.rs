@@ -1,4 +1,4 @@
-use crate::sky::SocketSender;
+use crate::sky::socket_sender::SocketSender;
 use codee::string::FromToStringCodec;
 use leptos::leptos_dom::error;
 use leptos::prelude::{Get, Memo, Signal};
@@ -9,7 +9,7 @@ use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct SkySocketReturn {
-    pub ready: Signal<ConnectionReadyState>,
+    pub state: Signal<ConnectionReadyState>,
     pub sender: SocketSender,
     pub receiver: Memo<Option<SocketResponse>>,
 }
@@ -36,7 +36,7 @@ pub fn use_sky_socket() -> SkySocketReturn {
     });
     let ready = ready_state.clone();
     SkySocketReturn {
-        ready,
+        state: ready,
         sender,
         receiver,
     }
