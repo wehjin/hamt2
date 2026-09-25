@@ -1,5 +1,6 @@
+use crate::storage::mem::edit::MemTrieEdit;
 use crate::storage::{
-    BaseStore, MemBaseStore, MemTrieCore, MemTrieView, ReadStorageError, StorageStatus, TrieView,
+    BaseStore, MemBaseStore, MemTrieView, ReadStorageError, StorageStatus, TrieView,
 };
 use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieStream};
 
@@ -22,9 +23,9 @@ impl<S: BaseStore + Send + Sync> MemTrie<S> {
 
     pub async fn edit<F, Out>(&mut self, f: F) -> anyhow::Result<Out>
     where
-        F: AsyncFnOnce(&mut MemTrieCore<S>) -> anyhow::Result<Out>,
+        F: AsyncFnOnce(&mut MemTrieEdit<S>) -> anyhow::Result<Out>,
     {
-        let mut edit = MemTrieCore::extend(&self.inner).await?;
+        let mut edit = MemTrieEdit::extend(&self.inner).await?;
         let out = f(&mut edit).await?;
         let committed = edit.commit().await?;
         self.inner = committed.snapshot();
