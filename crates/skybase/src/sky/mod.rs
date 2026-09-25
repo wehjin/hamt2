@@ -1,40 +1,17 @@
-use codee::string::FromToStringCodec;
-use leptos::leptos_dom::error;
 use leptos::prelude::*;
-use leptos_use::{UseWebSocketReturn, use_websocket};
-use sky_server::shared::protocol::SocketResponse;
-use std::sync::Arc;
 mod sky_client;
 mod socket_sender;
 mod spawn_task;
-
+use crate::sky::sky_socket::use_sky_socket;
 pub use sky_client::*;
 pub use socket_sender::*;
 pub use spawn_task::*;
 
+mod sky_socket;
+
 #[allow(unused_variables)]
 pub fn use_sky() -> SkyClient {
-    let UseWebSocketReturn {
-        ready_state,
-        message,
-        send,
-        ..
-    } = use_websocket::<String, String, FromToStringCodec>("/ws");
-    let socket_sender = SocketSender::new(Arc::new(send.clone()));
-    let socket_receiver = Memo::new(move |_| match message.get() {
-        None => None,
-        Some(json) => {
-            let result = serde_json::from_str::<SocketResponse>(&json);
-            match result {
-                Ok(response) => Some(response),
-                Err(e) => {
-                    error!("message parse error: {:?}", e);
-                    None
-                }
-            }
-        }
-    });
-    let socket_ready = ready_state.clone();
+    let socket = use_sky_socket();
     let stored_client = StoredValue::new(None);
     let (client_ready, set_client_ready) = signal(false);
     let (sky_ready, set_sky_ready) = signal(false);
@@ -43,8 +20,8 @@ pub fn use_sky() -> SkyClient {
         use leptos::logging::log;
         use leptos_use::core::ConnectionReadyState;
         use sky_server::shared::remote::RemoteClient;
-        let socket_sender = socket_sender.clone();
-        let socket_receiver = socket_receiver.clone();
+        let socket_sender = socket.sender.clone();
+        let socket_receiver = socket.receiver.clone();
         // Start the client.
         Effect::new(move |_| {
             stored_client.update_value(|stored_client| {
@@ -79,7 +56,7 @@ pub fn use_sky() -> SkyClient {
             }
         });
         {
-            let ws_ready = ready_state.clone();
+            let ws_ready = socket.ready.clone();
             let client_ready = client_ready.clone();
             Effect::new(move |_| {
                 if let (ConnectionReadyState::Open, true) = (ws_ready.get(), client_ready.get()) {
@@ -91,8 +68,6 @@ pub fn use_sky() -> SkyClient {
     SkyClient {
         stored_client,
         ready: sky_ready,
-        socket_sender,
-        socket_receiver,
-        socket_ready,
+        socket,
     }
 }

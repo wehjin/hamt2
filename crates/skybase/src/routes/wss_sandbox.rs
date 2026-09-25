@@ -32,7 +32,7 @@ pub fn WebSocketSandbox() -> impl IntoView {
     };
 
     let max_id = {
-        let socket_receiver = sky.socket_receiver.clone();
+        let socket_receiver = sky.socket.receiver.clone();
         Memo::new(move |_| match socket_receiver.get() {
             Some(response) => match response {
                 SocketResponse::DbStatus(status) | SocketResponse::TransactResult(status) => {
@@ -44,7 +44,7 @@ pub fn WebSocketSandbox() -> impl IntoView {
         })
     };
     let last_response = {
-        let socket_receiver = sky.socket_receiver.clone();
+        let socket_receiver = sky.socket.receiver.clone();
         Memo::new(move |_| {
             socket_receiver.get().map(|response| {
                 serde_json::to_string_pretty(&response).expect("serialize response")
@@ -56,7 +56,7 @@ pub fn WebSocketSandbox() -> impl IntoView {
         move |_| sky.reconnect()
     };
     let send_read_slot_base = {
-        let sender = sky.socket_sender.clone().clone();
+        let sender = sky.socket.sender.clone().clone();
         move |_| {
             if let Some(id) = max_id.get() {
                 sender.send_read(id);
@@ -78,7 +78,7 @@ pub fn WebSocketSandbox() -> impl IntoView {
         }
     };
 
-    let socket_ready = sky.socket_ready.clone();
+    let socket_ready = sky.socket.ready.clone();
     view! {
         <section class="box">
             <h1 class="title is-4">"Play with the web socket"</h1>
