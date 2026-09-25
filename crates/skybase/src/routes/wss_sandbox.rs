@@ -5,7 +5,7 @@ use leptos::logging::{error, log};
 use leptos::prelude::*;
 use leptos_use::{UseWebSocketReturn, use_websocket};
 use sky_db::traits::DbQuery;
-use sky_server::shared::SocketResponse;
+use sky_server::shared::protocol::SocketResponse;
 use sky_types::db;
 use sky_types::db::{Attr, datom, val};
 use std::sync::Arc;

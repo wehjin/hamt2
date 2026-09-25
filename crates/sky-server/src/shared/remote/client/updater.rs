@@ -1,4 +1,4 @@
-use crate::shared::SocketResponse;
+use crate::shared::protocol::SocketResponse;
 use crate::shared::remote::client::requests::ClientRequest;
 use crate::shared::remote::{SpawnTask, client};
 use std::marker::PhantomData;

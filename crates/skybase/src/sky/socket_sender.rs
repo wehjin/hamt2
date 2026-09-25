@@ -1,4 +1,4 @@
-use sky_server::shared::SocketRequest;
+use sky_server::shared::protocol::SocketRequest;
 use sky_types::trie::BaseId;
 use std::sync::Arc;
 

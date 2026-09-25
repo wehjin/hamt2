@@ -21,7 +21,7 @@ log = "0.4.34"
 
 sky-db = { path = "crates/sky-db" }
 sky-server = { path = "crates/sky-server" }
-sky-types = { path = "crates/sky-types" }
+sky-types = { path = "crates/sky-types", default-features = false }
 universal-hash = { path = "crates/universal-hash" }
 
 [profile.wasm-release]

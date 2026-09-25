@@ -1,4 +1,4 @@
-use crate::shared::SocketRequest;
+use crate::shared::protocol::SocketRequest;
 use crate::shared::remote::requests::ClientRequest;
 use sky_types::db::DbStatus;
 use sky_types::trie::{Base, BaseId};

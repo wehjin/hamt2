@@ -1,7 +1,7 @@
+use crate::shared::protocol::{SocketRequest, SocketResponse};
 use crate::shared::remote::requests::ClientRequest;
 use crate::shared::remote::updater::ClientUpdater;
 use crate::shared::remote::{Remote, SpawnTask};
-use crate::shared::{SocketRequest, SocketResponse};
 use sky_db::reader::DbReader;
 use sky_types::db::{Datom, DbStatus};
 use sky_types::storage::{StorageStatus, TrieView};

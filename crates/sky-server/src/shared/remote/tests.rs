@@ -1,5 +1,5 @@
 use super::*;
-use crate::shared::{SocketRequest, SocketResponse};
+use crate::shared::protocol::{SocketRequest, SocketResponse};
 use sky_db::traits::DbQuery;
 use sky_types::db;
 use sky_types::db::schema::Schema;

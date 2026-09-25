@@ -1,6 +1,6 @@
 use leptos::prelude::*;
 use leptos_use::core::ConnectionReadyState;
-use sky_server::shared::SocketResponse;
+use sky_server::shared::protocol::SocketResponse;
 mod sky_client;
 mod socket_sender;
 mod spawn_task;
@@ -20,9 +20,9 @@ pub fn use_sky(
     let (sky_ready, set_sky_ready) = signal(false);
     #[cfg(feature = "hydrate")]
     {
-        use leptos::logging::log;
-        use sky_server::shared::remote::RemoteClient;
-        // Start the client.
+	    use leptos::logging::log;
+	    use sky_server::shared::remote::RemoteClient;
+	    // Start the client.
         Effect::new(move |_| {
             stored_client.update_value(|stored_client| {
                 if stored_client.is_none() {

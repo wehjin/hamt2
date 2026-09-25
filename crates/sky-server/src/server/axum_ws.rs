@@ -6,7 +6,7 @@
 
 use crate::server::process_socket_requests;
 use crate::server::storage::StorageService;
-use crate::shared::{SocketRequest, SocketResponse};
+use crate::shared::protocol::{SocketRequest, SocketResponse};
 use axum::extract::ws::{Message, WebSocket};
 use futures_util::{SinkExt, StreamExt};
 
@@ -42,10 +42,10 @@ fn response_to_message(response: SocketResponse) -> Message {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use sky_types::trie::BaseId;
+	use super::*;
+	use sky_types::trie::BaseId;
 
-    #[test]
+	#[test]
     fn text_messages_map_to_requests() {
         let connect = Message::Text("{\"Connect\":null}".into());
         assert_eq!(Some(SocketRequest::Connect), request_from_message(connect));

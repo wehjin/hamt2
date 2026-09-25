@@ -1,5 +1,5 @@
 use crate::server::storage::{StorageBroadcastEvent, StorageService};
-use crate::shared::{SocketRequest, SocketResponse};
+use crate::shared::protocol::{SocketRequest, SocketResponse};
 use futures_util::{Sink, SinkExt, Stream, StreamExt};
 
 #[cfg(feature = "axum-ws")]
@@ -52,19 +52,19 @@ pub async fn process_socket_requests<In, Out>(
 
 #[cfg(test)]
 mod tests {
-    use crate::server::process_socket_requests;
-    use crate::server::storage::StorageService;
-    use crate::shared::{SocketRequest, SocketResponse};
-    use sky_types::db::{Attr, datom};
-    use sky_types::trie::BaseId;
-    use tokio::sync::mpsc;
-    use tokio::sync::mpsc::{Receiver, Sender};
-    use tokio::task::JoinHandle;
-    use tokio_stream::wrappers::ReceiverStream;
-    use tokio_util::sync::PollSender;
+	use crate::server::process_socket_requests;
+	use crate::server::storage::StorageService;
+	use crate::shared::protocol::{SocketRequest, SocketResponse};
+	use sky_types::db::{Attr, datom};
+	use sky_types::trie::BaseId;
+	use tokio::sync::mpsc;
+	use tokio::sync::mpsc::{Receiver, Sender};
+	use tokio::task::JoinHandle;
+	use tokio_stream::wrappers::ReceiverStream;
+	use tokio_util::sync::PollSender;
 
-    #[tokio::test]
-    async fn process_socket_requests_works() {
+	#[tokio::test]
+	async fn process_socket_requests_works() {
         let storage = StorageService::start(["Counter/count"]).await.unwrap();
         let (_task, request, mut response) = spawn_socket_task(storage);
 
