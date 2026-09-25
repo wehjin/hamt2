@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 
 pub mod error;
+
+#[cfg(feature = "fs")]
 mod file;
 mod mem;
 mod traits;
@@ -10,6 +12,7 @@ mod trie_view;
 
 use crate::trie::{BaseId, MapBase};
 pub use error::*;
+#[cfg(feature = "fs")]
 pub use file::*;
 pub use mem::*;
 pub use traits::*;
