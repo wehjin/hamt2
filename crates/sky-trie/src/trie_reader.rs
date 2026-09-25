@@ -1,7 +1,7 @@
-use sky_types::storage::{ReadStorageError, StorageStatus};
+use sky_types::storage::ReadStorageError;
+use sky_types::trie::BaseView;
 use sky_types::trie::MapBase;
 use sky_types::trie::TrieStream;
-use sky_types::trie::BaseView;
 use sky_types::trie::{Base, BaseId, BaseRead};
 
 /// A read-only trie over an owned read-only storage, used only for queries.
@@ -27,10 +27,6 @@ impl<S: BaseView + BaseRead + Clone + Send> TrieStream for TrieReader<S> {
 impl<S: BaseView + BaseRead + Clone + Send> BaseView for TrieReader<S> {
     type Snapshot = TrieReader<S>;
 
-    fn status(&self) -> StorageStatus {
-        self.storage.status()
-    }
-
     fn with_new_root(self, new_root: Option<MapBase>) -> Self {
         let storage = self.storage.with_new_root(new_root);
         Self { storage }
@@ -42,6 +38,10 @@ impl<S: BaseView + BaseRead + Clone + Send> BaseView for TrieReader<S> {
 }
 
 impl<S: BaseView + BaseRead + Clone + Send> BaseRead for TrieReader<S> {
+    fn max_id(&self) -> BaseId {
+        self.storage.max_id()
+    }
+
     fn read_root(&self) -> MapBase {
         self.storage.read_root()
     }

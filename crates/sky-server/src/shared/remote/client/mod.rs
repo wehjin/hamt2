@@ -31,7 +31,7 @@ impl<T: SpawnTask> RemoteClient<T> {
     }
 
     pub fn active_head(&self) -> StorageStatus {
-        self.inner.status()
+        self.inner.status.read().unwrap().head
     }
 
     pub fn to_updater(&self) -> ClientUpdater<T> {

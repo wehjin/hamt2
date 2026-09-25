@@ -5,6 +5,11 @@ pub trait BaseCommit: BaseRead
 where
     Self: Sized,
 {
+    /// Read the next available base id.
+    fn next_id(&self) -> BaseId {
+        self.max_id() + 1
+    }
+
     /// Commits a new `root` into the trie.
     async fn commit_root(&mut self, root: MapBase) -> Result<(), WriteStorageError>;
 

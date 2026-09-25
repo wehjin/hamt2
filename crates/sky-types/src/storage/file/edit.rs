@@ -1,8 +1,6 @@
 use crate::storage::file::internal;
 use crate::storage::file::internal::{read_max_id_file, write_base};
-use crate::storage::{
-    FileTrieView, ReadStorageError, StorageStatus, WriteStorageError,
-};
+use crate::storage::{FileTrieView, ReadStorageError, WriteStorageError};
 use crate::trie::BaseEdit;
 use crate::trie::BaseView;
 use crate::trie::{Base, BaseCommit, BaseId, BaseRead, MapBase, TrieStream};
@@ -53,11 +51,7 @@ impl FileTrieEdit {
     }
 }
 
-impl BaseEdit for FileTrieEdit {
-    fn next_id(&self) -> BaseId {
-        self.max_id() + 1
-    }
-}
+impl BaseEdit for FileTrieEdit {}
 
 impl BaseCommit for FileTrieEdit {
     async fn commit_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
@@ -86,9 +80,6 @@ impl TrieStream for FileTrieEdit {
 impl BaseView for FileTrieEdit {
     type Snapshot = FileTrieView;
 
-    fn status(&self) -> StorageStatus {
-        self.inner.status()
-    }
     fn with_new_root(self, new_root: Option<MapBase>) -> Self {
         let inner = self.inner.with_new_root(new_root);
         Self { inner, ..self }
@@ -100,6 +91,10 @@ impl BaseView for FileTrieEdit {
 }
 
 impl BaseRead for FileTrieEdit {
+    fn max_id(&self) -> BaseId {
+        self.inner.max_id()
+    }
+
     fn read_root(&self) -> MapBase {
         self.inner.read_root()
     }

@@ -1,5 +1,5 @@
+use crate::storage::ReadStorageError;
 use crate::storage::file::internal::{bases_dir, init_bases_dir_with_empty_base, read_base};
-use crate::storage::{ReadStorageError, StorageStatus};
 use crate::trie::BaseView;
 use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieStream};
 use std::path::{Path, PathBuf};
@@ -47,12 +47,6 @@ impl TrieStream for FileTrieView {
 impl BaseView for FileTrieView {
     type Snapshot = FileTrieView;
 
-    fn status(&self) -> StorageStatus {
-        StorageStatus {
-            max_id: self.max_id,
-            root: self.root,
-        }
-    }
     fn with_new_root(self, new_root: Option<MapBase>) -> Self {
         let root = new_root.unwrap_or(self.root);
         Self { root, ..self }
@@ -64,6 +58,10 @@ impl BaseView for FileTrieView {
 }
 
 impl BaseRead for FileTrieView {
+    fn max_id(&self) -> BaseId {
+        self.max_id
+    }
+
     fn read_root(&self) -> MapBase {
         self.root
     }

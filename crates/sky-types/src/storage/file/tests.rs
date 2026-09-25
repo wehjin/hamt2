@@ -1,8 +1,7 @@
 use super::*;
 use crate::storage::file::internal::bases_dir;
-use crate::trie::BaseEdit;
-use crate::trie::map_base::{one_kv, two_kv};
 use crate::trie::BaseView;
+use crate::trie::map_base::{one_kv, two_kv};
 use crate::trie::{Base, BaseCommit, BaseId, BaseRead, HashKey, MapBase, TrieValue};
 
 #[tokio::test]

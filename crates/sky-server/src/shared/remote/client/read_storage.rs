@@ -1,9 +1,13 @@
 use crate::shared::remote::{RemoteClient, RemoteClientReadStorage, SpawnTask};
-use sky_types::storage::{ReadStorageError, StorageStatus};
+use sky_types::storage::ReadStorageError;
 use sky_types::trie::BaseView;
 use sky_types::trie::{Base, BaseId, BaseRead, MapBase};
 
 impl<T: SpawnTask> BaseRead for RemoteClient<T> {
+    fn max_id(&self) -> BaseId {
+        self.inner.max_id()
+    }
+
     fn read_root(&self) -> MapBase {
         self.inner.read_root()
     }
@@ -15,10 +19,6 @@ impl<T: SpawnTask> BaseRead for RemoteClient<T> {
 
 impl<T: SpawnTask> BaseView for RemoteClient<T> {
     type Snapshot = RemoteClientReadStorage<T>;
-
-    fn status(&self) -> StorageStatus {
-        self.inner.status()
-    }
 
     fn with_new_root(self, new_root: Option<MapBase>) -> Self {
         let inner = self.inner.with_new_root(new_root);

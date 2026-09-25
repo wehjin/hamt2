@@ -1,6 +1,6 @@
 use crate::TrieReader;
+use sky_types::storage::ReadStorageError;
 use sky_types::storage::error::WriteStorageError;
-use sky_types::storage::{ReadStorageError, StorageStatus};
 use sky_types::trie::BaseEdit;
 use sky_types::trie::BaseView;
 use sky_types::trie::{Base, BaseId, BaseRead, MapBase};
@@ -21,10 +21,6 @@ impl<S: BaseEdit> TrieStream for Trie<S> {
 impl<S: BaseEdit> BaseView for Trie<S> {
     type Snapshot = TrieReader<S::Snapshot>;
 
-    fn status(&self) -> StorageStatus {
-        self.storage.status()
-    }
-
     fn with_new_root(self, new_root: Option<MapBase>) -> Self {
         let storage = self.storage.with_new_root(new_root);
         Self { storage }
@@ -36,6 +32,10 @@ impl<S: BaseEdit> BaseView for Trie<S> {
     }
 }
 impl<S: BaseEdit> BaseRead for Trie<S> {
+    fn max_id(&self) -> BaseId {
+        self.storage.max_id()
+    }
+
     fn read_root(&self) -> MapBase {
         self.storage.read_root()
     }

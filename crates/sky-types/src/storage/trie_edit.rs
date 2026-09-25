@@ -1,5 +1,5 @@
 use crate::storage::traits::BaseStore;
-use crate::storage::{Mem, ReadStorageError, StorageStatus, TrieView, WriteStorageError};
+use crate::storage::{Mem, ReadStorageError, TrieView, WriteStorageError};
 use crate::trie::BaseEdit;
 use crate::trie::BaseView;
 use crate::trie::{Base, BaseCommit, BaseId, BaseRead, MapBase, TrieStream};
@@ -61,13 +61,6 @@ impl<S: BaseStore + Send + Sync> TrieStream for TrieEdit<S> {
 impl<S: BaseStore + Send + Sync> BaseView for TrieEdit<S> {
     type Snapshot = TrieView<S>;
 
-    fn status(&self) -> StorageStatus {
-        StorageStatus {
-            max_id: self.store.max_id(),
-            root: self.store.root(),
-        }
-    }
-
     fn with_new_root(self, new_root: Option<MapBase>) -> Self {
         let Self { past, store } = self;
         let store = store.with_root(new_root);
@@ -83,6 +76,10 @@ impl<S: BaseStore + Send + Sync> BaseView for TrieEdit<S> {
 }
 
 impl<S: BaseStore> BaseRead for TrieEdit<S> {
+    fn max_id(&self) -> BaseId {
+        self.store.max_id()
+    }
+
     fn read_root(&self) -> MapBase {
         self.store.root()
     }
