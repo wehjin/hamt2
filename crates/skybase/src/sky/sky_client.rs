@@ -1,7 +1,7 @@
 use crate::sky::LeptosSpawnTask;
 use leptos::prelude::{ReadSignal, StoredValue, WithValue};
 use sky_db::reader::DbReader;
-use sky_server::shared::remote::{RemoteClient, RemoteClientReadStorage};
+use sky_server::shared::remote::{RemoteClient, Remote};
 use sky_types::db::Datom;
 
 #[derive(Clone)]
@@ -27,7 +27,7 @@ impl SkyClient {
         })
     }
 
-    pub fn to_reader(&self) -> Option<DbReader<RemoteClientReadStorage<LeptosSpawnTask>>> {
+    pub fn to_reader(&self) -> Option<DbReader<Remote<LeptosSpawnTask>>> {
         self.stored_client.with_value(|client_opt| {
             if let Some(client) = client_opt {
                 Some(client.to_reader())

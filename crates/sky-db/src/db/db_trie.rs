@@ -16,7 +16,7 @@ use futures::{StreamExt, pin_mut};
 use serde::{Deserialize, Serialize};
 use sky_types::db;
 use sky_types::db::{Attr, Dir, Ein, FindResult, TransactError, Val};
-use sky_types::trie::BaseEdit;
+use sky_types::storage::{BaseStore, TrieEdit};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -49,35 +49,35 @@ impl From<u32> for Value {
     }
 }
 
-pub(crate) async fn with_update<S: BaseEdit>(
-    trie: Trie<S>,
+pub(crate) async fn with_update<S: BaseStore + Send + Sync>(
+    trie: &mut TrieEdit<S>,
     attr_map: &AttrTable,
     ein: Ein,
     attr: Attr,
     val: Val,
     dir: Dir,
     txid: &Txid,
-) -> Result<Trie<S>, TransactError> {
+) -> Result<(), TransactError> {
     let attribute = &attr_map[attr];
     let eid = ein.to_i32();
     let aid = attribute.ein().to_i32();
-    let (mut trie, vid) = val_table::insert(trie, val).await?;
+    let vid = val_table::insert(trie, val).await?;
     let eavt_key = [KEY_EAVT, eid, aid, vid.to_id()];
     let aevt_key = [KEY_AEVT, aid, eid, vid.to_id()];
     let replace_tail = attribute.cardinality() == Cardinality::One;
     let tx_value = Value { id: *txid, dir };
     trie.deep_insert(eavt_key, tx_value, replace_tail).await?;
     trie.deep_insert(aevt_key, tx_value, replace_tail).await?;
-    Ok(trie)
+    Ok(())
 }
 
-pub(crate) async fn set_max_tx<S: BaseEdit>(
-    mut trie: Trie<S>,
+pub(crate) async fn set_max_tx<S: BaseStore>(
+    trie: &mut TrieEdit<S>,
     max_tx: Txid,
-) -> Result<Trie<S>, TransactError> {
+) -> Result<(), TransactError> {
     trie.insert(KEY_MAX_TXID, TrieValue::from(max_tx.u32()))
         .await?;
-    Ok(trie)
+    Ok(())
 }
 
 pub async fn find<'a, T>(

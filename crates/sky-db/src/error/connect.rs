@@ -11,4 +11,7 @@ pub enum ConnectError {
 
     #[error("TrieStorageWrite: {0}")]
     TrieStorageWrite(#[from] WriteStorageError),
+
+    #[error("trie edit: {0}")]
+    TrieEdit(#[source] anyhow::Error),
 }

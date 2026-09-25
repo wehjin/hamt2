@@ -1,10 +1,10 @@
 use crate::shared::remote::requests::ClientRequest;
 use crate::shared::remote::updater::ClientUpdater;
-use crate::shared::remote::{RemoteClientReadStorage, SpawnTask};
+use crate::shared::remote::{Remote, SpawnTask};
 use crate::shared::{SocketRequest, SocketResponse};
 use sky_db::reader::DbReader;
 use sky_types::db::{Datom, DbStatus};
-use sky_types::storage::StorageStatus;
+use sky_types::storage::{StorageStatus, TrieView};
 use sky_types::trie::BaseView;
 use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
@@ -19,19 +19,19 @@ pub mod updater;
 
 /// Deliberately non-Clone.
 pub struct RemoteClient<T: SpawnTask> {
-    inner: RemoteClientReadStorage<T>,
+    inner: TrieView<Remote<T>>,
     updater: ClientUpdater<T>,
 }
 
 impl<T: SpawnTask> RemoteClient<T> {
-    pub fn to_reader(&self) -> DbReader<RemoteClientReadStorage<T>> {
-        let storage = self.inner.snapshot();
-        let schema = storage.to_status().schema;
-        DbReader::start(schema, &self.inner)
+    pub fn to_reader(&self) -> DbReader<Remote<T>> {
+        let trie = self.inner.snapshot();
+        let schema = trie.store().to_status().schema;
+        DbReader::start(schema, trie)
     }
 
     pub fn active_head(&self) -> StorageStatus {
-        self.inner.status.read().unwrap().head
+        self.inner.store().to_status().head
     }
 
     pub fn to_updater(&self) -> ClientUpdater<T> {
@@ -67,17 +67,18 @@ impl<T: SpawnTask> RemoteClient<T> {
             task_head,
         ));
         send_socket(SocketRequest::Connect);
-        let inner = RemoteClientReadStorage {
+        let remote = Remote {
             requester: send_request.clone(),
             status,
             _spawn_local: PhantomData,
         };
+        let inner = TrieView::load(remote);
         let updater = ClientUpdater::new(send_request);
         Self { inner, updater }
     }
 
     fn send_request(&self, request: ClientRequest) {
-        send_request::<T>(&self.inner.requester, request)
+        send_request::<T>(&self.inner.store().requester, request)
     }
 }
 

@@ -3,6 +3,7 @@ use crate::storage::trie_edit::TrieEdit;
 use crate::storage::{Mem, ReadStorageError, TrieView};
 use crate::trie::BaseView;
 use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieStream};
+use std::ops::Deref;
 
 pub fn mem_load_new() -> TrieLoad<Mem> {
     TrieLoad::load(Mem::new())
@@ -28,6 +29,12 @@ impl<S: BaseStore + Send + Sync> TrieLoad<S> {
         let committed = edit.commit().await?;
         self.inner = committed.snapshot();
         Ok(out)
+    }
+}
+
+impl<S: BaseStore + Clone> TrieLoad<S> {
+    pub fn close(self) -> S {
+        self.inner.store.deref().clone()
     }
 }
 

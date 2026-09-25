@@ -2,22 +2,21 @@ use crate::db::{Db, db_trie};
 use crate::traits::Find;
 use crate::types::Txid;
 use schema_loader::SchemaLoader;
-use sky_trie::Trie;
 use sky_types::db;
 use sky_types::db::schema::Schema;
 use sky_types::db::{Dir, TransactError};
-use sky_types::trie::BaseEdit;
+use sky_types::storage::{BaseStore, TrieEdit};
 
 pub mod schema_loader;
 
-pub async fn save<S: BaseEdit>(
+pub async fn save<S: BaseStore + Send + Sync>(
     schema: &Schema,
-    mut trie: Trie<S>,
+    trie: &mut TrieEdit<S>,
     txid: Txid,
-) -> Result<Trie<S>, TransactError> {
+) -> Result<(), TransactError> {
     for (_, attribute) in schema.attr_table.iter() {
         let ein = attribute.ein;
-        trie = db_trie::with_update(
+        db_trie::with_update(
             trie,
             &schema.attr_table,
             ein,
@@ -27,7 +26,7 @@ pub async fn save<S: BaseEdit>(
             &txid,
         )
         .await?;
-        trie = db_trie::with_update(
+        db_trie::with_update(
             trie,
             &schema.attr_table,
             ein,
@@ -38,9 +37,9 @@ pub async fn save<S: BaseEdit>(
         )
         .await?
     }
-    Ok(trie)
+    Ok(())
 }
-pub async fn load<S: BaseEdit>(db: &Db<S>) -> Schema {
+pub async fn load<S: BaseStore + Send + Sync>(db: &Db<S>) -> Schema {
     let mut schema = db.schema.clone();
     let loader = SchemaLoader;
     let attributes = loader.apply(&db.trie, &db.schema).await;

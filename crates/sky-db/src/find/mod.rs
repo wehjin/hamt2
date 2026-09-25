@@ -21,12 +21,12 @@ mod tests {
     use sky_types::db::Transact;
     use sky_types::db::datom;
     use sky_types::db::{Attr, ein, val};
-    use sky_types::storage::mem_edit_new;
+    use sky_types::storage::Mem;
 
     #[tokio::test]
     async fn find_with_reader() {
         let attr = Attr::from("Counter/count");
-        let store = mem_edit_new();
+        let store = Mem::new();
         let db = Db::new(store, [attr.clone()]).await.unwrap();
         let txn = [datom::add(10, attr.clone(), 42)];
         let db = db.transact(txn).await.unwrap();

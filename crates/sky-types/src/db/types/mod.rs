@@ -8,6 +8,7 @@ mod val;
 
 use crate::db::schema::Schema;
 use crate::storage::StorageStatus;
+use crate::trie::MapBase;
 pub use attr::*;
 pub use dat::*;
 pub use ein::*;
@@ -34,4 +35,13 @@ pub enum Dir {
 pub struct DbStatus {
     pub head: StorageStatus,
     pub schema: Schema,
+}
+
+impl DbStatus {
+    pub fn with_root(&self, root: Option<MapBase>) -> Self {
+        let root = root.unwrap_or(self.head.root);
+        let Self { head, schema } = self.clone();
+        let head = StorageStatus { root, ..head };
+        Self { head, schema }
+    }
 }

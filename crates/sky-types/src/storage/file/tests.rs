@@ -1,8 +1,23 @@
 use super::*;
 use crate::storage::file::internal::bases_dir;
-use crate::trie::BaseView;
 use crate::trie::map_base::{one_kv, two_kv};
 use crate::trie::{Base, BaseCommit, BaseId, BaseRead, HashKey, MapBase, TrieValue};
+use crate::trie::{BaseView, TrieInsert, TrieQuery};
+
+#[tokio::test]
+async fn file_trie_works() -> anyhow::Result<()> {
+    let dir = tempfile::tempdir()?;
+    {
+        let mut trie = FileTrieEdit::new(dir.path()).await?;
+        trie.insert(1, TrieValue::U32(1)).await?;
+    }
+    {
+        let trie = FileTrieEdit::load(dir.path()).await?;
+        let value = trie.query(1).await?;
+        assert_eq!(Some(TrieValue::U32(1)), value);
+    }
+    Ok(())
+}
 
 #[tokio::test]
 async fn empty_storage_max_id_is_zero() -> anyhow::Result<()> {

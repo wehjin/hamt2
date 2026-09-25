@@ -6,7 +6,7 @@ use sky_db::traits::DbQuery;
 use sky_types::db::Transact;
 use sky_types::db::datom;
 use sky_types::db::{Attr, val};
-use sky_types::storage::mem_edit_new;
+use sky_types::storage::Mem;
 
 #[tokio::test]
 async fn test_cardinality_one() -> anyhow::Result<()> {
@@ -15,7 +15,7 @@ async fn test_cardinality_one() -> anyhow::Result<()> {
         attr: count(),
         cardinality: Cardinality::One,
     }];
-    let mut db = Db::new(mem_edit_new(), schema).await?;
+    let mut db = Db::new(Mem::new(), schema).await?;
     db = db.transact([datom::add(100, count(), 100)]).await?;
     db = db.transact([datom::add(100, count(), 101)]).await?;
     db = db.transact([datom::add(100, count(), 102)]).await?;
@@ -35,7 +35,7 @@ async fn test_cardinality_many() -> anyhow::Result<()> {
         attr: count(),
         cardinality: Cardinality::Many,
     }];
-    let mut db = Db::new(mem_edit_new(), schema).await?;
+    let mut db = Db::new(Mem::new(), schema).await?;
     db = db.transact([datom::add(100, count(), 100)]).await?;
     db = db.transact([datom::add(100, count(), 101)]).await?;
     db = db.transact([datom::add(100, count(), 102)]).await?;

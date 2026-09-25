@@ -2,7 +2,7 @@ use log::error;
 use sky_db::db::Db;
 use sky_db::db::attr_spec::DbSpec;
 use sky_types::db::{Datom, DbStatus, Transact};
-use sky_types::storage::mem_edit_new;
+use sky_types::storage::Mem;
 use sky_types::trie::{Base, BaseId};
 use tokio::sync::{broadcast, mpsc, oneshot};
 
@@ -119,7 +119,7 @@ async fn handle_storage(
     to_clients: broadcast::Sender<StorageBroadcastEvent>,
     db_spec: DbSpec,
 ) -> Result<(), StorageServiceError> {
-    let storage = mem_edit_new();
+    let storage = Mem::new();
     let mut db = Db::new(storage, db_spec).await?;
     while let Some(event) = from_clients.recv().await {
         match event {

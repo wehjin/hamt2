@@ -2,6 +2,7 @@ use crate::storage::ReadStorageError;
 use crate::storage::traits::BaseStore;
 use crate::trie::BaseView;
 use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieStream};
+use std::ops::Deref;
 use std::sync::Arc;
 
 #[derive(Debug)]
@@ -11,11 +12,14 @@ pub struct TrieView<S: BaseStore> {
 }
 
 impl<S: BaseStore> TrieView<S> {
-    pub(crate) fn load(store: S) -> Self {
+    pub fn load(store: S) -> Self {
         Self {
             past: None,
             store: Arc::new(store),
         }
+    }
+    pub fn store(&self) -> &S {
+        &self.store.deref()
     }
 }
 

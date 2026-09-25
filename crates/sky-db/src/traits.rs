@@ -4,34 +4,31 @@ use crate::find::ValsInSlot;
 use futures::FutureExt;
 use sky_types::db::schema::Schema;
 use sky_types::db::{Attr, Ein, FindResult, QueryError, Val};
+use sky_types::storage::BaseStore;
 use sky_types::trie::TrieStream;
-use sky_types::trie::BaseEdit;
 
+#[allow(async_fn_in_trait)]
 pub trait DbQuery {
-    fn find<F: Find>(&self, find: F) -> impl Future<Output = Vec<F::Output>>;
+    async fn find<F: Find>(&self, find: F) -> Vec<F::Output>;
 
-    fn find_val(
-        &self,
-        e: impl Into<Ein>,
-        a: Attr,
-    ) -> impl Future<Output = Result<Option<Val>, QueryError>> {
-        async move {
-            let find = self.find(ValsInSlot::new(e, a)).await;
-            Ok(find.first().cloned())
-        }
+    async fn find_val(&self, e: impl Into<Ein>, a: Attr) -> Result<Option<Val>, QueryError> {
+        let find = self.find(ValsInSlot::new(e, a)).await;
+        Ok(find.first().cloned())
     }
 
-    fn get_val(&self, e: impl Into<Ein>, a: Attr) -> impl Future<Output = Val> {
-        self.find_val(e.into(), a).map(|v| {
-            v.expect("find_val should succeed")
-                .expect("value should exist")
-        })
+    async fn get_val(&self, e: impl Into<Ein>, a: Attr) -> Val {
+        self.find_val(e.into(), a)
+            .map(|v| {
+                v.expect("find_val should succeed")
+                    .expect("value should exist")
+            })
+            .await
     }
 }
 
-impl<S: BaseEdit> DbQuery for Db<S> {
-    fn find<F: Find>(&self, find: F) -> impl Future<Output = Vec<F::Output>> {
-        find.apply(&self.trie, &self.schema)
+impl<S: BaseStore + Send + Sync> DbQuery for Db<S> {
+    async fn find<F: Find>(&self, find: F) -> Vec<F::Output> {
+        find.apply(&self.trie, &self.schema).await
     }
 }
 

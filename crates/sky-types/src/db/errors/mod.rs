@@ -21,6 +21,9 @@ pub enum TransactError {
     #[error("TrieInsertError: {0}")]
     TrieInsertError(#[from] TrieInsertError),
 
+    #[error("trie_edit: {0}")]
+    TrieEdit(#[source] anyhow::Error),
+
     #[error("No space in value table")]
     NoSpaceInValueTable,
 

@@ -5,7 +5,7 @@ use sky_db::traits::DbQuery;
 use sky_types::db::Transact;
 use sky_types::db::datom;
 use sky_types::db::{Attr, ein, val};
-use sky_types::storage::mem_edit_new;
+use sky_types::storage::Mem;
 
 fn attr_count() -> Attr {
     Attr::from("counter/count")
@@ -13,7 +13,7 @@ fn attr_count() -> Attr {
 
 #[tokio::test]
 async fn db_reader_works() -> anyhow::Result<()> {
-    let db = Db::new(mem_edit_new(), [attr_count()]).await?;
+    let db = Db::new(Mem::new(), [attr_count()]).await?;
     let db = db
         .transact([
             datom::add(1, attr_count(), val(10)),
@@ -42,7 +42,7 @@ async fn db_reader_works() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn db_reader_finds_entities() {
-    let db = Db::new(mem_edit_new(), [attr_count()])
+    let db = Db::new(Mem::new(), [attr_count()])
         .await
         .unwrap()
         .transact([datom::add(100, attr_count(), val(100))])
@@ -57,7 +57,7 @@ async fn db_reader_finds_entities() {
 
 #[tokio::test]
 async fn db_reader_lists_entity_attributes() {
-    let db = Db::new(mem_edit_new(), [attr_count()])
+    let db = Db::new(Mem::new(), [attr_count()])
         .await
         .unwrap()
         .transact([datom::add(100, attr_count(), val(100))])

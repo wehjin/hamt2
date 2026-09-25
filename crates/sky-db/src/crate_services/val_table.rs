@@ -4,11 +4,11 @@ use crate::db::vid::Vid;
 use crate::trie::prelude::*;
 use sky_types::db::Val;
 use sky_types::db::{QueryError, TransactError};
-use sky_types::trie::BaseEdit;
+use sky_types::storage::{BaseStore, TrieEdit};
 
-pub async fn insert<S>(trie: Trie<S>, val: Val) -> Result<(Trie<S>, Vid), TransactError>
+pub async fn insert<S>(trie: &mut TrieEdit<S>, val: Val) -> Result<Vid, TransactError>
 where
-    S: BaseEdit,
+    S: BaseStore + Send + Sync,
 {
     let bytes = match &val {
         Val::U32(u) => &u.to_be_bytes(),
@@ -21,15 +21,15 @@ where
 
     let mut hash = (universal_hash::hash(bytes, 1) & 0x7FFFFFFF) as i32;
     for _ in 0..1000 {
-        let hash_trie = find_hash_trie(&trie, hash).await?;
+        let hash_trie = find_hash_trie(trie, hash).await?;
         match hash_trie {
             None => {
-                let trie = insert_bytes(trie, hash, bytes, bytes_type).await?;
-                return Ok((trie, Vid::from_id(hash)));
+                insert_bytes(trie, hash, bytes, bytes_type).await?;
+                return Ok(Vid::from_id(hash));
             }
             Some(bytes_trie) => {
                 if is_equal_bytes(&bytes_trie, bytes, bytes_type).await? {
-                    return Ok((trie, Vid::from_id(hash)));
+                    return Ok(Vid::from_id(hash));
                 }
                 if hash == i32::MAX {
                     hash = 0;
@@ -79,13 +79,13 @@ const VAL_TYPE_U32: u8 = 0;
 const VAL_TYPE_STRING: u8 = 1;
 
 async fn insert_bytes<S>(
-    mut trie: Trie<S>,
+    trie: &mut TrieEdit<S>,
     hash: i32,
     bytes: &[u8],
     bytes_type: u8,
-) -> Result<Trie<S>, TransactError>
+) -> Result<(), TransactError>
 where
-    S: BaseEdit,
+    S: BaseStore,
 {
     let u32_stream = u32::Stream::new(bytes, SUBKEY_BYTES);
     for (u32_subkey, u32_value) in u32_stream {
@@ -108,7 +108,7 @@ where
         false,
     )
     .await?;
-    Ok(trie)
+    Ok(())
 }
 
 async fn is_equal_bytes<T: TrieQuery>(
@@ -171,20 +171,25 @@ async fn find_hash_trie<T: TrieStream>(
 mod tests {
     use super::*;
     use sky_types::db::{Val, val};
-    use sky_types::storage::mem_edit_new;
+    use sky_types::storage::{mem_edit_new, mem_load_new};
 
     #[tokio::test]
     async fn insert_and_query() {
-        let mut trie = Trie::connect(mem_edit_new());
-        let mut vids = Vec::new();
-        let mut vals = Vec::new();
-        for i in 0..100 {
-            let i_val = val(i);
-            vals.push(i_val.clone());
-            let (new_trie, vid) = insert(trie, i_val).await.expect("Failed to insert");
-            trie = new_trie;
-            vids.push(vid);
-        }
+        let mut trie = mem_load_new();
+        let (vids, vals) = trie
+            .edit(async |trie| {
+                let mut vids = Vec::new();
+                let mut vals = Vec::new();
+                for i in 0..100 {
+                    let i_val = val(i);
+                    vals.push(i_val.clone());
+                    let vid = insert(trie, i_val).await?;
+                    vids.push(vid);
+                }
+                Ok((vids, vals))
+            })
+            .await
+            .unwrap();
         for (vid, val) in vids.into_iter().zip(vals) {
             let table_val = query(&trie, vid).await.expect("Failed to query");
             assert_eq!(Some(val), table_val);
@@ -193,29 +198,38 @@ mod tests {
 
     #[tokio::test]
     async fn negative_numbers() {
-        let trie = Trie::connect(mem_edit_new());
-        let (trie, vid) = insert(trie, val(-1)).await.expect("Failed to insert");
+        let mut trie = mem_edit_new();
+        let vid = insert(&mut trie, val(-1)).await.expect("Failed to insert");
         let table_val = query(&trie, vid).await.expect("Failed to query");
         assert_eq!(Some(val(-1)), table_val);
     }
 
     #[tokio::test]
     async fn same_value_inserted_twice() {
-        let trie = Trie::connect(mem_edit_new());
-
-        let (trie, vid) = insert(trie, val(101)).await.expect("Failed to insert");
-        let (trie, vid2) = insert(trie, val(101)).await.expect("Failed to insert");
-        assert_eq!(vid, vid2);
+        let mut trie = mem_load_new();
+        let vid = trie
+            .edit(async |trie| {
+                let vid = insert(trie, val(101)).await?;
+                let vid2 = insert(trie, val(101)).await?;
+                assert_eq!(vid, vid2);
+                Ok(vid)
+            })
+            .await
+            .unwrap();
         let table_val = query(&trie, vid).await.expect("Failed to query");
         assert_eq!(Some(val(101)), table_val);
     }
 
     #[tokio::test]
     async fn string_insert_and_query() {
-        let trie = Trie::connect(mem_edit_new());
-        let (trie, vid) = insert(trie, Val::String("hello".into()))
+        let mut trie = mem_load_new();
+        let vid = trie
+            .edit(async |trie| {
+                let vid = insert(trie, Val::String("hello".into())).await?;
+                Ok(vid)
+            })
             .await
-            .expect("Failed to insert");
+            .unwrap();
         let val = query(&trie, vid).await.expect("Failed to query");
         assert_eq!(Some(Val::String("hello".into())), val);
     }

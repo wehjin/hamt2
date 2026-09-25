@@ -1,22 +1,18 @@
 use crate::db::Db;
 use sky_types::db::schema::attr_spec::DbSpec;
-use sky_types::storage::{Mem, TrieEdit, mem_edit_new};
-use sky_types::trie::BaseEdit;
+use sky_types::storage::Mem;
 
 pub trait DbRuntime {
     fn block_on<T>(main: impl Future<Output = T> + 'static) -> T;
 }
 
-pub struct LocalDb<S: BaseEdit> {
-    _db: Db<S>,
+pub struct LocalDb {
+    _db: Db<Mem>,
 }
 
-pub fn new_in_memory<R: DbRuntime>(
-    db_spec: impl Into<DbSpec>,
-) -> LocalDb<TrieEdit<Mem>> {
-    let mem_storage = mem_edit_new();
+pub fn new_in_memory<R: DbRuntime>(db_spec: impl Into<DbSpec>) -> LocalDb {
     let db_spec = db_spec.into();
-    let Ok(db) = R::block_on(async move { Db::new(mem_storage, db_spec).await }) else {
+    let Ok(db) = R::block_on(async move { Db::new(Mem::new(), db_spec).await }) else {
         unreachable!("Building db from a mem-storage should not fail")
     };
     LocalDb { _db: db }

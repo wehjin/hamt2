@@ -10,27 +10,25 @@ use crate::error::ConnectError;
 use crate::reader::DbReader;
 use crate::schema;
 pub use crate::types::*;
-use sky_trie::Trie;
-use sky_types::storage::{ReadStorageError, StorageStatus};
-use sky_types::trie::BaseEdit;
+use sky_types::storage::{BaseStore, ReadStorageError, StorageStatus, TrieLoad};
 use sky_types::trie::{Base, BaseId, BaseRead};
 pub use types::*;
 
 #[derive(Debug)]
-pub struct Db<S: BaseEdit> {
+pub struct Db<S: BaseStore> {
     pub(crate) schema: Schema,
-    pub(crate) trie: Trie<S>,
+    pub(crate) trie: TrieLoad<S>,
 }
 
 /// Production methods for Db
-impl<S: BaseEdit> Db<S> {
-    pub fn to_reader(&self) -> DbReader<S::Snapshot> {
+impl<S: BaseStore + Send + Sync> Db<S> {
+    pub fn to_reader(&self) -> DbReader<S> {
         DbReader::load(self)
     }
 }
 
 /// Construction methods for Db
-impl<S: BaseEdit> Db<S> {
+impl<S: BaseStore + Send + Sync> Db<S> {
     pub fn schema(&self) -> &Schema {
         &self.schema
     }
@@ -50,7 +48,7 @@ impl<S: BaseEdit> Db<S> {
         let db_spec = db_spec.into();
         let attr_specs = db_spec.as_ref();
         let (schema, trie) = {
-            let mut trie = Trie::connect(storage);
+            let mut trie = TrieLoad::load(storage);
             let mut max_eid = MaxEid::read(&trie).await?;
             let mut schema = Schema::starter();
             {
@@ -61,10 +59,14 @@ impl<S: BaseEdit> Db<S> {
                     .map(|(ein, spec)| Attribute::new(ein, spec.clone()));
                 schema.extend(attributes);
             }
-            trie = schema::save(&schema, trie, Txid::SETUP).await?;
-            trie = db_trie::set_max_tx(trie, Txid::FLOOR).await?;
-            trie = max_eid.write(trie).await?;
-            trie = trie.commit().await?;
+            trie.edit(async |trie| {
+                schema::save(&schema, trie, Txid::SETUP).await?;
+                db_trie::set_max_tx(trie, Txid::FLOOR).await?;
+                max_eid.write(trie).await?;
+                Ok(())
+            })
+            .await
+            .map_err(|e| ConnectError::TrieEdit(e))?;
             (schema, trie)
         };
         let db = Db { schema, trie };
@@ -74,7 +76,7 @@ impl<S: BaseEdit> Db<S> {
     pub async fn load(storage: S) -> Self {
         let starter_db = Db {
             schema: Schema::starter(),
-            trie: Trie::connect(storage),
+            trie: TrieLoad::load(storage),
         };
         let db = Db {
             schema: schema::load(&starter_db).await,
@@ -82,7 +84,9 @@ impl<S: BaseEdit> Db<S> {
         };
         db
     }
+}
 
+impl<S: BaseStore + Clone> Db<S> {
     pub fn close(self) -> S {
         self.trie.close()
     }
