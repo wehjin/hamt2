@@ -27,14 +27,27 @@ impl<T: SpawnTask> BaseStore for Remote<T> {
         self.status.read().unwrap().head.max_id
     }
 
-    fn start_id(&self) -> BaseId {
-        BaseId::ZERO
-    }
-
-    fn root(&self) -> MapBase {
+    fn read_root(&self) -> MapBase {
         // TODO We should wait for the status to arrive instead of return empty and
         // giving the false impression that there is no data.
         self.status.read().unwrap().head.root
+    }
+
+    async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
+        if id > self.max_id() {
+            panic!("invalid base id");
+        }
+        let (send, recv) = oneshot::channel();
+        self.requester
+            .send(ClientRequest::RequestBase(id, send))
+            .await
+            .expect("send request");
+        let base = recv.await.expect("recv base").expect("base");
+        Ok(base)
+    }
+
+    fn start_id(&self) -> BaseId {
+        BaseId::ZERO
     }
 
     async fn set_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
@@ -47,19 +60,6 @@ impl<T: SpawnTask> BaseStore for Remote<T> {
         let mut new = self.clone();
         new.status = Arc::new(RwLock::new(next_status));
         new
-    }
-
-    async fn base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
-        if id > self.max_id() {
-            panic!("invalid base id");
-        }
-        let (send, recv) = oneshot::channel();
-        self.requester
-            .send(ClientRequest::RequestBase(id, send))
-            .await
-            .expect("send request");
-        let base = recv.await.expect("recv base").expect("base");
-        Ok(base)
     }
 
     async fn push_base(&mut self, _base: Base) -> Result<BaseId, WriteStorageError> {

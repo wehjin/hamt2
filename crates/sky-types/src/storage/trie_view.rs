@@ -57,12 +57,12 @@ impl<S: BaseStore> BaseRead for TrieView<S> {
     }
 
     fn read_root(&self) -> MapBase {
-        self.store.root()
+        self.store.read_root()
     }
 
     async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
         if id >= self.store.start_id() {
-            self.store.base(id).await
+            self.store.read_base(id).await
         } else if let Some(past) = &self.past {
             Box::pin(past.read_base(id)).await
         } else {

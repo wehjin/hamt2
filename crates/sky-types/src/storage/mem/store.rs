@@ -31,12 +31,22 @@ impl BaseStore for Mem {
         self.start_id + self.bases.len() - 1
     }
 
-    fn start_id(&self) -> BaseId {
-        self.start_id
+    fn read_root(&self) -> MapBase {
+        self.root
     }
 
-    fn root(&self) -> MapBase {
-        self.root
+    async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
+        let base = if id < self.start_id || id > self.max_id() {
+            Base::empty()
+        } else {
+            let index = self.to_index(id);
+            self.bases[index].deref().clone()
+        };
+        Ok(base)
+    }
+
+    fn start_id(&self) -> BaseId {
+        self.start_id
     }
 
     async fn set_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
@@ -51,16 +61,6 @@ impl BaseStore for Mem {
             bases: self.bases.clone(),
             root,
         }
-    }
-
-    async fn base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
-        let base = if id < self.start_id || id > self.max_id() {
-            Base::empty()
-        } else {
-            let index = self.to_index(id);
-            self.bases[index].deref().clone()
-        };
-        Ok(base)
     }
 
     async fn push_base(&mut self, base: Base) -> Result<BaseId, WriteStorageError> {
@@ -78,7 +78,7 @@ impl BaseStore for Mem {
         let extension = Self {
             bases: vec![],
             start_id: self.max_id() + 1,
-            root: self.root(),
+            root: self.read_root(),
         };
         Ok(extension)
     }
