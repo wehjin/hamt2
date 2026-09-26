@@ -1,11 +1,11 @@
 use crate::storage::{ReadStorageError, StoreView};
-use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieSnap};
+use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieSnap, TrieWalk};
 use std::sync::Arc;
 
 #[cfg(test)]
 mod tests {
     use crate::storage::read::MemRead;
-    use crate::trie::{TrieQuery, TrieSnap, TrieStream};
+    use crate::trie::{TrieQuery, TrieSnap, TrieStream, TrieWalk};
     use futures::StreamExt;
 
     #[tokio::test]
@@ -28,9 +28,16 @@ mod tests {
         let values = mem.u32_stream().collect::<Vec<_>>().await;
         assert_eq!(values, vec![]);
     }
+
+    #[tokio::test]
+    async fn is_walk() {
+        let mem = MemRead::new();
+        let subtries = mem.subtrie_stream().collect::<Vec<_>>().await;
+        assert_eq!(subtries, vec![]);
+    }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct MemRead {
     pub(crate) bases: Arc<Vec<Base>>,
     pub(crate) root: MapBase,
@@ -75,6 +82,14 @@ impl TrieSnap for MemRead {
 
     fn snapshot(&self) -> Self::Snapshot {
         self.clone()
+    }
+}
+
+impl TrieWalk for MemRead {
+    type Subtrie = Self;
+
+    fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
+        self.clone().with_new_root(Some(subtrie_root))
     }
 }
 

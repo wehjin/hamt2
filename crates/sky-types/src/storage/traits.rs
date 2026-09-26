@@ -1,8 +1,8 @@
 use crate::storage::{ReadStorageError, WriteStorageError};
-use crate::trie::{Base, BaseId, MapBase, TrieQuery, TrieSnap, TrieStream};
+use crate::trie::{Base, BaseId, MapBase, TrieQuery, TrieSnap, TrieStream, TrieWalk};
 
 pub trait StoreView:
-    TrieSnap<Snapshot = Self> + TrieStream + TrieQuery + Clone + Send + Sync
+    TrieWalk<Subtrie = Self> + TrieSnap<Snapshot = Self> + TrieStream + TrieQuery + Clone + Send + Sync
 {
 }
 
