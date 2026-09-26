@@ -5,23 +5,20 @@ use std::sync::Arc;
 #[cfg(test)]
 mod tests {
     use crate::storage::read::MemRead;
-    use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieSnap};
+    use crate::trie::{TrieQuery, TrieSnap};
 
     #[tokio::test]
-    async fn is_store_read() {
+    async fn is_query() {
         let mem = MemRead::new();
-        // BaseRead
-        let max_id = mem.max_id();
-        assert_eq!(max_id, BaseId::ZERO);
-        let root = mem.read_root();
-        assert_eq!(root, MapBase::empty());
-        let base = mem.read_base(BaseId::ZERO).await.unwrap();
-        assert_eq!(base, Base::empty());
-        // BaseView
-        let snap = mem.snapshot();
-        assert_eq!(snap.max_id(), max_id);
-        assert_eq!(snap.read_root(), root);
-        assert_eq!(snap.read_base(BaseId::ZERO).await.unwrap(), base);
+        let values = mem.query_all().await.unwrap();
+        assert_eq!(values, vec![]);
+    }
+
+    #[tokio::test]
+    async fn is_snap() {
+        let mem = MemRead::new();
+        let values = mem.snapshot().query_all().await.unwrap();
+        assert_eq!(values, vec![]);
     }
 }
 
