@@ -4,8 +4,13 @@ use crate::trie::{Base, BaseId, MapBase};
 use std::ops::Deref;
 use std::sync::Arc;
 
-pub mod edit;
-pub mod view;
+mod edit;
+mod load;
+mod view;
+
+pub use edit::*;
+pub use load::*;
+pub use view::*;
 
 #[derive(Debug, Clone)]
 pub struct Mem {

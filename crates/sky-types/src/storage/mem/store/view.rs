@@ -1,52 +1,56 @@
-use crate::storage::{ReadStorageError, StoreView};
+use crate::storage::ReadStorageError;
+use crate::storage::traits::view::StoreView;
 use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieSnap, TrieWalk};
 use std::sync::Arc;
+use tokio::sync::RwLock;
 
 #[cfg(test)]
 mod tests {
-    use crate::storage::view::MemView;
+    use crate::storage::MemView;
     use crate::trie::{TrieQuery, TrieSnap, TrieStream, TrieWalk};
     use futures::StreamExt;
 
     #[tokio::test]
-    async fn is_query() {
+    async fn has_query() {
         let mem = MemView::new();
         let values = mem.query_all().await.unwrap();
         assert_eq!(values, vec![]);
     }
 
     #[tokio::test]
-    async fn is_snap() {
+    async fn has_snap() {
         let mem = MemView::new();
         let values = mem.snapshot().query_all().await.unwrap();
         assert_eq!(values, vec![]);
     }
 
     #[tokio::test]
-    async fn is_stream() {
+    async fn has_stream() {
         let mem = MemView::new();
         let values = mem.u32_stream().collect::<Vec<_>>().await;
         assert_eq!(values, vec![]);
     }
 
     #[tokio::test]
-    async fn is_walk() {
+    async fn has_walk() {
         let mem = MemView::new();
         let subtries = mem.subtrie_stream().collect::<Vec<_>>().await;
-        assert_eq!(subtries, vec![]);
+        assert_eq!(subtries.len(), 0);
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct MemView {
-    pub(crate) bases: Arc<Vec<Base>>,
+    pub(crate) bases: Arc<RwLock<Vec<Base>>>,
+    pub(crate) max_id: BaseId,
     pub(crate) root: MapBase,
 }
 
 impl MemView {
     pub fn new() -> Self {
         Self {
-            bases: Arc::new(vec![Base::empty()]),
+            bases: Arc::new(RwLock::new(vec![Base::empty()])),
+            max_id: BaseId(0),
             root: MapBase::empty(),
         }
     }
@@ -54,7 +58,7 @@ impl MemView {
 
 impl BaseRead for MemView {
     fn max_id(&self) -> BaseId {
-        BaseId(self.bases.len() as i32 - 1)
+        self.max_id
     }
 
     fn read_root(&self) -> MapBase {
@@ -62,11 +66,11 @@ impl BaseRead for MemView {
     }
 
     async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
-        let base = if id < BaseId::ZERO || id > self.max_id() {
+        let base = if id < BaseId::ZERO || id > self.max_id {
             Base::empty()
         } else {
             let index = id.0 as usize;
-            self.bases[index].clone()
+            self.bases.read().await[index].clone()
         };
         Ok(base)
     }

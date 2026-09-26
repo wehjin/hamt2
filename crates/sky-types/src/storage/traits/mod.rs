@@ -1,10 +1,10 @@
 use crate::storage::{ReadStorageError, WriteStorageError};
-use crate::trie::{Base, BaseId, MapBase, TrieQuery, TrieSnap, TrieStream, TrieWalk};
+use crate::trie::{Base, BaseId, MapBase};
 
-pub trait StoreView:
-    TrieWalk<Subtrie = Self> + TrieSnap<Snapshot = Self> + TrieStream + TrieQuery + Clone + Send + Sync
-{
-}
+pub mod edit;
+pub mod load;
+pub mod view;
+pub mod wrap;
 
 #[allow(async_fn_in_trait)]
 pub trait BaseStore {
