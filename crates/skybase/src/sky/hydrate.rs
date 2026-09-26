@@ -2,41 +2,40 @@ use crate::sky::sky_socket::SkySocketReturn;
 use crate::sky::spawn_task::LeptosSpawnTask;
 use leptos::leptos_dom::log;
 use leptos::prelude::{
-    Effect, Get, ReadSignal, Set, StoredValue, UpdateValue, WithValue, WriteSignal,
+    Callable, Effect, Get, ReadSignal, Set, StoredValue, UpdateValue, WithValue, WriteSignal,
 };
 use leptos_use::core::ConnectionReadyState;
 use sky_server::shared::remote::RemoteClient;
 
-pub fn enable_socket_responses(
+pub fn wire_socket_responses_to_client(
     socket: SkySocketReturn,
     client: StoredValue<Option<RemoteClient<LeptosSpawnTask>>>,
-    client_connected: WriteSignal<bool>,
+    set_client_connected: WriteSignal<bool>,
 ) {
     Effect::new(move |_| {
         if let ConnectionReadyState::Open = socket.state.get() {
             client.update_value(|opt_client| {
                 if opt_client.is_none() {
                     log!("set up sky client");
-                    let socket_sender = socket.sender.clone();
                     let send_socket = move |req| {
                         log!("got request: {:?}", req);
-                        socket_sender.send_request(req);
+                        socket.sender.try_run(req);
                     };
                     let client = RemoteClient::<LeptosSpawnTask>::connect(send_socket);
                     *opt_client = Some(client);
-                    client_connected.set(true);
+                    set_client_connected.set(true);
                     log!("sky client stored");
                 }
             });
         } else {
             client.update_value(|opt_client| {
                 *opt_client = None;
-                client_connected.set(false);
+                set_client_connected.set(false);
             })
         }
     });
 }
-pub fn enable_client_requests(
+pub fn wire_client_requests_to_socket(
     client: StoredValue<Option<RemoteClient<LeptosSpawnTask>>>,
     socket: SkySocketReturn,
 ) {

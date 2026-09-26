@@ -1,26 +1,21 @@
-use crate::sky::socket_sender::SocketSender;
 use codee::string::FromToStringCodec;
 use leptos::leptos_dom::error;
-use leptos::prelude::{Get, Memo, Signal};
+use leptos::prelude::{Callback, Get, Memo, Signal};
 use leptos_use::core::ConnectionReadyState;
 use leptos_use::{UseWebSocketReturn, use_websocket};
-use sky_server::shared::protocol::SocketResponse;
-use std::sync::Arc;
+use sky_server::shared::protocol::{SocketRequest, SocketResponse};
 
-#[derive(Clone)]
-pub struct SkySocketReturn {
-    pub state: Signal<ConnectionReadyState>,
-    pub sender: SocketSender,
-    pub receiver: Memo<Option<SocketResponse>>,
-}
 pub fn use_sky_socket() -> SkySocketReturn {
     let UseWebSocketReturn {
-        ready_state,
+        ready_state: state,
         message,
         send,
         ..
     } = use_websocket::<String, String, FromToStringCodec>("/ws");
-    let sender = SocketSender::new(Arc::new(send.clone()));
+    let sender = Callback::new(move |req: SocketRequest| {
+        let message = serde_json::to_string(&req).expect("serialize request");
+        send(&message);
+    });
     let receiver = Memo::new(move |_| match message.get() {
         None => None,
         Some(json) => {
@@ -34,10 +29,16 @@ pub fn use_sky_socket() -> SkySocketReturn {
             }
         }
     });
-    let ready = ready_state.clone();
     SkySocketReturn {
-        state: ready,
+        state,
         sender,
         receiver,
     }
+}
+
+#[derive(Copy, Clone)]
+pub struct SkySocketReturn {
+    pub state: Signal<ConnectionReadyState>,
+    pub sender: Callback<SocketRequest>,
+    pub receiver: Memo<Option<SocketResponse>>,
 }

@@ -4,7 +4,7 @@ use leptos::logging::log;
 use leptos::prelude::*;
 use sky::use_sky;
 use sky_db::traits::DbQuery;
-use sky_server::shared::protocol::SocketResponse;
+use sky_server::shared::protocol::{SocketRequest, SocketResponse};
 use sky_types::db;
 use sky_types::db::{Attr, datom, val};
 
@@ -30,7 +30,6 @@ pub fn WebSocketSandbox() -> impl IntoView {
             }
         }
     });
-
     let max_id = Memo::new(move |_| match socket.receiver.get() {
         Some(response) => match response {
             SocketResponse::DbStatus(status) | SocketResponse::TransactResult(status) => {
@@ -40,14 +39,12 @@ pub fn WebSocketSandbox() -> impl IntoView {
         },
         None => None,
     });
-    let last_response = {
-        let socket_receiver = socket.receiver.clone();
-        Memo::new(move |_| {
-            socket_receiver.get().map(|response| {
-                serde_json::to_string_pretty(&response).expect("serialize response")
-            })
-        })
-    };
+    let last_response = Memo::new(move |_| {
+        socket
+            .receiver
+            .get()
+            .map(|response| serde_json::to_string_pretty(&response).expect("serialize response"))
+    });
     let send_connect = move |_| {
         client.with_value(|client_opt| {
             if let Some(client) = client_opt {
@@ -57,17 +54,14 @@ pub fn WebSocketSandbox() -> impl IntoView {
     };
     let send_read_slot_base = move |_| {
         if let Some(id) = max_id.get() {
-            socket.sender.send_read(id);
+            socket.sender.run(SocketRequest::ReadSlotBase(id));
         }
     };
     let read_ident = move |_| local.refetch();
 
-    let send_transact = {
-        let sky = use_sky().clone();
-        move |_| {
-            let datom = datom::add(100, Attr::from("skybase/version"), val("0.1"));
-            sky.transact(vec![datom]);
-        }
+    let send_transact = move |_| {
+        let datom = datom::add(100, Attr::from("skybase/version"), val("0.1"));
+        socket.sender.run(SocketRequest::Transact(vec![datom]));
     };
 
     view! {

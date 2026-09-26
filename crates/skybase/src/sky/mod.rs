@@ -5,7 +5,6 @@ use sky_types::db::Datom;
 #[cfg(feature = "hydrate")]
 mod hydrate;
 mod sky_socket;
-mod socket_sender;
 mod spawn_task;
 
 use crate::sky::sky_socket::{SkySocketReturn, use_sky_socket};
@@ -16,15 +15,15 @@ pub fn use_sky() -> UseSkyReturn {
     let socket = use_sky_socket();
     let client = StoredValue::new(None);
     let (client_connected, set_client_connected) = signal(false);
-    let (client_ready, set_ready) = signal(false);
+    let (client_ready, set_client_ready) = signal(false);
     #[cfg(feature = "hydrate")]
     {
         use crate::sky::hydrate::{
-            enable_client_ready, enable_client_requests, enable_socket_responses,
+            enable_client_ready, wire_client_requests_to_socket, wire_socket_responses_to_client,
         };
-        enable_socket_responses(socket.clone(), client.clone(), set_client_connected);
-        enable_client_requests(client.clone(), socket.clone());
-        enable_client_ready(socket.clone(), client_connected, set_ready);
+        wire_socket_responses_to_client(socket.clone(), client.clone(), set_client_connected);
+        wire_client_requests_to_socket(client.clone(), socket.clone());
+        enable_client_ready(socket.clone(), client_connected, set_client_ready);
     }
     UseSkyReturn {
         client,
@@ -33,7 +32,7 @@ pub fn use_sky() -> UseSkyReturn {
     }
 }
 
-#[derive(Clone)]
+#[derive(Copy, Clone)]
 pub struct UseSkyReturn {
     pub client: StoredValue<Option<RemoteClient<LeptosSpawnTask>>>,
     pub client_ready: ReadSignal<bool>,
