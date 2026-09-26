@@ -1,7 +1,7 @@
 use crate::storage::ReadStorageError;
 use crate::storage::file::internal::{bases_dir, init_bases_dir_with_empty_base, read_base};
 use crate::trie::TrieSnap;
-use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieStream};
+use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieWalk};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -36,7 +36,7 @@ impl FileTrieView {
     }
 }
 
-impl TrieStream for FileTrieView {
+impl TrieWalk for FileTrieView {
     type Subtrie = FileTrieView;
 
     fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {

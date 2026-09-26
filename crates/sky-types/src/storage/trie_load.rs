@@ -2,7 +2,7 @@ use crate::storage::traits::BaseStore;
 use crate::storage::trie_edit::TrieEdit;
 use crate::storage::{Mem, ReadStorageError, TrieView};
 use crate::trie::TrieSnap;
-use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieStream};
+use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieWalk};
 use std::ops::Deref;
 
 pub fn mem_load_new() -> TrieLoad<Mem> {
@@ -38,7 +38,7 @@ impl<S: BaseStore + Clone> TrieLoad<S> {
     }
 }
 
-impl<S: BaseStore + Send + Sync> TrieStream for TrieLoad<S> {
+impl<S: BaseStore + Send + Sync> TrieWalk for TrieLoad<S> {
     type Subtrie = TrieView<S>;
 
     fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {

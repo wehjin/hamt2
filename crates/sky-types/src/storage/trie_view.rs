@@ -1,7 +1,7 @@
 use crate::storage::ReadStorageError;
 use crate::storage::traits::BaseStore;
 use crate::trie::TrieSnap;
-use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieStream};
+use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieWalk};
 use std::ops::Deref;
 use std::sync::Arc;
 
@@ -31,7 +31,7 @@ impl<S: BaseStore> Clone for TrieView<S> {
     }
 }
 
-impl<S: BaseStore + Send + Sync> TrieStream for TrieView<S> {
+impl<S: BaseStore + Send + Sync> TrieWalk for TrieView<S> {
     type Subtrie = TrieView<S>;
 
     fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
@@ -74,7 +74,7 @@ impl<S: BaseStore> BaseRead for TrieView<S> {
 #[cfg(test)]
 mod tests {
     use crate::storage::{Mem, TrieView};
-    use crate::trie::TrieStream;
+    use crate::trie::TrieWalk;
     use futures::StreamExt;
 
     #[tokio::test]

@@ -1,6 +1,6 @@
 use crate::storage::mem_load_new;
 use crate::trie::TrieValue;
-use crate::trie::{TrieInsert, TrieStream};
+use crate::trie::{TrieInsert, TrieWalk};
 use futures::StreamExt;
 
 #[tokio::test]

@@ -44,7 +44,7 @@ where
 
 pub async fn query<T>(trie: &T, vid: Vid) -> Result<Option<Val>, QueryError>
 where
-    T: TrieStream,
+    T: TrieWalk,
 {
     match find_hash_trie(trie, vid.to_id()).await? {
         None => Ok(None),
@@ -153,7 +153,7 @@ async fn is_equal_bytes<T: TrieQuery>(
     }
 }
 
-async fn find_hash_trie<T: TrieStream>(
+async fn find_hash_trie<T: TrieWalk>(
     trie: &T,
     hash: i32,
 ) -> Result<Option<T::Subtrie>, QueryError> {

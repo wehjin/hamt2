@@ -5,7 +5,7 @@ use futures::FutureExt;
 use sky_types::db::schema::Schema;
 use sky_types::db::{Attr, Ein, FindResult, QueryError, Val};
 use sky_types::storage::BaseStore;
-use sky_types::trie::TrieStream;
+use sky_types::trie::TrieWalk;
 
 #[allow(async_fn_in_trait)]
 pub trait DbQuery {
@@ -42,7 +42,7 @@ pub trait Find {
     fn apply<T>(self, trie: &T, schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
     where
         Self: Sized,
-        T: TrieStream,
+        T: TrieWalk,
     {
         async move {
             let select = self.select();

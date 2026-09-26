@@ -2,7 +2,7 @@ use crate::storage::traits::BaseStore;
 use crate::storage::{Mem, ReadStorageError, TrieView, WriteStorageError};
 use crate::trie::BaseEdit;
 use crate::trie::TrieSnap;
-use crate::trie::{Base, BaseCommit, BaseId, BaseRead, MapBase, TrieStream};
+use crate::trie::{Base, BaseCommit, BaseId, BaseRead, MapBase, TrieWalk};
 use std::sync::Arc;
 
 pub fn mem_edit_new() -> TrieEdit<Mem> {
@@ -50,7 +50,7 @@ impl<S: BaseStore> BaseCommit for TrieEdit<S> {
     }
 }
 
-impl<S: BaseStore + Send + Sync> TrieStream for TrieEdit<S> {
+impl<S: BaseStore + Send + Sync> TrieWalk for TrieEdit<S> {
     type Subtrie = TrieView<S>;
 
     fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
@@ -98,7 +98,7 @@ impl<S: BaseStore> BaseRead for TrieEdit<S> {
 #[cfg(test)]
 mod tests {
     use crate::storage::mem_edit_new;
-    use crate::trie::{TrieInsert, TrieQuery, TrieStream, TrieValue};
+    use crate::trie::{TrieInsert, TrieQuery, TrieWalk, TrieValue};
     use futures::StreamExt;
 
     #[tokio::test]
