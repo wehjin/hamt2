@@ -2,7 +2,8 @@ use crate::storage::traits::BaseStore;
 use crate::storage::trie_edit::TrieEdit;
 use crate::storage::{Mem, ReadStorageError, TrieView};
 use crate::trie::TrieSnap;
-use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieWalk};
+use crate::trie::TrieWalk;
+use crate::trie::{Base, BaseId, BaseRead, MapBase};
 use std::ops::Deref;
 
 pub fn mem_load_new() -> TrieLoad<Mem> {

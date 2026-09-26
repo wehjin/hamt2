@@ -1,13 +1,15 @@
 use crate::storage::ReadStorageError;
 use crate::storage::traits::view::StoreView;
-use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieSnap, TrieWalk};
+use crate::trie::TrieWalk;
+use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieSnap};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
 #[cfg(test)]
 mod tests {
     use crate::storage::MemView;
-    use crate::trie::{TrieQuery, TrieSnap, TrieStream, TrieWalk};
+    use crate::trie::TrieWalk;
+    use crate::trie::{TrieQuery, TrieSnap, TrieStream};
     use futures::StreamExt;
 
     #[tokio::test]

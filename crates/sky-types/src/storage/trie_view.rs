@@ -1,7 +1,8 @@
 use crate::storage::ReadStorageError;
 use crate::storage::traits::BaseStore;
 use crate::trie::TrieSnap;
-use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieWalk};
+use crate::trie::TrieWalk;
+use crate::trie::{Base, BaseId, BaseRead, MapBase};
 use std::ops::Deref;
 use std::sync::Arc;
 

@@ -2,7 +2,8 @@ use crate::storage::traits::BaseStore;
 use crate::storage::{Mem, ReadStorageError, TrieView, WriteStorageError};
 use crate::trie::BaseEdit;
 use crate::trie::TrieSnap;
-use crate::trie::{Base, BaseCommit, BaseId, BaseRead, MapBase, TrieWalk};
+use crate::trie::TrieWalk;
+use crate::trie::{Base, BaseCommit, BaseId, BaseRead, MapBase};
 use std::sync::Arc;
 
 pub fn mem_edit_new() -> TrieEdit<Mem> {

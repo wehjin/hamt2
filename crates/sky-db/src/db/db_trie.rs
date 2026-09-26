@@ -10,13 +10,13 @@ use crate::db::cardinality::Cardinality;
 use crate::db::types::key::{KEY_AEVT, KEY_EAVT, KEY_MAX_TXID};
 use crate::db::vid::Vid;
 use crate::db::{Txid, txid};
-use sky_types::trie::*;
 use async_stream::stream;
 use futures::{StreamExt, pin_mut};
 use serde::{Deserialize, Serialize};
 use sky_types::db;
 use sky_types::db::{Attr, Dir, Ein, FindResult, TransactError, Val};
 use sky_types::storage::{BaseStore, TrieEdit};
+use sky_types::trie::*;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -2,8 +2,8 @@ use crate::crate_services::datalog::kb::KnowledgeBase;
 use crate::crate_services::datalog::sub::Substitution;
 use crate::crate_services::datalog::term::Term;
 use crate::crate_services::datalog::var::Var;
-use sky_types::trie::*;
 use sky_types::db::Attr;
+use sky_types::trie::*;
 
 pub fn atom(attr: impl Into<Attr>, terms: impl Into<Vec<Term>>) -> Atom {
     Atom::new(attr.into(), terms)

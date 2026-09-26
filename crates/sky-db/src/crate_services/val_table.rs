@@ -1,10 +1,10 @@
 use crate::crate_services::u32;
 use crate::db::types::key::KEY_VAL_TABLE;
 use crate::db::vid::Vid;
-use sky_types::trie::*;
 use sky_types::db::Val;
 use sky_types::db::{QueryError, TransactError};
 use sky_types::storage::{BaseStore, TrieEdit};
+use sky_types::trie::*;
 
 pub async fn insert<S>(trie: &mut TrieEdit<S>, val: Val) -> Result<Vid, TransactError>
 where
@@ -169,11 +169,11 @@ async fn find_hash_trie<T: TrieWalk>(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use sky_types::db::{Val, val};
-    use sky_types::storage::{mem_edit_new, mem_load_new};
+	use super::*;
+	use sky_types::db::{Val, val};
+	use sky_types::storage::{mem_edit_new, mem_load_new};
 
-    #[tokio::test]
+	#[tokio::test]
     async fn insert_and_query() {
         let mut trie = mem_load_new();
         let (vids, vals) = trie

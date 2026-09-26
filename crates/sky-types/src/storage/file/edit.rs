@@ -1,9 +1,9 @@
 use crate::storage::file::internal;
 use crate::storage::file::internal::{read_max_id_file, write_base};
 use crate::storage::{FileTrieView, ReadStorageError, WriteStorageError};
-use crate::trie::BaseEdit;
 use crate::trie::TrieSnap;
-use crate::trie::{Base, BaseCommit, BaseId, BaseRead, MapBase, TrieWalk};
+use crate::trie::{Base, BaseCommit, BaseId, BaseRead, MapBase};
+use crate::trie::{BaseEdit, TrieWalk};
 use internal::{read_root_file, write_max_id_file, write_root_file};
 use std::path::{Path, PathBuf};
 use tokio::fs;
