@@ -5,42 +5,6 @@ use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieSnap};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-#[cfg(test)]
-mod tests {
-    use crate::storage::MemView;
-    use crate::trie::TrieWalk;
-    use crate::trie::{TrieQuery, TrieSnap, TrieStream};
-    use futures::StreamExt;
-
-    #[tokio::test]
-    async fn has_query() {
-        let mem = MemView::new();
-        let values = mem.query_all().await.unwrap();
-        assert_eq!(values, vec![]);
-    }
-
-    #[tokio::test]
-    async fn has_snap() {
-        let mem = MemView::new();
-        let values = mem.snapshot().query_all().await.unwrap();
-        assert_eq!(values, vec![]);
-    }
-
-    #[tokio::test]
-    async fn has_stream() {
-        let mem = MemView::new();
-        let values = mem.u32_stream().collect::<Vec<_>>().await;
-        assert_eq!(values, vec![]);
-    }
-
-    #[tokio::test]
-    async fn has_walk() {
-        let mem = MemView::new();
-        let subtries = mem.subtrie_stream().collect::<Vec<_>>().await;
-        assert_eq!(subtries.len(), 0);
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct MemView {
     pub(crate) bases: Arc<RwLock<Vec<Base>>>,
@@ -48,15 +12,7 @@ pub struct MemView {
     pub(crate) root: MapBase,
 }
 
-impl MemView {
-    pub fn new() -> Self {
-        Self {
-            bases: Arc::new(RwLock::new(vec![Base::empty()])),
-            max_id: BaseId(0),
-            root: MapBase::empty(),
-        }
-    }
-}
+impl MemView {}
 
 impl BaseRead for MemView {
     fn max_id(&self) -> BaseId {

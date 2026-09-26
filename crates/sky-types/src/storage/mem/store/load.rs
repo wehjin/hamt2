@@ -1,7 +1,13 @@
+use crate::storage::MemEdit;
 use crate::storage::load::StoreLoad;
 use crate::storage::mem::MemView;
-use crate::trie::{MapBase, TrieQuery, TrieQueryError, TrieSnap, TrieStream, TrieValue, TrieWalk};
+use crate::trie::{
+    Base, BaseId, BaseRead, MapBase, TrieQuery, TrieQueryError, TrieSnap, TrieStream, TrieValue,
+    TrieWalk,
+};
 use futures::Stream;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
 /// Deliberately non-Clone
 #[derive(Debug)]
@@ -9,7 +15,44 @@ pub struct MemLoad {
     pub(crate) inner: MemView,
 }
 
-impl StoreLoad for MemLoad {}
+impl MemLoad {}
+
+impl StoreLoad for MemLoad {
+    type Edit = MemEdit;
+
+    fn new() -> Self {
+        let inner = MemView {
+            bases: Arc::new(RwLock::new(vec![Base::empty()])),
+            max_id: BaseId(0),
+            root: MapBase::empty(),
+        };
+        Self { inner }
+    }
+
+    async fn edit<F, Out>(&mut self, f: F) -> anyhow::Result<Out>
+    where
+        F: AsyncFnOnce(&mut Self::Edit) -> anyhow::Result<Out>,
+    {
+        let mut edit = MemEdit {
+            past: self.inner.snapshot(),
+            bases: vec![],
+            root: self.inner.read_root(),
+        };
+        let out = f(&mut edit).await?;
+        {
+            let max_id = edit.max_id();
+            let root = edit.root;
+            let bases = self.inner.bases.clone();
+            bases.write().await.append(&mut edit.bases);
+            self.inner = MemView {
+                bases,
+                max_id,
+                root,
+            };
+        }
+        Ok(out)
+    }
+}
 
 impl TrieWalk for MemLoad {
     type Subtrie = MemView;
