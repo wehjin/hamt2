@@ -1,4 +1,4 @@
-use crate::storage::{ReadStorageError, StoreRead};
+use crate::storage::{ReadStorageError, StoreView};
 use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieSnap};
 use std::sync::Arc;
 
@@ -78,4 +78,4 @@ impl TrieSnap for MemRead {
     }
 }
 
-impl StoreRead for MemRead {}
+impl StoreView for MemRead {}
