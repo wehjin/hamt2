@@ -4,6 +4,8 @@ use crate::trie::{Base, BaseId, MapBase};
 use std::ops::Deref;
 use std::sync::Arc;
 
+pub mod read;
+
 #[derive(Debug, Clone)]
 pub struct Mem {
     pub(crate) start_id: BaseId,

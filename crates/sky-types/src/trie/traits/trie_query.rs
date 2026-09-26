@@ -30,7 +30,7 @@ impl<T: BaseRead> TrieQuery for T {
 }
 
 #[allow(async_fn_in_trait)]
-pub trait TrieQuery: BaseRead {
+pub trait TrieQuery {
     /// Returns the value stored at the given key or none if the key is absent.
     async fn query(&self, key: i32) -> Result<Option<TrieValue>, TrieQueryError>;
 

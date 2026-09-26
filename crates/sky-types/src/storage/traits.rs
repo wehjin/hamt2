@@ -1,5 +1,7 @@
 use crate::storage::{ReadStorageError, WriteStorageError};
-use crate::trie::{Base, BaseId, MapBase};
+use crate::trie::{Base, BaseId, BaseView, MapBase, TrieQuery};
+
+pub trait StoreRead: TrieQuery + BaseView<Snapshot = Self> + Clone + Send + Sync {}
 
 #[allow(async_fn_in_trait)]
 pub trait BaseStore {

@@ -1,8 +1,8 @@
-use crate::trie::{BaseRead, MapBase};
+use crate::trie::MapBase;
 
 /// These are the core functions of a read-only trie.
 #[allow(async_fn_in_trait)]
-pub trait BaseView: BaseRead + Sized {
+pub trait BaseView: Sized {
     type Snapshot: BaseView + Send + Clone;
 
     /// Convert the storage into one that reads starting at the new root. The new
