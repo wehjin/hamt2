@@ -1,10 +1,10 @@
-use crate::trie::{MapBase, TrieStream, TrieValue};
+use crate::trie::{MapBase, TrieQuery, TrieSnap, TrieStream, TrieValue};
 use futures::{Stream, StreamExt};
 
 /// Implement this trait and provide `to_subtrie` to acquire streaming access
 /// to stored values.
-pub trait TrieWalk: TrieStream {
-    type Subtrie: TrieWalk;
+pub trait TrieWalk: TrieStream + TrieSnap + TrieQuery + Send {
+    type Subtrie: TrieWalk + TrieStream + TrieSnap + TrieQuery + Send;
 
     fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie;
 

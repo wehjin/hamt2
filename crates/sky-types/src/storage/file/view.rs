@@ -41,17 +41,14 @@ impl TrieWalk for FileTrieView {
     type Subtrie = FileTrieView;
 
     fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
-        self.clone().with_new_root(Some(subtrie_root))
+        let mut new = self.clone();
+        new.root = subtrie_root;
+        new
     }
 }
 
 impl TrieSnap for FileTrieView {
     type Snapshot = FileTrieView;
-
-    fn with_new_root(self, new_root: Option<MapBase>) -> Self {
-        let root = new_root.unwrap_or(self.root);
-        Self { root, ..self }
-    }
 
     fn snapshot(&self) -> Self::Snapshot {
         self.clone()

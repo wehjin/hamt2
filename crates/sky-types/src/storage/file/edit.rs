@@ -80,11 +80,6 @@ impl TrieWalk for FileTrieEdit {
 impl TrieSnap for FileTrieEdit {
     type Snapshot = FileTrieView;
 
-    fn with_new_root(self, new_root: Option<MapBase>) -> Self {
-        let inner = self.inner.with_new_root(new_root);
-        Self { inner, ..self }
-    }
-
     fn snapshot(&self) -> Self::Snapshot {
         self.inner.snapshot()
     }

@@ -36,17 +36,15 @@ impl<S: BaseStore + Send + Sync> TrieWalk for TrieView<S> {
     type Subtrie = TrieView<S>;
 
     fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
-        self.clone().with_new_root(Some(subtrie_root))
+        let past = self.past.clone();
+        let store = Arc::new(self.store.with_root(Some(subtrie_root)));
+        Self { past, store }
     }
 }
 
 impl<S: BaseStore + Send + Sync> TrieSnap for TrieView<S> {
     type Snapshot = TrieView<S>;
 
-    fn with_new_root(self, new_root: Option<MapBase>) -> Self {
-        let store = Arc::new(self.store.with_root(new_root));
-        Self { store, ..self }
-    }
     fn snapshot(&self) -> Self::Snapshot {
         self.clone()
     }

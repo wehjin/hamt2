@@ -4,7 +4,6 @@ use crate::trie::{Base, BaseId, MapBase};
 pub mod edit;
 pub mod load;
 pub mod view;
-pub mod wrap;
 
 #[allow(async_fn_in_trait)]
 pub trait BaseStore {

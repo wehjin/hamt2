@@ -81,11 +81,6 @@ impl BaseRead for MemView {
 impl TrieSnap for MemView {
     type Snapshot = Self;
 
-    fn with_new_root(self, new_root: Option<MapBase>) -> Self {
-        let root = new_root.unwrap_or(self.root);
-        Self { root, ..self }
-    }
-
     fn snapshot(&self) -> Self::Snapshot {
         self.clone()
     }
@@ -95,7 +90,10 @@ impl TrieWalk for MemView {
     type Subtrie = Self;
 
     fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
-        self.clone().with_new_root(Some(subtrie_root))
+        MemView {
+            root: subtrie_root,
+            ..self.clone()
+        }
     }
 }
 

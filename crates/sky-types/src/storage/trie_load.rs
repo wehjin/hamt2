@@ -50,11 +50,6 @@ impl<S: BaseStore + Send + Sync> TrieWalk for TrieLoad<S> {
 impl<S: BaseStore + Send + Sync> TrieSnap for TrieLoad<S> {
     type Snapshot = TrieView<S>;
 
-    fn with_new_root(self, new_root: Option<MapBase>) -> Self {
-        let inner = self.inner.with_new_root(new_root);
-        Self { inner }
-    }
-
     fn snapshot(&self) -> Self::Snapshot {
         self.inner.snapshot()
     }

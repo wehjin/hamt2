@@ -3,7 +3,7 @@ use crate::trie::{BaseRead, TrieSnap};
 use crate::trie::{MapBase, TrieValue};
 use futures::{Stream, StreamExt};
 
-pub trait TrieStream: TrieSnap<Snapshot: BaseRead> + BaseRead {
+pub trait TrieStream {
     /// Stream sub-trie values from the trie.
     fn map_base_stream(&self) -> impl Stream<Item = (i32, MapBase)>;
 

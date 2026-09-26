@@ -20,11 +20,6 @@ impl<T: SpawnTask> BaseRead for RemoteClient<T> {
 impl<T: SpawnTask> TrieSnap for RemoteClient<T> {
     type Snapshot = TrieView<Remote<T>>;
 
-    fn with_new_root(self, new_root: Option<MapBase>) -> Self {
-        let inner = self.inner.with_new_root(new_root);
-        Self { inner, ..self }
-    }
-
     fn snapshot(&self) -> Self::Snapshot {
         self.inner.snapshot()
     }
