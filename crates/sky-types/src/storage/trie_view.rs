@@ -74,7 +74,7 @@ impl<S: BaseStore> BaseRead for TrieView<S> {
 #[cfg(test)]
 mod tests {
     use crate::storage::{Mem, TrieView};
-    use crate::trie::TrieWalk;
+    use crate::trie::TrieStream;
     use futures::StreamExt;
 
     #[tokio::test]

@@ -1,6 +1,6 @@
 use crate::storage::mem_load_new;
-use crate::trie::TrieSnap;
-use crate::trie::{TrieInsert, TrieQuery, TrieWalk, TrieValue};
+use crate::trie::{TrieInsert, TrieQuery, TrieValue};
+use crate::trie::{TrieSnap, TrieStream};
 use futures::StreamExt;
 use std::collections::HashMap;
 

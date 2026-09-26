@@ -5,7 +5,8 @@ use std::sync::Arc;
 #[cfg(test)]
 mod tests {
     use crate::storage::read::MemRead;
-    use crate::trie::{TrieQuery, TrieSnap};
+    use crate::trie::{TrieQuery, TrieSnap, TrieStream};
+    use futures::StreamExt;
 
     #[tokio::test]
     async fn is_query() {
@@ -18,6 +19,13 @@ mod tests {
     async fn is_snap() {
         let mem = MemRead::new();
         let values = mem.snapshot().query_all().await.unwrap();
+        assert_eq!(values, vec![]);
+    }
+
+    #[tokio::test]
+    async fn is_stream() {
+        let mem = MemRead::new();
+        let values = mem.u32_stream().collect::<Vec<_>>().await;
         assert_eq!(values, vec![]);
     }
 }

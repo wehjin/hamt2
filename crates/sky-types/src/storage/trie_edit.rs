@@ -98,7 +98,7 @@ impl<S: BaseStore> BaseRead for TrieEdit<S> {
 #[cfg(test)]
 mod tests {
     use crate::storage::mem_edit_new;
-    use crate::trie::{TrieInsert, TrieQuery, TrieWalk, TrieValue};
+    use crate::trie::{TrieInsert, TrieQuery, TrieStream, TrieValue};
     use futures::StreamExt;
 
     #[tokio::test]
