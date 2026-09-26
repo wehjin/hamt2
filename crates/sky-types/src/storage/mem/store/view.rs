@@ -4,46 +4,46 @@ use std::sync::Arc;
 
 #[cfg(test)]
 mod tests {
-    use crate::storage::read::MemRead;
+    use crate::storage::view::MemView;
     use crate::trie::{TrieQuery, TrieSnap, TrieStream, TrieWalk};
     use futures::StreamExt;
 
     #[tokio::test]
     async fn is_query() {
-        let mem = MemRead::new();
+        let mem = MemView::new();
         let values = mem.query_all().await.unwrap();
         assert_eq!(values, vec![]);
     }
 
     #[tokio::test]
     async fn is_snap() {
-        let mem = MemRead::new();
+        let mem = MemView::new();
         let values = mem.snapshot().query_all().await.unwrap();
         assert_eq!(values, vec![]);
     }
 
     #[tokio::test]
     async fn is_stream() {
-        let mem = MemRead::new();
+        let mem = MemView::new();
         let values = mem.u32_stream().collect::<Vec<_>>().await;
         assert_eq!(values, vec![]);
     }
 
     #[tokio::test]
     async fn is_walk() {
-        let mem = MemRead::new();
+        let mem = MemView::new();
         let subtries = mem.subtrie_stream().collect::<Vec<_>>().await;
         assert_eq!(subtries, vec![]);
     }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct MemRead {
+pub struct MemView {
     pub(crate) bases: Arc<Vec<Base>>,
     pub(crate) root: MapBase,
 }
 
-impl MemRead {
+impl MemView {
     pub fn new() -> Self {
         Self {
             bases: Arc::new(vec![Base::empty()]),
@@ -52,7 +52,7 @@ impl MemRead {
     }
 }
 
-impl BaseRead for MemRead {
+impl BaseRead for MemView {
     fn max_id(&self) -> BaseId {
         BaseId(self.bases.len() as i32 - 1)
     }
@@ -72,7 +72,7 @@ impl BaseRead for MemRead {
     }
 }
 
-impl TrieSnap for MemRead {
+impl TrieSnap for MemView {
     type Snapshot = Self;
 
     fn with_new_root(self, new_root: Option<MapBase>) -> Self {
@@ -85,7 +85,7 @@ impl TrieSnap for MemRead {
     }
 }
 
-impl TrieWalk for MemRead {
+impl TrieWalk for MemView {
     type Subtrie = Self;
 
     fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
@@ -93,4 +93,4 @@ impl TrieWalk for MemRead {
     }
 }
 
-impl StoreView for MemRead {}
+impl StoreView for MemView {}
