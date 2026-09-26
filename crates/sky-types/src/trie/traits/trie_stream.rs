@@ -22,10 +22,9 @@ pub trait TrieStream: TrieSnap<Snapshot: BaseRead> + BaseRead {
             .map(|(key, map_base)| (key, self.to_subtrie(map_base)))
     }
 
-    /// Stream all map-base key values in the trie.
+    /// Stream sub-trie values from the trie.
     fn map_base_stream(&self) -> impl Stream<Item = (i32, MapBase)> {
-        let stream = kv_stream(self.read_root(), self.snapshot());
-        stream.filter_map(move |(key, value)| async move {
+        kv_stream(self.read_root(), self.snapshot()).filter_map(move |(key, value)| async move {
             if let TrieValue::SubTrie(map_base) = value {
                 Some((key, map_base))
             } else {
@@ -34,10 +33,9 @@ pub trait TrieStream: TrieSnap<Snapshot: BaseRead> + BaseRead {
         })
     }
 
-    /// Stream all u32 keyed values in the trie.
+    /// Stream u32 values from the trie.
     fn u32_stream(&self) -> impl Stream<Item = (i32, u32)> {
-        let stream = kv_stream(self.read_root(), self.snapshot());
-        stream.filter_map(|(key, value)| async move {
+        kv_stream(self.read_root(), self.snapshot()).filter_map(|(key, value)| async move {
             if let TrieValue::U32(val) = value {
                 Some((key, val))
             } else {

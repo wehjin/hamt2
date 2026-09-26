@@ -1,6 +1,6 @@
-use crate::trie::{HashKey, MapBase, Slot, BaseId, BaseRead, TrieQueryError, TrieValue};
+use crate::trie::{BaseId, BaseRead, HashKey, MapBase, Slot, TrieQueryError, TrieValue};
+use async_stream::stream;
 use futures::Stream;
-use futures::stream;
 
 pub struct State<S: BaseRead> {
     storage: S,
@@ -27,11 +27,11 @@ pub fn kv_stream<S: BaseRead>(
     map_base: MapBase,
     trie_read: S,
 ) -> impl Stream<Item = (i32, TrieValue)> {
-    let state = State {
-        storage: trie_read,
-        jobs: Job::start(&map_base).into_iter().collect::<Vec<_>>(),
-    };
-    stream::unfold(state, |mut state| async move {
+    stream! {
+        let mut state = State {
+            storage: trie_read,
+            jobs: Job::start(&map_base).into_iter().collect::<Vec<_>>(),
+        };
         while let Some(mut job) = state.jobs.pop() {
             let base = state.storage.read_base(job.base).await.expect("read base");
             match &base.as_ref()[job.slot_offset] {
@@ -42,7 +42,7 @@ pub fn kv_stream<S: BaseRead>(
                     if job.next() {
                         state.jobs.push(job);
                     }
-                    return Some((kv, state));
+                    yield kv;
                 }
                 Slot::MapBase(lower_map_base) => {
                     // Found a lower map-base. We will move the current job
@@ -57,8 +57,7 @@ pub fn kv_stream<S: BaseRead>(
                 }
             }
         }
-        None
-    })
+    }
 }
 
 pub async fn query_keys_values<P: BaseRead>(

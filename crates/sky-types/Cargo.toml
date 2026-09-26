@@ -11,6 +11,7 @@ futures.workspace = true
 anyhow.workspace = true
 postcard = { workspace = true, features = ["alloc"] }
 tokio = { workspace = true, features = ["sync"] }
+async-stream.workspace = true
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros"] }
