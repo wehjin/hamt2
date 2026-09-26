@@ -5,6 +5,7 @@ use crate::trie::{
     Base, BaseId, BaseRead, MapBase, TrieQuery, TrieQueryError, TrieSnap, TrieStream, TrieValue,
     TrieWalk,
 };
+use anyhow::anyhow;
 use futures::Stream;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -19,6 +20,7 @@ impl MemLoad {}
 
 impl StoreLoad for MemLoad {
     type Edit = MemEdit;
+    type View = MemView;
 
     fn new() -> Self {
         let inner = MemView {
@@ -29,33 +31,35 @@ impl StoreLoad for MemLoad {
         Self { inner }
     }
 
-    async fn edit<F, Out>(&mut self, f: F) -> anyhow::Result<Out>
-    where
-        F: AsyncFnOnce(&mut Self::Edit) -> anyhow::Result<Out>,
-    {
-        let mut edit = MemEdit {
+    async fn begin_edit(&self) -> Result<Self::Edit, anyhow::Error> {
+        let edit = MemEdit {
             past: self.inner.snapshot(),
             bases: vec![],
             root: self.inner.read_root(),
         };
-        let out = f(&mut edit).await?;
+        Ok(edit)
+    }
+    async fn commit_edit(&mut self, mut edit: Self::Edit) -> Result<(), anyhow::Error> {
+        if edit.past.max_id() != self.inner.max_id()
+            || edit.past.read_root() != self.inner.read_root()
         {
-            let max_id = edit.max_id();
-            let root = edit.root;
-            let bases = self.inner.bases.clone();
-            bases.write().await.append(&mut edit.bases);
-            self.inner = MemView {
-                bases,
-                max_id,
-                root,
-            };
+            return Err(anyhow!("stale edit"));
         }
-        Ok(out)
+        let max_id = edit.max_id();
+        let root = edit.root;
+        let bases = self.inner.bases.clone();
+        bases.write().await.append(&mut edit.bases);
+        self.inner = MemView {
+            bases,
+            max_id,
+            root,
+        };
+        Ok(())
     }
 }
 
 impl TrieWalk for MemLoad {
-    type Subtrie = MemView;
+    type Subtrie = <Self as StoreLoad>::View;
     fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
         MemView {
             root: subtrie_root,
@@ -75,7 +79,7 @@ impl TrieStream for MemLoad {
 }
 
 impl TrieSnap for MemLoad {
-    type Snapshot = MemView;
+    type Snapshot = <Self as StoreLoad>::View;
 
     fn snapshot(&self) -> Self::Snapshot {
         self.inner.snapshot()
