@@ -1,5 +1,5 @@
 use crate::storage::mem_edit_new;
-use crate::trie::BaseView;
+use crate::trie::TrieSnap;
 use crate::trie::map_base::one_kv;
 use crate::trie::{Base, BaseCommit, BaseId, BaseRead, HashKey, MapBase, TrieValue};
 

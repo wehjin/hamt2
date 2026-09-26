@@ -2,7 +2,7 @@ use super::*;
 use crate::storage::file::internal::bases_dir;
 use crate::trie::map_base::{one_kv, two_kv};
 use crate::trie::{Base, BaseCommit, BaseId, BaseRead, HashKey, MapBase, TrieValue};
-use crate::trie::{BaseView, TrieInsert, TrieQuery};
+use crate::trie::{TrieSnap, TrieInsert, TrieQuery};
 
 #[tokio::test]
 async fn file_trie_works() -> anyhow::Result<()> {

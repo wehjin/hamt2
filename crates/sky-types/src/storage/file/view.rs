@@ -1,6 +1,6 @@
 use crate::storage::ReadStorageError;
 use crate::storage::file::internal::{bases_dir, init_bases_dir_with_empty_base, read_base};
-use crate::trie::BaseView;
+use crate::trie::TrieSnap;
 use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieStream};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -44,7 +44,7 @@ impl TrieStream for FileTrieView {
     }
 }
 
-impl BaseView for FileTrieView {
+impl TrieSnap for FileTrieView {
     type Snapshot = FileTrieView;
 
     fn with_new_root(self, new_root: Option<MapBase>) -> Self {

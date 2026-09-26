@@ -1,7 +1,7 @@
 use crate::storage::traits::BaseStore;
 use crate::storage::{Mem, ReadStorageError, TrieView, WriteStorageError};
 use crate::trie::BaseEdit;
-use crate::trie::BaseView;
+use crate::trie::TrieSnap;
 use crate::trie::{Base, BaseCommit, BaseId, BaseRead, MapBase, TrieStream};
 use std::sync::Arc;
 
@@ -58,7 +58,7 @@ impl<S: BaseStore + Send + Sync> TrieStream for TrieEdit<S> {
     }
 }
 
-impl<S: BaseStore + Send + Sync> BaseView for TrieEdit<S> {
+impl<S: BaseStore + Send + Sync> TrieSnap for TrieEdit<S> {
     type Snapshot = TrieView<S>;
 
     fn with_new_root(self, new_root: Option<MapBase>) -> Self {

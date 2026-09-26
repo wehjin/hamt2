@@ -2,7 +2,7 @@ use crate::db::{Db, Schema};
 use crate::traits::DbQuery;
 use crate::traits::Find;
 use sky_types::storage::{BaseStore, TrieView};
-use sky_types::trie::BaseView;
+use sky_types::trie::TrieSnap;
 
 /// A read-only snapshot of a [`Db`], for running queries only.
 #[derive(Debug, Clone)]

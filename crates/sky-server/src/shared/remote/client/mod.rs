@@ -5,7 +5,7 @@ use crate::shared::remote::{Remote, SpawnTask};
 use sky_db::reader::DbReader;
 use sky_types::db::{Datom, DbStatus};
 use sky_types::storage::{StorageStatus, TrieView};
-use sky_types::trie::BaseView;
+use sky_types::trie::TrieSnap;
 use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
 use tokio::sync::mpsc::Sender;

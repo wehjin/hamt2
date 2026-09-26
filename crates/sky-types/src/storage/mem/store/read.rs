@@ -1,11 +1,11 @@
 use crate::storage::{ReadStorageError, StoreRead};
-use crate::trie::{Base, BaseId, BaseRead, BaseView, MapBase};
+use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieSnap};
 use std::sync::Arc;
 
 #[cfg(test)]
 mod tests {
     use crate::storage::read::MemRead;
-    use crate::trie::{Base, BaseId, BaseRead, BaseView, MapBase};
+    use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieSnap};
 
     #[tokio::test]
     async fn is_store_read() {
@@ -60,7 +60,7 @@ impl BaseRead for MemRead {
     }
 }
 
-impl BaseView for MemRead {
+impl TrieSnap for MemRead {
     type Snapshot = Self;
 
     fn with_new_root(self, new_root: Option<MapBase>) -> Self {

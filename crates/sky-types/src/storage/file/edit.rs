@@ -2,7 +2,7 @@ use crate::storage::file::internal;
 use crate::storage::file::internal::{read_max_id_file, write_base};
 use crate::storage::{FileTrieView, ReadStorageError, WriteStorageError};
 use crate::trie::BaseEdit;
-use crate::trie::BaseView;
+use crate::trie::TrieSnap;
 use crate::trie::{Base, BaseCommit, BaseId, BaseRead, MapBase, TrieStream};
 use internal::{read_root_file, write_max_id_file, write_root_file};
 use std::path::{Path, PathBuf};
@@ -77,7 +77,7 @@ impl TrieStream for FileTrieEdit {
     }
 }
 
-impl BaseView for FileTrieEdit {
+impl TrieSnap for FileTrieEdit {
     type Snapshot = FileTrieView;
 
     fn with_new_root(self, new_root: Option<MapBase>) -> Self {
