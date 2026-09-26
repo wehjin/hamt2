@@ -31,6 +31,7 @@ pub fn enable_socket_responses(
         } else {
             client.update_value(|opt_client| {
                 *opt_client = None;
+                client_connected.set(false);
             })
         }
     });

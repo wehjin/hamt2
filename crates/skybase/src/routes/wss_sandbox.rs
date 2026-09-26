@@ -1,6 +1,8 @@
 use crate::sky;
+use crate::sky::UseSkyReturn;
 use leptos::logging::log;
 use leptos::prelude::*;
+use sky::use_sky;
 use sky_db::traits::DbQuery;
 use sky_server::shared::protocol::SocketResponse;
 use sky_types::db;
@@ -8,22 +10,28 @@ use sky_types::db::{Attr, datom, val};
 
 #[component]
 pub fn WebSocketSandbox() -> impl IntoView {
-    let sky = sky::use_sky();
-    let local = {
-        let sky = sky.clone();
-        LocalResource::new(move || {
-            let sky = sky.clone();
-            async move {
-                let reader = sky.to_reader();
-                if let Some(reader) = reader {
-                    let val = reader.find_val(2, db::ident()).await;
-                    log!("found: {:?}", val);
+    let UseSkyReturn {
+        client,
+        client_ready,
+        socket,
+    } = use_sky();
+    let local = LocalResource::new(move || async move {
+        if client_ready.get() {
+            let reader = client.with_value(|client| {
+                if let Some(client) = client {
+                    Some(client.to_reader())
+                } else {
+                    None
                 }
+            });
+            if let Some(reader) = reader {
+                let val = reader.find_val(2, db::ident()).await;
+                log!("found: {:?}", val);
             }
-        })
-    };
+        }
+    });
 
-    let max_id = Memo::new(move |_| match sky.socket.receiver.clone().get() {
+    let max_id = Memo::new(move |_| match socket.receiver.get() {
         Some(response) => match response {
             SocketResponse::DbStatus(status) | SocketResponse::TransactResult(status) => {
                 Some(status.head.max_id)
@@ -33,41 +41,35 @@ pub fn WebSocketSandbox() -> impl IntoView {
         None => None,
     });
     let last_response = {
-        let socket_receiver = sky.socket.receiver.clone();
+        let socket_receiver = socket.receiver.clone();
         Memo::new(move |_| {
             socket_receiver.get().map(|response| {
                 serde_json::to_string_pretty(&response).expect("serialize response")
             })
         })
     };
-    let send_connect = {
-        let sky = sky.clone();
-        move |_| sky.reconnect()
-    };
-    let send_read_slot_base = {
-        let sender = sky.socket.sender.clone().clone();
-        move |_| {
-            if let Some(id) = max_id.get() {
-                sender.send_read(id);
+    let send_connect = move |_| {
+        client.with_value(|client_opt| {
+            if let Some(client) = client_opt {
+                client.reconnect();
             }
+        })
+    };
+    let send_read_slot_base = move |_| {
+        if let Some(id) = max_id.get() {
+            socket.sender.send_read(id);
         }
     };
-    let read_ident = {
-        let local = local.clone();
-        move |_| {
-            local.refetch();
-        }
-    };
+    let read_ident = move |_| local.refetch();
 
     let send_transact = {
-        let sky = sky.clone();
+        let sky = use_sky().clone();
         move |_| {
             let datom = datom::add(100, Attr::from("skybase/version"), val("0.1"));
             sky.transact(vec![datom]);
         }
     };
 
-    let socket_ready = sky.socket.state.clone();
     view! {
         <section class="box">
             <h1 class="title is-4">"Play with the web socket"</h1>
@@ -79,7 +81,7 @@ pub fn WebSocketSandbox() -> impl IntoView {
             </div>
             <p>
                 "Ready state: "
-                <strong>{move || format!("{:?}", socket_ready.get())}</strong>
+                <strong>{move || format!("{:?}", socket.state.get())}</strong>
                 {move || format!(" · max_id: {:?}", max_id.get())}
             </p>
             <pre class="is-size-7">{move || last_response.get()}</pre>
