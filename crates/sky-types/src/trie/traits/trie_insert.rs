@@ -2,6 +2,25 @@ use crate::trie::map_base::query_value;
 use crate::trie::{BaseCommit, DeepKey, HashKey, MapBase, TrieInsertError, TrieValue, map_base};
 use std::collections::HashMap;
 
+#[allow(async_fn_in_trait)]
+pub trait TrieInsert {
+    /// Inserts `value` into the trie at position `key`.
+    async fn insert(
+        &mut self,
+        key: i32,
+        value: impl Into<TrieValue>,
+    ) -> Result<&mut Self, TrieInsertError>;
+
+    /// Inserts `value` several levels deep into the trie. Each element in `key` indexes
+    /// into the sub-trie found at the previous element.
+    async fn deep_insert<const N: usize>(
+        &mut self,
+        key: [i32; N],
+        value: impl Into<TrieValue>,
+        replace_tail: bool,
+    ) -> Result<&mut Self, TrieInsertError>;
+}
+
 impl<T: BaseCommit> TrieInsert for T {
     async fn insert(
         &mut self,
@@ -53,23 +72,4 @@ impl<T: BaseCommit> TrieInsert for T {
         self.commit_root(root).await?;
         Ok(self)
     }
-}
-
-#[allow(async_fn_in_trait)]
-pub trait TrieInsert: BaseCommit {
-    /// Inserts `value` into the trie at position `key`.
-    async fn insert(
-        &mut self,
-        key: i32,
-        value: impl Into<TrieValue>,
-    ) -> Result<&mut Self, TrieInsertError>;
-
-    /// Inserts `value` several levels deep into the trie. Each element in `key` indexes
-    /// into the sub-trie found a the previous element.
-    async fn deep_insert<const N: usize>(
-        &mut self,
-        key: [i32; N],
-        value: impl Into<TrieValue>,
-        replace_tail: bool,
-    ) -> Result<&mut Self, TrieInsertError>;
 }
