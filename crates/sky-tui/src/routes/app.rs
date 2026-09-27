@@ -143,6 +143,7 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
                             active: *focus.read() == Focus::Attr,
                             on_select: move |it| {
                                 active_attr.set(Some(it));
+                                active_ein.set(None);
                                 focus.set(Focus::Ein);
                             }
                         )
@@ -156,6 +157,7 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
                         active: *focus.read() == Focus::Attr,
                         on_select: move |it| {
                             active_attr.set(Some(it));
+                            active_ein.set(None);
                             focus.set(Focus::Ein);
                         }
                     )
