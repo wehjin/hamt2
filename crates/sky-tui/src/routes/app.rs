@@ -10,7 +10,8 @@ use sky_types::db::{Attr, Ein, ein};
 pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
     let mut exit = hooks.use_exit();
     let mut active_attr = hooks.use_state(|| None::<Attr>);
-    let _active_ein = hooks.use_state(|| None::<Ein>);
+    let active_ein = hooks.use_state(|| None::<Ein>);
+    let eins_state = hooks.use_state(|| Some(vec![ein(3), ein(5), ein(8), ein(13), ein(21)]));
 
     hooks.use_event_handler(EventScope::Current, EventPriority::Normal, move |event| {
         let Event::Key(key) = event else {
@@ -34,7 +35,6 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
         EventResult::Ignored
     });
     let attrs = vec![db::ident(), db::cardinality(), db::query()];
-    let eins = Some(vec![ein(3), ein(5), ein(8), ein(13), ein(21)]);
     element!(
         View {
             if let Some(attr) = active_attr.read().clone() {
@@ -43,17 +43,50 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
                         width: Constraint::Fill(1),
                         top_title: Line::from(format!(" [{}] ← Entities ", attr)).centered(),
                     ) {
-                        Center(
-                            width: Constraint::Length(48),
-                            height: Constraint::Length(9),
-                        ) {
+                        if let Some(ein) = active_ein.read().clone() {
                             Text(
                                 text: Line::styled(
-                                    "no entities".to_string(),
+                                    format!("selected: {ein:?}"),
                                     Style::new().green().bold(),
                                 )
                                 .centered(),
                             )
+                        } else {
+                            Center(
+                                width: Constraint::Length(48),
+                                height: Constraint::Length(9),
+                            ) {
+                                if let Some(eins) = eins_state.read().clone() {
+                                    if eins.len() == 0 {
+                                        // Have eins data, no eins.
+                                        Text(
+                                            text: Line::styled(
+                                                "no entities".to_string(),
+                                                Style::new().green().bold(),
+                                            )
+                                            .centered(),
+                                        )
+                                    } else {
+                                        // Have eins data, have eins.
+                                        Text(
+                                            text: Line::styled(
+                                                format!("eins: {}", eins.len()),
+                                                Style::new().green().bold(),
+                                            )
+                                            .centered(),
+                                        )
+                                    }
+                                } else {
+                                    // Loading eins data.
+                                    Text(
+                                        text: Line::styled(
+                                            "loading".to_string(),
+                                            Style::new().green().bold(),
+                                        )
+                                        .centered(),
+                                    )
+                                }
+                            }
                         }
                     }
                     View(width: Constraint::Percentage(30)) {
