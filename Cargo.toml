@@ -1,5 +1,12 @@
 [workspace]
-members = ["crates/*"]
+members = [
+    "crates/*"
+]
+default-members = [
+    "crates/sky-types",
+    "crates/sky-db",
+    "crates/sky-tui",
+]
 resolver = "3"
 
 [workspace.package]
