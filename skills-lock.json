@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "ratatui-kit": {
+      "source": "yexiyue/ratatui-kit",
+      "sourceType": "github",
+      "skillPath": "skills/ratatui-kit/SKILL.md",
+      "computedHash": "03026f4572906ed27ee071c687728cfed11a08a01f8922f4f066f8b8cb72eb82"
+    }
+  }
+}
