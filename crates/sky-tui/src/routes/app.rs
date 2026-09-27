@@ -44,13 +44,18 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
                         top_title: Line::from(format!(" [{}] ← Entities ", attr)).centered(),
                     ) {
                         if let Some(ein) = active_ein.read().clone() {
-                            Text(
-                                text: Line::styled(
-                                    format!("selected: {ein:?}"),
-                                    Style::new().green().bold(),
+                            Center(
+                                width: Constraint::Length(48),
+                                height: Constraint::Length(9),
+                            ){
+                                Text(
+                                    text: Line::styled(
+                                        format!("selected: {ein:?}"),
+                                        Style::new().green().bold(),
+                                    )
+                                    .centered(),
                                 )
-                                .centered(),
-                            )
+                            }
                         } else {
                             Center(
                                 width: Constraint::Length(48),
@@ -67,7 +72,7 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
                                             .centered(),
                                         )
                                     } else {
-                                        // Have eins data, have eins.
+                                        // Have eins data and one or more eins.
                                         Text(
                                             text: Line::styled(
                                                 format!("eins: {}", eins.len()),
