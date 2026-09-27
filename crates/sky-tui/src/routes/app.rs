@@ -33,32 +33,39 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
     });
     let attrs = vec![db::ident(), db::cardinality(), db::query()];
     element!(
-        Center(width: Constraint::Length(48), height: Constraint::Length(9)) {
-            if let Some(active_attr) = active_attr.read().clone() {
+        View {
+            if let Some(attr) = active_attr.read().clone() {
                 View(flex_direction: Direction::Horizontal, gap: 2) {
                     View(width: Constraint::Fill(1)) {
-                        Text(
-                            text: Line::styled(
-                                format!("{}", active_attr),
-                                Style::new().green().bold()
-                            ).centered()
-                        )
+                        Center(width: Constraint::Length(48), height: Constraint::Length(9)) {
+                            Text(
+                                text: Line::styled(
+                                    format!("{}", attr),
+                                    Style::new().green().bold()
+                                ).centered()
+                            )
+                        }
                     }
                     View(width: Constraint::Percentage(30)) {
                         AttrSelect(
                             items: attrs.clone(),
-                            selected: Some(active_attr.clone()),
+                            selected: Some(attr.clone()),
+                            on_select: move |it| {
+                                active_attr.set(Some(it));
+                            }
                         )
                     }
                 }
             } else {
-                AttrSelect(
-                    items: attrs.clone(),
-                    selected: active_attr.read().clone(),
-                    on_select: move |it| {
-                        active_attr.set(Some(it));
-                    }
-                )
+                Center(width: Constraint::Length(48), height: Constraint::Length(9)) {
+                    AttrSelect(
+                        items: attrs.clone(),
+                        selected: active_attr.read().clone(),
+                        on_select: move |it| {
+                            active_attr.set(Some(it));
+                        }
+                    )
+                }
             }
         }
     )
