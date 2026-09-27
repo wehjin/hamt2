@@ -4,12 +4,14 @@ use ratatui_kit::prelude::*;
 use ratatui_kit::ratatui::layout::Direction;
 use ratatui_kit::ratatui::prelude::{Constraint, Line, Style};
 use sky_types::db;
-use sky_types::db::Attr;
+use sky_types::db::{Attr, Ein, ein};
 
 #[component]
 pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
     let mut exit = hooks.use_exit();
     let mut active_attr = hooks.use_state(|| None::<Attr>);
+    let _active_ein = hooks.use_state(|| None::<Ein>);
+
     hooks.use_event_handler(EventScope::Current, EventPriority::Normal, move |event| {
         let Event::Key(key) = event else {
             return EventResult::Ignored;
@@ -32,6 +34,7 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
         EventResult::Ignored
     });
     let attrs = vec![db::ident(), db::cardinality(), db::query()];
+    let eins = Some(vec![ein(3), ein(5), ein(8), ein(13), ein(21)]);
     element!(
         View {
             if let Some(attr) = active_attr.read().clone() {
@@ -46,7 +49,7 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
                         ) {
                             Text(
                                 text: Line::styled(
-                                    format!("{}", attr),
+                                    "no entities".to_string(),
                                     Style::new().green().bold(),
                                 )
                                 .centered(),
