@@ -1,16 +1,18 @@
 use crate::routes::attr_select::AttrSelect;
+use crate::routes::ein_select::EinSelect;
 use ratatui_kit::crossterm::event::{Event, KeyCode, KeyEventKind, KeyModifiers};
 use ratatui_kit::prelude::*;
 use ratatui_kit::ratatui::layout::Direction;
-use ratatui_kit::ratatui::prelude::{Constraint, Line, Style};
+use ratatui_kit::ratatui::prelude::{Constraint, Line, Span, Style};
 use sky_types::db;
 use sky_types::db::{Attr, Ein, ein};
 
 #[component]
 pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
     let mut exit = hooks.use_exit();
+    let palette = hooks.use_palette();
     let mut active_attr = hooks.use_state(|| None::<Attr>);
-    let active_ein = hooks.use_state(|| None::<Ein>);
+    let mut active_ein = hooks.use_state(|| None::<Ein>);
     let eins_state = hooks.use_state(|| Some(vec![ein(3), ein(5), ein(8), ein(13), ein(21)]));
 
     hooks.use_event_handler(EventScope::Current, EventPriority::Normal, move |event| {
@@ -24,7 +26,11 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
             (key.code, key.modifiers),
             (KeyCode::Char('w'), KeyModifiers::CONTROL)
         ) {
-            active_attr.set(None);
+            if active_ein.read().is_some() {
+                active_ein.set(None);
+            } else {
+                active_attr.set(None);
+            }
         } else if matches!(
             (key.code, key.modifiers),
             (KeyCode::Char('q'), KeyModifiers::CONTROL)
@@ -47,12 +53,12 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
                             Center(
                                 width: Constraint::Length(48),
                                 height: Constraint::Length(9),
-                            ){
+                            ) {
                                 Text(
-                                    text: Line::styled(
-                                        format!("selected: {ein:?}"),
-                                        Style::new().green().bold(),
-                                    )
+                                    text: Line::from(vec![
+                                        Span::styled("◆ ", Style::new().fg(palette.accent)),
+                                        Span::styled(ein.0.to_string(), Style::new().bold()),
+                                    ])
                                     .centered(),
                                 )
                             }
@@ -62,25 +68,15 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
                                 height: Constraint::Length(9),
                             ) {
                                 if let Some(eins) = eins_state.read().clone() {
-                                    if eins.len() == 0 {
-                                        // Have eins data, no eins.
-                                        Text(
-                                            text: Line::styled(
-                                                "no entities".to_string(),
-                                                Style::new().green().bold(),
-                                            )
-                                            .centered(),
-                                        )
-                                    } else {
-                                        // Have eins data and one or more eins.
-                                        Text(
-                                            text: Line::styled(
-                                                format!("eins: {}", eins.len()),
-                                                Style::new().green().bold(),
-                                            )
-                                            .centered(),
-                                        )
-                                    }
+                                    // Have eins data; zero eins are handled by the
+                                    // EinSelect's empty_message.
+                                    EinSelect(
+                                        items: eins,
+                                        selected: active_ein.read().clone(),
+                                        on_select: move |it| {
+                                            active_ein.set(Some(it));
+                                        },
+                                    )
                                 } else {
                                     // Loading eins data.
                                     Text(
