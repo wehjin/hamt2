@@ -8,6 +8,7 @@ pub struct EinSelectProps {
     pub items: Vec<Ein>,
     pub selected: Option<Ein>,
     pub active: bool,
+    pub focused: bool,
     pub on_select: Handler<'static, Ein>,
 }
 
@@ -16,6 +17,16 @@ pub fn EinSelect(props: &mut EinSelectProps, hooks: Hooks) -> impl Into<AnyEleme
     let mut on_select = props.on_select.take();
     let palette = hooks.use_palette();
     let accent = Style::new().fg(palette.accent);
+    let border_style = if props.focused {
+        Style::new().fg(palette.border_active)
+    } else {
+        Style::new().fg(palette.border)
+    };
+    let highlight_style = if props.focused {
+        Style::new().fg(palette.on_accent).bg(palette.selection)
+    } else {
+        Style::new().fg(palette.fg_dim).bg(palette.selection)
+    };
 
     let mut items = props.items.clone();
     items.sort();
@@ -44,6 +55,8 @@ pub fn EinSelect(props: &mut EinSelectProps, hooks: Hooks) -> impl Into<AnyEleme
             default_index: index,
             active: props.active,
             highlight_symbol: "> ",
+            border_style: border_style,
+            highlight_style: highlight_style,
             empty_message: "No entities",
             on_select: move |line: Line<'static>| {
                 let key = line

@@ -92,6 +92,7 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
                                             items: eins,
                                             selected: Some(ein.clone()),
                                             active: *focus.read() == Focus::Ein,
+                                            focused: *focus.read() == Focus::Ein,
                                             on_select: move |it| {
                                                 active_ein.set(Some(it));
                                             },
@@ -119,6 +120,7 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
                                         items: eins,
                                         selected: active_ein.read().clone(),
                                         active: *focus.read() == Focus::Ein,
+                                        focused: *focus.read() == Focus::Ein,
                                         on_select: move |it| {
                                             active_ein.set(Some(it));
                                         },
@@ -141,6 +143,7 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
                             items: attrs.clone(),
                             selected: Some(attr.clone()),
                             active: *focus.read() == Focus::Attr,
+                            focused: *focus.read() == Focus::Attr,
                             on_select: move |it| {
                                 active_attr.set(Some(it));
                                 active_ein.set(None);
@@ -155,6 +158,7 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
                         items: attrs.clone(),
                         selected: active_attr.read().clone(),
                         active: *focus.read() == Focus::Attr,
+                        focused: *focus.read() == Focus::Attr,
                         on_select: move |it| {
                             active_attr.set(Some(it));
                             active_ein.set(None);
