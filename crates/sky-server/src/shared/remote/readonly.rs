@@ -1,10 +1,10 @@
 use crate::shared::remote::SpawnTask;
 use crate::shared::remote::client::requests::ClientRequest;
 use sky_types::db::DbStatus;
-use sky_types::storage::{BaseStore, ReadStorageError, WriteStorageError};
-use sky_types::trie::{Base, BaseId, MapBase};
+use sky_types::storage::ReadStorageError;
+use sky_types::storage::view::StoreView;
+use sky_types::trie::{Base, BaseId, BaseRead, MapBase, TrieSnap, TrieWalk};
 use std::marker::PhantomData;
-use std::ops::Deref;
 use std::sync::{Arc, RwLock};
 use tokio::sync::mpsc::Sender;
 use tokio::sync::oneshot;
@@ -22,7 +22,9 @@ impl<T: SpawnTask> Remote<T> {
     }
 }
 
-impl<T: SpawnTask> BaseStore for Remote<T> {
+impl<T: SpawnTask> StoreView for Remote<T> {}
+
+impl<T: SpawnTask> BaseRead for Remote<T> {
     fn max_id(&self) -> BaseId {
         self.status.read().unwrap().head.max_id
     }
@@ -45,47 +47,32 @@ impl<T: SpawnTask> BaseStore for Remote<T> {
         let base = recv.await.expect("recv base").expect("base");
         Ok(base)
     }
+}
 
-    fn start_id(&self) -> BaseId {
-        BaseId::ZERO
-    }
+impl<T: SpawnTask> TrieSnap for Remote<T> {
+    type Snapshot = Self;
 
-    async fn set_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
-        self.status.write().unwrap().head.root = root;
-        Ok(())
-    }
-
-    fn with_root(&self, new: Option<MapBase>) -> Self {
-        let next_status = self.status.deref().read().unwrap().with_root(new);
-        let mut new = self.clone();
-        new.status = Arc::new(RwLock::new(next_status));
-        new
-    }
-
-    async fn push_base(&mut self, _base: Base) -> Result<BaseId, WriteStorageError> {
-        unimplemented!()
-    }
-
-    async fn extend(&self) -> Result<Self, WriteStorageError>
-    where
-        Self: Sized,
-    {
-        unimplemented!()
-    }
-
-    async fn commit(self, _past: &Self) -> Result<Self, WriteStorageError>
-    where
-        Self: Sized,
-    {
-        unimplemented!()
-    }
-
-    fn snapshot(&self) -> Self {
+    fn snapshot(&self) -> Self::Snapshot {
         // Deep-clone the status so that future changes in the processing loop do not affect the
         // snapshot.
-        let deep_cloned_status = self.status.read().unwrap().clone();
+        let status = self.status.read().unwrap().clone();
         Self {
-            status: Arc::new(RwLock::new(deep_cloned_status)),
+            status: Arc::new(RwLock::new(status)),
+            ..self.clone()
+        }
+    }
+}
+
+impl<T: SpawnTask> TrieWalk for Remote<T> {
+    type Subtrie = Self;
+
+    fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
+        // Deep-clone the status so that future changes in the processing loop do not affect the
+        // snapshot.
+        let mut status = self.status.read().unwrap().clone();
+        status.head.root = subtrie_root;
+        Self {
+            status: Arc::new(RwLock::new(status)),
             ..self.clone()
         }
     }

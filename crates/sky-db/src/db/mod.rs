@@ -10,45 +10,49 @@ use crate::error::ConnectError;
 use crate::reader::DbReader;
 use crate::schema;
 pub use crate::types::*;
-use sky_types::storage::{BaseStore, ReadStorageError, StorageStatus, TrieLoad};
-use sky_types::trie::{Base, BaseId, BaseRead};
+use sky_types::storage::load::StoreLoad;
+use sky_types::storage::{MemLoad, MemView, ReadStorageError, StorageStatus};
+use sky_types::trie::{Base, BaseId, BaseRead, TrieSnap};
 pub use types::*;
 
 #[derive(Debug)]
-pub struct Db<S: BaseStore> {
+pub struct Db {
     pub(crate) schema: Schema,
-    pub(crate) trie: TrieLoad<S>,
+    pub(crate) trie: MemLoad,
 }
 
 /// Production methods for Db
-impl<S: BaseStore + Send + Sync> Db<S> {
-    pub fn to_reader(&self) -> DbReader<S> {
-        DbReader::load(self)
+impl Db {
+    pub fn to_reader(&self) -> DbReader<MemView> {
+        let schema = self.schema.clone();
+        let read_trie = self.trie.snapshot();
+        DbReader::start(schema, read_trie)
     }
 }
 
 /// Construction methods for Db
-impl<S: BaseStore + Send + Sync> Db<S> {
+impl Db {
     pub fn schema(&self) -> &Schema {
         &self.schema
     }
 
     pub fn status(&self) -> StorageStatus {
-        let max_id = self.trie.max_id();
-        let root = self.trie.read_root();
+        let view = self.trie.snapshot();
+        let max_id = view.max_id();
+        let root = view.read_root();
         StorageStatus { max_id, root }
     }
 
     /// Keep until we figure out a better api for sky-server.
     pub async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
-        self.trie.read_base(id).await
+        self.trie.snapshot().read_base(id).await
     }
 
-    pub async fn new(storage: S, db_spec: impl Into<DbSpec>) -> Result<Self, ConnectError> {
+    pub async fn new(storage: MemLoad, db_spec: impl Into<DbSpec>) -> Result<Self, ConnectError> {
         let db_spec = db_spec.into();
         let attr_specs = db_spec.as_ref();
         let (schema, trie) = {
-            let mut trie = TrieLoad::load(storage);
+            let mut trie = storage;
             let mut max_eid = MaxEid::read(&trie).await?;
             let mut schema = Schema::starter();
             {
@@ -73,10 +77,10 @@ impl<S: BaseStore + Send + Sync> Db<S> {
         Ok(db)
     }
 
-    pub async fn load(storage: S) -> Self {
+    pub async fn load(storage: MemLoad) -> Self {
         let starter_db = Db {
             schema: Schema::starter(),
-            trie: TrieLoad::load(storage),
+            trie: storage,
         };
         let db = Db {
             schema: schema::load(&starter_db).await,
@@ -86,8 +90,8 @@ impl<S: BaseStore + Send + Sync> Db<S> {
     }
 }
 
-impl<S: BaseStore + Clone> Db<S> {
-    pub fn close(self) -> S {
-        self.trie.close()
+impl Db {
+    pub fn close(self) -> MemLoad {
+        self.trie
     }
 }

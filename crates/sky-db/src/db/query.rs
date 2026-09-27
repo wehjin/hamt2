@@ -3,10 +3,9 @@ use crate::db::types::key::KEY_MAX_TXID;
 use crate::db::{Db, Txid};
 use sky_types::db::QueryError;
 use sky_types::db::{Attr, Val};
-use sky_types::storage::BaseStore;
-use sky_types::trie::*;
+use sky_types::trie::{TrieQuery, TrieValue};
 
-impl<S: BaseStore + Send + Sync> Db<S> {
+impl Db {
     pub async fn max_tx(&self) -> Result<Txid, QueryError> {
         let Some(TrieValue::U32(value)) = self.trie.query(KEY_MAX_TXID).await? else {
             panic!("max_tx not found");
@@ -26,13 +25,14 @@ mod tests {
     use sky_types::db::Transact;
     use sky_types::db::datom;
     use sky_types::db::{dat, ent};
-    use sky_types::storage::Mem;
+    use sky_types::storage::MemLoad;
+    use sky_types::storage::load::StoreLoad;
 
     #[tokio::test]
     async fn ev_stream_test() -> anyhow::Result<()> {
         let count = || Attr::from("counter/count");
         let schema = vec![count()];
-        let storage = Mem::new();
+        let storage = MemLoad::new();
         let mut db = Db::new(storage, schema.clone()).await?;
         db.transact(vec![
             datom::add(ent(10), count(), dat(Val::from(10))),

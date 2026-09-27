@@ -1,3 +1,4 @@
+use crate::storage::load::StoreLoad;
 use crate::storage::mem_load_new;
 use crate::trie::{TrieInsert, TrieQuery, TrieValue};
 use crate::trie::{TrieSnap, TrieStream};
@@ -34,13 +35,16 @@ async fn multiple_insertions_work() {
     let mut trie = mem_load_new();
     trie.edit(async |edit| {
         edit.insert(1, 1).await?;
-        let values = edit.u32_stream().collect::<HashMap<i32, u32>>().await;
-        assert_eq!(values.get(&1), Some(&1));
-
+        Ok(())
+    })
+    .await
+    .unwrap();
+    let values = trie.u32_stream().collect::<HashMap<i32, u32>>().await;
+    assert_eq!(values.get(&1), Some(&1));
+    trie.edit(async |edit| {
         edit.insert(2, 2).await?;
-        let values = edit.u32_stream().collect::<HashMap<i32, u32>>().await;
-        assert_eq!(values.get(&1), Some(&1));
-        assert_eq!(values.get(&2), Some(&2));
+        assert_eq!(TrieValue::U32(1), edit.query(1).await?.unwrap());
+        assert_eq!(TrieValue::U32(2), edit.query(2).await?.unwrap());
         Ok(())
     })
     .await

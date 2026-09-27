@@ -1,11 +1,11 @@
 use sky_db::db::Db;
 use sky_db::find::{AllEins, AttrsOfEin, EinsWithAttr};
-use sky_db::reader::DbReader;
 use sky_db::traits::DbQuery;
 use sky_types::db::Transact;
 use sky_types::db::datom;
 use sky_types::db::{Attr, ein, val};
-use sky_types::storage::Mem;
+use sky_types::storage::MemLoad;
+use sky_types::storage::load::StoreLoad;
 
 fn attr_count() -> Attr {
     Attr::from("counter/count")
@@ -13,7 +13,7 @@ fn attr_count() -> Attr {
 
 #[tokio::test]
 async fn db_reader_works() -> anyhow::Result<()> {
-    let mut db = Db::new(Mem::new(), [attr_count()]).await?;
+    let mut db = Db::new(MemLoad::new(), [attr_count()]).await?;
     db.transact([
         datom::add(1, attr_count(), val(10)),
         datom::add(2, attr_count(), val(20)),
@@ -25,7 +25,7 @@ async fn db_reader_works() -> anyhow::Result<()> {
     eins.sort();
     assert_eq!(vec![ein(1), ein(2), ein(3)], eins);
 
-    let reader = DbReader::load(&db);
+    let reader = db.to_reader();
     assert_eq!(Some(val(10)), reader.find_val(1, attr_count()).await?);
     assert_eq!(Some(val(20)), reader.find_val(2, attr_count()).await?);
     assert_eq!(Some(val(30)), reader.find_val(3, attr_count()).await?);
@@ -41,7 +41,7 @@ async fn db_reader_works() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn db_reader_finds_entities() {
-    let mut db = Db::new(Mem::new(), [attr_count()]).await.unwrap();
+    let mut db = Db::new(MemLoad::new(), [attr_count()]).await.unwrap();
     db.transact([datom::add(100, attr_count(), val(100))])
         .await
         .unwrap();
@@ -54,7 +54,7 @@ async fn db_reader_finds_entities() {
 
 #[tokio::test]
 async fn db_reader_lists_entity_attributes() {
-    let mut db = Db::new(Mem::new(), [attr_count()]).await.unwrap();
+    let mut db = Db::new(MemLoad::new(), [attr_count()]).await.unwrap();
     db.transact([datom::add(100, attr_count(), val(100))])
         .await
         .unwrap();

@@ -6,7 +6,6 @@ use sky_types::db::Datom;
 use sky_types::db::QueryError;
 use sky_types::db::datom;
 use sky_types::db::{Attr, Ein, Ent};
-use sky_types::storage::BaseStore;
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename = "basis")]
@@ -51,7 +50,7 @@ impl<'a> Pull<'a> for Basis {
         ]
     }
 
-    async fn pull<S: BaseStore + Send + Sync>(db: &Db<S>, eid: Ein) -> Result<Self, QueryError> {
+    async fn pull(db: &Db, eid: Ein) -> Result<Self, QueryError> {
         let symbol = db.find_val(eid, Self::symbol()).await?.expect("symbol");
         let shares = db.find_val(eid, Self::shares()).await?.expect("shares");
         let price_each = db

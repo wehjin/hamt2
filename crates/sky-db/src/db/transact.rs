@@ -5,9 +5,9 @@ use crate::db::types::ent_eid::EntEid;
 use sky_types::db::Transact;
 use sky_types::db::{Dat, Ent, val};
 use sky_types::db::{Datom, TransactError};
-use sky_types::storage::BaseStore;
+use sky_types::storage::load::StoreLoad;
 
-impl<S: BaseStore + Send + Sync> Transact for Db<S> {
+impl Transact for Db {
     async fn transact(
         &mut self,
         datoms: impl Into<Vec<Datom>>,

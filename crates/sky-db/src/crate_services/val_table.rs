@@ -3,13 +3,10 @@ use crate::db::types::key::KEY_VAL_TABLE;
 use crate::db::vid::Vid;
 use sky_types::db::Val;
 use sky_types::db::{QueryError, TransactError};
-use sky_types::storage::{BaseStore, TrieEdit};
+use sky_types::storage::MemEdit;
 use sky_types::trie::*;
 
-pub async fn insert<S>(trie: &mut TrieEdit<S>, val: Val) -> Result<Vid, TransactError>
-where
-    S: BaseStore + Send + Sync,
-{
+pub async fn insert(trie: &mut MemEdit, val: Val) -> Result<Vid, TransactError> {
     let bytes = match &val {
         Val::U32(u) => &u.to_be_bytes(),
         Val::String(s) => s.as_bytes(),
@@ -78,15 +75,12 @@ const SUBKEY_BYTES: i32 = 100;
 const VAL_TYPE_U32: u8 = 0;
 const VAL_TYPE_STRING: u8 = 1;
 
-async fn insert_bytes<S>(
-    trie: &mut TrieEdit<S>,
+async fn insert_bytes(
+    trie: &mut MemEdit,
     hash: i32,
     bytes: &[u8],
     bytes_type: u8,
-) -> Result<(), TransactError>
-where
-    S: BaseStore,
-{
+) -> Result<(), TransactError> {
     let u32_stream = u32::Stream::new(bytes, SUBKEY_BYTES);
     for (u32_subkey, u32_value) in u32_stream {
         trie.deep_insert(
@@ -169,13 +163,14 @@ async fn find_hash_trie<T: TrieWalk>(
 
 #[cfg(test)]
 mod tests {
-	use super::*;
-	use sky_types::db::{Val, val};
-	use sky_types::storage::{mem_edit_new, mem_load_new};
+    use super::*;
+    use sky_types::db::{Val, val};
+    use sky_types::storage::MemLoad;
+    use sky_types::storage::load::StoreLoad;
 
-	#[tokio::test]
+    #[tokio::test]
     async fn insert_and_query() {
-        let mut trie = mem_load_new();
+        let mut trie = MemLoad::new();
         let (vids, vals) = trie
             .edit(async |trie| {
                 let mut vids = Vec::new();
@@ -198,7 +193,7 @@ mod tests {
 
     #[tokio::test]
     async fn negative_numbers() {
-        let mut trie = mem_edit_new();
+        let mut trie = MemEdit::new();
         let vid = insert(&mut trie, val(-1)).await.expect("Failed to insert");
         let table_val = query(&trie, vid).await.expect("Failed to query");
         assert_eq!(Some(val(-1)), table_val);
@@ -206,7 +201,7 @@ mod tests {
 
     #[tokio::test]
     async fn same_value_inserted_twice() {
-        let mut trie = mem_load_new();
+        let mut trie = MemLoad::new();
         let vid = trie
             .edit(async |trie| {
                 let vid = insert(trie, val(101)).await?;
@@ -222,7 +217,7 @@ mod tests {
 
     #[tokio::test]
     async fn string_insert_and_query() {
-        let mut trie = mem_load_new();
+        let mut trie = MemLoad::new();
         let vid = trie
             .edit(async |trie| {
                 let vid = insert(trie, Val::String("hello".into())).await?;

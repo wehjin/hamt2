@@ -7,6 +7,7 @@ use crate::trie::{
 };
 use anyhow::anyhow;
 use futures::Stream;
+use std::ops::Deref;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -33,13 +34,13 @@ impl StoreLoad for MemLoad {
 
     async fn begin_edit(&self) -> Result<Self::Edit, anyhow::Error> {
         let edit = MemEdit {
-            past: self.inner.snapshot(),
+            past: Arc::new(self.inner.snapshot()),
             bases: vec![],
             root: self.inner.read_root(),
         };
         Ok(edit)
     }
-    async fn commit_edit(&mut self, mut edit: Self::Edit) -> Result<(), anyhow::Error> {
+    async fn commit_edit(&mut self, edit: Self::Edit) -> Result<(), anyhow::Error> {
         if edit.past.max_id() != self.inner.max_id()
             || edit.past.read_root() != self.inner.read_root()
         {
@@ -47,8 +48,16 @@ impl StoreLoad for MemLoad {
         }
         let max_id = edit.max_id();
         let root = edit.root;
-        let bases = self.inner.bases.clone();
-        bases.write().await.append(&mut edit.bases);
+        let bases = {
+            let mut edit_bases = edit
+                .bases
+                .into_iter()
+                .map(|base| base.deref().clone())
+                .collect();
+            let bases = self.inner.bases.clone();
+            bases.write().await.append(&mut edit_bases);
+            bases
+        };
         self.inner = MemView {
             bases,
             max_id,

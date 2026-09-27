@@ -47,19 +47,20 @@ impl Program {
 
 #[cfg(test)]
 mod tests {
-	use super::*;
-	use crate::crate_services::datalog::atom::atom;
-	use crate::crate_services::datalog::rule::rule;
-	use crate::crate_services::datalog::term::term;
-	use crate::crate_services::datalog::var::var;
-	use crate::db::Db;
-	use sky_types::db::Transact;
-	use sky_types::db::datom;
-	use sky_types::db::{Attr, ent, val};
-	use sky_types::storage::Mem;
+    use super::*;
+    use crate::crate_services::datalog::atom::atom;
+    use crate::crate_services::datalog::rule::rule;
+    use crate::crate_services::datalog::term::term;
+    use crate::crate_services::datalog::var::var;
+    use crate::db::Db;
+    use sky_types::db::Transact;
+    use sky_types::db::datom;
+    use sky_types::db::{Attr, ent, val};
+    use sky_types::storage::MemLoad;
+    use sky_types::storage::load::StoreLoad;
 
-	fn advisor() -> Attr {
-		Attr::from("member/advisor")
+    fn advisor() -> Attr {
+        Attr::from("member/advisor")
     }
     fn name() -> Attr {
         Attr::from("member/name")
@@ -77,7 +78,7 @@ mod tests {
     #[tokio::test]
     async fn program_test() -> anyhow::Result<()> {
         let schema = vec![advisor(), name()];
-        let mut storage = Mem::new();
+        let mut storage = MemLoad::new();
         {
             let mut db = Db::new(storage, schema.clone()).await?;
             db.transact([

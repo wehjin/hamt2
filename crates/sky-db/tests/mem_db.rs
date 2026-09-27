@@ -4,7 +4,8 @@ use sky_db::traits::DbQuery;
 use sky_types::db::Transact;
 use sky_types::db::datom;
 use sky_types::db::{Attr, val};
-use sky_types::storage::Mem;
+use sky_types::storage::MemLoad;
+use sky_types::storage::load::StoreLoad;
 
 fn attr_count() -> Attr {
     Attr::from("counter/count")
@@ -12,7 +13,7 @@ fn attr_count() -> Attr {
 
 #[tokio::test]
 async fn mem_db_works() -> anyhow::Result<()> {
-    let mut db = Db::new(Mem::new(), [attr_count()]).await?;
+    let mut db = Db::new(MemLoad::new(), [attr_count()]).await?;
     db.transact([
         datom::add(1, attr_count(), val(10)),
         datom::add(2, attr_count(), val(20)),

@@ -1,86 +1,80 @@
-use crate::storage::ReadStorageError;
-use crate::storage::traits::BaseStore;
-use crate::trie::TrieSnap;
+use crate::storage::view::StoreView;
 use crate::trie::TrieWalk;
-use crate::trie::{Base, BaseId, BaseRead, MapBase};
-use std::ops::Deref;
-use std::sync::Arc;
+use crate::trie::{MapBase, TrieQuery, TrieQueryError, TrieValue};
+use crate::trie::{TrieSnap, TrieStream};
+use futures::Stream;
 
-#[derive(Debug)]
-pub struct TrieView<S: BaseStore> {
-    pub(crate) past: Option<Arc<TrieView<S>>>,
-    pub(crate) store: Arc<S>,
+#[derive(Debug, Clone)]
+pub struct TrieView<S: StoreView> {
+    pub(crate) inner: S,
 }
 
-impl<S: BaseStore> TrieView<S> {
-    pub fn load(store: S) -> Self {
-        Self {
-            past: None,
-            store: Arc::new(store),
-        }
-    }
-    pub fn store(&self) -> &S {
-        &self.store.deref()
-    }
-}
-
-impl<S: BaseStore> Clone for TrieView<S> {
-    fn clone(&self) -> Self {
-        let past = self.past.clone();
-        let store = self.store.clone();
-        Self { past, store }
-    }
-}
-
-impl<S: BaseStore + Send + Sync> TrieWalk for TrieView<S> {
-    type Subtrie = TrieView<S>;
+impl<S: StoreView> TrieWalk for TrieView<S> {
+    type Subtrie = Self;
 
     fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
-        let past = self.past.clone();
-        let store = Arc::new(self.store.with_root(Some(subtrie_root)));
-        Self { past, store }
+        Self {
+            inner: self.inner.to_subtrie(subtrie_root),
+        }
     }
 }
 
-impl<S: BaseStore + Send + Sync> TrieSnap for TrieView<S> {
-    type Snapshot = TrieView<S>;
+impl<S: StoreView> StoreView for TrieView<S> {}
+
+impl<S: StoreView> TrieStream for TrieView<S> {
+    fn map_base_stream(&self) -> impl Stream<Item = (i32, MapBase)> {
+        self.inner.map_base_stream()
+    }
+
+    fn u32_stream(&self) -> impl Stream<Item = (i32, u32)> {
+        self.inner.u32_stream()
+    }
+}
+
+impl<S: StoreView> TrieSnap for TrieView<S> {
+    type Snapshot = Self;
 
     fn snapshot(&self) -> Self::Snapshot {
-        self.clone()
+        Self {
+            inner: self.inner.snapshot(),
+        }
     }
 }
 
-impl<S: BaseStore> BaseRead for TrieView<S> {
-    fn max_id(&self) -> BaseId {
-        self.store.max_id()
+impl<S: StoreView> TrieQuery for TrieView<S> {
+    async fn query(&self, key: i32) -> Result<Option<TrieValue>, TrieQueryError> {
+        self.inner.query(key).await
     }
 
-    fn read_root(&self) -> MapBase {
-        self.store.read_root()
+    async fn query_u32(&self, key: i32) -> Result<Option<u32>, TrieQueryError> {
+        self.inner.query_u32(key).await
     }
 
-    async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
-        if id >= self.store.start_id() {
-            self.store.read_base(id).await
-        } else if let Some(past) = &self.past {
-            Box::pin(past.read_base(id)).await
-        } else {
-            Ok(Base::empty())
-        }
+    async fn query_all(&self) -> Result<Vec<(i32, TrieValue)>, TrieQueryError> {
+        self.inner.query_all().await
+    }
+
+    async fn deep_query<const N: usize>(
+        &self,
+        key: [i32; N],
+    ) -> Result<Option<TrieValue>, TrieQueryError> {
+        self.inner.deep_query(key).await
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::storage::{Mem, TrieView};
-    use crate::trie::TrieStream;
+    use crate::storage::load::StoreLoad;
+    use crate::storage::{MemLoad, TrieView};
+    use crate::trie::{TrieSnap, TrieStream};
     use futures::StreamExt;
 
     #[tokio::test]
     async fn stream_exists() {
-        let trie = TrieView::load(Mem::new());
-        let stream = trie.u32_stream();
-        let values: Vec<(i32, u32)> = stream.collect().await;
+        let trie = TrieView {
+            inner: MemLoad::new().snapshot(),
+        };
+        let values: Vec<(i32, u32)> = trie.u32_stream().collect().await;
         assert_eq!(values, vec![]);
     }
 }

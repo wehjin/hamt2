@@ -12,7 +12,15 @@ pub struct MemView {
     pub(crate) root: MapBase,
 }
 
-impl MemView {}
+impl MemView {
+    pub fn new() -> Self {
+        Self {
+            bases: Arc::new(RwLock::new(vec![Base::empty()])),
+            max_id: BaseId::ZERO,
+            root: MapBase::empty(),
+        }
+    }
+}
 
 impl BaseRead for MemView {
     fn max_id(&self) -> BaseId {

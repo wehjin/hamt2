@@ -1,70 +1,87 @@
-use crate::storage::traits::BaseStore;
+use crate::storage::load::StoreLoad;
 use crate::storage::trie_edit::TrieEdit;
-use crate::storage::{Mem, ReadStorageError, TrieView};
-use crate::trie::TrieSnap;
-use crate::trie::TrieWalk;
-use crate::trie::{Base, BaseId, BaseRead, MapBase};
-use std::ops::Deref;
+use crate::storage::{MemLoad, TrieView};
+use crate::trie::{MapBase, TrieQuery, TrieQueryError, TrieSnap, TrieStream, TrieValue, TrieWalk};
+use anyhow::Error;
+use futures::Stream;
 
-pub fn mem_load_new() -> TrieLoad<Mem> {
-    TrieLoad::load(Mem::new())
+pub fn mem_load_new() -> TrieLoad<MemLoad> {
+    TrieLoad::new()
 }
 
 #[derive(Debug)]
-pub struct TrieLoad<S: BaseStore> {
-    inner: TrieView<S>,
+pub struct TrieLoad<S: StoreLoad> {
+    inner: S,
 }
 
-impl<S: BaseStore + Send + Sync> TrieLoad<S> {
-    pub fn load(store: S) -> Self {
-        let inner = TrieView::load(store);
-        Self { inner }
+impl<S: StoreLoad> StoreLoad for TrieLoad<S> {
+    type Edit = TrieEdit<S::Edit>;
+    type View = TrieView<S::View>;
+
+    fn new() -> Self {
+        Self { inner: S::new() }
     }
 
-    pub async fn edit<F, Out>(&mut self, f: F) -> anyhow::Result<Out>
-    where
-        F: AsyncFnOnce(&mut TrieEdit<S>) -> anyhow::Result<Out>,
-    {
-        let mut edit = TrieEdit::extend(&self.inner).await?;
-        let out = f(&mut edit).await?;
-        let committed = edit.commit().await?;
-        self.inner = committed.snapshot();
-        Ok(out)
+    async fn begin_edit(&self) -> Result<Self::Edit, Error> {
+        let edit = TrieEdit {
+            inner: self.inner.begin_edit().await?,
+        };
+        Ok(edit)
     }
-}
 
-impl<S: BaseStore + Clone> TrieLoad<S> {
-    pub fn close(self) -> S {
-        self.inner.store.deref().clone()
+    async fn commit_edit(&mut self, edit: Self::Edit) -> Result<(), Error> {
+        let edit = edit.inner;
+        self.inner.commit_edit(edit).await
     }
 }
 
-impl<S: BaseStore + Send + Sync> TrieWalk for TrieLoad<S> {
-    type Subtrie = TrieView<S>;
+impl<S: StoreLoad> TrieWalk for TrieLoad<S> {
+    type Subtrie = TrieView<S::View>;
 
     fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
-        self.inner.to_subtrie(subtrie_root)
+        TrieView {
+            inner: self.inner.to_subtrie(subtrie_root),
+        }
     }
 }
 
-impl<S: BaseStore + Send + Sync> TrieSnap for TrieLoad<S> {
-    type Snapshot = TrieView<S>;
+impl<S: StoreLoad> TrieStream for TrieLoad<S> {
+    fn map_base_stream(&self) -> impl Stream<Item = (i32, MapBase)> {
+        self.inner.map_base_stream()
+    }
+
+    fn u32_stream(&self) -> impl Stream<Item = (i32, u32)> {
+        self.inner.u32_stream()
+    }
+}
+
+impl<S: StoreLoad> TrieSnap for TrieLoad<S> {
+    type Snapshot = TrieView<S::View>;
 
     fn snapshot(&self) -> Self::Snapshot {
-        self.inner.snapshot()
+        TrieView {
+            inner: self.inner.snapshot(),
+        }
     }
 }
 
-impl<S: BaseStore> BaseRead for TrieLoad<S> {
-    fn max_id(&self) -> BaseId {
-        self.inner.max_id()
+impl<S: StoreLoad> TrieQuery for TrieLoad<S> {
+    async fn query(&self, key: i32) -> Result<Option<TrieValue>, TrieQueryError> {
+        self.inner.query(key).await
     }
 
-    fn read_root(&self) -> MapBase {
-        self.inner.read_root()
+    async fn query_u32(&self, key: i32) -> Result<Option<u32>, TrieQueryError> {
+        self.inner.query_u32(key).await
     }
 
-    async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
-        self.inner.read_base(id).await
+    async fn query_all(&self) -> Result<Vec<(i32, TrieValue)>, TrieQueryError> {
+        self.inner.query_all().await
+    }
+
+    async fn deep_query<const N: usize>(
+        &self,
+        key: [i32; N],
+    ) -> Result<Option<TrieValue>, TrieQueryError> {
+        self.inner.deep_query(key).await
     }
 }

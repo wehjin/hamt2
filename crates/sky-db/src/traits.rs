@@ -4,7 +4,6 @@ use crate::find::ValsInSlot;
 use futures::FutureExt;
 use sky_types::db::schema::Schema;
 use sky_types::db::{Attr, Ein, FindResult, QueryError, Val};
-use sky_types::storage::BaseStore;
 use sky_types::trie::TrieWalk;
 
 #[allow(async_fn_in_trait)]
@@ -26,7 +25,7 @@ pub trait DbQuery {
     }
 }
 
-impl<S: BaseStore + Send + Sync> DbQuery for Db<S> {
+impl DbQuery for Db {
     async fn find<F: Find>(&self, find: F) -> Vec<F::Output> {
         find.apply(&self.trie, &self.schema).await
     }

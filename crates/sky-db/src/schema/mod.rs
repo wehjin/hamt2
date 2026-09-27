@@ -5,15 +5,11 @@ use schema_loader::SchemaLoader;
 use sky_types::db;
 use sky_types::db::schema::Schema;
 use sky_types::db::{Dir, TransactError};
-use sky_types::storage::{BaseStore, TrieEdit};
+use sky_types::storage::MemEdit;
 
 pub mod schema_loader;
 
-pub async fn save<S: BaseStore + Send + Sync>(
-    schema: &Schema,
-    trie: &mut TrieEdit<S>,
-    txid: Txid,
-) -> Result<(), TransactError> {
+pub async fn save(schema: &Schema, trie: &mut MemEdit, txid: Txid) -> Result<(), TransactError> {
     for (_, attribute) in schema.attr_table.iter() {
         let ein = attribute.ein;
         db_trie::with_update(
@@ -39,7 +35,7 @@ pub async fn save<S: BaseStore + Send + Sync>(
     }
     Ok(())
 }
-pub async fn load<S: BaseStore + Send + Sync>(db: &Db<S>) -> Schema {
+pub async fn load(db: &Db) -> Schema {
     let mut schema = db.schema.clone();
     let loader = SchemaLoader;
     let attributes = loader.apply(&db.trie, &db.schema).await;
