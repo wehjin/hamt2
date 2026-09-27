@@ -7,10 +7,17 @@ use ratatui_kit::ratatui::prelude::{Constraint, Line, Span, Style};
 use sky_types::db;
 use sky_types::db::{Attr, Ein, ein};
 
+#[derive(Copy, Clone, PartialEq, Eq)]
+enum Focus {
+    Ein,
+    Attr,
+}
+
 #[component]
 pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
     let mut exit = hooks.use_exit();
     let palette = hooks.use_palette();
+    let mut focus = hooks.use_state(|| Focus::Attr);
     let mut active_attr = hooks.use_state(|| None::<Attr>);
     let mut active_ein = hooks.use_state(|| None::<Ein>);
     let eins_state = hooks.use_state(|| Some(vec![ein(3), ein(5), ein(8), ein(13), ein(21)]));
@@ -30,12 +37,20 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
                 active_ein.set(None);
             } else {
                 active_attr.set(None);
+                focus.set(Focus::Attr);
             }
+            return EventResult::Consumed;
         } else if matches!(
             (key.code, key.modifiers),
             (KeyCode::Char('q'), KeyModifiers::CONTROL)
         ) {
             exit();
+            return EventResult::Consumed;
+        } else if matches!(key.code, KeyCode::Char('h') | KeyCode::Left) {
+            focus.set(Focus::Ein);
+            return EventResult::Consumed;
+        } else if matches!(key.code, KeyCode::Char('l') | KeyCode::Right) {
+            focus.set(Focus::Attr);
             return EventResult::Consumed;
         }
         EventResult::Ignored
@@ -76,6 +91,7 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
                                         EinSelect(
                                             items: eins,
                                             selected: Some(ein.clone()),
+                                            active: *focus.read() == Focus::Ein,
                                             on_select: move |it| {
                                                 active_ein.set(Some(it));
                                             },
@@ -102,6 +118,7 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
                                     EinSelect(
                                         items: eins,
                                         selected: active_ein.read().clone(),
+                                        active: *focus.read() == Focus::Ein,
                                         on_select: move |it| {
                                             active_ein.set(Some(it));
                                         },
@@ -123,8 +140,10 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
                         AttrSelect(
                             items: attrs.clone(),
                             selected: Some(attr.clone()),
+                            active: *focus.read() == Focus::Attr,
                             on_select: move |it| {
                                 active_attr.set(Some(it));
+                                focus.set(Focus::Ein);
                             }
                         )
                     }
@@ -134,8 +153,10 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
                     AttrSelect(
                         items: attrs.clone(),
                         selected: active_attr.read().clone(),
+                        active: *focus.read() == Focus::Attr,
                         on_select: move |it| {
                             active_attr.set(Some(it));
+                            focus.set(Focus::Ein);
                         }
                     )
                 }

@@ -7,6 +7,7 @@ use std::collections::HashMap;
 pub struct EinSelectProps {
     pub items: Vec<Ein>,
     pub selected: Option<Ein>,
+    pub active: bool,
     pub on_select: Handler<'static, Ein>,
 }
 
@@ -41,6 +42,7 @@ pub fn EinSelect(props: &mut EinSelectProps, hooks: Hooks) -> impl Into<AnyEleme
         Select<Line<'static>>(
             items: rows,
             default_index: index,
+            active: props.active,
             highlight_symbol: "> ",
             empty_message: "No entities",
             on_select: move |line: Line<'static>| {

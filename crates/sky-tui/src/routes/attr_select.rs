@@ -6,6 +6,7 @@ use std::collections::HashMap;
 pub struct AttrSelectProps {
     pub items: Vec<Attr>,
     pub selected: Option<Attr>,
+    pub active: bool,
     pub on_select: Handler<'static, Attr>,
 }
 
@@ -29,6 +30,7 @@ pub fn AttrSelect(props: &mut AttrSelectProps) -> impl Into<AnyElement<'static>>
         Select<String>(
             items: items,
             default_index: index,
+            active: props.active,
             highlight_symbol: "> ",
             empty_message: "No attributes",
             on_select: move |item: String| {
