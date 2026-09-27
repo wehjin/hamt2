@@ -62,7 +62,11 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
                 View(flex_direction: Direction::Horizontal, gap: 2) {
                     Border(
                         width: Constraint::Fill(1),
-                        top_title: Line::from(format!(" [{}] ← Entities ", attr)).centered(),
+                        top_title: Line::styled(
+                            format!(" [{}] ← Entities ", attr),
+                            Style::new().fg(palette.accent).bold(),
+                        )
+                        .centered(),
                     ) {
                         if let Some(ein) = active_ein.read().clone() {
                             View(flex_direction: Direction::Horizontal, gap: 1) {
