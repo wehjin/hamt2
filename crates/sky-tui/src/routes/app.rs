@@ -147,7 +147,6 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
                             on_select: move |it| {
                                 active_attr.set(Some(it));
                                 active_ein.set(None);
-                                focus.set(Focus::Ein);
                             }
                         )
                     }
