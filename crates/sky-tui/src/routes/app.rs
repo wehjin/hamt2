@@ -1,6 +1,7 @@
 use crate::routes::attr_select::AttrSelect;
 use ratatui_kit::crossterm::event::{Event, KeyCode, KeyEventKind, KeyModifiers};
 use ratatui_kit::prelude::*;
+use ratatui_kit::ratatui::layout::Direction;
 use ratatui_kit::ratatui::prelude::{Constraint, Line, Style};
 use sky_types::db;
 use sky_types::db::Attr;
@@ -34,12 +35,22 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
     element!(
         Center(width: Constraint::Length(48), height: Constraint::Length(9)) {
             if let Some(active_attr) = active_attr.read().clone() {
-                Text(
-                    text: Line::styled(
-                        format!("{}", active_attr),
-                        Style::new().green().bold()
-                    ).centered()
-                )
+                View(flex_direction: Direction::Horizontal, gap: 2) {
+                    View(width: Constraint::Fill(1)) {
+                        Text(
+                            text: Line::styled(
+                                format!("{}", active_attr),
+                                Style::new().green().bold()
+                            ).centered()
+                        )
+                    }
+                    View(width: Constraint::Percentage(30)) {
+                        AttrSelect(
+                            items: attrs.clone(),
+                            selected: Some(active_attr.clone()),
+                        )
+                    }
+                }
             } else {
                 AttrSelect(
                     items: attrs.clone(),
