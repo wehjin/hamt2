@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
+use std::ops::Deref;
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub struct Attr(pub String);
@@ -10,6 +11,14 @@ impl Attr {
     }
     pub fn to_name(&self) -> String {
         self.0.clone()
+    }
+}
+
+impl Deref for Attr {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
