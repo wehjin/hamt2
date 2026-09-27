@@ -36,13 +36,20 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
         View {
             if let Some(attr) = active_attr.read().clone() {
                 View(flex_direction: Direction::Horizontal, gap: 2) {
-                    View(width: Constraint::Fill(1)) {
-                        Center(width: Constraint::Length(48), height: Constraint::Length(9)) {
+                    Border(
+                        width: Constraint::Fill(1),
+                        top_title: Line::from(format!(" [{}] ← Entities ", attr)).centered(),
+                    ) {
+                        Center(
+                            width: Constraint::Length(48),
+                            height: Constraint::Length(9),
+                        ) {
                             Text(
                                 text: Line::styled(
                                     format!("{}", attr),
-                                    Style::new().green().bold()
-                                ).centered()
+                                    Style::new().green().bold(),
+                                )
+                                .centered(),
                             )
                         }
                     }
