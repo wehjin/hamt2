@@ -3209,6 +3209,7 @@ dependencies = [
 name = "sky-tui"
 version = "0.1.0"
 dependencies = [
+ "log",
  "ratatui-kit",
  "tokio",
 ]

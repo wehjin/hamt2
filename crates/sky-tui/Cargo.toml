@@ -6,4 +6,5 @@ edition.workspace = true
 [dependencies]
 ratatui-kit = { version = "0.10.3", features = ["full"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }
+log = "0.4.34"
 
