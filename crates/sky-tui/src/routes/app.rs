@@ -50,17 +50,46 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
                         top_title: Line::from(format!(" [{}] ← Entities ", attr)).centered(),
                     ) {
                         if let Some(ein) = active_ein.read().clone() {
-                            Center(
-                                width: Constraint::Length(48),
-                                height: Constraint::Length(9),
-                            ) {
-                                Text(
-                                    text: Line::from(vec![
-                                        Span::styled("◆ ", Style::new().fg(palette.accent)),
-                                        Span::styled(ein.0.to_string(), Style::new().bold()),
-                                    ])
-                                    .centered(),
-                                )
+                            View(flex_direction: Direction::Horizontal, gap: 1) {
+                                View(width: Constraint::Fill(1)) {
+                                    Center(
+                                        width: Constraint::Length(48),
+                                        height: Constraint::Length(9),
+                                    ) {
+                                        Text(
+                                            text: Line::from(vec![
+                                                Span::styled(
+                                                    "◆ ",
+                                                    Style::new().fg(palette.accent),
+                                                ),
+                                                Span::styled(
+                                                    ein.0.to_string(),
+                                                    Style::new().bold(),
+                                                ),
+                                            ])
+                                            .centered(),
+                                        )
+                                    }
+                                }
+                                View(width: Constraint::Percentage(20)) {
+                                    if let Some(eins) = eins_state.read().clone() {
+                                        EinSelect(
+                                            items: eins,
+                                            selected: Some(ein.clone()),
+                                            on_select: move |it| {
+                                                active_ein.set(Some(it));
+                                            },
+                                        )
+                                    } else {
+                                        Text(
+                                            text: Line::styled(
+                                                "loading".to_string(),
+                                                Style::new().green().bold(),
+                                            )
+                                            .centered(),
+                                        )
+                                    }
+                                }
                             }
                         } else {
                             Center(
