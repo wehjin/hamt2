@@ -2,19 +2,23 @@ mod attr;
 mod dat;
 mod ein;
 mod ent;
+mod fill;
 mod find_result;
-pub mod schema;
 mod val;
+
+pub mod schema;
 
 use crate::db::schema::Schema;
 use crate::storage::StorageStatus;
 use crate::trie::MapBase;
+use serde::{Deserialize, Serialize};
+
 pub use attr::*;
 pub use dat::*;
 pub use ein::*;
 pub use ent::*;
+pub use fill::*;
 pub use find_result::*;
-use serde::{Deserialize, Serialize};
 pub use val::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

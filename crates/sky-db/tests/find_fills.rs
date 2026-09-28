@@ -1,0 +1,23 @@
+use sky_db::db::Db;
+use sky_db::find::FillsOfEin;
+use sky_db::traits::DbQuery;
+use sky_types::db::{Attr, Fill, Transact, Val, dat, datom, ein};
+use sky_types::storage::MemLoad;
+use sky_types::storage::load::StoreLoad;
+
+fn attr_count() -> Attr {
+    Attr::from("counter/count")
+}
+
+#[tokio::test]
+async fn find_fills_works() {
+    let ein = ein(300);
+
+    let mut db = Db::new(MemLoad::new(), [attr_count()]).await.unwrap();
+    db.transact([datom::add(ein, attr_count(), dat(300))])
+        .await
+        .unwrap();
+
+    let fills = db.find(FillsOfEin(ein)).await;
+    assert_eq!(fills, vec![Fill(attr_count(), Val::U32(300))]);
+}

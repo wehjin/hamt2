@@ -152,6 +152,10 @@ impl AttrEin {
     pub fn ein(&self) -> Ein {
         self.0
     }
+
+    pub fn to_i32(&self) -> i32 {
+        self.0.to_i32()
+    }
 }
 impl From<i32> for AttrEin {
     fn from(ein: i32) -> Self {
@@ -175,11 +179,38 @@ where
     }
 }
 
+pub async fn list_entity_fills<T>(trie: &T, ein: Ein, attr_ein: AttrEin) -> Vec<(AttrEin, Vid)>
+where
+    T: TrieWalk,
+{
+    if let Some(root) = ea_vt_subtrie(trie, ein, attr_ein).await {
+        let keys_and_values = root.query_all().await.expect("read keys and values");
+        keys_and_values
+            .into_iter()
+            .map(|(key, _)| (attr_ein, Vid::from_id(key)))
+            .collect::<Vec<_>>()
+    } else {
+        vec![]
+    }
+}
+
 async fn eavt_root<T>(trie: &T) -> Option<T::Subtrie>
 where
     T: TrieWalk,
 {
     let root_value = trie.deep_query([KEY_EAVT]).await.ok().flatten();
+    root_value.and_then(|value| trie.to_subtrie_in_value(value))
+}
+
+async fn ea_vt_subtrie<T>(trie: &T, ein: Ein, attr_ein: AttrEin) -> Option<T::Subtrie>
+where
+    T: TrieWalk,
+{
+    let root_value = trie
+        .deep_query([KEY_EAVT, ein.to_i32(), attr_ein.to_i32()])
+        .await
+        .ok()
+        .flatten();
     root_value.and_then(|value| trie.to_subtrie_in_value(value))
 }
 
