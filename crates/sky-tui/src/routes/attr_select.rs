@@ -1,6 +1,5 @@
-use crate::styles::highlight_style;
+use crate::styles::{border_style, highlight_style};
 use ratatui_kit::prelude::*;
-use ratatui_kit::ratatui::prelude::Style;
 use sky_types::db::Attr;
 use std::collections::HashMap;
 
@@ -17,11 +16,7 @@ pub struct AttrSelectProps {
 pub fn AttrSelect(props: &mut AttrSelectProps, hooks: Hooks) -> impl Into<AnyElement<'static>> {
     let mut on_select = props.on_select.take();
     let palette = hooks.use_palette();
-    let border_style = if props.focused {
-        Style::new().fg(palette.border_active)
-    } else {
-        Style::new().fg(palette.border)
-    };
+    let border_style = border_style(palette, props.focused);
     let highlight_style = highlight_style(palette, props.focused);
     let lookup = props
         .items

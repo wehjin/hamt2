@@ -1,4 +1,4 @@
-use crate::styles::highlight_style;
+use crate::styles::{border_style, highlight_style};
 use ratatui_kit::prelude::*;
 use ratatui_kit::ratatui::prelude::{Line, Span, Style};
 use sky_types::db::Ein;
@@ -18,11 +18,7 @@ pub fn EinSelect(props: &mut EinSelectProps, hooks: Hooks) -> impl Into<AnyEleme
     let mut on_select = props.on_select.take();
     let palette = hooks.use_palette();
     let accent = Style::new().fg(palette.accent);
-    let border_style = if props.focused {
-        Style::new().fg(palette.border_active)
-    } else {
-        Style::new().fg(palette.border)
-    };
+    let border_style = border_style(palette, props.focused);
     let highlight_style = highlight_style(palette, props.focused);
 
     let mut items = props.items.clone();
@@ -45,7 +41,7 @@ pub fn EinSelect(props: &mut EinSelectProps, hooks: Hooks) -> impl Into<AnyEleme
     let index = props
         .selected
         .and_then(|ein| items.iter().position(|it| it == &ein))
-        .or(Some(0));
+        .or(None);
     element!(
         Select<Line<'static>>(
             items: rows,

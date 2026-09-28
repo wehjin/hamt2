@@ -10,5 +10,6 @@ async fn main() {
 }
 
 mod components;
+mod lines;
 mod routes;
 mod styles;

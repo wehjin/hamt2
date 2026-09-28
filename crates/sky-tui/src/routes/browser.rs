@@ -1,16 +1,17 @@
 use crate::components::loading::Loading;
+use crate::lines::{print_ein, print_fill};
 use crate::routes::app::DB_VIEW;
 use crate::routes::attr_select::AttrSelect;
 use crate::routes::ein_select::EinSelect;
+use crate::styles::border_style;
 use ratatui_kit::crossterm::event::{Event, KeyCode, KeyEventKind, KeyModifiers};
 use ratatui_kit::prelude::*;
 use ratatui_kit::ratatui::layout::{Constraint, Direction};
-use ratatui_kit::ratatui::style::Style;
-use ratatui_kit::ratatui::text::{Line, Span};
-use sky_db::find::{AllAttrs, EinsWithAttr};
+use ratatui_kit::ratatui::widgets::Block;
+use sky_db::find::{AllAttrs, EinsWithAttr, FillsOfEin};
 use sky_db::reader::DbReader;
 use sky_db::traits::DbQuery;
-use sky_types::db::{Attr, Ein};
+use sky_types::db::{Attr, Ein, Fill};
 use sky_types::storage::MemView;
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -27,18 +28,6 @@ pub enum Focus {
     Attr,
 }
 
-fn print_ein<'a>(ein: Ein, palette: Palette, margins: bool) -> Line<'a> {
-    let mut spans = vec![
-        Span::styled("◆ ", Style::new().fg(palette.accent)),
-        Span::styled(ein.0.to_string(), Style::new().bold()),
-    ];
-    if margins {
-        spans.insert(0, Span::styled(" ", Style::new().bold()));
-        spans.push(Span::styled(" ", Style::new().bold()));
-    }
-    Line::from(spans)
-}
-
 async fn attrs_in_view(opt_view: &Option<DbReader<MemView>>) -> Option<Vec<Attr>> {
     if let Some(view) = opt_view {
         let view_attrs = view.find(AllAttrs).await;
@@ -49,8 +38,8 @@ async fn attrs_in_view(opt_view: &Option<DbReader<MemView>>) -> Option<Vec<Attr>
 }
 
 async fn eins_with_attr_in_view(
-    opt_attr: &Option<Attr>,
     opt_view: &Option<DbReader<MemView>>,
+    opt_attr: &Option<Attr>,
 ) -> Option<Vec<Ein>> {
     if let (Some(view), Some(attr)) = (opt_view, opt_attr) {
         let view_eins = view.find(EinsWithAttr::new(attr.clone())).await;
@@ -60,12 +49,25 @@ async fn eins_with_attr_in_view(
     }
 }
 
+async fn fills_of_ein_in_view(
+    opt_view: &Option<DbReader<MemView>>,
+    opt_ein: &Option<Ein>,
+) -> Option<Vec<Fill>> {
+    if let (Some(view), Some(ein)) = (opt_view, opt_ein) {
+        let view_fills = view.find(FillsOfEin(*ein)).await;
+        Some(view_fills)
+    } else {
+        None
+    }
+}
+
 #[component]
 pub fn Browser(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
     let db_view = hooks.use_atom(&DB_VIEW);
     let mut attrs = hooks.use_state(|| None::<Vec<Attr>>);
-    let mut active_attr = hooks.use_state(|| None::<Attr>);
     let mut eins = hooks.use_state(|| None::<Vec<Ein>>);
+    let mut fills = hooks.use_state(|| None::<Vec<Fill>>);
+    let mut active_attr = hooks.use_state(|| None::<Attr>);
     let mut active_ein = hooks.use_state(|| None::<Ein>);
 
     let palette = hooks.use_palette();
@@ -82,15 +84,26 @@ pub fn Browser(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
         attrs_deps,
     );
 
-    let eins_attr = active_attr.read().clone();
     let eins_db = db_view.read().clone();
-    let eins_deps = (eins_attr.clone(), eins_db.clone());
+    let eins_attr = active_attr.read().clone();
+    let eins_deps = (eins_db.clone(), eins_attr.clone());
     hooks.use_async_effect(
         async move {
-            let view_eins = eins_with_attr_in_view(&eins_attr, &eins_db).await;
+            let view_eins = eins_with_attr_in_view(&eins_db, &eins_attr).await;
             eins.set(view_eins);
         },
         eins_deps,
+    );
+
+    let fills_db = db_view.read().clone();
+    let fills_ein = active_ein.read().clone();
+    let fills_deps = (fills_db.clone(), fills_ein.clone());
+    hooks.use_async_effect(
+        async move {
+            let view_fills = fills_of_ein_in_view(&fills_db, &fills_ein).await;
+            fills.set(view_fills);
+        },
+        fills_deps,
     );
 
     hooks.use_event_handler(EventScope::Current, EventPriority::Normal, move |event| {
@@ -152,15 +165,22 @@ pub fn Browser(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
                     Layout::TwoColumns => Constraint::Percentage(0),
                     Layout::ThreeColumns => Constraint::Percentage(50),
                 }) {
-                    if let Some(ein) = active_ein.get() {
-                         Border(
-                                width: Constraint::Fill(1),
-                                top_title: print_ein(ein, palette, true).centered(),
+                    if let (Some(fills),Some(ein)) = (fills.read().clone(), active_ein.read().clone()) {
+                        ScrollView(
+                            flex_direction: Direction::Vertical,
+                            active: *focus.read() == Focus::Val,
+                            block: Block::bordered()
+                                    .title(print_ein(ein, palette, true).centered())
+                                    .border_style(border_style(palette, *focus.read() == Focus::Val))
                         ) {
-                            Loading()
+                            for (index, fill) in fills.into_iter().enumerate() {
+                                View(key: index, height: Constraint::Length(1)) {
+                                    Text(text: print_fill(fill, palette))
+                                }
+                            }
                         }
                     } else {
-                        Text(text: "loading".to_string())
+                        Loading()
                     }
                 }
                 View(width: match *layout.read() {
