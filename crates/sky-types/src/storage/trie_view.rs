@@ -4,7 +4,7 @@ use crate::trie::{MapBase, TrieQuery, TrieQueryError, TrieValue};
 use crate::trie::{TrieSnap, TrieStream};
 use futures::Stream;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct TrieView<S: StoreView> {
     pub(crate) inner: S,
 }

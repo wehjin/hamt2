@@ -9,7 +9,7 @@ use anyhow::anyhow;
 use futures::Stream;
 use std::ops::Deref;
 use std::sync::Arc;
-use tokio::sync::RwLock;
+use std::sync::RwLock;
 
 /// Deliberately non-Clone
 #[derive(Debug)]
@@ -55,7 +55,7 @@ impl StoreLoad for MemLoad {
                 .map(|base| base.deref().clone())
                 .collect();
             let bases = self.inner.bases.clone();
-            bases.write().await.append(&mut edit_bases);
+            bases.write().unwrap().append(&mut edit_bases);
             bases
         };
         self.inner = MemView {

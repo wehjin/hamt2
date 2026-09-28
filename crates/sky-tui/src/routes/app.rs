@@ -1,10 +1,26 @@
 use crate::routes::browser::Browser;
 use ratatui_kit::crossterm::event::{Event, KeyCode, KeyEventKind, KeyModifiers};
 use ratatui_kit::prelude::*;
+use sky_db::db::Db;
+use sky_db::reader::DbReader;
+use sky_types::db::attr;
+use sky_types::storage::load::StoreLoad;
+use sky_types::storage::{MemLoad, MemView};
+
+pub static DB_VIEW: Atom<Option<DbReader<MemView>>> = Atom::new(|| None);
 
 #[component]
 pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
     let mut exit = hooks.use_exit();
+    let mut db_view = hooks.use_atom(&DB_VIEW);
+
+    hooks.use_future(async move {
+        let spec = [attr("counter/count")];
+        let db = Db::new(MemLoad::new(), spec).await.expect("db");
+        let snap = db.to_reader();
+        db_view.set(Some(snap));
+    });
+
     hooks.use_event_handler(EventScope::Current, EventPriority::Normal, move |event| {
         let Event::Key(key) = event else {
             return EventResult::Ignored;

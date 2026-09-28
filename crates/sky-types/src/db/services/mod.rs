@@ -1,4 +1,4 @@
-use crate::db::{Dat, Ein, Ent, Val};
+use crate::db::{Attr, Dat, Ein, Ent, Val};
 
 pub mod datom;
 
@@ -7,6 +7,10 @@ pub fn val(from: impl Into<Val>) -> Val {
 }
 
 pub fn dat(from: impl Into<Dat>) -> Dat {
+    from.into()
+}
+
+pub fn attr(from: impl Into<Attr>) -> Attr {
     from.into()
 }
 

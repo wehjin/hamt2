@@ -12,13 +12,21 @@ use tokio::sync::oneshot;
 #[derive(Clone)]
 pub struct Remote<T: SpawnTask> {
     pub(crate) requester: Sender<ClientRequest>,
-    pub(crate) status: Arc<std::sync::RwLock<DbStatus>>,
+    pub(crate) status: Arc<RwLock<DbStatus>>,
     pub(crate) _spawn_local: PhantomData<T>,
 }
 
 impl<T: SpawnTask> Remote<T> {
     pub fn to_status(&self) -> DbStatus {
         self.status.read().unwrap().clone()
+    }
+}
+
+impl<T: SpawnTask> Eq for Remote<T> {}
+
+impl<T: SpawnTask> PartialEq for Remote<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.to_status() == other.to_status()
     }
 }
 

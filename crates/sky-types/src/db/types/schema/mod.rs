@@ -10,7 +10,7 @@ pub mod attr_table;
 pub mod attribute;
 pub mod cardinality;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Schema {
     pub attr_table: AttrTable,
 }

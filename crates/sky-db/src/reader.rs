@@ -4,7 +4,7 @@ use crate::traits::Find;
 use sky_types::storage::view::StoreView;
 
 /// A read-only snapshot of a [`Db`], for running queries only.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct DbReader<S: StoreView> {
     schema: Schema,
     read_trie: S,

@@ -2,8 +2,9 @@ use crate::storage::ReadStorageError;
 use crate::storage::traits::view::StoreView;
 use crate::trie::TrieWalk;
 use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieSnap};
+use std::ops::Deref;
 use std::sync::Arc;
-use tokio::sync::RwLock;
+use std::sync::RwLock;
 
 #[derive(Debug, Clone)]
 pub struct MemView {
@@ -22,6 +23,17 @@ impl MemView {
     }
 }
 
+impl Eq for MemView {}
+
+impl PartialEq for MemView {
+    fn eq(&self, other: &Self) -> bool {
+        self.root == other.root
+            && self.max_id == other.max_id
+            && self.bases.deref().read().unwrap().deref()
+                == other.bases.deref().read().unwrap().deref()
+    }
+}
+
 impl BaseRead for MemView {
     fn max_id(&self) -> BaseId {
         self.max_id
@@ -36,7 +48,7 @@ impl BaseRead for MemView {
             Base::empty()
         } else {
             let index = id.0 as usize;
-            self.bases.read().await[index].clone()
+            self.bases.read().unwrap()[index].clone()
         };
         Ok(base)
     }

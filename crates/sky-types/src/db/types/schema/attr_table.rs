@@ -7,7 +7,7 @@ use crate::db::schema::attr_spec::AttrSpec;
 use crate::db::schema::attribute::Attribute;
 use crate::db::schema::cardinality::Cardinality;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct AttrTable {
     map: HashMap<Attr, Attribute>,
     by_ein: HashMap<Ein, Attr>,

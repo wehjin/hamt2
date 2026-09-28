@@ -1,3 +1,4 @@
+use crate::routes::app::DB_VIEW;
 use crate::routes::attr_select::AttrSelect;
 use crate::routes::ein_select::EinSelect;
 use ratatui_kit::crossterm::event::{Event, KeyCode, KeyEventKind, KeyModifiers};
@@ -36,15 +37,17 @@ fn print_ein<'a>(ein: Ein, palette: Palette, margins: bool) -> Line<'a> {
 
 #[component]
 pub fn Browser(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
-    let palette = hooks.use_palette();
-    let mut focus = hooks.use_state(|| Focus::Attr);
+    let db_view = hooks.use_atom(&DB_VIEW);
+    // let db_attrs = hooks.use_async_state(move || async move {}, db_view.read().clone());
     let attrs = hooks.use_state(|| vec![db::ident(), db::cardinality(), db::query()]);
     let mut active_attr = hooks.use_state(|| None::<Attr>);
-
     let eins = hooks.use_state(|| Some(vec![ein(3), ein(5), ein(8), ein(13), ein(21)]));
     let mut active_ein = hooks.use_state(|| None::<Ein>);
 
+    let palette = hooks.use_palette();
+    let mut focus = hooks.use_state(|| Focus::Attr);
     let mut layout = hooks.use_state(|| Layout::OneColumn);
+
     hooks.use_event_handler(EventScope::Current, EventPriority::Normal, move |event| {
         let Event::Key(key) = event else {
             return EventResult::Ignored;
