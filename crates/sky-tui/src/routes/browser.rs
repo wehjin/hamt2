@@ -7,10 +7,10 @@ use ratatui_kit::prelude::*;
 use ratatui_kit::ratatui::layout::{Constraint, Direction};
 use ratatui_kit::ratatui::style::Style;
 use ratatui_kit::ratatui::text::{Line, Span};
-use sky_db::find::AllAttrs;
+use sky_db::find::{AllAttrs, EinsWithAttr};
 use sky_db::reader::DbReader;
 use sky_db::traits::DbQuery;
-use sky_types::db::{Attr, Ein, ein};
+use sky_types::db::{Attr, Ein};
 use sky_types::storage::MemView;
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -39,10 +39,22 @@ fn print_ein<'a>(ein: Ein, palette: Palette, margins: bool) -> Line<'a> {
     Line::from(spans)
 }
 
-async fn attrs_in_view(opt_reader: Option<DbReader<MemView>>) -> Option<Vec<Attr>> {
-    if let Some(reader) = opt_reader {
-        let view_attrs = reader.find(AllAttrs).await;
+async fn attrs_in_view(opt_view: &Option<DbReader<MemView>>) -> Option<Vec<Attr>> {
+    if let Some(view) = opt_view {
+        let view_attrs = view.find(AllAttrs).await;
         Some(view_attrs)
+    } else {
+        None
+    }
+}
+
+async fn eins_with_attr_in_view(
+    opt_attr: &Option<Attr>,
+    opt_view: &Option<DbReader<MemView>>,
+) -> Option<Vec<Ein>> {
+    if let (Some(view), Some(attr)) = (opt_view, opt_attr) {
+        let view_eins = view.find(EinsWithAttr::new(attr.clone())).await;
+        Some(view_eins)
     } else {
         None
     }
@@ -53,21 +65,32 @@ pub fn Browser(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
     let db_view = hooks.use_atom(&DB_VIEW);
     let mut attrs = hooks.use_state(|| None::<Vec<Attr>>);
     let mut active_attr = hooks.use_state(|| None::<Attr>);
-    let eins = hooks.use_state(|| Some(vec![ein(3), ein(5), ein(8), ein(13), ein(21)]));
+    let mut eins = hooks.use_state(|| None::<Vec<Ein>>);
     let mut active_ein = hooks.use_state(|| None::<Ein>);
 
     let palette = hooks.use_palette();
     let mut focus = hooks.use_state(|| Focus::Attr);
     let mut layout = hooks.use_state(|| Layout::OneColumn);
 
-    let db = db_view.read().clone();
-    let db_dep = db.clone();
+    let attrs_db = db_view.read().clone();
+    let attrs_deps = attrs_db.clone();
     hooks.use_async_effect(
         async move {
-            let view_attrs = attrs_in_view(db).await;
+            let view_attrs = attrs_in_view(&attrs_db).await;
             attrs.set(view_attrs);
         },
-        db_dep,
+        attrs_deps,
+    );
+
+    let eins_attr = active_attr.read().clone();
+    let eins_db = db_view.read().clone();
+    let eins_deps = (eins_attr.clone(), eins_db.clone());
+    hooks.use_async_effect(
+        async move {
+            let view_eins = eins_with_attr_in_view(&eins_attr, &eins_db).await;
+            eins.set(view_eins);
+        },
+        eins_deps,
     );
 
     hooks.use_event_handler(EventScope::Current, EventPriority::Normal, move |event| {
