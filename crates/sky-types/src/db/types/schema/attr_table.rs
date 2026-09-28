@@ -1,11 +1,11 @@
-use crate::db::{Attr, Ein};
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::ops::{Deref, Index};
 use crate::db;
 use crate::db::schema::attr_spec::AttrSpec;
 use crate::db::schema::attribute::Attribute;
 use crate::db::schema::cardinality::Cardinality;
+use crate::db::{Attr, Ein};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::ops::{Deref, Index};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct AttrTable {
@@ -19,6 +19,10 @@ impl AttrTable {
             map: HashMap::new(),
             by_ein: HashMap::new(),
         }
+    }
+
+    pub fn to_attrs(&self) -> Vec<Attr> {
+        self.map.keys().cloned().collect()
     }
 
     pub fn find_attr(&self, ein: Ein) -> Option<&Attr> {

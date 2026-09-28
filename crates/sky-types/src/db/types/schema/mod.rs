@@ -39,6 +39,10 @@ impl Schema {
     pub fn find_attr(&self, ein: Ein) -> Option<&Attr> {
         self.attr_table.find_attr(ein)
     }
+
+    pub fn to_attrs(&self) -> Vec<Attr> {
+        self.attr_table.to_attrs()
+    }
 }
 
 impl Index<Attr> for Schema {
