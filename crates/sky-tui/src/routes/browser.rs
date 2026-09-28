@@ -1,5 +1,5 @@
 use crate::components::loading::Loading;
-use crate::lines::{print_ein, print_fill};
+use crate::lines::{print_attr_title, print_ein, print_fill};
 use crate::routes::app::DB_VIEW;
 use crate::routes::attr_select::AttrSelect;
 use crate::routes::ein_select::EinSelect;
@@ -188,10 +188,11 @@ pub fn Browser(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
                     Layout::TwoColumns => Constraint::Percentage(70),
                     Layout::ThreeColumns => Constraint::Percentage(20),
                 }) {
-                    if let Some(eins) = eins.read().clone() {
+                    if let (Some(eins), Some(attr)) = (eins.read().clone(), active_attr.read().clone()) {
                         EinSelect(
                             items: eins,
                             selected: *active_ein.read(),
+                            top_title: Some(print_attr_title(attr, palette, *focus.read() == Focus::Ein)),
                             active: *focus.read() == Focus::Ein,
                             focused: *focus.read() == Focus::Ein,
                             on_select: move |it| {

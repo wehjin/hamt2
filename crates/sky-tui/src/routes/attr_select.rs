@@ -1,5 +1,6 @@
 use crate::styles::{border_style, highlight_style};
 use ratatui_kit::prelude::*;
+use ratatui_kit::ratatui::prelude::Line;
 use sky_types::db::Attr;
 use std::collections::HashMap;
 
@@ -7,6 +8,7 @@ use std::collections::HashMap;
 pub struct AttrSelectProps {
     pub items: Vec<Attr>,
     pub selected: Option<Attr>,
+    pub top_title: Option<Line<'static>>,
     pub active: bool,
     pub focused: bool,
     pub on_select: Handler<'static, Attr>,
@@ -35,6 +37,7 @@ pub fn AttrSelect(props: &mut AttrSelectProps, hooks: Hooks) -> impl Into<AnyEle
         Select<String>(
             items: items,
             default_index: index,
+            top_title: props.top_title.clone(),
             active: props.active,
             highlight_symbol: "> ",
             border_style: border_style,

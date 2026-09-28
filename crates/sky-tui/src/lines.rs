@@ -1,6 +1,6 @@
 use ratatui_kit::Palette;
 use ratatui_kit::ratatui::prelude::{Line, Span, Style};
-use sky_types::db::{Ein, Fill, Val};
+use sky_types::db::{Attr, Ein, Fill, Val};
 
 pub fn print_ein<'a>(ein: Ein, palette: Palette, margins: bool) -> Line<'a> {
     let mut spans = vec![
@@ -31,4 +31,15 @@ pub fn print_fill<'a>(fill: Fill, palette: Palette) -> Line<'a> {
         Span::styled(val_string, val_style),
     ];
     Line::from(spans)
+}
+
+pub fn print_attr_title<'a>(attr: Attr, palette: Palette, focused: bool) -> Line<'a> {
+    let title_string = format!(" {} ", attr.to_string());
+    let title_style = if focused {
+        Style::new().fg(palette.border_active)
+    } else {
+        Style::new().fg(palette.border)
+    };
+    let spans = vec![Span::styled(title_string, title_style)];
+    Line::from(spans).centered()
 }

@@ -8,6 +8,7 @@ use std::collections::HashMap;
 pub struct EinSelectProps {
     pub items: Vec<Ein>,
     pub selected: Option<Ein>,
+    pub top_title: Option<Line<'static>>,
     pub active: bool,
     pub focused: bool,
     pub on_select: Handler<'static, Ein>,
@@ -46,6 +47,7 @@ pub fn EinSelect(props: &mut EinSelectProps, hooks: Hooks) -> impl Into<AnyEleme
         Select<Line<'static>>(
             items: rows,
             default_index: index,
+            top_title: props.top_title.clone(),
             active: props.active,
             highlight_symbol: "> ",
             border_style: border_style,
