@@ -9,5 +9,6 @@ async fn main() {
         .expect("failed to run the application");
 }
 
+mod components;
 mod routes;
 mod styles;
