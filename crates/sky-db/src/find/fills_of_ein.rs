@@ -6,15 +6,15 @@ use sky_types::db::schema::Schema;
 use sky_types::db::{Ein, Fill, FindResult};
 use sky_types::trie::TrieWalk;
 
-pub struct FillsOfEin(pub Ein);
+pub struct EntityFills(pub Ein);
 
-impl FillsOfEin {
+impl EntityFills {
     pub fn new(ein: impl Into<Ein>) -> Self {
         Self(ein.into())
     }
 }
 
-impl Find for FillsOfEin {
+impl Find for EntityFills {
     type Output = Fill;
 
     fn select(&self) -> Vec<&'static str> {

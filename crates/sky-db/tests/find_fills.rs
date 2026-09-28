@@ -1,5 +1,5 @@
 use sky_db::db::Db;
-use sky_db::find::FillsOfEin;
+use sky_db::find::EntityFills;
 use sky_db::traits::DbQuery;
 use sky_types::db::{Attr, Fill, Transact, Val, dat, datom, ein};
 use sky_types::storage::MemLoad;
@@ -18,6 +18,6 @@ async fn find_fills_works() {
         .await
         .unwrap();
 
-    let fills = db.find(FillsOfEin(ein)).await;
+    let fills = db.find(EntityFills(ein)).await;
     assert_eq!(fills, vec![Fill(attr_count(), Val::U32(300))]);
 }

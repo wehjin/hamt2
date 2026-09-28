@@ -8,20 +8,20 @@ use ratatui_kit::crossterm::event::{Event, KeyCode, KeyEventKind, KeyModifiers};
 use ratatui_kit::prelude::*;
 use ratatui_kit::ratatui::layout::{Constraint, Direction};
 use ratatui_kit::ratatui::widgets::Block;
-use sky_db::find::{AllAttrs, EinsWithAttr, FillsOfEin};
+use sky_db::find::{AllAttrs, EinsWithAttr, EntityFills};
 use sky_db::reader::DbReader;
 use sky_db::traits::DbQuery;
 use sky_types::db::{Attr, Ein, Fill};
 use sky_types::storage::MemView;
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Layout {
     OneColumn,
     TwoColumns,
     ThreeColumns,
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub enum Focus {
     Val,
     Ein,
@@ -54,7 +54,7 @@ async fn fills_of_ein_in_view(
     opt_ein: &Option<Ein>,
 ) -> Option<Vec<Fill>> {
     if let (Some(view), Some(ein)) = (opt_view, opt_ein) {
-        let view_fills = view.find(FillsOfEin(*ein)).await;
+        let view_fills = view.find(EntityFills(*ein)).await;
         Some(view_fills)
     } else {
         None
@@ -90,7 +90,14 @@ pub fn Browser(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
     hooks.use_async_effect(
         async move {
             let view_eins = eins_with_attr_in_view(&eins_db, &eins_attr).await;
+            let (next_active, next_layout) = match &view_eins {
+                Some(eins) if eins.len() == 1 => (Some(eins[0].clone()), Layout::ThreeColumns),
+                Some(_eins) => (None, Layout::TwoColumns),
+                _ => (None, Layout::OneColumn),
+            };
             eins.set(view_eins);
+            active_ein.set(next_active);
+            layout.set(next_layout);
         },
         eins_deps,
     );
@@ -217,8 +224,6 @@ pub fn Browser(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
                             focused: *focus.read() == Focus::Attr,
                             on_select: move |it| {
                                 active_attr.set(Some(it));
-                                active_ein.set(None);
-                                layout.set(Layout::TwoColumns);
                             }
                         )
                     } else {

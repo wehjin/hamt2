@@ -38,7 +38,7 @@ pub fn print_attr_title<'a>(attr: Attr, palette: Palette, focused: bool) -> Line
     let title_style = if focused {
         Style::new().fg(palette.border_active)
     } else {
-        Style::new().fg(palette.border)
+        Style::new().fg(palette.surface)
     };
     let spans = vec![Span::styled(title_string, title_style)];
     Line::from(spans).centered()
