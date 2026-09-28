@@ -1,3 +1,4 @@
+use crate::styles::highlight_style;
 use ratatui_kit::prelude::*;
 use ratatui_kit::ratatui::prelude::Style;
 use sky_types::db::Attr;
@@ -21,11 +22,7 @@ pub fn AttrSelect(props: &mut AttrSelectProps, hooks: Hooks) -> impl Into<AnyEle
     } else {
         Style::new().fg(palette.border)
     };
-    let highlight_style = if props.focused {
-        Style::new().fg(palette.on_accent).bg(palette.selection)
-    } else {
-        Style::new().fg(palette.fg_dim).bg(palette.selection)
-    };
+    let highlight_style = highlight_style(palette, props.focused);
     let lookup = props
         .items
         .iter()

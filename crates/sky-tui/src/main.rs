@@ -10,3 +10,4 @@ async fn main() {
 }
 
 mod routes;
+mod styles;
