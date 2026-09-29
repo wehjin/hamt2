@@ -1,8 +1,8 @@
 use crate::storage::edit::StoreEdit;
 use crate::storage::{MemView, ReadStorageError, WriteStorageError};
 use crate::trie::{
-    Base, BaseCommit, BaseId, BaseRead, CursorPos, MapBase, TrieInsert, TrieInsertError, TrieKey,
-    TrieQuery, TrieSnap, TrieValue, TrieWalk,
+    Base, BaseCommit, BaseId, BaseRead, CursorPos, MapBase, TrieInsert, TrieKey, TrieQuery,
+    TrieQueryError, TrieSnap, TrieValue, TrieWalk,
 };
 use crate::trie::{InsertCursor, QueryCursor};
 use std::ops::Deref;
@@ -50,18 +50,10 @@ impl QueryCursor for MemEdit {
     fn ascend(&mut self) -> Option<(TrieKey, MapBase)> {
         self.cursor_pos.ascend()
     }
-}
-
-impl InsertCursor for MemEdit {
-    async fn descend_insert(&mut self, key: impl Into<TrieKey>) -> Result<(), TrieInsertError> {
+    async fn descend(&mut self, key: impl Into<TrieKey>) -> Result<(), TrieQueryError> {
         let key = key.into();
         let lower_root = match self.query(key.into()).await? {
-            None => {
-                let lower_root = MapBase::empty();
-                self.insert(key.into(), TrieValue::SubTrie(lower_root))
-                    .await?;
-                lower_root
-            }
+            None => MapBase::empty(),
             Some(TrieValue::U32(_)) => panic!("key is occupied by a primitive value"),
             Some(TrieValue::SubTrie(lower_root)) => lower_root,
         };
@@ -69,6 +61,7 @@ impl InsertCursor for MemEdit {
         Ok(())
     }
 }
+impl InsertCursor for MemEdit {}
 impl StoreEdit for MemEdit {}
 
 impl TrieWalk for MemEdit {
