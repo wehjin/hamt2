@@ -70,7 +70,7 @@ async fn snapshot_queries_work() {
     assert_eq!(Some(42), snap.query_u32(1).await.unwrap());
     assert_eq!(
         Some(TrieValue::U32(242)),
-        snap.deep_query([2, 42]).await.unwrap()
+        snap.query_deep([2, 42]).await.unwrap()
     );
 }
 
@@ -96,7 +96,7 @@ async fn multi_depth_saturation_in_multiple_edits_work() {
         for a in 0..=32 {
             assert_eq!(
                 Some(TrieValue::U32(a as u32)),
-                trie.deep_query([3, a]).await?
+                trie.query_deep([3, a]).await?
             );
         }
         Ok(())
@@ -136,7 +136,7 @@ async fn multi_depth_saturation_in_multiple_edits_work() {
     for a in 0..=64 {
         assert_eq!(
             Some(TrieValue::U32(a as u32)),
-            snap.deep_query([3, a]).await.unwrap()
+            snap.query_deep([3, a]).await.unwrap()
         );
     }
 }
@@ -189,7 +189,7 @@ async fn deep_insertions_work_basic() {
     .unwrap();
     assert_eq!(
         Some(TrieValue::U32(242)),
-        trie.deep_query([2, 42]).await.unwrap()
+        trie.query_deep([2, 42]).await.unwrap()
     );
 }
 
@@ -206,22 +206,22 @@ async fn deep_insertions_work_with_saturated_root() {
     .await
     .unwrap();
     {
-        let value = trie.deep_query([4]).await.unwrap();
+        let value = trie.query_deep([4]).await.unwrap();
         let Some(TrieValue::SubTrie(map_base)) = value else {
             panic!("expected map_base");
         };
         assert_eq!(1, map_base.map.slot_count());
     }
     {
-        let value = trie.deep_query([4, 4]).await.unwrap();
+        let value = trie.query_deep([4, 4]).await.unwrap();
         assert_eq!(Some(TrieValue::U32(4)), value);
     }
     {
-        let value = trie.deep_query([4, 1]).await.unwrap();
+        let value = trie.query_deep([4, 1]).await.unwrap();
         assert_eq!(None, value);
     }
     {
-        let value = trie.deep_query([5, 2]).await.unwrap();
+        let value = trie.query_deep([5, 2]).await.unwrap();
         assert_eq!(None, value);
     }
 }
@@ -230,5 +230,5 @@ async fn deep_insertions_work_with_saturated_root() {
 #[should_panic(expected = "assertion failed: value >= 0")]
 async fn deep_queries_panic_for_invalid_key() {
     let trie = MemLoad::new();
-    trie.deep_query([4, 4, -1]).await.unwrap();
+    trie.query_deep([4, 4, -1]).await.unwrap();
 }

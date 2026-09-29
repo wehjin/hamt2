@@ -13,6 +13,6 @@ assert_eq!(v, Some(TrieValue::U32(33)));
 async fn deep_insert_and_query_works() {
     let mut m = MemEdit::new();
     m.insert_deep([1, 2, 3], 45, false).await.unwrap();
-    let v = m.deep_query([1, 2, 3]).await.unwrap();
+    let v = m.query_deep([1, 2, 3]).await.unwrap();
     assert_eq!(v, Some(TrieValue::U32(45)));
 }

@@ -98,10 +98,10 @@ impl TrieQuery for MemLoad {
         self.inner.query_all().await
     }
 
-    async fn deep_query<const N: usize>(
+    async fn query_deep<const N: usize>(
         &self,
         key: [i32; N],
     ) -> Result<Option<TrieValue>, TrieQueryError> {
-        self.inner.deep_query(key).await
+        self.inner.query_deep(key).await
     }
 }

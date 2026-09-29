@@ -13,7 +13,7 @@ pub trait TrieQuery {
     async fn query_all(&self) -> Result<Vec<(i32, TrieValue)>, TrieQueryError>;
 
     /// Returns the value stored at the given deep key.
-    async fn deep_query<const N: usize>(
+    async fn query_deep<const N: usize>(
         &self,
         key: [i32; N],
     ) -> Result<Option<TrieValue>, TrieQueryError>;
@@ -38,10 +38,10 @@ impl<T: BaseRead> TrieQuery for T {
         map_base::query_keys_values(self.read_root(), self).await
     }
 
-    async fn deep_query<const N: usize>(
+    async fn query_deep<const N: usize>(
         &self,
         key: [i32; N],
     ) -> Result<Option<TrieValue>, TrieQueryError> {
-        map_base::deep_query_value(self.read_root(), key, self).await
+        map_base::query_value_deep(self.read_root(), key, self).await
     }
 }
