@@ -33,7 +33,7 @@ impl Find for AllEins {
     fn apply<T>(self, trie: &T, _schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
     where
         Self: Sized,
-        T: TrieWalk,
+        T: QueryCursor + TrieStream + TrieSnap,
     {
         db_trie::list_entities(trie)
     }

@@ -84,7 +84,7 @@ pub async fn find<'a, T>(
     where_: impl Into<Vec<Atom>>,
 ) -> FindResult
 where
-    T: TrieWalk + QueryCursor + TrieSnap + TrieQuery,
+    T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
 {
     let select = select.into();
     let query_terms = select.iter().map(|s| term(var(*s))).collect::<Vec<_>>();
@@ -109,11 +109,10 @@ where
     found
 }
 
-pub fn ev_stream<T: QueryCursor + TrieStream + TrieSnap>(
-    trie: &T,
-    a: Attr,
-    schema: &Schema,
-) -> impl futures::Stream<Item = (i32, Val)> {
+pub fn ev_stream<T>(trie: &T, a: Attr, schema: &Schema) -> impl futures::Stream<Item = (i32, Val)>
+where
+    T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
+{
     stream! {
         let evt_subtrie = evt_subtrie(trie, a, schema).await;
         let evid_stream = evid_stream(evt_subtrie);
@@ -127,7 +126,7 @@ pub fn ev_stream<T: QueryCursor + TrieStream + TrieSnap>(
 
 pub async fn list_entities<T>(trie: &T) -> Vec<Ein>
 where
-    T: TrieWalk,
+    T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
 {
     if let Some(root) = eavt_root(trie).await {
         root.query_all()
@@ -161,7 +160,7 @@ impl From<i32> for AttrEin {
 
 pub async fn list_entity_attributes<T>(trie: &T, ein: Ein) -> Vec<AttrEin>
 where
-    T: TrieWalk,
+    T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
 {
     if let Some(root) = e_avt_subtrie(trie, ein).await {
         root.query_all()
@@ -177,7 +176,7 @@ where
 
 pub async fn list_entity_fills<T>(trie: &T, ein: Ein, attr_ein: AttrEin) -> Vec<(AttrEin, Vid)>
 where
-    T: TrieWalk,
+    T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
 {
     if let Some(root) = ea_vt_subtrie(trie, ein, attr_ein).await {
         let keys_and_values = root.query_all().await.expect("read keys and values");
@@ -190,41 +189,45 @@ where
     }
 }
 
-async fn eavt_root<T>(trie: &T) -> Option<T::Subtrie>
+async fn eavt_root<T>(trie: &T) -> Option<T::Snapshot>
 where
-    T: TrieWalk,
+    T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
 {
-    let root_value = trie.deep_query([KEY_EAVT]).await.ok().flatten();
-    root_value.and_then(|value| trie.to_subtrie_in_value(value))
+    let mut snapshot = trie.snapshot();
+    snapshot
+        .descend(KEY_EAVT)
+        .await
+        .expect("should descend to eavt");
+    Some(snapshot)
 }
 
-async fn ea_vt_subtrie<T>(trie: &T, ein: Ein, attr_ein: AttrEin) -> Option<T::Subtrie>
+async fn ea_vt_subtrie<T>(trie: &T, ein: Ein, attr_ein: AttrEin) -> Option<T::Snapshot>
 where
-    T: TrieWalk,
+    T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
 {
-    let root_value = trie
-        .deep_query([KEY_EAVT, ein.to_i32(), attr_ein.to_i32()])
+    let mut snapshot = trie.snapshot();
+    snapshot
+        .descend_n([KEY_EAVT, ein.to_i32(), attr_ein.to_i32()])
         .await
-        .ok()
-        .flatten();
-    root_value.and_then(|value| trie.to_subtrie_in_value(value))
+        .expect("failed to descend to vt");
+    Some(snapshot)
 }
 
-async fn e_avt_subtrie<T>(trie: &T, ein: Ein) -> Option<T::Subtrie>
+async fn e_avt_subtrie<T>(trie: &T, ein: Ein) -> Option<T::Snapshot>
 where
-    T: TrieWalk,
+    T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
 {
-    let root_value = trie
-        .deep_query([KEY_EAVT, ein.to_i32()])
+    let mut snapshot = trie.snapshot();
+    snapshot
+        .descend_n([KEY_EAVT, ein.to_i32()])
         .await
-        .ok()
-        .flatten();
-    root_value.and_then(|value| trie.to_subtrie_in_value(value))
+        .expect("failed to descend to avt");
+    Some(snapshot)
 }
 
 async fn evt_subtrie<T>(trie: &T, attr: Attr, schema: &Schema) -> T::Snapshot
 where
-    T: QueryCursor + TrieStream + TrieSnap,
+    T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
 {
     let aid = schema[attr].ein().to_i32();
 
@@ -234,9 +237,10 @@ where
     snapshot
 }
 
-fn evid_stream<T: QueryCursor + TrieStream + TrieSnap>(
-    evt_subtrie: T,
-) -> impl futures::Stream<Item = (i32, i32)> {
+fn evid_stream<T>(evt_subtrie: T) -> impl futures::Stream<Item = (i32, i32)>
+where
+    T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
+{
     stream! {
         let evt_roots = evt_subtrie.map_base_stream();
         pin_mut!(evt_roots);

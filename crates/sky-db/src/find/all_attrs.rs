@@ -3,7 +3,6 @@ use crate::db::Schema;
 use crate::traits::Find;
 use sky_types::db::Attr;
 use sky_types::db::FindResult;
-use sky_types::trie::*;
 use std::future::Future;
 
 pub struct AllAttrs;
@@ -32,7 +31,6 @@ impl Find for AllAttrs {
     fn apply<T>(self, _trie: &T, schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
     where
         Self: Sized,
-        T: TrieWalk,
     {
         async move { schema.to_attrs() }
     }

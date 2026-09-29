@@ -41,7 +41,7 @@ pub async fn insert(trie: &mut MemEdit, val: Val) -> Result<Vid, TransactError> 
 
 pub async fn query<T>(trie: &T, vid: Vid) -> Result<Option<Val>, QueryError>
 where
-    T: QueryCursor + TrieSnap + TrieQuery,
+    T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
 {
     match find_hash_trie(trie, vid.to_id()).await? {
         None => Ok(None),
@@ -147,10 +147,10 @@ async fn is_equal_bytes<T: TrieQuery>(
     }
 }
 
-async fn find_hash_trie<T: QueryCursor + TrieSnap>(
-    trie: &T,
-    hash: i32,
-) -> Result<Option<T::Snapshot>, QueryError> {
+async fn find_hash_trie<T>(trie: &T, hash: i32) -> Result<Option<T::Snapshot>, QueryError>
+where
+    T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
+{
     let mut snapshot = trie.snapshot();
     snapshot.descend(KEY_VAL_TABLE).await?;
     match snapshot.query(hash).await? {
