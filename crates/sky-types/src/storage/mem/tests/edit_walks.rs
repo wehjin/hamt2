@@ -1,5 +1,5 @@
 use crate::storage::MemEdit;
-use crate::trie::{TrieInsert, TrieQuery, TrieValue};
+use crate::trie::{InsertCursor, QueryCursor, TrieInsert, TrieQuery, TrieValue};
 
 #[tokio::test]
 async fn single_hop_works() {

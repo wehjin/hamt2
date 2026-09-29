@@ -4,6 +4,7 @@ use crate::trie::{
     Base, BaseCommit, BaseId, BaseRead, CursorPos, MapBase, TrieInsert, TrieInsertError, TrieKey,
     TrieQuery, TrieSnap, TrieValue, TrieWalk,
 };
+use crate::trie::{InsertCursor, QueryCursor};
 use std::ops::Deref;
 use std::sync::Arc;
 
@@ -42,11 +43,17 @@ impl MemEdit {
     }
 }
 
-impl MemEdit {
-    pub fn top_root(&self) -> MapBase {
+impl QueryCursor for MemEdit {
+    fn top_root(&self) -> MapBase {
         self.cursor_pos.top_root()
     }
-    pub async fn descend_insert(&mut self, key: impl Into<TrieKey>) -> Result<(), TrieInsertError> {
+    fn ascend(&mut self) -> Option<(TrieKey, MapBase)> {
+        self.cursor_pos.ascend()
+    }
+}
+
+impl InsertCursor for MemEdit {
+    async fn descend_insert(&mut self, key: impl Into<TrieKey>) -> Result<(), TrieInsertError> {
         let key = key.into();
         let lower_root = match self.query(key.into()).await? {
             None => {
@@ -60,9 +67,6 @@ impl MemEdit {
         };
         self.cursor_pos.descend(key, lower_root);
         Ok(())
-    }
-    pub fn ascend(&mut self) -> Option<(TrieKey, MapBase)> {
-        self.cursor_pos.ascend()
     }
 }
 impl StoreEdit for MemEdit {}

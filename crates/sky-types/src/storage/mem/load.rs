@@ -1,10 +1,7 @@
 use crate::storage::MemEdit;
 use crate::storage::load::StoreLoad;
 use crate::storage::mem::MemView;
-use crate::trie::{
-    Base, BaseId, BaseRead, MapBase, TrieQuery, TrieQueryError, TrieSnap, TrieStream, TrieValue,
-    TrieWalk,
-};
+use crate::trie::{Base, BaseId, BaseRead, MapBase, QueryCursor, TrieQuery, TrieQueryError, TrieSnap, TrieStream, TrieValue, TrieWalk};
 use anyhow::anyhow;
 use futures::Stream;
 use std::ops::Deref;
