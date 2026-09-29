@@ -4,6 +4,7 @@ use crate::trie::TrieSnap;
 use crate::trie::map_base::one_kv;
 use crate::trie::{Base, BaseCommit, BaseId, BaseRead, HashKey, MapBase, TrieValue};
 
+mod edit;
 mod mem_insert;
 mod mem_stream;
 

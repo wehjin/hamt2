@@ -1,5 +1,5 @@
+use crate::storage::MemLoad;
 use crate::storage::load::StoreLoad;
-use crate::storage::mem_load_new;
 use crate::trie::TrieInsert;
 use crate::trie::TrieWalk;
 use crate::trie::{TrieStream, TrieValue};
@@ -7,7 +7,7 @@ use futures::StreamExt;
 
 #[tokio::test]
 async fn u32_stream() -> anyhow::Result<()> {
-    let mut trie = mem_load_new();
+    let mut trie = MemLoad::new();
     trie.edit(async |trie| {
         trie.insert(1, TrieValue::U32(1)).await?;
         trie.insert(2, TrieValue::U32(2)).await?;
@@ -24,7 +24,7 @@ async fn u32_stream() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn subtrie_stream() -> anyhow::Result<()> {
-    let mut trie = mem_load_new();
+    let mut trie = MemLoad::new();
     trie.edit(async |trie| {
         trie.deep_insert([1, 101], TrieValue::U32(101), false)
             .await?;

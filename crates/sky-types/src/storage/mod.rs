@@ -6,9 +6,6 @@ pub mod error;
 mod file;
 mod mem;
 mod traits;
-mod trie_edit;
-mod trie_load;
-mod trie_view;
 
 use crate::trie::{BaseId, MapBase};
 pub use error::*;
@@ -16,9 +13,6 @@ pub use error::*;
 pub use file::*;
 pub use mem::*;
 pub use traits::*;
-pub use trie_edit::*;
-pub use trie_load::*;
-pub use trie_view::*;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageStatus {

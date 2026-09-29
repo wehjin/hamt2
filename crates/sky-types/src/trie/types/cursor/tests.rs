@@ -1,9 +1,10 @@
 use crate::trie::{CursorPos, MapBase, key};
 
 #[test]
-fn cursor_has_active_root() {
+fn cursor_has_active_and_top_root() {
     let cursor = CursorPos::default();
     let _ = cursor.active_root();
+    let _ = cursor.top_root();
 }
 
 #[test]
