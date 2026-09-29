@@ -20,9 +20,3 @@ pub trait TrieWalk: TrieStream + TrieSnap + TrieQuery + Send {
             .map(|(key, map_base)| (key, self.to_subtrie(map_base)))
     }
 }
-
-#[allow(async_fn_in_trait)]
-pub trait Walk {
-    fn top_root(&self) -> MapBase;
-    fn active_root(&self) -> MapBase;
-}
