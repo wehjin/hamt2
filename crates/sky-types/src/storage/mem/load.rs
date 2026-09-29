@@ -2,8 +2,8 @@ use crate::storage::MemEdit;
 use crate::storage::load::StoreLoad;
 use crate::storage::mem::MemView;
 use crate::trie::{
-    BaseRead, CursorPos, MapBase, TrieQuery, TrieQueryError, TrieSnap, TrieStream, TrieValue,
-    TrieWalk,
+    BaseRead, CursorPos, MapBase, QueryCursor, TrieQuery, TrieQueryError, TrieSnap, TrieStream,
+    TrieValue, TrieWalk,
 };
 use anyhow::anyhow;
 use futures::Stream;
@@ -16,6 +16,16 @@ pub struct MemLoad {
 }
 
 impl MemLoad {}
+
+impl QueryCursor for MemLoad {
+    fn cursor_pos(&self) -> &CursorPos {
+        self.inner.cursor_pos()
+    }
+
+    fn cursor_pos_mut(&mut self) -> &mut CursorPos {
+        self.inner.cursor_pos_mut()
+    }
+}
 
 impl StoreLoad for MemLoad {
     type Edit = MemEdit;
