@@ -1,9 +1,9 @@
-use crate::storage::MemEdit2;
+use crate::storage::MemEdit;
 use crate::trie::{TrieInsert, TrieQuery, TrieValue};
 
 #[tokio::test]
 async fn single_hop_works() {
-    let mut edit = MemEdit2::new();
+    let mut edit = MemEdit::new();
 
     // Insert at top level and descend.
     edit.insert(33, 1).await.unwrap();
@@ -27,7 +27,7 @@ async fn single_hop_works() {
 
 #[tokio::test]
 async fn multi_hop_works() {
-    let mut edit = MemEdit2::new();
+    let mut edit = MemEdit::new();
     edit.insert(33, 1).await.unwrap();
     assert_eq!(edit.query(33).await.unwrap(), Some(TrieValue::U32(1)));
     edit.descend_insert(40).await.unwrap();

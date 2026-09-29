@@ -21,6 +21,10 @@ impl MemView {
             root: MapBase::empty(),
         }
     }
+
+    pub fn top_root(&self) -> MapBase {
+        self.read_root()
+    }
 }
 
 impl Eq for MemView {}

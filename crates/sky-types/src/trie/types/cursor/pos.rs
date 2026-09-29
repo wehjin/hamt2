@@ -20,11 +20,8 @@ impl CursorPos {
         }
     }
     pub fn top_root(&self) -> MapBase {
-        if let Some(Leg {
-            higher_root: root, ..
-        }) = &self.route.first()
-        {
-            *root
+        if let Some(leg) = self.route.first() {
+            leg.higher_root
         } else {
             self.active_root
         }

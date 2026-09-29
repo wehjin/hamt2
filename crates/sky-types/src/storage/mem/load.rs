@@ -33,11 +33,7 @@ impl StoreLoad for MemLoad {
     }
 
     async fn begin_edit(&self) -> Result<Self::Edit, anyhow::Error> {
-        let edit = MemEdit {
-            past: Arc::new(self.inner.snapshot()),
-            bases: vec![],
-            root: self.inner.read_root(),
-        };
+        let edit = MemEdit::extend(self.inner.snapshot());
         Ok(edit)
     }
     async fn commit_edit(&mut self, edit: Self::Edit) -> Result<(), anyhow::Error> {
@@ -47,7 +43,7 @@ impl StoreLoad for MemLoad {
             return Err(anyhow!("stale edit"));
         }
         let max_id = edit.max_id();
-        let root = edit.root;
+        let root = edit.top_root();
         let bases = {
             let mut edit_bases = edit
                 .bases
