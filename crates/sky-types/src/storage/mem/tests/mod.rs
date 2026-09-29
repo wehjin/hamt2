@@ -3,7 +3,7 @@ use crate::storage::load::StoreLoad;
 use crate::storage::mem::tests::fixtures::{
     edit_assert_trie, error_edit_assert_trie, start_assert_trie,
 };
-use crate::trie::{TrieInsert, TrieQuery, TrieSnap, TrieStream, TrieValue, TrieWalk};
+use crate::trie::{TrieInsert, TrieQuery, TrieSnap, TrieStream, TrieValue};
 use futures::StreamExt;
 
 #[cfg(test)]
@@ -28,13 +28,6 @@ async fn view_has_stream() {
     let mem = MemLoad::new().snapshot();
     let values = mem.u32_stream().collect::<Vec<_>>().await;
     assert_eq!(values, vec![]);
-}
-
-#[tokio::test]
-async fn view_has_walk() {
-    let mem = MemLoad::new().snapshot();
-    let subtries = mem.subtrie_stream().collect::<Vec<_>>().await;
-    assert_eq!(subtries.len(), 0);
 }
 
 #[tokio::test]

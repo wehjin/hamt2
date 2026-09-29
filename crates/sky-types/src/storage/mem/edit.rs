@@ -2,7 +2,6 @@ use crate::storage::edit::StoreEdit;
 use crate::storage::{MemView, ReadStorageError, WriteStorageError};
 use crate::trie::{
     Base, BaseCommit, BaseId, BaseRead, CursorPos, MapBase, TrieInsert, TrieSnap, TrieValue,
-    TrieWalk,
 };
 use crate::trie::{InsertCursor, QueryCursor};
 use std::ops::Deref;
@@ -46,18 +45,6 @@ impl QueryCursor for MemEdit {
 }
 impl InsertCursor for MemEdit {}
 impl StoreEdit for MemEdit {}
-
-impl TrieWalk for MemEdit {
-    type Subtrie = MemEdit;
-
-    fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
-        Self {
-            past: self.past.clone(),
-            bases: self.bases.clone(),
-            cursor_pos: CursorPos::new(subtrie_root),
-        }
-    }
-}
 
 impl TrieSnap for MemEdit {
     type Snapshot = MemEdit;

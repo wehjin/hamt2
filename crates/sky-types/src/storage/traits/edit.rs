@@ -1,16 +1,7 @@
-use crate::trie::{
-    InsertCursor, QueryCursor, TrieInsert, TrieQuery, TrieSnap, TrieStream, TrieWalk,
-};
+use crate::trie::{InsertCursor, QueryCursor, TrieInsert, TrieQuery, TrieSnap, TrieStream};
 
 /// Deliberately no clone.
 pub trait StoreEdit:
-    InsertCursor
-    + TrieInsert
-    + TrieWalk<Subtrie = Self>
-    + QueryCursor
-    + TrieStream
-    + TrieSnap<Snapshot = Self>
-    + TrieQuery
-    + Send
+    InsertCursor + TrieInsert + QueryCursor + TrieStream + TrieSnap<Snapshot = Self> + TrieQuery + Send
 {
 }

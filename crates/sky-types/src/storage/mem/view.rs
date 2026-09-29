@@ -1,7 +1,7 @@
 use crate::storage::ReadStorageError;
 use crate::storage::traits::view::StoreView;
+use crate::trie::CursorPos;
 use crate::trie::{Base, BaseId, BaseRead, MapBase, QueryCursor, TrieSnap};
-use crate::trie::{CursorPos, TrieWalk};
 use std::ops::Deref;
 use std::sync::Arc;
 use std::sync::RwLock;
@@ -73,18 +73,6 @@ impl TrieSnap for MemView {
 
     fn snapshot(&self) -> Self::Snapshot {
         self.clone()
-    }
-}
-
-impl TrieWalk for MemView {
-    type Subtrie = Self;
-
-    fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
-        let cursor_pos = CursorPos::new(subtrie_root);
-        MemView {
-            cursor_pos,
-            ..self.clone()
-        }
     }
 }
 

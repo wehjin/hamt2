@@ -5,8 +5,6 @@ mod trie_insert;
 mod trie_query;
 mod trie_snap;
 mod trie_stream;
-mod trie_walk;
-
 pub use base_commit::*;
 pub use base_read::*;
 pub use cursor::*;
@@ -14,4 +12,3 @@ pub use trie_insert::*;
 pub use trie_query::*;
 pub use trie_snap::*;
 pub use trie_stream::*;
-pub use trie_walk::*;

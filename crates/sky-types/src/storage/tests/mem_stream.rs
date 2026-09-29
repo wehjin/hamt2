@@ -1,6 +1,5 @@
 use crate::storage::MemLoad;
 use crate::storage::load::StoreLoad;
-use crate::trie::TrieWalk;
 use crate::trie::{InsertCursor, TrieInsert};
 use crate::trie::{TrieStream, TrieValue};
 use futures::StreamExt;
@@ -19,22 +18,5 @@ async fn u32_stream() -> anyhow::Result<()> {
     u32s.sort_by_key(|(key, _u32)| *key);
     // Map-base values are skipped by the u32 stream.
     assert_eq!(vec![(1, 1), (2, 2)], u32s);
-    Ok(())
-}
-
-#[tokio::test]
-async fn subtrie_stream() -> anyhow::Result<()> {
-    let mut trie = MemLoad::new();
-    trie.edit(async |trie| {
-        trie.insert_deep([1, 101], TrieValue::U32(101), false)
-            .await?;
-        trie.insert_deep([2, 202], TrieValue::U32(202), false)
-            .await?;
-        trie.insert(3, TrieValue::U32(33)).await?;
-        Ok(())
-    })
-    .await?;
-    let subtries = trie.subtrie_stream().collect::<Vec<_>>().await;
-    assert_eq!(2, subtries.len());
     Ok(())
 }

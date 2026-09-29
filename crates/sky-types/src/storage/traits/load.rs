@@ -1,16 +1,11 @@
 use crate::storage::edit::StoreEdit;
 use crate::storage::view::StoreView;
-use crate::trie::{QueryCursor, TrieWalk};
+use crate::trie::QueryCursor;
 use crate::trie::{TrieQuery, TrieSnap, TrieStream};
 
 #[allow(async_fn_in_trait)]
 pub trait StoreLoad:
-    TrieWalk<Subtrie = Self::View>
-    + QueryCursor
-    + TrieStream
-    + TrieSnap<Snapshot = Self::View>
-    + TrieQuery
-    + Send
+    QueryCursor + TrieStream + TrieSnap<Snapshot = Self::View> + TrieQuery + Send
 {
     type Edit: StoreEdit;
     type View: StoreView;

@@ -3,9 +3,7 @@ use crate::shared::remote::client::requests::ClientRequest;
 use sky_types::db::DbStatus;
 use sky_types::storage::ReadStorageError;
 use sky_types::storage::view::StoreView;
-use sky_types::trie::{
-    Base, BaseId, BaseRead, CursorPos, MapBase, QueryCursor, TrieSnap, TrieWalk,
-};
+use sky_types::trie::{Base, BaseId, BaseRead, CursorPos, MapBase, QueryCursor, TrieSnap};
 use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
 use tokio::sync::mpsc::Sender;
@@ -76,21 +74,6 @@ impl<T: SpawnTask> TrieSnap for Remote<T> {
         // Deep-clone the status so that future changes in the processing loop do not affect the
         // snapshot.
         let status = self.status.read().unwrap().clone();
-        Self {
-            status: Arc::new(RwLock::new(status)),
-            ..self.clone()
-        }
-    }
-}
-
-impl<T: SpawnTask> TrieWalk for Remote<T> {
-    type Subtrie = Self;
-
-    fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
-        // Deep-clone the status so that future changes in the processing loop do not affect the
-        // snapshot.
-        let mut status = self.status.read().unwrap().clone();
-        status.head.root = subtrie_root;
         Self {
             status: Arc::new(RwLock::new(status)),
             ..self.clone()

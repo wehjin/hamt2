@@ -3,7 +3,7 @@ use crate::storage::load::StoreLoad;
 use crate::storage::mem::MemView;
 use crate::trie::{
     BaseRead, CursorPos, MapBase, QueryCursor, TrieQuery, TrieQueryError, TrieSnap, TrieStream,
-    TrieValue, TrieWalk,
+    TrieValue,
 };
 use anyhow::anyhow;
 use futures::Stream;
@@ -64,17 +64,6 @@ impl StoreLoad for MemLoad {
             cursor_pos,
         };
         Ok(())
-    }
-}
-
-impl TrieWalk for MemLoad {
-    type Subtrie = <Self as StoreLoad>::View;
-    fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
-        let cursor_pos = CursorPos::new(subtrie_root);
-        MemView {
-            cursor_pos,
-            ..self.snapshot()
-        }
     }
 }
 

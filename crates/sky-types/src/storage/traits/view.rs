@@ -1,9 +1,8 @@
-use crate::trie::{QueryCursor, TrieWalk};
+use crate::trie::QueryCursor;
 use crate::trie::{TrieQuery, TrieSnap, TrieStream};
 
 pub trait StoreView:
-    TrieWalk<Subtrie = Self>
-    + QueryCursor
+    QueryCursor
     + TrieStream
     + TrieSnap<Snapshot = Self>
     + TrieQuery
