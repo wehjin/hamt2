@@ -1,6 +1,6 @@
 use crate::storage::MemLoad;
 use crate::storage::load::StoreLoad;
-use crate::trie::{TrieInsert, TrieQuery, TrieValue};
+use crate::trie::{InsertCursor, TrieInsert, TrieQuery, TrieValue};
 use crate::trie::{TrieSnap, TrieStream};
 use futures::StreamExt;
 use std::collections::HashMap;
@@ -59,7 +59,7 @@ async fn snapshot_queries_work() {
     let mut trie = MemLoad::new();
     trie.edit(async |trie| {
         trie.insert(1, TrieValue::U32(42)).await?;
-        trie.deep_insert([2, 42], TrieValue::U32(242), false)
+        trie.insert_deep([2, 42], TrieValue::U32(242), false)
             .await?;
         Ok(())
     })
@@ -81,7 +81,7 @@ async fn multi_depth_saturation_in_multiple_edits_work() {
     trie.edit(async |trie| {
         trie.insert(100, TrieValue::U32(42)).await.unwrap();
         for a in 0..=32 {
-            trie.deep_insert([3, a], TrieValue::U32(a as u32), false)
+            trie.insert_deep([3, a], TrieValue::U32(a as u32), false)
                 .await
                 .unwrap();
         }
@@ -109,20 +109,20 @@ async fn multi_depth_saturation_in_multiple_edits_work() {
         // Use at least 33 keys so that the root blook in the first trie is saturated.
         for i in 0..35 {
             let e = 5 + i;
-            trie.deep_insert([e, 0], TrieValue::U32(e as u32), false)
+            trie.insert_deep([e, 0], TrieValue::U32(e as u32), false)
                 .await
                 .unwrap();
         }
         // Use at least 33 keys so that the root block in the second trie is saturated.
         for i in 0..35 {
             let a = 3 + i;
-            trie.deep_insert([4, a], TrieValue::U32(a as u32), false)
+            trie.insert_deep([4, a], TrieValue::U32(a as u32), false)
                 .await
                 .unwrap();
         }
         // 3.x should be saturated.  So adding more should trigger at least on hybrid merge.
         for a in 32..=64 {
-            trie.deep_insert([3, a], TrieValue::U32(a as u32), false)
+            trie.insert_deep([3, a], TrieValue::U32(a as u32), false)
                 .await
                 .unwrap();
         }
@@ -182,7 +182,7 @@ async fn different_keys_store_different_values() {
 async fn deep_insertions_work_basic() {
     let mut trie = MemLoad::new();
     trie.edit(async |edit| {
-        edit.deep_insert([2, 42], 242, false).await?;
+        edit.insert_deep([2, 42], 242, false).await?;
         Ok(())
     })
     .await
@@ -198,7 +198,7 @@ async fn deep_insertions_work_with_saturated_root() {
     let mut trie = MemLoad::new();
     trie.edit(async |trie| {
         for e in 0..=33 {
-            trie.deep_insert([e, e], TrieValue::U32(e as u32), false)
+            trie.insert_deep([e, e], TrieValue::U32(e as u32), false)
                 .await?;
         }
         Ok(())

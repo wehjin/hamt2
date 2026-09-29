@@ -1,5 +1,5 @@
 use crate::storage::MemEdit;
-use crate::trie::{TrieInsert, TrieQuery, TrieValue};
+use crate::trie::{InsertCursor, TrieInsert, TrieQuery, TrieValue};
 
 #[tokio::test]
 async fn query_value_exists_works() {
@@ -12,7 +12,7 @@ assert_eq!(v, Some(TrieValue::U32(33)));
 #[tokio::test]
 async fn deep_insert_and_query_works() {
     let mut m = MemEdit::new();
-    m.deep_insert([1, 2, 3], 45, false).await.unwrap();
+    m.insert_deep([1, 2, 3], 45, false).await.unwrap();
     let v = m.deep_query([1, 2, 3]).await.unwrap();
     assert_eq!(v, Some(TrieValue::U32(45)));
 }

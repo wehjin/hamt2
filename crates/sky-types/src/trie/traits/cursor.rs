@@ -1,5 +1,6 @@
 use crate::trie::{
-    CursorPos, MapBase, TrieInsert, TrieInsertError, TrieKey, TrieQueryError, TrieValue,
+    CursorPos, InsertOption, MapBase, TrieInsert, TrieInsertError, TrieKey, TrieQueryError,
+    TrieValue,
 };
 
 #[allow(async_fn_in_trait)]
@@ -38,7 +39,7 @@ pub trait InsertCursor: QueryCursor + TrieInsert {
         &mut self,
         keys: impl IntoIterator<Item = impl Into<TrieKey>>,
         value: impl Into<TrieValue>,
-        replace_tail: bool,
+        delete_others: bool,
     ) -> Result<&mut Self, TrieInsertError> {
         let start_pos = self.backup();
         let (descend_keys, insert_key) = {
@@ -53,12 +54,15 @@ pub trait InsertCursor: QueryCursor + TrieInsert {
                 return Err(TrieInsertError::TrieQuery(e));
             }
         };
-        let result = if replace_tail {
-            self.clear_insert(insert_key.into(), value).await
+        let insert_options = if delete_others {
+            vec![InsertOption::DeleteOthers]
         } else {
-            self.insert(insert_key.into(), value).await
+            vec![]
         };
-        if let Err(e) = result {
+        if let Err(e) = self
+            .insert_with_options(insert_key.into(), value, insert_options)
+            .await
+        {
             self.restore(start_pos);
             return Err(e);
         }

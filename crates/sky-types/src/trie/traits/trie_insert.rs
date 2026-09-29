@@ -1,6 +1,11 @@
-use crate::trie::map_base::query_value;
-use crate::trie::{BaseCommit, DeepKey, HashKey, MapBase, TrieInsertError, TrieValue, map_base};
-use std::collections::HashMap;
+use crate::trie::{BaseCommit, HashKey, MapBase, TrieInsertError, TrieValue, map_base};
+use std::collections::HashSet;
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+pub enum InsertOption {
+    /// Clear the trie of other values before inserting.
+    DeleteOthers,
+}
 
 #[allow(async_fn_in_trait)]
 pub trait TrieInsert {
@@ -11,21 +16,12 @@ pub trait TrieInsert {
         value: impl Into<TrieValue>,
     ) -> Result<&mut Self, TrieInsertError>;
 
-    /// Inserts `value` into the trie at position `key` after first clearing the
-    /// trie of all other values.
-    async fn clear_insert(
+    /// Inserts `value` into the trie at position `key` with `options`.
+    async fn insert_with_options(
         &mut self,
         key: i32,
         value: impl Into<TrieValue>,
-    ) -> Result<&mut Self, TrieInsertError>;
-
-    /// Inserts `value` several levels deep into the trie. Each element in `key` indexes
-    /// into the sub-trie found at the previous element.
-    async fn deep_insert<const N: usize>(
-        &mut self,
-        key: [i32; N],
-        value: impl Into<TrieValue>,
-        replace_tail: bool,
+        options: impl IntoIterator<Item = InsertOption>,
     ) -> Result<&mut Self, TrieInsertError>;
 }
 
@@ -35,59 +31,24 @@ impl<T: BaseCommit> TrieInsert for T {
         key: i32,
         value: impl Into<TrieValue>,
     ) -> Result<&mut Self, TrieInsertError> {
-        let value = value.into();
-        let key = HashKey::new(key);
-        let root = map_base::insert_kv(self.read_root(), key, value, self).await?;
-        self.commit_root(root).await?;
-        Ok(self)
+        self.insert_with_options(key, value, []).await
     }
-    async fn clear_insert(
+
+    async fn insert_with_options(
         &mut self,
         key: i32,
         value: impl Into<TrieValue>,
+        options: impl IntoIterator<Item = InsertOption>,
     ) -> Result<&mut Self, TrieInsertError> {
+        let options = options.into_iter().collect::<HashSet<_>>();
+        let pre_root = if options.contains(&InsertOption::DeleteOthers) {
+            MapBase::empty()
+        } else {
+            self.read_root()
+        };
         let value = value.into();
         let key = HashKey::new(key);
-        let root = map_base::insert_kv(MapBase::empty(), key, value, self).await?;
-        self.commit_root(root).await?;
-        Ok(self)
-    }
-
-    async fn deep_insert<const N: usize>(
-        &mut self,
-        key: [i32; N],
-        value: impl Into<TrieValue>,
-        replace_tail: bool,
-    ) -> Result<&mut Self, TrieInsertError> {
-        let deep_key = DeepKey::from(key);
-        let last_index = N - 1;
-        let mut map_bases = HashMap::new();
-        map_bases.insert(0, self.read_root().clone());
-        for i in 0..last_index {
-            let key = deep_key[i].clone();
-            let map_base = map_bases.get(&i).expect("map_base should exist");
-            let subtrie_i = i + 1;
-            let map_base_i = if replace_tail && subtrie_i == last_index {
-                MapBase::empty()
-            } else {
-                match query_value(*map_base, key, self).await? {
-                    None => MapBase::empty(),
-                    Some(TrieValue::SubTrie(map_base)) => map_base,
-                    Some(TrieValue::U32(_)) => unreachable!("expected a sub-trie but found a u32"),
-                }
-            };
-            map_bases.insert(subtrie_i, map_base_i);
-        }
-        let mut value = value.into();
-        for i in (0..=last_index).rev() {
-            let key = deep_key[i].clone();
-            let pre_map_base = map_bases.get(&i).expect("map_base should exist");
-            let post_map_base = map_base::insert_kv(pre_map_base.clone(), key, value, self).await?;
-            value = TrieValue::SubTrie(post_map_base);
-        }
-        let TrieValue::SubTrie(root) = value else {
-            panic!("value should be map_base")
-        };
+        let root = map_base::insert_kv(pre_root, key, value, self).await?;
         self.commit_root(root).await?;
         Ok(self)
     }

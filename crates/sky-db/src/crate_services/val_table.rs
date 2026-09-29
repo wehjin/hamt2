@@ -83,20 +83,20 @@ async fn insert_bytes(
 ) -> Result<(), TransactError> {
     let u32_stream = u32::Stream::new(bytes, SUBKEY_BYTES);
     for (u32_subkey, u32_value) in u32_stream {
-        trie.deep_insert(
+        trie.insert_deep(
             [KEY_VAL_TABLE, hash, u32_subkey],
             TrieValue::U32(u32_value),
             false,
         )
         .await?;
     }
-    trie.deep_insert(
+    trie.insert_deep(
         [KEY_VAL_TABLE, hash, SUBKEY_LEN],
         TrieValue::U32(bytes.len() as u32),
         false,
     )
     .await?;
-    trie.deep_insert(
+    trie.insert_deep(
         [KEY_VAL_TABLE, hash, SUBKEY_VAL_TYPE],
         TrieValue::U32(bytes_type as u32),
         false,

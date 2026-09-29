@@ -1,7 +1,7 @@
 use crate::storage::MemLoad;
 use crate::storage::load::StoreLoad;
-use crate::trie::TrieInsert;
 use crate::trie::TrieWalk;
+use crate::trie::{InsertCursor, TrieInsert};
 use crate::trie::{TrieStream, TrieValue};
 use futures::StreamExt;
 
@@ -11,7 +11,7 @@ async fn u32_stream() -> anyhow::Result<()> {
     trie.edit(async |trie| {
         trie.insert(1, TrieValue::U32(1)).await?;
         trie.insert(2, TrieValue::U32(2)).await?;
-        trie.deep_insert([3, 4], TrieValue::U32(34), false).await?;
+        trie.insert_deep([3, 4], TrieValue::U32(34), false).await?;
         Ok(())
     })
     .await?;
@@ -26,9 +26,9 @@ async fn u32_stream() -> anyhow::Result<()> {
 async fn subtrie_stream() -> anyhow::Result<()> {
     let mut trie = MemLoad::new();
     trie.edit(async |trie| {
-        trie.deep_insert([1, 101], TrieValue::U32(101), false)
+        trie.insert_deep([1, 101], TrieValue::U32(101), false)
             .await?;
-        trie.deep_insert([2, 202], TrieValue::U32(202), false)
+        trie.insert_deep([2, 202], TrieValue::U32(202), false)
             .await?;
         trie.insert(3, TrieValue::U32(33)).await?;
         Ok(())
