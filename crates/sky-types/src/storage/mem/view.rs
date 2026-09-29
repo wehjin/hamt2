@@ -1,7 +1,7 @@
 use crate::storage::ReadStorageError;
 use crate::storage::traits::view::StoreView;
-use crate::trie::TrieWalk;
-use crate::trie::{Base, BaseId, BaseRead, MapBase, TrieSnap};
+use crate::trie::{Base, BaseId, BaseRead, MapBase, QueryCursor, TrieSnap};
+use crate::trie::{CursorPos, TrieWalk};
 use std::ops::Deref;
 use std::sync::Arc;
 use std::sync::RwLock;
@@ -10,7 +10,7 @@ use std::sync::RwLock;
 pub struct MemView {
     pub(crate) bases: Arc<RwLock<Vec<Base>>>,
     pub(crate) max_id: BaseId,
-    pub(crate) root: MapBase,
+    pub(crate) cursor_pos: CursorPos,
 }
 
 impl MemView {
@@ -18,7 +18,7 @@ impl MemView {
         Self {
             bases: Arc::new(RwLock::new(vec![Base::empty()])),
             max_id: BaseId::ZERO,
-            root: MapBase::empty(),
+            cursor_pos: CursorPos::new(MapBase::empty()),
         }
     }
 
@@ -27,11 +27,21 @@ impl MemView {
     }
 }
 
+impl QueryCursor for MemView {
+    fn cursor_pos(&self) -> &CursorPos {
+        &self.cursor_pos
+    }
+
+    fn cursor_pos_mut(&mut self) -> &mut CursorPos {
+        &mut self.cursor_pos
+    }
+}
+
 impl Eq for MemView {}
 
 impl PartialEq for MemView {
     fn eq(&self, other: &Self) -> bool {
-        self.root == other.root
+        self.cursor_pos == other.cursor_pos
             && self.max_id == other.max_id
             && self.bases.deref().read().unwrap().deref()
                 == other.bases.deref().read().unwrap().deref()
@@ -44,7 +54,7 @@ impl BaseRead for MemView {
     }
 
     fn read_root(&self) -> MapBase {
-        self.root
+        self.cursor_pos.active_root
     }
 
     async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
@@ -70,8 +80,9 @@ impl TrieWalk for MemView {
     type Subtrie = Self;
 
     fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
+        let cursor_pos = CursorPos::new(subtrie_root);
         MemView {
-            root: subtrie_root,
+            cursor_pos,
             ..self.clone()
         }
     }

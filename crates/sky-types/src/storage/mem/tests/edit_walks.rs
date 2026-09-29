@@ -6,20 +6,20 @@ async fn insert_deep() {
     let mut edit = MemEdit::new();
     edit.insert_deep([1, 2, 10], 10, false).await.unwrap();
     edit.insert_deep([1, 2, 11], 11, false).await.unwrap();
-    edit.descend_keys([1, 2]).await.unwrap();
+    edit.descend_n([1, 2]).await.unwrap();
     assert_eq!(edit.query_u32(10).await.unwrap(), Some(10));
     assert_eq!(edit.query_u32(11).await.unwrap(), Some(11));
     edit.ascend_n(2);
 
     let backup = edit.backup();
     edit.insert_deep([1, 2, 12], 12, true).await.unwrap();
-    edit.descend_keys([1, 2]).await.unwrap();
+    edit.descend_n([1, 2]).await.unwrap();
     assert_eq!(edit.query_u32(10).await.unwrap(), None);
     assert_eq!(edit.query_u32(11).await.unwrap(), None);
     assert_eq!(edit.query_u32(12).await.unwrap(), Some(12));
 
     edit.restore(backup);
-    edit.descend_keys([1, 2]).await.unwrap();
+    edit.descend_n([1, 2]).await.unwrap();
     assert_eq!(edit.query_u32(10).await.unwrap(), Some(10));
     assert_eq!(edit.query_u32(11).await.unwrap(), Some(11));
     assert_eq!(edit.query_u32(12).await.unwrap(), None);

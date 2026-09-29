@@ -1,20 +1,45 @@
 use crate::trie::{
-    CursorPos, InsertOption, MapBase, TrieInsert, TrieInsertError, TrieKey, TrieQueryError,
-    TrieValue,
+    CursorPos, InsertOption, MapBase, TrieInsert, TrieInsertError, TrieKey, TrieQuery,
+    TrieQueryError, TrieValue,
 };
 
 #[allow(async_fn_in_trait)]
-pub trait QueryCursor {
-    fn top_root(&self) -> MapBase;
+pub trait QueryCursor: TrieQuery {
+    fn cursor_pos(&self) -> &CursorPos;
 
-    fn ascend(&mut self) -> Option<(TrieKey, MapBase)>;
+    fn cursor_pos_mut(&mut self) -> &mut CursorPos;
+
+    /// Returns the root of the trie
+    fn top_root(&self) -> MapBase {
+        self.cursor_pos().top_root()
+    }
+
+    /// Moves up one level in the trie.
+    fn ascend(&mut self) -> Option<(TrieKey, MapBase)> {
+        self.cursor_pos_mut().ascend()
+    }
+
+    /// Moves up n levels in the trie.
     fn ascend_n(&mut self, n: usize) {
         for _ in 0..n {
             self.ascend();
         }
     }
-    async fn descend(&mut self, key: impl Into<TrieKey>) -> Result<(), TrieQueryError>;
-    async fn descend_keys(
+
+    /// Moves down one level in the trie.
+    async fn descend(&mut self, key: impl Into<TrieKey>) -> Result<(), TrieQueryError> {
+        let key = key.into();
+        let lower_root = match self.query(key.into()).await? {
+            None => MapBase::empty(),
+            Some(TrieValue::U32(_)) => panic!("key is occupied by a primitive value"),
+            Some(TrieValue::SubTrie(lower_root)) => lower_root,
+        };
+        self.cursor_pos_mut().descend(key, lower_root);
+        Ok(())
+    }
+
+    /// Moves down n levels in the trie.
+    async fn descend_n(
         &mut self,
         keys: impl IntoIterator<Item = impl Into<TrieKey>>,
     ) -> Result<usize, TrieQueryError> {
@@ -27,14 +52,19 @@ pub trait QueryCursor {
     }
 
     /// Provides the cursor position for later restoration.
-    fn backup(&self) -> CursorPos;
+    fn backup(&self) -> CursorPos {
+        self.cursor_pos().clone()
+    }
 
     /// Restores cursor position to a previous backup.
-    fn restore(&mut self, pos: CursorPos);
+    fn restore(&mut self, pos: CursorPos) {
+        *self.cursor_pos_mut() = pos;
+    }
 }
 
 #[allow(async_fn_in_trait)]
 pub trait InsertCursor: QueryCursor + TrieInsert {
+    /// Inserts `value` into the trie after descending the path marked by `keys`.
     async fn insert_deep(
         &mut self,
         keys: impl IntoIterator<Item = impl Into<TrieKey>>,
@@ -47,7 +77,7 @@ pub trait InsertCursor: QueryCursor + TrieInsert {
             let last_key = keys.pop().expect("too few keys");
             (keys, last_key)
         };
-        let count = match self.descend_keys(descend_keys).await {
+        let count = match self.descend_n(descend_keys).await {
             Ok(count) => count,
             Err(e) => {
                 self.restore(start_pos);

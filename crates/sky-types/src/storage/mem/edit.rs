@@ -1,8 +1,8 @@
 use crate::storage::edit::StoreEdit;
 use crate::storage::{MemView, ReadStorageError, WriteStorageError};
 use crate::trie::{
-    Base, BaseCommit, BaseId, BaseRead, CursorPos, MapBase, TrieInsert, TrieKey, TrieQuery,
-    TrieQueryError, TrieSnap, TrieValue, TrieWalk,
+    Base, BaseCommit, BaseId, BaseRead, CursorPos, MapBase, TrieInsert, TrieSnap, TrieValue,
+    TrieWalk,
 };
 use crate::trie::{InsertCursor, QueryCursor};
 use std::ops::Deref;
@@ -18,18 +18,11 @@ pub struct MemEdit {
 
 impl MemEdit {
     pub fn new() -> Self {
-        let past = Arc::new(MemView::new());
-        let cursor_pos = CursorPos::new(past.root);
-        let bases = vec![];
-        Self {
-            past,
-            bases,
-            cursor_pos,
-        }
+        Self::extend(MemView::new())
     }
     pub fn extend(past: MemView) -> Self {
         let past = Arc::new(past);
-        let cursor_pos = CursorPos::new(past.top_root());
+        let cursor_pos = past.cursor_pos().clone().ascend_top();
         let bases = vec![];
         Self {
             past,
@@ -44,28 +37,11 @@ impl MemEdit {
 }
 
 impl QueryCursor for MemEdit {
-    fn top_root(&self) -> MapBase {
-        self.cursor_pos.top_root()
+    fn cursor_pos(&self) -> &CursorPos {
+        &self.cursor_pos
     }
-    fn ascend(&mut self) -> Option<(TrieKey, MapBase)> {
-        self.cursor_pos.ascend()
-    }
-    async fn descend(&mut self, key: impl Into<TrieKey>) -> Result<(), TrieQueryError> {
-        let key = key.into();
-        let lower_root = match self.query(key.into()).await? {
-            None => MapBase::empty(),
-            Some(TrieValue::U32(_)) => panic!("key is occupied by a primitive value"),
-            Some(TrieValue::SubTrie(lower_root)) => lower_root,
-        };
-        self.cursor_pos.descend(key, lower_root);
-        Ok(())
-    }
-    fn backup(&self) -> CursorPos {
-        self.cursor_pos.clone()
-    }
-
-    fn restore(&mut self, pos: CursorPos) {
-        self.cursor_pos = pos;
+    fn cursor_pos_mut(&mut self) -> &mut CursorPos {
+        &mut self.cursor_pos
     }
 }
 impl InsertCursor for MemEdit {}

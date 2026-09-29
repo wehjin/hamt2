@@ -1,12 +1,13 @@
 use crate::storage::MemEdit;
 use crate::storage::load::StoreLoad;
 use crate::storage::mem::MemView;
-use crate::trie::{Base, BaseId, BaseRead, MapBase, QueryCursor, TrieQuery, TrieQueryError, TrieSnap, TrieStream, TrieValue, TrieWalk};
+use crate::trie::{
+    BaseRead, CursorPos, MapBase, TrieQuery, TrieQueryError, TrieSnap, TrieStream, TrieValue,
+    TrieWalk,
+};
 use anyhow::anyhow;
 use futures::Stream;
 use std::ops::Deref;
-use std::sync::Arc;
-use std::sync::RwLock;
 
 /// Deliberately non-Clone
 #[derive(Debug)]
@@ -21,11 +22,7 @@ impl StoreLoad for MemLoad {
     type View = MemView;
 
     fn new() -> Self {
-        let inner = MemView {
-            bases: Arc::new(RwLock::new(vec![Base::empty()])),
-            max_id: BaseId(0),
-            root: MapBase::empty(),
-        };
+        let inner = MemView::new();
         Self { inner }
     }
 
@@ -40,7 +37,7 @@ impl StoreLoad for MemLoad {
             return Err(anyhow!("stale edit"));
         }
         let max_id = edit.max_id();
-        let root = edit.top_root();
+        let cursor_pos = edit.cursor_pos.ascend_top();
         let bases = {
             let mut edit_bases = edit
                 .bases
@@ -54,7 +51,7 @@ impl StoreLoad for MemLoad {
         self.inner = MemView {
             bases,
             max_id,
-            root,
+            cursor_pos,
         };
         Ok(())
     }
@@ -63,8 +60,9 @@ impl StoreLoad for MemLoad {
 impl TrieWalk for MemLoad {
     type Subtrie = <Self as StoreLoad>::View;
     fn to_subtrie(&self, subtrie_root: MapBase) -> Self::Subtrie {
+        let cursor_pos = CursorPos::new(subtrie_root);
         MemView {
-            root: subtrie_root,
+            cursor_pos,
             ..self.snapshot()
         }
     }

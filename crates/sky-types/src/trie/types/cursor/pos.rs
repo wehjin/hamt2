@@ -53,4 +53,10 @@ impl CursorPos {
             None
         }
     }
+    pub fn ascend_top(self) -> Self {
+        Self {
+            route: vec![],
+            active_root: self.top_root(),
+        }
+    }
 }
