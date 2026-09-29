@@ -14,7 +14,9 @@ pub trait TrieInsert {
         &mut self,
         key: i32,
         value: impl Into<TrieValue>,
-    ) -> Result<&mut Self, TrieInsertError>;
+    ) -> Result<&mut Self, TrieInsertError> {
+        self.insert_with_options(key, value, []).await
+    }
 
     /// Inserts `value` into the trie at position `key` with `options`.
     async fn insert_with_options(
@@ -26,14 +28,6 @@ pub trait TrieInsert {
 }
 
 impl<T: BaseCommit> TrieInsert for T {
-    async fn insert(
-        &mut self,
-        key: i32,
-        value: impl Into<TrieValue>,
-    ) -> Result<&mut Self, TrieInsertError> {
-        self.insert_with_options(key, value, []).await
-    }
-
     async fn insert_with_options(
         &mut self,
         key: i32,
