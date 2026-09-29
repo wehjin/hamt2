@@ -60,6 +60,13 @@ impl QueryCursor for MemEdit {
         self.cursor_pos.descend(key, lower_root);
         Ok(())
     }
+    fn backup(&self) -> CursorPos {
+        self.cursor_pos.clone()
+    }
+
+    fn restore(&mut self, pos: CursorPos) {
+        self.cursor_pos = pos;
+    }
 }
 impl InsertCursor for MemEdit {}
 impl StoreEdit for MemEdit {}

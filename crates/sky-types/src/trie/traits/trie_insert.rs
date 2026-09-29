@@ -11,6 +11,14 @@ pub trait TrieInsert {
         value: impl Into<TrieValue>,
     ) -> Result<&mut Self, TrieInsertError>;
 
+    /// Inserts `value` into the trie at position `key` after first clearing the
+    /// trie of all other values.
+    async fn clear_insert(
+        &mut self,
+        key: i32,
+        value: impl Into<TrieValue>,
+    ) -> Result<&mut Self, TrieInsertError>;
+
     /// Inserts `value` several levels deep into the trie. Each element in `key` indexes
     /// into the sub-trie found at the previous element.
     async fn deep_insert<const N: usize>(
@@ -30,6 +38,17 @@ impl<T: BaseCommit> TrieInsert for T {
         let value = value.into();
         let key = HashKey::new(key);
         let root = map_base::insert_kv(self.read_root(), key, value, self).await?;
+        self.commit_root(root).await?;
+        Ok(self)
+    }
+    async fn clear_insert(
+        &mut self,
+        key: i32,
+        value: impl Into<TrieValue>,
+    ) -> Result<&mut Self, TrieInsertError> {
+        let value = value.into();
+        let key = HashKey::new(key);
+        let root = map_base::insert_kv(MapBase::empty(), key, value, self).await?;
         self.commit_root(root).await?;
         Ok(self)
     }

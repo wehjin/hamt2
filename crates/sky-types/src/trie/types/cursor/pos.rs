@@ -8,8 +8,8 @@ pub struct Leg {
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct CursorPos {
-    pub route: Vec<Leg>,
-    pub active_root: MapBase,
+    pub(crate) route: Vec<Leg>,
+    pub(crate) active_root: MapBase,
 }
 
 impl CursorPos {
