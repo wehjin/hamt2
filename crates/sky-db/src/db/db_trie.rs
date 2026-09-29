@@ -84,7 +84,7 @@ pub async fn find<'a, T>(
     where_: impl Into<Vec<Atom>>,
 ) -> FindResult
 where
-    T: TrieWalk,
+    T: TrieWalk + QueryCursor + TrieSnap + TrieQuery,
 {
     let select = select.into();
     let query_terms = select.iter().map(|s| term(var(*s))).collect::<Vec<_>>();
@@ -109,22 +109,18 @@ where
     found
 }
 
-pub fn ev_stream<'a, T>(
-    trie: &'a T,
+pub fn ev_stream<T: QueryCursor + TrieStream + TrieSnap>(
+    trie: &T,
     a: Attr,
-    schema: &'a Schema,
-) -> impl futures::Stream<Item = (i32, Val)> + 'a
-where
-    T: TrieWalk + 'a,
-{
+    schema: &Schema,
+) -> impl futures::Stream<Item = (i32, Val)> {
     stream! {
-        if let Some(evt_subtrie) = evt_subtrie(trie, a, schema).await {
-            let evid_stream = evid_stream(evt_subtrie);
-            pin_mut!(evid_stream);
-            while let Some((eid, vid)) = evid_stream.next().await {
-                let val = val_table::query(trie, Vid::from_id(vid)).await.ok().flatten().expect("val not found");
-                yield (eid, val);
-            }
+        let evt_subtrie = evt_subtrie(trie, a, schema).await;
+        let evid_stream = evid_stream(evt_subtrie);
+        pin_mut!(evid_stream);
+        while let Some((eid, vid)) = evid_stream.next().await {
+            let val = val_table::query(trie, Vid::from_id(vid)).await.ok().flatten().expect("val not found");
+            yield (eid, val);
         }
     }
 }
@@ -226,22 +222,29 @@ where
     root_value.and_then(|value| trie.to_subtrie_in_value(value))
 }
 
-async fn evt_subtrie<T>(trie: &T, attr: Attr, schema: &Schema) -> Option<T::Subtrie>
+async fn evt_subtrie<T>(trie: &T, attr: Attr, schema: &Schema) -> T::Snapshot
 where
-    T: TrieWalk,
+    T: QueryCursor + TrieStream + TrieSnap,
 {
     let aid = schema[attr].ein().to_i32();
-    let keys = [KEY_AEVT, aid];
-    let evt_value = trie.deep_query(keys).await.ok().flatten();
-    evt_value.and_then(|evt| trie.to_subtrie_in_value(evt))
+
+    let mut snapshot = trie.snapshot();
+    snapshot.descend(KEY_AEVT).await.expect("descend aevt");
+    snapshot.descend(aid).await.expect("descend aid");
+    snapshot
 }
 
-fn evid_stream<T: TrieWalk>(evt_subtrie: T) -> impl futures::Stream<Item = (i32, i32)> {
+fn evid_stream<T: QueryCursor + TrieStream + TrieSnap>(
+    evt_subtrie: T,
+) -> impl futures::Stream<Item = (i32, i32)> {
     stream! {
-        let evt_stream = evt_subtrie.subtrie_stream();
-        pin_mut!(evt_stream);
-        while let Some((eid, vt_trie)) = evt_stream.next().await {
-            let vt_stream = vt_trie.u32_stream();
+        let evt_roots = evt_subtrie.map_base_stream();
+        pin_mut!(evt_roots);
+        while let Some((eid, _vt_trie)) = evt_roots.next().await {
+            let mut vt_subtrie = evt_subtrie.snapshot();
+            vt_subtrie.descend(eid).await.expect("failed to descend to vt_subtrie");
+
+            let vt_stream = vt_subtrie.u32_stream();
             pin_mut!(vt_stream);
             while let Some((vid, tx_u32)) = vt_stream.next().await {
                 let tx_value = Value::from(tx_u32);

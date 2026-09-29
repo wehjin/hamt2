@@ -61,7 +61,7 @@ impl Atom {
         kb: &KnowledgeBase<'a, T>,
     ) -> Vec<Substitution>
     where
-        T: TrieWalk,
+        T: TrieWalk + QueryCursor + TrieSnap + TrieQuery,
     {
         let mut new_subs = Vec::new();
         for sub in subs {

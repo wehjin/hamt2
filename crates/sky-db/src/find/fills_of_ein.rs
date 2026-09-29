@@ -4,7 +4,7 @@ use crate::db::db_trie;
 use crate::traits::Find;
 use sky_types::db::schema::Schema;
 use sky_types::db::{Ein, Fill, FindResult};
-use sky_types::trie::TrieWalk;
+use sky_types::trie::{QueryCursor, TrieQuery, TrieSnap, TrieWalk};
 
 pub struct EntityFills(pub Ein);
 
@@ -32,7 +32,7 @@ impl Find for EntityFills {
     fn apply<T>(self, trie: &T, schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
     where
         Self: Sized,
-        T: TrieWalk,
+        T: TrieWalk + QueryCursor + TrieSnap + TrieQuery,
     {
         async move {
             // For now, use custom function `list_entity_attributes`. Later maybe make a program

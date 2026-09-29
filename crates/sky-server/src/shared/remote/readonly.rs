@@ -3,7 +3,9 @@ use crate::shared::remote::client::requests::ClientRequest;
 use sky_types::db::DbStatus;
 use sky_types::storage::ReadStorageError;
 use sky_types::storage::view::StoreView;
-use sky_types::trie::{Base, BaseId, BaseRead, MapBase, TrieSnap, TrieWalk};
+use sky_types::trie::{
+    Base, BaseId, BaseRead, CursorPos, MapBase, QueryCursor, TrieSnap, TrieWalk,
+};
 use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
 use tokio::sync::mpsc::Sender;
@@ -19,6 +21,16 @@ pub struct Remote<T: SpawnTask> {
 impl<T: SpawnTask> Remote<T> {
     pub fn to_status(&self) -> DbStatus {
         self.status.read().unwrap().clone()
+    }
+}
+
+impl<T: SpawnTask> QueryCursor for Remote<T> {
+    fn cursor_pos(&self) -> &CursorPos {
+        unimplemented!()
+    }
+
+    fn cursor_pos_mut(&mut self) -> &mut CursorPos {
+        unimplemented!()
     }
 }
 

@@ -26,7 +26,7 @@ impl Program {
 
     pub async fn solve<'a, T>(self, db_trie: &'a T, schema: &'a Schema) -> KnowledgeBase<'a, T>
     where
-        T: TrieWalk,
+        T: TrieWalk + QueryCursor + TrieSnap + TrieQuery,
     {
         for rule in &self.rules {
             if !rule.is_range_restricted() {
