@@ -1,3 +1,4 @@
+mod cursor;
 mod deep_key;
 mod error;
 mod hash_key;
@@ -8,6 +9,7 @@ mod slot_base_id;
 mod slot_map;
 mod trie_value;
 
+pub use cursor::*;
 pub use deep_key::*;
 pub use error::*;
 pub use hash_key::*;
