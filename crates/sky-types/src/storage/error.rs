@@ -14,4 +14,6 @@ pub enum WriteStorageError {
     Io(String, #[source] std::io::Error),
     #[error("failed to encode {0}: {1}")]
     Encode(String, #[source] postcard::Error),
+    #[error("write storage failed: {0}")]
+    Anyhow(#[from] anyhow::Error),
 }

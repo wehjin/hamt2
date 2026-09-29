@@ -1,0 +1,124 @@
+use crate::storage::edit::StoreEdit;
+use crate::storage::{MemView, ReadStorageError, WriteStorageError};
+use crate::trie::{
+    Base, BaseCommit, BaseId, BaseRead, CursorPos, MapBase, TrieInsert, TrieInsertError, TrieKey,
+    TrieQuery, TrieSnap, TrieValue, TrieWalk,
+};
+use std::ops::Deref;
+use std::sync::Arc;
+
+/// Deliberately non-Clone.
+#[derive(Debug)]
+pub struct MemEdit2 {
+    pub(crate) past: Arc<MemView>,
+    pub(crate) bases: Vec<Arc<Base>>,
+    pub(crate) cursor_pos: CursorPos,
+}
+
+impl MemEdit2 {
+    pub fn new() -> Self {
+        let past = Arc::new(MemView::new());
+        let pos = CursorPos::new(past.root);
+        let bases = vec![];
+        Self {
+            past,
+            bases,
+            cursor_pos: pos,
+        }
+    }
+    fn start_id(&self) -> BaseId {
+        self.past.max_id() + 1
+    }
+}
+
+impl MemEdit2 {
+    pub async fn descend_insert(&mut self, key: impl Into<TrieKey>) -> Result<(), TrieInsertError> {
+        let key = key.into();
+        let lower_root = match self.query(key.into()).await? {
+            None => {
+                let lower_root = MapBase::empty();
+                self.insert(key.into(), TrieValue::SubTrie(lower_root))
+                    .await?;
+                lower_root
+            }
+            Some(TrieValue::U32(_)) => panic!("key is occupied by a primitive value"),
+            Some(TrieValue::SubTrie(lower_root)) => lower_root,
+        };
+        self.cursor_pos.descend(key, lower_root);
+        Ok(())
+    }
+    pub fn ascend(&mut self) -> Option<(TrieKey, MapBase)> {
+        self.cursor_pos.ascend()
+    }
+}
+
+impl StoreEdit for MemEdit2 {}
+
+impl TrieWalk for MemEdit2 {
+    type Subtrie = Self;
+
+    fn to_subtrie(&self, _subtrie_root: MapBase) -> Self::Subtrie {
+        unimplemented!()
+    }
+}
+
+impl TrieSnap for MemEdit2 {
+    type Snapshot = Self;
+
+    fn snapshot(&self) -> Self::Snapshot {
+        Self {
+            past: self.past.clone(),
+            bases: self.bases.clone(),
+            cursor_pos: self.cursor_pos.clone(),
+        }
+    }
+}
+impl BaseCommit for MemEdit2 {
+    async fn commit_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
+        let cursor_pos = self.cursor_pos.clone();
+        if let Some((key, _previous_active)) = self.cursor_pos.ascend() {
+            // Make sure the ascended level has the updated value at key.
+            let value = TrieValue::SubTrie(root);
+            if let Err(e) = Box::pin(self.insert(key.into(), value)).await {
+                self.cursor_pos = cursor_pos;
+                return Err(WriteStorageError::Anyhow(e.into()));
+            }
+            // Return to the original level.
+            self.cursor_pos.descend(key, root);
+        } else {
+            self.cursor_pos.active_root = root;
+        }
+        Ok(())
+    }
+
+    async fn commit_base(&mut self, base: Base) -> Result<BaseId, WriteStorageError> {
+        let next_id = self.next_id();
+        self.bases.push(Arc::new(base));
+        debug_assert_eq!(self.max_id(), next_id);
+        Ok(next_id)
+    }
+}
+
+impl BaseRead for MemEdit2 {
+    fn max_id(&self) -> BaseId {
+        self.past.max_id() + self.bases.len()
+    }
+
+    fn read_root(&self) -> MapBase {
+        self.cursor_pos.active_root()
+    }
+
+    async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
+        let start_id = self.start_id();
+        if id < start_id {
+            return self.past.read_base(id).await;
+        }
+        if id <= self.max_id() {
+            let index = (id.0 - start_id.0) as usize;
+            let base = self.bases[index].deref().clone();
+            Ok(base)
+        } else {
+            Ok(Base::empty())
+        }
+    }
+}

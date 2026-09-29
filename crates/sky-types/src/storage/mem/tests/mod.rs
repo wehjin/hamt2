@@ -6,6 +6,9 @@ use crate::storage::mem::tests::fixtures::{
 use crate::trie::{TrieInsert, TrieQuery, TrieSnap, TrieStream, TrieValue, TrieWalk};
 use futures::StreamExt;
 
+#[cfg(test)]
+mod edit_walks;
+
 #[tokio::test]
 async fn view_has_query() {
     let mem = MemLoad::new().snapshot();
