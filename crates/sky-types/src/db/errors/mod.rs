@@ -1,4 +1,4 @@
-use crate::storage::error::{ReadStorageError, WriteStorageError};
+use crate::storage::error::WriteStorageError;
 use crate::trie::{TrieInsertError, TrieQueryError};
 
 #[derive(thiserror::Error, Debug)]
@@ -11,9 +11,6 @@ pub enum QueryError {
 pub enum TransactError {
     #[error("QueryError: {0}")]
     QueryError(#[from] QueryError),
-
-    #[error("ReadStorageError: {0}")]
-    ReadStorageError(#[from] ReadStorageError),
 
     #[error("WriteStorageError: {0}")]
     WriteStorageError(#[from] WriteStorageError),
