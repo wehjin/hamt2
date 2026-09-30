@@ -45,7 +45,7 @@ impl Db {
 
     /// Keep until we figure out a better api for sky-server.
     pub async fn read_base(&self, id: BufferIndex) -> Result<Base, ReadStorageError> {
-        self.trie.snapshot().read_base(id).await
+        self.trie.snapshot().get_base(id).await
     }
 
     pub async fn new(storage: MemLoad, db_spec: impl Into<DbSpec>) -> Result<Self, ConnectError> {

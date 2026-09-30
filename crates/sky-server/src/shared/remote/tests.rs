@@ -94,7 +94,7 @@ async fn remote_client_works() {
         // be in a separate call so we can continue working before the read returns.
         let mut updater = client.to_updater();
         let join = spawn_local(async move {
-            let read = client.read_base(id1).await.unwrap();
+            let read = client.get_base(id1).await.unwrap();
             (client, read)
         });
         let client_request_after_read = requests_from_client.recv().await.expect("recv request");
@@ -113,7 +113,7 @@ async fn remote_client_works() {
 
         // Try the read again. This time it should be in the cache and there should be
         // no request sent to socket.
-        let read_result = tokio::time::timeout(Duration::from_secs(1), client.read_base(id1))
+        let read_result = tokio::time::timeout(Duration::from_secs(1), client.get_base(id1))
             .await
             .expect("read");
         let Ok(second_read_from_client) = read_result else {

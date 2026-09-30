@@ -12,8 +12,8 @@ impl<T: SpawnTask> Buffer for RemoteClient<T> {
         self.inner.read_root()
     }
 
-    async fn read_base(&self, id: BufferIndex) -> Result<Base, ReadStorageError> {
-        self.inner.read_base(id).await
+    async fn get_base(&self, id: BufferIndex) -> Result<Base, ReadStorageError> {
+        self.inner.get_base(id).await
     }
 }
 

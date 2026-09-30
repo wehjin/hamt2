@@ -10,7 +10,7 @@ pub async fn one_kv<P: BufferMut>(
 ) -> Result<MapBase, TrieInsertError> {
     use crate::trie::base;
     let base = base::form_kv(key, value);
-    let id = policy.commit_base(base).await?;
+    let id = policy.push_base(base).await?;
     let map_base = MapBase {
         map: SlotMap::set_key_bit(key),
         base: id,
@@ -39,6 +39,6 @@ pub async fn two_kv<P: BufferMut>(
         }
         Base { slots }
     };
-    let id = policy.commit_base(base).await?;
+    let id = policy.push_base(base).await?;
     Ok(MapBase { map, base: id })
 }

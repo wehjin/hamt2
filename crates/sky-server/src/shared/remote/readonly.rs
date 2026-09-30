@@ -53,7 +53,7 @@ impl<T: SpawnTask> Buffer for Remote<T> {
         self.status.read().unwrap().head.root
     }
 
-    async fn read_base(&self, id: BufferIndex) -> Result<Base, ReadStorageError> {
+    async fn get_base(&self, id: BufferIndex) -> Result<Base, ReadStorageError> {
         if id > self.max_index() {
             panic!("invalid base id");
         }

@@ -15,7 +15,7 @@ pub async fn query_value<S: Buffer>(
     let MapBase { map, base: base_id } = map_base;
     let value = match map.try_base_index(key) {
         Some(base_index) => {
-            let base = base_read.read_base(base_id).await?;
+            let base = base_read.get_base(base_id).await?;
             Box::pin(base.as_ref()[base_index].query_value(key, base_read)).await?
         }
         None => None,
@@ -33,7 +33,7 @@ pub fn kv_stream<S: Buffer>(
             jobs: Job::start(&map_base).into_iter().collect::<Vec<_>>(),
         };
         while let Some(mut job) = state.jobs.pop() {
-            let base = state.storage.read_base(job.base).await.expect("read base");
+            let base = state.storage.get_base(job.base).await.expect("read base");
             match &base.as_ref()[job.slot_offset] {
                 Slot::KeyValue(key, value) => {
                     // Found a key and value. We finish by moving the current
@@ -67,7 +67,7 @@ pub async fn query_keys_values<P: Buffer>(
     let MapBase { map, base: base_id } = map_base;
     let mut out = Vec::new();
     let slot_count = map.slot_count();
-    let base = storage.read_base(base_id).await?;
+    let base = storage.get_base(base_id).await?;
     let base_ref = base.as_ref();
     debug_assert_eq!(slot_count, base_ref.len());
     for base_index in 0..slot_count {

@@ -15,5 +15,5 @@ pub trait Buffer {
     fn read_root(&self) -> MapBase;
 
     /// Reads a base from the trie's state at position `id`.
-    async fn read_base(&self, id: BufferIndex) -> Result<Base, ReadStorageError>;
+    async fn get_base(&self, id: BufferIndex) -> Result<Base, ReadStorageError>;
 }

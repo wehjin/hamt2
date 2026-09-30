@@ -57,7 +57,7 @@ impl Buffer for MemView {
         self.cursor_pos.active_root
     }
 
-    async fn read_base(&self, id: BufferIndex) -> Result<Base, ReadStorageError> {
+    async fn get_base(&self, id: BufferIndex) -> Result<Base, ReadStorageError> {
         let base = if id < BufferIndex::ZERO || id > self.max_id {
             Base::empty()
         } else {

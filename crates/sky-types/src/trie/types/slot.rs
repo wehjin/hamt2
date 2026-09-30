@@ -34,7 +34,7 @@ impl Slot {
             ))
             .await?;
             let base = Base { slots: vec![slot] };
-            let id = policy.commit_base(base).await?;
+            let id = policy.push_base(base).await?;
             Ok(Slot::MapBase(MapBase { map, base: id }))
         } else {
             let map_base = two_kv(a_key, a_value, b_key, b_value, policy).await?;

@@ -75,7 +75,7 @@ impl BufferMut for MemEdit {
         Ok(())
     }
 
-    async fn commit_base(&mut self, base: Base) -> Result<BufferIndex, WriteStorageError> {
+    async fn push_base(&mut self, base: Base) -> Result<BufferIndex, WriteStorageError> {
         let next_id = self.next_index();
         self.bases.push(Arc::new(base));
         debug_assert_eq!(self.max_index(), next_id);
@@ -92,10 +92,10 @@ impl Buffer for MemEdit {
         self.cursor_pos.active_root()
     }
 
-    async fn read_base(&self, id: BufferIndex) -> Result<Base, ReadStorageError> {
+    async fn get_base(&self, id: BufferIndex) -> Result<Base, ReadStorageError> {
         let start_id = self.start_id();
         if id < start_id {
-            return self.past.read_base(id).await;
+            return self.past.get_base(id).await;
         }
         if id <= self.max_index() {
             let index = (id.0 - start_id.0) as usize;
