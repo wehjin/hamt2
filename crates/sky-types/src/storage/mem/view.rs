@@ -18,7 +18,7 @@ impl MemView {
 
     pub fn with_buffer(buffer: SlotBuffer) -> Self {
         let max_id = buffer.max_index();
-        let cursor_pos = CursorPos::new(buffer.read_root());
+        let cursor_pos = CursorPos::new(buffer.get_root());
         Self {
             buffer: Arc::new(buffer),
             max_id,
@@ -27,7 +27,7 @@ impl MemView {
     }
 
     pub fn top_root(&self) -> MapBase {
-        self.read_root()
+        self.get_root()
     }
 }
 
@@ -56,7 +56,7 @@ impl Buffer for MemView {
         self.max_id
     }
 
-    fn read_root(&self) -> MapBase {
+    fn get_root(&self) -> MapBase {
         self.cursor_pos.active_root
     }
 

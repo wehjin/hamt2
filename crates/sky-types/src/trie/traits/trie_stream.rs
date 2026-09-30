@@ -13,7 +13,7 @@ pub trait TrieStream {
 
 impl<T: TrieSnap<Snapshot: Buffer> + Buffer> TrieStream for T {
     fn map_base_stream(&self) -> impl Stream<Item = (i32, MapBase)> {
-        kv_stream(self.read_root(), self.snapshot()).filter_map(move |(key, value)| async move {
+        kv_stream(self.get_root(), self.snapshot()).filter_map(move |(key, value)| async move {
             if let TrieValue::SubTrie(map_base) = value {
                 Some((key, map_base))
             } else {
@@ -22,7 +22,7 @@ impl<T: TrieSnap<Snapshot: Buffer> + Buffer> TrieStream for T {
         })
     }
     fn u32_stream(&self) -> impl Stream<Item = (i32, u32)> {
-        kv_stream(self.read_root(), self.snapshot()).filter_map(|(key, value)| async move {
+        kv_stream(self.get_root(), self.snapshot()).filter_map(|(key, value)| async move {
             if let TrieValue::U32(val) = value {
                 Some((key, val))
             } else {

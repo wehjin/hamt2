@@ -40,7 +40,7 @@ impl Buffer for SlotBuffer {
         BufferIndex(self.slots.len() as i32 - 1)
     }
 
-    fn read_root(&self) -> MapBase {
+    fn get_root(&self) -> MapBase {
         if let Some(root_index) = self.root_index {
             let Slot::MapBase(map_base) = self.slots[root_index] else {
                 panic!("expected a subtrie in the last slot")
@@ -64,7 +64,7 @@ impl Buffer for SlotBuffer {
 }
 
 impl BufferMut for SlotBuffer {
-    async fn commit_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
+    async fn push_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
         self.slots.push(Slot::MapBase(root));
         self.root_index = Some(self.slots.len() - 1);
         Ok(())

@@ -61,7 +61,7 @@ impl Buffer for MemEdit {
         self.past.max_index() + self.buffer.len()
     }
 
-    fn read_root(&self) -> MapBase {
+    fn get_root(&self) -> MapBase {
         self.cursor_pos.active_root()
     }
 
@@ -79,7 +79,7 @@ impl Buffer for MemEdit {
 }
 
 impl BufferMut for MemEdit {
-    async fn commit_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
+    async fn push_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
         let cursor_pos = self.cursor_pos.clone();
         if let Some((key, _previous_active)) = self.cursor_pos.ascend() {
             // Make sure the ascended level has the updated value at key.
@@ -91,7 +91,7 @@ impl BufferMut for MemEdit {
             // Return to the original level.
             self.cursor_pos.descend(key, root);
         } else {
-            self.buffer.commit_root(root).await?;
+            self.buffer.push_root(root).await?;
             self.cursor_pos.active_root = root;
         }
         Ok(())

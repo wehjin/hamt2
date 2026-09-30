@@ -6,7 +6,7 @@ where
     Self: Sized,
 {
     /// Commits a new `root` into the trie.
-    async fn commit_root(&mut self, root: MapBase) -> Result<(), WriteStorageError>;
+    async fn push_root(&mut self, root: MapBase) -> Result<(), WriteStorageError>;
 
     /// Commits a base and returns its assigned handle.
     async fn push_base(&mut self, base: Base) -> Result<BufferIndex, WriteStorageError>;

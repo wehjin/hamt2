@@ -24,7 +24,7 @@ async fn base_id_zero_is_the_empty_base() {
 #[tokio::test]
 async fn empty_storage_root_is_empty() {
     let storage = MemEdit::new();
-    assert_eq!(MapBase::empty(), storage.read_root());
+    assert_eq!(MapBase::empty(), storage.get_root());
 }
 
 #[tokio::test]
@@ -35,13 +35,13 @@ async fn root_round_trip_works() {
         let root = one_kv(HashKey::new(7), TrieValue::U32(7), &mut storage)
             .await
             .expect("root");
-        storage.commit_root(root).await.expect("write root");
-        assert_eq!(root, storage.read_root());
+        storage.push_root(root).await.expect("write root");
+        assert_eq!(root, storage.get_root());
         load.commit_edit(storage).await.unwrap();
         root
     };
     let view = load.snapshot();
-    assert_eq!(root, view.read_root());
+    assert_eq!(root, view.get_root());
 }
 
 #[tokio::test]

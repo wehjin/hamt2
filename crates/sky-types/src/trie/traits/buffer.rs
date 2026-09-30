@@ -11,7 +11,7 @@ pub trait Buffer {
     }
 
     /// Reads the trie's root.
-    fn read_root(&self) -> MapBase;
+    fn get_root(&self) -> MapBase;
 
     /// Reads a base with `size` slots from the trie's buffer
     /// at position `id`.

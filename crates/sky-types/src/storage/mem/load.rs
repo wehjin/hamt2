@@ -42,7 +42,7 @@ impl StoreLoad for MemLoad {
     }
     async fn commit_edit(&mut self, edit: Self::Edit) -> Result<(), anyhow::Error> {
         if edit.past.max_index() != self.inner.max_index()
-            || edit.past.read_root() != self.inner.read_root()
+            || edit.past.get_root() != self.inner.get_root()
         {
             return Err(anyhow!("stale edit"));
         }

@@ -46,7 +46,7 @@ impl<T: SpawnTask> Buffer for Remote<T> {
         self.status.read().unwrap().head.max_id
     }
 
-    fn read_root(&self) -> MapBase {
+    fn get_root(&self) -> MapBase {
         // TODO We should wait for the status to arrive instead of return empty and
         // giving the false impression that there is no data.
         self.status.read().unwrap().head.root

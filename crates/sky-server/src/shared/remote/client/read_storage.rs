@@ -7,8 +7,8 @@ impl<T: SpawnTask> Buffer for RemoteClient<T> {
         self.inner.max_index()
     }
 
-    fn read_root(&self) -> MapBase {
-        self.inner.read_root()
+    fn get_root(&self) -> MapBase {
+        self.inner.get_root()
     }
 
     async fn get_base(&self, id: BufferIndex, size: usize) -> Base {

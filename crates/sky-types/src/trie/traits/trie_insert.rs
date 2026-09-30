@@ -38,12 +38,12 @@ impl<T: BufferMut> TrieInsert for T {
         let pre_root = if options.contains(&InsertOption::DeleteOthers) {
             MapBase::empty()
         } else {
-            self.read_root()
+            self.get_root()
         };
         let value = value.into();
         let key = HashKey::new(key);
         let root = map_base::insert_kv(pre_root, key, value, self).await?;
-        self.commit_root(root).await?;
+        self.push_root(root).await?;
         Ok(self)
     }
 }

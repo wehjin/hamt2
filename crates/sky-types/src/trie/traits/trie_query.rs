@@ -21,7 +21,7 @@ pub trait TrieQuery {
 
 impl<T: Buffer> TrieQuery for T {
     async fn query(&self, key: i32) -> Result<Option<TrieValue>, TrieQueryError> {
-        map_base::query_value(self.read_root(), HashKey::new(key), self).await
+        map_base::query_value(self.get_root(), HashKey::new(key), self).await
     }
 
     async fn query_u32(&self, key: i32) -> Result<Option<u32>, TrieQueryError> {
@@ -35,13 +35,13 @@ impl<T: Buffer> TrieQuery for T {
     }
 
     async fn query_all(&self) -> Result<Vec<(i32, TrieValue)>, TrieQueryError> {
-        map_base::query_keys_values(self.read_root(), self).await
+        map_base::query_keys_values(self.get_root(), self).await
     }
 
     async fn query_deep<const N: usize>(
         &self,
         key: [i32; N],
     ) -> Result<Option<TrieValue>, TrieQueryError> {
-        map_base::query_value_deep(self.read_root(), key, self).await
+        map_base::query_value_deep(self.get_root(), key, self).await
     }
 }

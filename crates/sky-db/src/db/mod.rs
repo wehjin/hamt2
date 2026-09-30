@@ -39,7 +39,7 @@ impl Db {
     pub fn status(&self) -> StorageStatus {
         let view = self.trie.snapshot();
         let max_id = view.max_index();
-        let root = view.read_root();
+        let root = view.get_root();
         StorageStatus { max_id, root }
     }
 
