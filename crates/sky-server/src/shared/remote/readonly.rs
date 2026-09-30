@@ -1,9 +1,8 @@
 use crate::shared::remote::SpawnTask;
 use crate::shared::remote::client::requests::ClientRequest;
 use sky_types::db::DbStatus;
-use sky_types::storage::ReadStorageError;
 use sky_types::storage::view::StoreView;
-use sky_types::trie::{Base, BufferIndex, Buffer, CursorPos, MapBase, QueryCursor, TrieSnap};
+use sky_types::trie::{Base, Buffer, BufferIndex, CursorPos, MapBase, QueryCursor, TrieSnap};
 use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
 use tokio::sync::mpsc::Sender;
@@ -53,17 +52,17 @@ impl<T: SpawnTask> Buffer for Remote<T> {
         self.status.read().unwrap().head.root
     }
 
-    async fn get_base(&self, id: BufferIndex) -> Result<Base, ReadStorageError> {
+    async fn get_base(&self, id: BufferIndex, size: usize) -> Base {
         if id > self.max_index() {
             panic!("invalid base id");
         }
         let (send, recv) = oneshot::channel();
         self.requester
-            .send(ClientRequest::RequestBase(id, send))
+            .send(ClientRequest::RequestBase(id, size, send))
             .await
             .expect("send request");
         let base = recv.await.expect("recv base").expect("base");
-        Ok(base)
+        base
     }
 }
 

@@ -1,7 +1,6 @@
 use crate::shared::remote::{Remote, RemoteClient, SpawnTask};
-use sky_types::storage::ReadStorageError;
 use sky_types::trie::TrieSnap;
-use sky_types::trie::{Base, BufferIndex, Buffer, MapBase};
+use sky_types::trie::{Base, Buffer, BufferIndex, MapBase};
 
 impl<T: SpawnTask> Buffer for RemoteClient<T> {
     fn max_index(&self) -> BufferIndex {
@@ -12,8 +11,8 @@ impl<T: SpawnTask> Buffer for RemoteClient<T> {
         self.inner.read_root()
     }
 
-    async fn get_base(&self, id: BufferIndex) -> Result<Base, ReadStorageError> {
-        self.inner.get_base(id).await
+    async fn get_base(&self, id: BufferIndex, size: usize) -> Base {
+        self.inner.get_base(id, size).await
     }
 }
 

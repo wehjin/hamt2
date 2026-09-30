@@ -5,7 +5,7 @@ use sky_types::db;
 use sky_types::db::schema::Schema;
 use sky_types::db::{Attr, DbStatus, datom, val};
 use sky_types::storage::StorageStatus;
-use sky_types::trie::{Base, BufferIndex, Buffer, MapBase, Slot, SlotMap, TrieValue};
+use sky_types::trie::{Base, Buffer, BufferIndex, MapBase, Slot, SlotMap, TrieValue};
 use std::time::Duration;
 use tokio::task::spawn_local;
 
@@ -31,7 +31,7 @@ async fn get_reader_works() {
         while let Ok(msg) = socket_requests.try_recv() {
             contents.push(msg);
         }
-        assert_eq!(SocketRequest::ReadSlotBase(BufferIndex(1)), contents[0]);
+        assert_eq!(SocketRequest::ReadSlotBase(BufferIndex(1), 32), contents[0]);
     })
     .await;
 }
@@ -94,11 +94,14 @@ async fn remote_client_works() {
         // be in a separate call so we can continue working before the read returns.
         let mut updater = client.to_updater();
         let join = spawn_local(async move {
-            let read = client.get_base(id1).await.unwrap();
+            let read = client.get_base(id1, 1).await;
             (client, read)
         });
         let client_request_after_read = requests_from_client.recv().await.expect("recv request");
-        assert_eq!(client_request_after_read, SocketRequest::ReadSlotBase(id1));
+        assert_eq!(
+            client_request_after_read,
+            SocketRequest::ReadSlotBase(id1, 1)
+        );
 
         // Deliver the read to the client and check it comes back out.
         let fed_to_client = Base::empty().insert_slot(0, Slot::KeyValue(1, TrieValue::U32(15)));
@@ -113,9 +116,8 @@ async fn remote_client_works() {
 
         // Try the read again. This time it should be in the cache and there should be
         // no request sent to socket.
-        let read_result = tokio::time::timeout(Duration::from_secs(1), client.get_base(id1))
-            .await
-            .expect("read");
+        let read_result =
+            tokio::time::timeout(Duration::from_secs(1), client.get_base(id1, 1)).await;
         let Ok(second_read_from_client) = read_result else {
             panic!("join after read timed out");
         };

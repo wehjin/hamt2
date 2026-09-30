@@ -11,8 +11,8 @@ use crate::reader::DbReader;
 use crate::schema;
 pub use crate::types::*;
 use sky_types::storage::load::StoreLoad;
-use sky_types::storage::{MemLoad, MemView, ReadStorageError, StorageStatus};
-use sky_types::trie::{Base, BufferIndex, Buffer, TrieSnap};
+use sky_types::storage::{MemLoad, MemView, StorageStatus};
+use sky_types::trie::{Base, Buffer, BufferIndex, TrieSnap};
 pub use types::*;
 
 #[derive(Debug)]
@@ -44,8 +44,8 @@ impl Db {
     }
 
     /// Keep until we figure out a better api for sky-server.
-    pub async fn read_base(&self, id: BufferIndex) -> Result<Base, ReadStorageError> {
-        self.trie.snapshot().get_base(id).await
+    pub async fn read_base(&self, id: BufferIndex, size: usize) -> Base {
+        self.trie.snapshot().get_base(id, size).await
     }
 
     pub async fn new(storage: MemLoad, db_spec: impl Into<DbSpec>) -> Result<Self, ConnectError> {

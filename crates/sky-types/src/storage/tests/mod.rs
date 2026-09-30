@@ -2,26 +2,23 @@ use crate::storage::load::StoreLoad;
 use crate::storage::{MemEdit, MemLoad};
 use crate::trie::TrieSnap;
 use crate::trie::map_base::one_kv;
-use crate::trie::{Base, BufferMut, BufferIndex, Buffer, HashKey, MapBase, TrieValue};
+use crate::trie::{Base, Buffer, BufferIndex, BufferMut, HashKey, MapBase, TrieValue};
 
 mod edit;
 mod mem_insert;
 mod mem_stream;
 
 #[tokio::test]
-async fn empty_storage_max_id_is_zero() {
+async fn empty_storage_max_id_is_nil() {
     let storage = MemEdit::new();
-    assert_eq!(BufferIndex::ZERO, storage.max_index());
-    assert_eq!(BufferIndex(1), storage.next_index());
+    assert_eq!(BufferIndex::NIL, storage.max_index());
+    assert_eq!(BufferIndex::ZERO, storage.next_index());
 }
 
 #[tokio::test]
 async fn base_id_zero_is_the_empty_base() {
     let storage = MemEdit::new();
-    assert_eq!(
-        Base::empty(),
-        storage.get_base(BufferIndex::ZERO).await.expect("read")
-    );
+    assert_eq!(Base::empty(), storage.get_base(BufferIndex::ZERO, 1).await);
 }
 
 #[tokio::test]
@@ -53,12 +50,12 @@ async fn append_assigns_sequential_ids() {
     let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7));
     let id0 = storage.push_base(base.clone()).await.expect("append");
     let id1 = storage.push_base(base.clone()).await.expect("append");
-    assert_eq!(BufferIndex(1), id0);
-    assert_eq!(BufferIndex(2), id1);
-    assert_eq!(BufferIndex(2), storage.max_index());
-    assert_eq!(BufferIndex(3), storage.next_index());
-    assert_eq!(base, storage.get_base(id0).await.expect("read"));
-    assert_eq!(base, storage.get_base(id1).await.expect("read"));
+    assert_eq!(BufferIndex(0), id0);
+    assert_eq!(BufferIndex(1), id1);
+    assert_eq!(BufferIndex(1), storage.max_index());
+    assert_eq!(BufferIndex(2), storage.next_index());
+    assert_eq!(base, storage.get_base(id0, base.slots.len()).await);
+    assert_eq!(base, storage.get_base(id1, base.slots.len()).await);
 }
 
 #[tokio::test]
@@ -81,9 +78,9 @@ async fn mem_readonly_snapshot_does_not_see_new_bases() {
         })
         .await
         .unwrap();
-    assert_eq!(BufferIndex(2), max_id);
+    assert_eq!(BufferIndex(1), max_id);
     assert_eq!(id, view.max_index());
-    assert_eq!(base, view.get_base(id).await.expect("read"));
+    assert_eq!(base, view.get_base(id, base.slots.len()).await);
 }
 
 #[tokio::test]
@@ -104,13 +101,13 @@ async fn reading_beyond_max_id_produces_empty() {
         })
         .await
         .unwrap();
-    let base = view.get_base(new_id).await.expect("read");
-    assert_eq!(base, Base::empty())
+    let get_base = view.get_base(new_id, base.slots.len()).await;
+    assert_eq!(get_base, Base::empty())
 }
 
 #[tokio::test]
 async fn reading_unwritten_id_produces_empty() {
     let storage = MemLoad::new().snapshot();
-    let base = storage.get_base(BufferIndex(1)).await.expect("read");
+    let base = storage.get_base(BufferIndex(1), 0).await;
     assert_eq!(base, Base::empty())
 }

@@ -1,4 +1,3 @@
-use crate::storage::ReadStorageError;
 use crate::trie::{Base, BufferIndex, MapBase};
 
 #[allow(async_fn_in_trait)]
@@ -14,6 +13,7 @@ pub trait Buffer {
     /// Reads the trie's root.
     fn read_root(&self) -> MapBase;
 
-    /// Reads a base from the trie's state at position `id`.
-    async fn get_base(&self, id: BufferIndex) -> Result<Base, ReadStorageError>;
+    /// Reads a base with `size` slots from the trie's buffer
+    /// at position `id`.
+    async fn get_base(&self, id: BufferIndex, size: usize) -> Base;
 }

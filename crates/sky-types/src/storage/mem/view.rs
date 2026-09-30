@@ -1,24 +1,28 @@
-use crate::storage::ReadStorageError;
+use crate::storage::mem::SlotBuffer;
 use crate::storage::traits::view::StoreView;
 use crate::trie::CursorPos;
-use crate::trie::{Base, BufferIndex, Buffer, MapBase, QueryCursor, TrieSnap};
-use std::ops::Deref;
+use crate::trie::{Base, Buffer, BufferIndex, MapBase, QueryCursor, TrieSnap};
 use std::sync::Arc;
-use std::sync::RwLock;
 
 #[derive(Debug, Clone)]
 pub struct MemView {
-    pub(crate) bases: Arc<RwLock<Vec<Base>>>,
+    pub(crate) buffer: Arc<SlotBuffer>,
     pub(crate) max_id: BufferIndex,
     pub(crate) cursor_pos: CursorPos,
 }
 
 impl MemView {
     pub fn new() -> Self {
+        Self::with_buffer(SlotBuffer::new())
+    }
+
+    pub fn with_buffer(buffer: SlotBuffer) -> Self {
+        let max_id = buffer.max_index();
+        let cursor_pos = CursorPos::new(buffer.read_root());
         Self {
-            bases: Arc::new(RwLock::new(vec![Base::empty()])),
-            max_id: BufferIndex::ZERO,
-            cursor_pos: CursorPos::new(MapBase::empty()),
+            buffer: Arc::new(buffer),
+            max_id,
+            cursor_pos,
         }
     }
 
@@ -43,8 +47,7 @@ impl PartialEq for MemView {
     fn eq(&self, other: &Self) -> bool {
         self.cursor_pos == other.cursor_pos
             && self.max_id == other.max_id
-            && self.bases.deref().read().unwrap().deref()
-                == other.bases.deref().read().unwrap().deref()
+            && self.buffer == other.buffer
     }
 }
 
@@ -57,14 +60,12 @@ impl Buffer for MemView {
         self.cursor_pos.active_root
     }
 
-    async fn get_base(&self, id: BufferIndex) -> Result<Base, ReadStorageError> {
-        let base = if id < BufferIndex::ZERO || id > self.max_id {
+    async fn get_base(&self, id: BufferIndex, slots: usize) -> Base {
+        if id < BufferIndex::ZERO || id > self.max_id {
             Base::empty()
         } else {
-            let index = id.0 as usize;
-            self.bases.read().unwrap()[index].clone()
-        };
-        Ok(base)
+            self.buffer.get_base(id, slots).await
+        }
     }
 }
 

@@ -5,7 +5,7 @@ use crate::trie::{
 };
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum Slot {
     KeyValue(i32, TrieValue),
     MapBase(MapBase),

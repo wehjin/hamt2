@@ -7,6 +7,16 @@ pub struct Base {
     pub slots: Vec<Slot>,
 }
 
+impl Base {
+    pub fn new(count: usize, slots: &[Slot]) -> Self {
+        let mut base_slots = vec![];
+        for i in 0..count {
+            base_slots.push(slots[i].clone());
+        }
+        Self { slots: base_slots }
+    }
+}
+
 impl AsRef<Base> for Base {
     fn as_ref(&self) -> &Base {
         &self

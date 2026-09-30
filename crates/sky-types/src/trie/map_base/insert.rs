@@ -7,9 +7,10 @@ pub async fn insert_kv<P: BufferMut>(
     base_commit: &mut P,
 ) -> Result<MapBase, TrieInsertError> {
     let MapBase { map, base: base_id } = map_base;
+    let slot_count = map.slot_count();
     let post_map_base = match map.try_base_index(key) {
         Some(base_index) => {
-            let read_base = base_commit.get_base(base_id).await?;
+            let read_base = base_commit.get_base(base_id, slot_count).await;
             match read_base.as_ref()[base_index].test_kv(&key, &value) {
                 KvTest::SameValue => MapBase { map, base: base_id },
                 KvTest::ValueConflict => {
@@ -40,7 +41,7 @@ pub async fn insert_kv<P: BufferMut>(
         None => {
             assert_eq!(false, map.is_present(key));
             let post_slot_base = {
-                let base = base_commit.get_base(base_id).await?;
+                let base = base_commit.get_base(base_id, slot_count).await;
                 let kv_index = map.count_left(key);
                 base::insert_kv(base, kv_index, key, value)
             };

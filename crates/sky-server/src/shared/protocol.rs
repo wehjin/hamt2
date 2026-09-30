@@ -5,7 +5,7 @@ use sky_types::trie::{Base, BufferIndex};
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SocketRequest {
     Connect,
-    ReadSlotBase(BufferIndex),
+    ReadSlotBase(BufferIndex, usize),
     Transact(Vec<Datom>),
 }
 

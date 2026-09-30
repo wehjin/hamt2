@@ -54,7 +54,7 @@ pub fn WebSocketSandbox() -> impl IntoView {
     };
     let send_read_slot_base = move |_| {
         if let Some(id) = max_id.get() {
-            socket.sender.run(SocketRequest::ReadSlotBase(id));
+            socket.sender.run(SocketRequest::ReadSlotBase(id, 1));
         }
     };
     let read_ident = move |_| local.refetch();

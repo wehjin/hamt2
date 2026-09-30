@@ -3,9 +3,11 @@ members = [
     "crates/*"
 ]
 default-members = [
-    "crates/sky-types",
     "crates/sky-db",
+    "crates/sky-server",
     "crates/sky-tui",
+    "crates/sky-types",
+    "crates/skybase",
 ]
 resolver = "3"
 

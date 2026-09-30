@@ -2,9 +2,77 @@ mod edit;
 mod load;
 mod view;
 
+use crate::storage::WriteStorageError;
+use crate::trie::{Base, Buffer, BufferIndex, BufferMut, MapBase, Slot};
 pub use edit::*;
 pub use load::*;
 pub use view::*;
 
 #[cfg(test)]
 mod tests;
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub struct SlotBuffer {
+    slots: Vec<Slot>,
+    root_index: Option<usize>,
+}
+
+impl SlotBuffer {
+    pub fn new() -> Self {
+        Self {
+            slots: vec![],
+            root_index: None,
+        }
+    }
+    pub fn append(&mut self, other: SlotBuffer) {
+        if let Some(root_index) = other.root_index {
+            self.root_index = Some(root_index + self.slots.len());
+        }
+        self.slots.extend(other.slots);
+    }
+    pub fn len(&self) -> usize {
+        self.slots.len()
+    }
+}
+
+impl Buffer for SlotBuffer {
+    fn max_index(&self) -> BufferIndex {
+        BufferIndex(self.slots.len() as i32 - 1)
+    }
+
+    fn read_root(&self) -> MapBase {
+        if let Some(root_index) = self.root_index {
+            let Slot::MapBase(map_base) = self.slots[root_index] else {
+                panic!("expected a subtrie in the last slot")
+            };
+            map_base
+        } else {
+            MapBase::empty()
+        }
+    }
+
+    async fn get_base(&self, id: BufferIndex, size: usize) -> Base {
+        if id.0 < 0 || id.0 > self.slots.len() as i32 {
+            return Base::empty();
+        }
+        let start = id.0 as usize;
+        let end = start + size;
+        assert!(end <= self.slots.len(), "too few slots in the buffer");
+        let slots = &self.slots[start..end];
+        Base::new(size, slots)
+    }
+}
+
+impl BufferMut for SlotBuffer {
+    async fn commit_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
+        self.slots.push(Slot::MapBase(root));
+        self.root_index = Some(self.slots.len() - 1);
+        Ok(())
+    }
+
+    async fn push_base(&mut self, base: Base) -> Result<BufferIndex, WriteStorageError> {
+        let index = self.next_index();
+        self.slots.extend(base.slots);
+        Ok(index)
+    }
+}

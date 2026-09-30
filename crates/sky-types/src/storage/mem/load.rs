@@ -2,8 +2,8 @@ use crate::storage::MemEdit;
 use crate::storage::load::StoreLoad;
 use crate::storage::mem::MemView;
 use crate::trie::{
-	Buffer, CursorPos, MapBase, QueryCursor, TrieQuery, TrieQueryError, TrieSnap, TrieStream,
-	TrieValue,
+    Buffer, CursorPos, MapBase, QueryCursor, TrieQuery, TrieQueryError, TrieSnap, TrieStream,
+    TrieValue,
 };
 use anyhow::anyhow;
 use futures::Stream;
@@ -46,23 +46,9 @@ impl StoreLoad for MemLoad {
         {
             return Err(anyhow!("stale edit"));
         }
-        let max_id = edit.max_index();
-        let cursor_pos = edit.cursor_pos.ascend_top();
-        let bases = {
-            let mut edit_bases = edit
-                .bases
-                .into_iter()
-                .map(|base| base.deref().clone())
-                .collect();
-            let bases = self.inner.bases.clone();
-            bases.write().unwrap().append(&mut edit_bases);
-            bases
-        };
-        self.inner = MemView {
-            bases,
-            max_id,
-            cursor_pos,
-        };
+        let mut buffer = self.inner.buffer.deref().clone();
+        buffer.append(edit.buffer);
+        self.inner = MemView::with_buffer(buffer);
         Ok(())
     }
 }

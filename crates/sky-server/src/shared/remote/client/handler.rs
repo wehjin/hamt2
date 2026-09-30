@@ -26,7 +26,7 @@ pub async fn process_client_requests(
                         *write_lock = new_status
                     }
                 }
-                ClientRequest::RequestBase(id, send_base) => {
+                ClientRequest::RequestBase(id, size, send_base) => {
                     if id > db_status.read().unwrap().head.max_id {
                         let _ = send_base.send(None);
                     } else {
@@ -36,7 +36,7 @@ pub async fn process_client_requests(
                             let mut line = read_line.remove(&id).unwrap_or_default();
                             line.push(send_base);
                             read_line.insert(id, line);
-                            task_send_socket(SocketRequest::ReadSlotBase(id));
+                            task_send_socket(SocketRequest::ReadSlotBase(id, size));
                         }
                     }
                 }
