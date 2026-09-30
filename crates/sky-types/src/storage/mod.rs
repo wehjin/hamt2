@@ -1,4 +1,4 @@
-use crate::trie::{BaseId, MapBase};
+use crate::trie::{BufferIndex, MapBase};
 use serde::{Deserialize, Serialize};
 
 pub mod error;
@@ -11,7 +11,7 @@ pub use traits::*;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageStatus {
-    pub max_id: BaseId,
+    pub max_id: BufferIndex,
     pub root: MapBase,
 }
 

@@ -6,9 +6,9 @@ use std::ops::{Add, Sub};
 #[derive(
     Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize, Default,
 )]
-pub struct BaseId(pub i32);
+pub struct BufferIndex(pub i32);
 
-impl Add<i32> for BaseId {
+impl Add<i32> for BufferIndex {
     type Output = Self;
 
     fn add(self, rhs: i32) -> Self::Output {
@@ -16,7 +16,7 @@ impl Add<i32> for BaseId {
     }
 }
 
-impl Sub<i32> for BaseId {
+impl Sub<i32> for BufferIndex {
     type Output = Self;
 
     fn sub(self, rhs: i32) -> Self::Output {
@@ -24,27 +24,26 @@ impl Sub<i32> for BaseId {
     }
 }
 
-impl Add<usize> for BaseId {
+impl Add<usize> for BufferIndex {
     type Output = Self;
     fn add(self, rhs: usize) -> Self::Output {
         Self(self.0 + rhs as i32)
     }
 }
 
-impl Display for BaseId {
+impl Display for BufferIndex {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         Display::fmt(&self.0, f)
     }
 }
 
-impl Into<usize> for BaseId {
+impl Into<usize> for BufferIndex {
     fn into(self) -> usize {
         self.0 as usize
     }
 }
 
-impl BaseId {
-    /// The reserved id of the empty base. It is never stored.
-    pub const ZERO: BaseId = BaseId(0);
-    pub const EMPTY: BaseId = BaseId(0);
+impl BufferIndex {
+    pub const ZERO: BufferIndex = BufferIndex(0);
+    pub const NIL: BufferIndex = BufferIndex(-1);
 }

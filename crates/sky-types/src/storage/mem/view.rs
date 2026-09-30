@@ -1,7 +1,7 @@
 use crate::storage::ReadStorageError;
 use crate::storage::traits::view::StoreView;
 use crate::trie::CursorPos;
-use crate::trie::{Base, BaseId, BaseRead, MapBase, QueryCursor, TrieSnap};
+use crate::trie::{Base, BufferIndex, Buffer, MapBase, QueryCursor, TrieSnap};
 use std::ops::Deref;
 use std::sync::Arc;
 use std::sync::RwLock;
@@ -9,7 +9,7 @@ use std::sync::RwLock;
 #[derive(Debug, Clone)]
 pub struct MemView {
     pub(crate) bases: Arc<RwLock<Vec<Base>>>,
-    pub(crate) max_id: BaseId,
+    pub(crate) max_id: BufferIndex,
     pub(crate) cursor_pos: CursorPos,
 }
 
@@ -17,7 +17,7 @@ impl MemView {
     pub fn new() -> Self {
         Self {
             bases: Arc::new(RwLock::new(vec![Base::empty()])),
-            max_id: BaseId::ZERO,
+            max_id: BufferIndex::ZERO,
             cursor_pos: CursorPos::new(MapBase::empty()),
         }
     }
@@ -48,8 +48,8 @@ impl PartialEq for MemView {
     }
 }
 
-impl BaseRead for MemView {
-    fn max_id(&self) -> BaseId {
+impl Buffer for MemView {
+    fn max_index(&self) -> BufferIndex {
         self.max_id
     }
 
@@ -57,8 +57,8 @@ impl BaseRead for MemView {
         self.cursor_pos.active_root
     }
 
-    async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
-        let base = if id < BaseId::ZERO || id > self.max_id {
+    async fn read_base(&self, id: BufferIndex) -> Result<Base, ReadStorageError> {
+        let base = if id < BufferIndex::ZERO || id > self.max_id {
             Base::empty()
         } else {
             let index = id.0 as usize;

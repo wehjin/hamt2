@@ -1,6 +1,6 @@
 use crate::trie::TrieQueryError;
 use crate::trie::TrieValue;
-use crate::trie::{BaseRead, HashKey, map_base};
+use crate::trie::{Buffer, HashKey, map_base};
 
 #[allow(async_fn_in_trait)]
 pub trait TrieQuery {
@@ -19,7 +19,7 @@ pub trait TrieQuery {
     ) -> Result<Option<TrieValue>, TrieQueryError>;
 }
 
-impl<T: BaseRead> TrieQuery for T {
+impl<T: Buffer> TrieQuery for T {
     async fn query(&self, key: i32) -> Result<Option<TrieValue>, TrieQueryError> {
         map_base::query_value(self.read_root(), HashKey::new(key), self).await
     }

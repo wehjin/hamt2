@@ -1,17 +1,17 @@
-use crate::trie::{BaseId, SlotMap};
+use crate::trie::{BufferIndex, SlotMap};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Serialize, Deserialize, Default)]
 pub struct MapBase {
     pub map: SlotMap,
-    pub base: BaseId,
+    pub base: BufferIndex,
 }
 
 impl MapBase {
     pub fn empty() -> Self {
         Self {
             map: SlotMap::empty(),
-            base: BaseId::ZERO,
+            base: BufferIndex::ZERO,
         }
     }
 }

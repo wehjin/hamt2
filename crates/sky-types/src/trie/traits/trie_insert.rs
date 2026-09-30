@@ -1,4 +1,4 @@
-use crate::trie::{BaseCommit, HashKey, MapBase, TrieInsertError, TrieValue, map_base};
+use crate::trie::{BufferMut, HashKey, MapBase, TrieInsertError, TrieValue, map_base};
 use std::collections::HashSet;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -27,7 +27,7 @@ pub trait TrieInsert {
     ) -> Result<&mut Self, TrieInsertError>;
 }
 
-impl<T: BaseCommit> TrieInsert for T {
+impl<T: BufferMut> TrieInsert for T {
     async fn insert_with_options(
         &mut self,
         key: i32,

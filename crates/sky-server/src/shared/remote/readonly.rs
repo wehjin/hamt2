@@ -3,7 +3,7 @@ use crate::shared::remote::client::requests::ClientRequest;
 use sky_types::db::DbStatus;
 use sky_types::storage::ReadStorageError;
 use sky_types::storage::view::StoreView;
-use sky_types::trie::{Base, BaseId, BaseRead, CursorPos, MapBase, QueryCursor, TrieSnap};
+use sky_types::trie::{Base, BufferIndex, Buffer, CursorPos, MapBase, QueryCursor, TrieSnap};
 use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
 use tokio::sync::mpsc::Sender;
@@ -42,8 +42,8 @@ impl<T: SpawnTask> PartialEq for Remote<T> {
 
 impl<T: SpawnTask> StoreView for Remote<T> {}
 
-impl<T: SpawnTask> BaseRead for Remote<T> {
-    fn max_id(&self) -> BaseId {
+impl<T: SpawnTask> Buffer for Remote<T> {
+    fn max_index(&self) -> BufferIndex {
         self.status.read().unwrap().head.max_id
     }
 
@@ -53,8 +53,8 @@ impl<T: SpawnTask> BaseRead for Remote<T> {
         self.status.read().unwrap().head.root
     }
 
-    async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
-        if id > self.max_id() {
+    async fn read_base(&self, id: BufferIndex) -> Result<Base, ReadStorageError> {
+        if id > self.max_index() {
             panic!("invalid base id");
         }
         let (send, recv) = oneshot::channel();

@@ -1,9 +1,9 @@
 use crate::trie::{
-    HashKey, MapBase, Slot, Base, SlotMap, TrieInsertError, TrieValue, BaseCommit,
+	HashKey, MapBase, Slot, Base, SlotMap, TrieInsertError, TrieValue, BufferMut,
 };
 
 #[cfg(test)]
-pub async fn one_kv<P: BaseCommit>(
+pub async fn one_kv<P: BufferMut>(
     key: HashKey,
     value: TrieValue,
     policy: &mut P,
@@ -18,7 +18,7 @@ pub async fn one_kv<P: BaseCommit>(
     Ok(map_base)
 }
 
-pub async fn two_kv<P: BaseCommit>(
+pub async fn two_kv<P: BufferMut>(
     key: HashKey,
     value: TrieValue,
     key2: HashKey,

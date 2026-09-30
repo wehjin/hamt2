@@ -1,12 +1,12 @@
-mod base_commit;
-mod base_read;
+mod buffer_mut;
+mod buffer;
 mod cursor;
 mod trie_insert;
 mod trie_query;
 mod trie_snap;
 mod trie_stream;
-pub use base_commit::*;
-pub use base_read::*;
+pub use buffer_mut::*;
+pub use buffer::*;
 pub use cursor::*;
 pub use trie_insert::*;
 pub use trie_query::*;

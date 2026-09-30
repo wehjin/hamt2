@@ -1,7 +1,7 @@
 use crate::storage::edit::StoreEdit;
 use crate::storage::{MemView, ReadStorageError, WriteStorageError};
 use crate::trie::{
-    Base, BaseCommit, BaseId, BaseRead, CursorPos, MapBase, TrieInsert, TrieSnap, TrieValue,
+	Base, BufferMut, BufferIndex, Buffer, CursorPos, MapBase, TrieInsert, TrieSnap, TrieValue,
 };
 use crate::trie::{InsertCursor, QueryCursor};
 use std::ops::Deref;
@@ -30,8 +30,8 @@ impl MemEdit {
         }
     }
 
-    fn start_id(&self) -> BaseId {
-        self.past.max_id() + 1
+    fn start_id(&self) -> BufferIndex {
+        self.past.max_index() + 1
     }
 }
 
@@ -57,7 +57,7 @@ impl TrieSnap for MemEdit {
         }
     }
 }
-impl BaseCommit for MemEdit {
+impl BufferMut for MemEdit {
     async fn commit_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
         let cursor_pos = self.cursor_pos.clone();
         if let Some((key, _previous_active)) = self.cursor_pos.ascend() {
@@ -75,29 +75,29 @@ impl BaseCommit for MemEdit {
         Ok(())
     }
 
-    async fn commit_base(&mut self, base: Base) -> Result<BaseId, WriteStorageError> {
-        let next_id = self.next_id();
+    async fn commit_base(&mut self, base: Base) -> Result<BufferIndex, WriteStorageError> {
+        let next_id = self.next_index();
         self.bases.push(Arc::new(base));
-        debug_assert_eq!(self.max_id(), next_id);
+        debug_assert_eq!(self.max_index(), next_id);
         Ok(next_id)
     }
 }
 
-impl BaseRead for MemEdit {
-    fn max_id(&self) -> BaseId {
-        self.past.max_id() + self.bases.len()
+impl Buffer for MemEdit {
+    fn max_index(&self) -> BufferIndex {
+        self.past.max_index() + self.bases.len()
     }
 
     fn read_root(&self) -> MapBase {
         self.cursor_pos.active_root()
     }
 
-    async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
+    async fn read_base(&self, id: BufferIndex) -> Result<Base, ReadStorageError> {
         let start_id = self.start_id();
         if id < start_id {
             return self.past.read_base(id).await;
         }
-        if id <= self.max_id() {
+        if id <= self.max_index() {
             let index = (id.0 - start_id.0) as usize;
             let base = self.bases[index].deref().clone();
             Ok(base)

@@ -12,7 +12,7 @@ use crate::schema;
 pub use crate::types::*;
 use sky_types::storage::load::StoreLoad;
 use sky_types::storage::{MemLoad, MemView, ReadStorageError, StorageStatus};
-use sky_types::trie::{Base, BaseId, BaseRead, TrieSnap};
+use sky_types::trie::{Base, BufferIndex, Buffer, TrieSnap};
 pub use types::*;
 
 #[derive(Debug)]
@@ -38,13 +38,13 @@ impl Db {
 
     pub fn status(&self) -> StorageStatus {
         let view = self.trie.snapshot();
-        let max_id = view.max_id();
+        let max_id = view.max_index();
         let root = view.read_root();
         StorageStatus { max_id, root }
     }
 
     /// Keep until we figure out a better api for sky-server.
-    pub async fn read_base(&self, id: BaseId) -> Result<Base, ReadStorageError> {
+    pub async fn read_base(&self, id: BufferIndex) -> Result<Base, ReadStorageError> {
         self.trie.snapshot().read_base(id).await
     }
 

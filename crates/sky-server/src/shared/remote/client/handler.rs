@@ -1,7 +1,7 @@
 use crate::shared::protocol::SocketRequest;
 use crate::shared::remote::requests::ClientRequest;
 use sky_types::db::DbStatus;
-use sky_types::trie::{Base, BaseId};
+use sky_types::trie::{Base, BufferIndex};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use tokio::sync::mpsc::Receiver;
@@ -12,8 +12,8 @@ pub async fn process_client_requests(
     task_send_socket: Arc<impl Fn(SocketRequest)>,
     db_status: Arc<RwLock<DbStatus>>,
 ) {
-    let mut read_line: HashMap<BaseId, Vec<oneshot::Sender<Option<Base>>>> = HashMap::new();
-    let mut bases = HashMap::from([(BaseId::ZERO, Base::empty())]);
+    let mut read_line: HashMap<BufferIndex, Vec<oneshot::Sender<Option<Base>>>> = HashMap::new();
+    let mut bases = HashMap::from([(BufferIndex::ZERO, Base::empty())]);
     let mut transact_line: Option<oneshot::Sender<Option<DbStatus>>> = None;
     loop {
         let event = recv_request.recv().await;

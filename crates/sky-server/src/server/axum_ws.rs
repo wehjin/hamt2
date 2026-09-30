@@ -43,7 +43,7 @@ fn response_to_message(response: SocketResponse) -> Message {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use sky_types::trie::BaseId;
+	use sky_types::trie::BufferIndex;
 
 	#[test]
     fn text_messages_map_to_requests() {
@@ -63,7 +63,7 @@ mod tests {
 
     #[test]
     fn responses_map_to_text_messages() {
-        let message = response_to_message(SocketResponse::SlotBase(BaseId::ZERO, None));
+        let message = response_to_message(SocketResponse::SlotBase(BufferIndex::ZERO, None));
         let Message::Text(text) = message else {
             panic!("expected text message");
         };

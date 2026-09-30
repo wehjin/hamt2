@@ -2,8 +2,8 @@ use crate::storage::MemEdit;
 use crate::storage::load::StoreLoad;
 use crate::storage::mem::MemView;
 use crate::trie::{
-    BaseRead, CursorPos, MapBase, QueryCursor, TrieQuery, TrieQueryError, TrieSnap, TrieStream,
-    TrieValue,
+	Buffer, CursorPos, MapBase, QueryCursor, TrieQuery, TrieQueryError, TrieSnap, TrieStream,
+	TrieValue,
 };
 use anyhow::anyhow;
 use futures::Stream;
@@ -41,12 +41,12 @@ impl StoreLoad for MemLoad {
         Ok(edit)
     }
     async fn commit_edit(&mut self, edit: Self::Edit) -> Result<(), anyhow::Error> {
-        if edit.past.max_id() != self.inner.max_id()
+        if edit.past.max_index() != self.inner.max_index()
             || edit.past.read_root() != self.inner.read_root()
         {
             return Err(anyhow!("stale edit"));
         }
-        let max_id = edit.max_id();
+        let max_id = edit.max_index();
         let cursor_pos = edit.cursor_pos.ascend_top();
         let bases = {
             let mut edit_bases = edit
