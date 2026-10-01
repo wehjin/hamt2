@@ -1,12 +1,15 @@
 use crate::trie::map_base::{query_keys_values, query_value, two_kv};
 use crate::trie::types::key_value::KeyValue;
-use crate::trie::{Base, Buffer, BufferMut, HashKey, MapBase, SlotMap, TrieInsertError, TrieValue};
+use crate::trie::{
+    Base, Buffer, BufferMut, ByteData, HashKey, MapBase, SlotMap, TrieInsertError, TrieValue,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum Slot {
     KeyValue(KeyValue),
     MapBase(MapBase),
+    ByteData(ByteData),
 }
 
 impl Slot {
@@ -62,6 +65,7 @@ impl Slot {
                 vec![key_value]
             }
             Slot::MapBase(map_base) => query_keys_values(*map_base, storage).await,
+            Slot::ByteData(_) => unreachable!("byte-data should not appear at this level"),
         }
     }
     pub async fn query_value<P: Buffer>(&self, key: HashKey, storage: &P) -> Option<TrieValue> {
@@ -71,6 +75,7 @@ impl Slot {
                 if k != key.i32() { None } else { Some(v) }
             }
             Slot::MapBase(map_base) => query_value(*map_base, key.next(), storage).await,
+            Slot::ByteData(_) => unreachable!("byte-data should not appear at this level"),
         }
     }
     pub async fn test_kv(&self, key: &HashKey, value: &TrieValue, buffer: &impl Buffer) -> KvTest {
@@ -88,6 +93,7 @@ impl Slot {
                 }
             }
             Slot::MapBase(_) => KvTest::MapBaseConflict,
+            Slot::ByteData(_) => unreachable!("byte-data should not appear at this level"),
         }
     }
 }

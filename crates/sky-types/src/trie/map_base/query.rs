@@ -55,6 +55,9 @@ pub fn kv_stream<S: Buffer>(
                         state.jobs.push(new_job);
                     }
                 }
+                Slot::ByteData(_) => {
+                    unreachable!("base should contain no byte-data slots")
+                }
             }
         }
     }

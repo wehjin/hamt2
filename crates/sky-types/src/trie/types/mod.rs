@@ -1,4 +1,5 @@
 mod buffer_index;
+mod byte_data;
 mod cursor;
 mod deep_key;
 mod error;
@@ -21,3 +22,4 @@ pub use slot::*;
 pub use slot_base::*;
 pub use slot_map::*;
 pub use trie_value::*;
+pub use byte_data::*;
