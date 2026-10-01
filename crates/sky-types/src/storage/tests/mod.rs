@@ -47,7 +47,9 @@ async fn root_round_trip_works() {
 #[tokio::test]
 async fn append_assigns_sequential_ids() {
     let mut storage = MemEdit::new();
-    let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7));
+    let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7), &mut storage)
+        .await
+        .expect("base");
     let id0 = storage.push_base(base.clone()).await.expect("append");
     let id1 = storage.push_base(base.clone()).await.expect("append");
     assert_eq!(BufferIndex(0), id0);
@@ -61,11 +63,11 @@ async fn append_assigns_sequential_ids() {
 #[tokio::test]
 async fn mem_readonly_snapshot_does_not_see_new_bases() {
     let mut load = MemLoad::new();
-    let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7));
-    let id = load
+    let (base, id) = load
         .edit(async |storage| {
+            let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7), storage).await?;
             let id = storage.push_base(base.clone()).await.expect("append");
-            Ok(id)
+            Ok((base, id))
         })
         .await
         .unwrap();
@@ -85,14 +87,15 @@ async fn mem_readonly_snapshot_does_not_see_new_bases() {
 
 #[tokio::test]
 async fn reading_beyond_max_id_produces_empty() {
-    let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7));
     let mut load = MemLoad::new();
-    load.edit(async |storage| {
-        storage.push_base(base.clone()).await.expect("append");
-        Ok(())
-    })
-    .await
-    .unwrap();
+    let base = load
+        .edit(async |storage| {
+            let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7), storage).await?;
+            storage.push_base(base.clone()).await.expect("append");
+            Ok(base)
+        })
+        .await
+        .unwrap();
     let view = load.snapshot();
     let new_id = load
         .edit(async |storage| {

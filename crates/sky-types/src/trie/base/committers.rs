@@ -1,6 +1,4 @@
-use crate::trie::{
-	HashKey, Slot, Base, TrieInsertError, TrieValue, BufferMut, map_base,
-};
+use crate::trie::{Base, BufferMut, HashKey, Slot, TrieInsertError, TrieValue, map_base};
 
 /// Makes a copy of `base` where the kv already at `index` is moved into a new
 /// base containing both the old kv and a new kv.
@@ -8,19 +6,20 @@ use crate::trie::{
 /// #Effects
 /// This functions commits sub-bases into the write-policy.
 pub async fn kick_kv<P>(
-	base: Base,
-	index: usize,
-	key: HashKey,
-	value: TrieValue,
-	policy: &mut P,
+    base: Base,
+    index: usize,
+    key: HashKey,
+    value: TrieValue,
+    policy: &mut P,
 ) -> Result<Base, TrieInsertError>
 where
     P: BufferMut,
 {
     let post_slot = {
-        let Slot::KeyValue(b_key, b_value) = base[index].clone() else {
+        let Slot::KeyValue(b_key_value) = base[index].clone() else {
             unreachable!("Should be a key-value slot, not a map-base slot:")
         };
+        let (b_key, b_value) = b_key_value.to_trie_key_trie_value(policy).await;
         let b_key = key.sync(b_key);
         debug_assert!(b_key.i32() != key.i32());
         Slot::two_kv(b_key.next(), b_value, key.next(), value, policy).await?
@@ -34,11 +33,11 @@ where
 /// #Effects
 /// This functions commits sub-bases into the write-policy.
 pub async fn merge_kv<P>(
-	base: Base,
-	index: usize,
-	key: HashKey,
-	value: TrieValue,
-	policy: &mut P,
+    base: Base,
+    index: usize,
+    key: HashKey,
+    value: TrieValue,
+    policy: &mut P,
 ) -> Result<Base, TrieInsertError>
 where
     P: BufferMut,

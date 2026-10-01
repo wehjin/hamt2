@@ -5,7 +5,7 @@ use sky_types::db;
 use sky_types::db::schema::Schema;
 use sky_types::db::{Attr, DbStatus, datom, val};
 use sky_types::storage::StorageStatus;
-use sky_types::trie::{Base, Buffer, BufferIndex, MapBase, Slot, SlotMap, TrieValue};
+use sky_types::trie::{Base, Buffer, BufferIndex, KeyValue, MapBase, Slot, SlotMap};
 use std::time::Duration;
 use tokio::task::spawn_local;
 
@@ -104,7 +104,9 @@ async fn remote_client_works() {
         );
 
         // Deliver the read to the client and check it comes back out.
-        let fed_to_client = Base::empty().insert_slot(0, Slot::KeyValue(1, TrieValue::U32(15)));
+        let key_value = KeyValue::Int { key: 1, value: 15 };
+        let slot = Slot::KeyValue(key_value);
+        let fed_to_client = Base { slots: vec![slot] };
         updater.update(SocketResponse::SlotBase(id1, Some(fed_to_client.clone())));
         let join_result = tokio::time::timeout(Duration::from_secs(1), join)
             .await

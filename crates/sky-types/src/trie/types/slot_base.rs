@@ -1,4 +1,4 @@
-use crate::trie::{HashKey, Slot, TrieValue};
+use crate::trie::{BufferMut, HashKey, Slot, TrieInsertError, TrieValue};
 use serde::{Deserialize, Serialize};
 use std::ops::{Deref, DerefMut, Index};
 
@@ -40,10 +40,14 @@ impl Base {
     pub fn empty() -> Self {
         Self { slots: vec![] }
     }
-    pub fn new_kv(key: HashKey, value: TrieValue) -> Self {
-        let slot = Slot::one_kv(key, value);
+    pub async fn new_kv(
+        key: HashKey,
+        value: TrieValue,
+        buffer: &mut impl BufferMut,
+    ) -> Result<Self, TrieInsertError> {
+        let slot = Slot::one_kv(key, value, buffer).await?;
         let slots = vec![slot];
-        Self { slots }
+        Ok(Self { slots })
     }
 
     pub fn len(&self) -> usize {

@@ -1,19 +1,22 @@
 use crate::trie::map_base::{query_keys_values, query_value, two_kv};
-use crate::trie::{
-    HashKey, MapBase, Base, SlotMap, BufferMut, Buffer, TrieInsertError,
-    TrieQueryError, TrieValue,
-};
+use crate::trie::types::key_value::KeyValue;
+use crate::trie::{Base, Buffer, BufferMut, HashKey, MapBase, SlotMap, TrieInsertError, TrieValue};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum Slot {
-    KeyValue(i32, TrieValue),
+    KeyValue(KeyValue),
     MapBase(MapBase),
 }
 
 impl Slot {
-    pub fn one_kv(key: HashKey, value: TrieValue) -> Self {
-        Self::KeyValue(key.i32(), value)
+    pub async fn one_kv(
+        key: HashKey,
+        value: TrieValue,
+        buffer: &mut impl BufferMut,
+    ) -> Result<Self, TrieInsertError> {
+        let key_value = KeyValue::from_hash_key_trie_value(key, value, buffer).await?;
+        Ok(Slot::KeyValue(key_value))
     }
     pub async fn two_kv<P: BufferMut>(
         a_key: HashKey,
@@ -41,42 +44,41 @@ impl Slot {
             Ok(Slot::MapBase(map_base))
         }
     }
-    pub fn replace_value(self, value: TrieValue) -> Self {
-        let Slot::KeyValue(key, _value) = self else {
+    pub async fn replace_value(
+        self,
+        value: TrieValue,
+        buffer: &mut impl BufferMut,
+    ) -> Result<Self, TrieInsertError> {
+        let Slot::KeyValue(key_value) = self else {
             unreachable!("Should be a key-value slot, not a map-base slot:")
         };
-        Slot::KeyValue(key, value)
+        let key_value = key_value.replace_value(value, buffer).await?;
+        Ok(Slot::KeyValue(key_value))
     }
-    pub async fn query_key_values<P: Buffer>(
-        &self,
-        storage: &P,
-    ) -> Result<Vec<(i32, TrieValue)>, TrieQueryError> {
+    pub async fn query_key_values<P: Buffer>(&self, storage: &P) -> Vec<(i32, TrieValue)> {
         match self {
-            Slot::KeyValue(key, value) => Ok(vec![(*key, value.clone())]),
+            Slot::KeyValue(key_value) => {
+                let key_value = key_value.to_trie_key_trie_value(storage).await;
+                vec![key_value]
+            }
             Slot::MapBase(map_base) => query_keys_values(*map_base, storage).await,
         }
     }
-    pub async fn query_value<P: Buffer>(
-        &self,
-        key: HashKey,
-        storage: &P,
-    ) -> Result<Option<TrieValue>, TrieQueryError> {
+    pub async fn query_value<P: Buffer>(&self, key: HashKey, storage: &P) -> Option<TrieValue> {
         match self {
-            Slot::KeyValue(k, v) => {
-                if *k != key.i32() {
-                    Ok(None)
-                } else {
-                    Ok(Some(v.clone()))
-                }
+            Slot::KeyValue(kv) => {
+                let (k, v) = kv.to_trie_key_trie_value(storage).await;
+                if k != key.i32() { None } else { Some(v) }
             }
             Slot::MapBase(map_base) => query_value(*map_base, key.next(), storage).await,
         }
     }
-    pub fn test_kv(&self, key: &HashKey, value: &TrieValue) -> KvTest {
+    pub async fn test_kv(&self, key: &HashKey, value: &TrieValue, buffer: &impl Buffer) -> KvTest {
         match self {
-            Slot::KeyValue(slot_key, slot_value) => {
-                if key.i32() == *slot_key {
-                    if value == slot_value {
+            Slot::KeyValue(key_value) => {
+                let (slot_key, slot_value) = key_value.to_trie_key_trie_value(buffer).await;
+                if key.i32() == slot_key {
+                    if value == &slot_value {
                         KvTest::SameValue
                     } else {
                         KvTest::ValueConflict

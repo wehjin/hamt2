@@ -9,7 +9,7 @@ pub async fn query_value_deep<const N: usize, S: Buffer>(
     let mut current_map_base = root.clone();
     let last_index = N - 1;
     for i in 0..=last_index {
-        match map_base::query_value(current_map_base, deep_key[i].clone(), storage).await? {
+        match map_base::query_value(current_map_base, deep_key[i].clone(), storage).await {
             None => {
                 return Ok(None);
             }

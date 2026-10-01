@@ -1,21 +1,23 @@
+mod buffer_index;
 mod cursor;
 mod deep_key;
 mod error;
 mod hash_key;
+mod key_value;
 mod map_base;
 mod slot;
 mod slot_base;
-mod buffer_index;
 mod slot_map;
 mod trie_value;
 
+pub use buffer_index::*;
 pub use cursor::*;
 pub use deep_key::*;
 pub use error::*;
 pub use hash_key::*;
+pub use key_value::*;
 pub use map_base::*;
 pub use slot::*;
 pub use slot_base::*;
-pub use buffer_index::*;
 pub use slot_map::*;
 pub use trie_value::*;

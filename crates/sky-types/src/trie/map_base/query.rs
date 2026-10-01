@@ -1,4 +1,4 @@
-use crate::trie::{Buffer, BufferIndex, HashKey, MapBase, Slot, TrieQueryError, TrieValue};
+use crate::trie::{Buffer, BufferIndex, HashKey, MapBase, Slot, TrieValue};
 use async_stream::stream;
 use futures::Stream;
 
@@ -11,16 +11,16 @@ pub async fn query_value<S: Buffer>(
     map_base: MapBase,
     key: HashKey,
     base_read: &S,
-) -> Result<Option<TrieValue>, TrieQueryError> {
+) -> Option<TrieValue> {
     let MapBase { map, base: base_id } = map_base;
     let value = match map.try_base_index(key) {
         Some(base_index) => {
             let base = base_read.get_base(base_id, map.slot_count()).await;
-            Box::pin(base.as_ref()[base_index].query_value(key, base_read)).await?
+            Box::pin(base.as_ref()[base_index].query_value(key, base_read)).await
         }
         None => None,
     };
-    Ok(value)
+    value
 }
 
 pub fn kv_stream<S: Buffer>(
@@ -35,10 +35,10 @@ pub fn kv_stream<S: Buffer>(
         while let Some(mut job) = state.jobs.pop() {
             let base = state.storage.get_base(job.base, job.slot_count).await;
             match &base.as_ref()[job.slot_offset] {
-                Slot::KeyValue(key, value) => {
+                Slot::KeyValue(key_value) => {
                     // Found a key and value. We finish by moving the current
                     // job forward and yielding the key-value pair.
-                    let kv = (*key, value.clone());
+                    let kv = key_value.to_trie_key_trie_value( &state.storage ).await;
                     if job.next() {
                         state.jobs.push(job);
                     }
@@ -60,10 +60,7 @@ pub fn kv_stream<S: Buffer>(
     }
 }
 
-pub async fn query_keys_values<P: Buffer>(
-    map_base: MapBase,
-    storage: &P,
-) -> Result<Vec<(i32, TrieValue)>, TrieQueryError> {
+pub async fn query_keys_values<P: Buffer>(map_base: MapBase, storage: &P) -> Vec<(i32, TrieValue)> {
     let MapBase { map, base: base_id } = map_base;
     let mut out = Vec::new();
     let slot_count = map.slot_count();
@@ -71,10 +68,10 @@ pub async fn query_keys_values<P: Buffer>(
     let base_ref = base.as_ref();
     debug_assert_eq!(slot_count, base_ref.len());
     for base_index in 0..slot_count {
-        let keys_values = Box::pin(base_ref[base_index].query_key_values(storage)).await?;
+        let keys_values = Box::pin(base_ref[base_index].query_key_values(storage)).await;
         out.extend(keys_values);
     }
-    Ok(out)
+    out
 }
 
 struct Job {

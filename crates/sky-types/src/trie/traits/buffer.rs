@@ -1,4 +1,4 @@
-use crate::trie::{Base, BufferIndex, MapBase};
+use crate::trie::{Base, BufferIndex, MapBase, Slot};
 
 #[allow(async_fn_in_trait)]
 pub trait Buffer {
@@ -16,4 +16,14 @@ pub trait Buffer {
     /// Reads a base with `size` slots from the trie's buffer
     /// at position `id`.
     async fn get_base(&self, id: BufferIndex, size: usize) -> Base;
+
+    /// Reads a subtrie.
+    async fn get_subtrie(&self, id: BufferIndex) -> MapBase {
+        let mut base = self.get_base(id, 1).await;
+        let slot = base.slots.pop().expect("slot not found");
+        let Slot::MapBase(map_base) = slot else {
+            panic!("subtrie id should have a map-base")
+        };
+        map_base
+    }
 }

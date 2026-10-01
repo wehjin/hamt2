@@ -16,7 +16,7 @@ pub async fn insert(trie: &mut MemEdit, val: Val) -> Result<Vid, TransactError> 
         Val::String(_) => VAL_TYPE_STRING,
     };
 
-    let mut hash = (universal_hash::hash(bytes, 1) & 0x7FFFFFFF) as i32;
+    let mut hash = (universal_hash::hash(bytes, 1) & TrieKey::MASK) as i32;
     for _ in 0..1000 {
         let hash_trie = find_hash_trie(trie, hash).await?;
         match hash_trie {

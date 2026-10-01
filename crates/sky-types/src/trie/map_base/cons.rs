@@ -1,6 +1,4 @@
-use crate::trie::{
-	HashKey, MapBase, Slot, Base, SlotMap, TrieInsertError, TrieValue, BufferMut,
-};
+use crate::trie::{Base, BufferMut, HashKey, MapBase, Slot, SlotMap, TrieInsertError, TrieValue};
 
 #[cfg(test)]
 pub async fn one_kv<P: BufferMut>(
@@ -9,7 +7,7 @@ pub async fn one_kv<P: BufferMut>(
     policy: &mut P,
 ) -> Result<MapBase, TrieInsertError> {
     use crate::trie::base;
-    let base = base::form_kv(key, value);
+    let base = base::form_kv(key, value, policy).await?;
     let id = policy.push_base(base).await?;
     let map_base = MapBase {
         map: SlotMap::set_key_bit(key),
@@ -31,11 +29,11 @@ pub async fn two_kv<P: BufferMut>(
     let base = {
         let mut slots = Vec::new();
         if key.map_index() < key2.map_index() {
-            slots.push(Slot::one_kv(key, value));
-            slots.push(Slot::one_kv(key2, value2));
+            slots.push(Slot::one_kv(key, value, policy).await?);
+            slots.push(Slot::one_kv(key2, value2, policy).await?);
         } else {
-            slots.push(Slot::one_kv(key2, value2));
-            slots.push(Slot::one_kv(key, value));
+            slots.push(Slot::one_kv(key2, value2, policy).await?);
+            slots.push(Slot::one_kv(key, value, policy).await?);
         }
         Base { slots }
     };

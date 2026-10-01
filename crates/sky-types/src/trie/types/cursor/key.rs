@@ -1,6 +1,10 @@
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct TrieKey(i32);
 
+impl TrieKey {
+    pub const MASK: u32 = 0x3FFF_FFFF;
+}
+
 impl From<i32> for TrieKey {
     fn from(value: i32) -> Self {
         debug_assert!(value >= 0, "Attempted to create key with high bit");

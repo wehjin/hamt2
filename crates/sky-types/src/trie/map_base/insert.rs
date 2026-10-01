@@ -11,10 +11,13 @@ pub async fn insert_kv<P: BufferMut>(
     let post_map_base = match map.try_base_index(key) {
         Some(base_index) => {
             let read_base = base_commit.get_base(base_id, slot_count).await;
-            match read_base.as_ref()[base_index].test_kv(&key, &value) {
+            match read_base.as_ref()[base_index]
+                .test_kv(&key, &value, base_commit)
+                .await
+            {
                 KvTest::SameValue => MapBase { map, base: base_id },
                 KvTest::ValueConflict => {
-                    let post_base = base::swap_v(read_base, base_index, value);
+                    let post_base = base::swap_v(read_base, base_index, value, base_commit).await?;
                     let id = base_commit.push_base(post_base).await?;
                     MapBase { map, base: id }
                 }
@@ -43,7 +46,7 @@ pub async fn insert_kv<P: BufferMut>(
             let post_slot_base = {
                 let base = base_commit.get_base(base_id, slot_count).await;
                 let kv_index = map.count_left(key);
-                base::insert_kv(base, kv_index, key, value)
+                base::insert_kv(base, kv_index, key, value, base_commit).await?
             };
             let id = base_commit.push_base(post_slot_base).await?;
             let post_map = map.with_key(key);
