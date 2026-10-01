@@ -31,7 +31,8 @@ pub trait QueryCursor: TrieQuery {
         let key = key.into();
         let lower_root = match self.query(key.into()).await? {
             None => MapBase::empty(),
-            Some(TrieValue::U32(_)) => panic!("key is occupied by a primitive value"),
+            Some(TrieValue::U32(_)) => panic!("key is occupied by a u32 value"),
+            Some(TrieValue::Bytes(_)) => panic!("key is occupied by a bytes value"),
             Some(TrieValue::SubTrie(lower_root)) => lower_root,
         };
         self.cursor_pos_mut().descend(key, lower_root);
