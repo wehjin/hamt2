@@ -27,8 +27,8 @@ pub async fn process_socket_requests<In, Out>(
                         let status  = storage.read_status().await;
                         let _ = outgoing.send(SocketResponse::DbStatus(status)).await;
                     }
-                    Some(SocketRequest::ReadSlotBase(slotbase_id)) => {
-                        let slot_base = storage.read_slot_base(slotbase_id).await;
+                    Some(SocketRequest::ReadSlotBase(slotbase_id, size)) => {
+                        let slot_base = storage.read_slot_base(slotbase_id, size).await;
                         let _ = outgoing.send(SocketResponse::SlotBase(slotbase_id, slot_base)).await;
                     }
                     Some(SocketRequest::Transact(datoms)) => {
@@ -52,19 +52,19 @@ pub async fn process_socket_requests<In, Out>(
 
 #[cfg(test)]
 mod tests {
-	use crate::server::process_socket_requests;
-	use crate::server::storage::StorageService;
-	use crate::shared::protocol::{SocketRequest, SocketResponse};
-	use sky_types::db::{Attr, datom};
-	use sky_types::trie::BufferIndex;
-	use tokio::sync::mpsc;
-	use tokio::sync::mpsc::{Receiver, Sender};
-	use tokio::task::JoinHandle;
-	use tokio_stream::wrappers::ReceiverStream;
-	use tokio_util::sync::PollSender;
+    use crate::server::process_socket_requests;
+    use crate::server::storage::StorageService;
+    use crate::shared::protocol::{SocketRequest, SocketResponse};
+    use sky_types::db::{Attr, datom};
+    use sky_types::trie::BufferIndex;
+    use tokio::sync::mpsc;
+    use tokio::sync::mpsc::{Receiver, Sender};
+    use tokio::task::JoinHandle;
+    use tokio_stream::wrappers::ReceiverStream;
+    use tokio_util::sync::PollSender;
 
-	#[tokio::test]
-	async fn process_socket_requests_works() {
+    #[tokio::test]
+    async fn process_socket_requests_works() {
         let storage = StorageService::start(["Counter/count"]).await.unwrap();
         let (_task, request, mut response) = spawn_socket_task(storage);
 
