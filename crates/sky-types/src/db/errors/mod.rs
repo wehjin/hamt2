@@ -3,7 +3,7 @@ use crate::trie::{TrieInsertError, TrieQueryError};
 
 #[derive(thiserror::Error, Debug)]
 pub enum QueryError {
-    #[error("Trie: {0}")]
+    #[error("TrieQueryError: {0}")]
     TrieQueryError(#[from] TrieQueryError),
 }
 
@@ -14,6 +14,9 @@ pub enum TransactError {
 
     #[error("WriteStorageError: {0}")]
     WriteStorageError(#[from] WriteStorageError),
+
+    #[error("TrieQueryError: {0}")]
+    TrieQueryError(#[from] TrieQueryError),
 
     #[error("TrieInsertError: {0}")]
     TrieInsertError(#[from] TrieInsertError),

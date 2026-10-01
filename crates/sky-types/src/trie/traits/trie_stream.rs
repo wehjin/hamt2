@@ -9,6 +9,9 @@ pub trait TrieStream {
 
     /// Stream u32 values from the trie.
     fn u32_stream(&self) -> impl Stream<Item = (i32, u32)>;
+
+    /// Stream key values from the trie
+    fn kv_stream(&self) -> impl Stream<Item = (i32, TrieValue)>;
 }
 
 impl<T: TrieSnap<Snapshot: Buffer> + Buffer> TrieStream for T {
@@ -29,5 +32,8 @@ impl<T: TrieSnap<Snapshot: Buffer> + Buffer> TrieStream for T {
                 None
             }
         })
+    }
+    fn kv_stream(&self) -> impl Stream<Item = (i32, TrieValue)> {
+        kv_stream(self.get_root(), self.snapshot())
     }
 }

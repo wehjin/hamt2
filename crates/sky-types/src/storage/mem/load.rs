@@ -61,6 +61,10 @@ impl TrieStream for MemLoad {
     fn u32_stream(&self) -> impl Stream<Item = (i32, u32)> {
         self.inner.u32_stream()
     }
+
+    fn kv_stream(&self) -> impl Stream<Item = (i32, TrieValue)> {
+        self.inner.kv_stream()
+    }
 }
 
 impl TrieSnap for MemLoad {

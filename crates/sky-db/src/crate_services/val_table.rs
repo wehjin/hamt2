@@ -1,4 +1,3 @@
-use crate::crate_services::u32;
 use crate::db::types::key::KEY_VAL_TABLE;
 use crate::db::vid::Vid;
 use sky_types::db::Val;
@@ -6,160 +5,103 @@ use sky_types::db::{QueryError, TransactError};
 use sky_types::storage::MemEdit;
 use sky_types::trie::*;
 
-pub async fn insert(trie: &mut MemEdit, val: Val) -> Result<Vid, TransactError> {
-    let bytes = match &val {
+const VAL_TYPE_U32: u8 = 16;
+const VAL_TYPE_STRING: u8 = 17;
+
+fn bytes_from_val(val: &Val) -> Vec<u8> {
+    let data_bytes = match &val {
         Val::U32(u) => &u.to_be_bytes(),
         Val::String(s) => s.as_bytes(),
     };
-    let bytes_type = match &val {
+    let type_byte = match &val {
         Val::U32(_) => VAL_TYPE_U32,
         Val::String(_) => VAL_TYPE_STRING,
     };
+    let mut bytes = vec![type_byte];
+    bytes.extend_from_slice(data_bytes);
+    bytes
+}
 
-    let mut hash = (universal_hash::hash(bytes, 1) & TrieKey::MASK) as i32;
-    for _ in 0..1000 {
-        let hash_trie = find_hash_trie(trie, hash).await?;
-        match hash_trie {
-            None => {
-                insert_bytes(trie, hash, bytes, bytes_type).await?;
-                return Ok(Vid::from_id(hash));
-            }
-            Some(bytes_trie) => {
-                if is_equal_bytes(&bytes_trie, bytes, bytes_type).await? {
-                    return Ok(Vid::from_id(hash));
-                }
-                if hash == i32::MAX {
-                    hash = 0;
-                } else {
-                    hash += 1;
-                }
-            }
+fn val_from_bytes(bytes: &[u8]) -> Val {
+    match bytes[0] {
+        VAL_TYPE_U32 => Val::U32(u32::from_be_bytes(
+            bytes[1..].try_into().expect("parse u32 from bytes"),
+        )),
+        VAL_TYPE_STRING => {
+            Val::String(String::from_utf8(bytes[1..].to_vec()).expect("parse string from bytes"))
+        }
+        _ => unreachable!(),
+    }
+}
+
+async fn restore_on_err(
+    trie: &mut MemEdit,
+    f: impl AsyncFnOnce(&mut MemEdit) -> Result<Vid, TransactError>,
+) -> Result<Vid, TransactError> {
+    let start = trie.backup();
+    match f(trie).await {
+        Ok(vid) => {
+            // Do not attempt using `restore` here to avoid doing
+            // ascends in `f`. Doing so would also erase any work that
+            // was accomplished in `f`.
+            Ok(vid)
+        }
+        Err(e) => {
+            trie.restore(start);
+            Err(e)
         }
     }
-    Err(TransactError::NoSpaceInValueTable)
+}
+
+const SEARCH_SIZE: i32 = 4000;
+
+fn search_start(bytes: &[u8]) -> i32 {
+    let u32_key = universal_hash::hash(&bytes, 0) & TrieKey::MASK;
+    let i32_key = u32_key as i32;
+    (i32::MAX - SEARCH_SIZE - 1).min(i32_key)
+}
+pub async fn insert(trie: &mut MemEdit, val: Val) -> Result<Vid, TransactError> {
+    let result = restore_on_err(trie, async |trie| {
+        trie.descend(KEY_VAL_TABLE).await?;
+        let bytes = bytes_from_val(&val);
+        let start = search_start(&bytes);
+        for i in 0..SEARCH_SIZE {
+            let vid = start + i;
+            match trie.query(vid).await? {
+                None => {
+                    trie.insert(vid, TrieValue::Bytes(bytes)).await?;
+                    trie.ascend();
+                    return Ok(Vid::from_id(vid));
+                }
+                Some(TrieValue::Bytes(existing)) if &existing == &bytes => {
+                    trie.ascend();
+                    return Ok(Vid::from_id(vid));
+                }
+                Some(_) => (),
+            }
+        }
+        Err(TransactError::NoSpaceInValueTable)
+    })
+    .await?;
+    let query_val = query(trie, result).await.expect("should find val");
+    debug_assert_eq!(query_val, Some(val));
+    Ok(result)
 }
 
 pub async fn query<T>(trie: &T, vid: Vid) -> Result<Option<Val>, QueryError>
 where
     T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
 {
-    match find_hash_trie(trie, vid.to_id()).await? {
-        None => Ok(None),
-        Some(val_trie) => {
-            let Some(TrieValue::U32(bytes_len)) = val_trie.query(SUBKEY_LEN).await? else {
-                panic!("Unexpected MemValue variant")
-            };
-            let Some(TrieValue::U32(val_type)) = val_trie.query(SUBKEY_VAL_TYPE).await? else {
-                panic!("Unexpected MemValue variant")
-            };
-            let builder = u32::Read::new(val_trie, bytes_len as usize, SUBKEY_BYTES);
-            let bytes = builder.into_bytes().await;
-            match val_type as u8 {
-                VAL_TYPE_U32 => {
-                    let v = u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
-                    Ok(Some(Val::U32(v)))
-                }
-                VAL_TYPE_STRING => {
-                    let s = String::from_utf8(bytes).expect("valid utf8");
-                    Ok(Some(Val::String(s)))
-                }
-                _ => unreachable!("Invalid val_type: {:?}", val_type),
-            }
-        }
-    }
-}
-
-const SUBKEY_LEN: i32 = 0;
-const SUBKEY_VAL_TYPE: i32 = 1;
-const SUBKEY_BYTES: i32 = 100;
-const VAL_TYPE_U32: u8 = 0;
-const VAL_TYPE_STRING: u8 = 1;
-
-async fn insert_bytes(
-    trie: &mut MemEdit,
-    hash: i32,
-    bytes: &[u8],
-    bytes_type: u8,
-) -> Result<(), TransactError> {
-    let u32_stream = u32::Stream::new(bytes, SUBKEY_BYTES);
-    for (u32_subkey, u32_value) in u32_stream {
-        trie.insert_deep(
-            [KEY_VAL_TABLE, hash, u32_subkey],
-            TrieValue::U32(u32_value),
-            false,
-        )
-        .await?;
-    }
-    trie.insert_deep(
-        [KEY_VAL_TABLE, hash, SUBKEY_LEN],
-        TrieValue::U32(bytes.len() as u32),
-        false,
-    )
-    .await?;
-    trie.insert_deep(
-        [KEY_VAL_TABLE, hash, SUBKEY_VAL_TYPE],
-        TrieValue::U32(bytes_type as u32),
-        false,
-    )
-    .await?;
-    Ok(())
-}
-
-async fn is_equal_bytes<T: TrieQuery>(
-    hash_trie: &T,
-    bytes: &[u8],
-    bytes_type: u8,
-) -> Result<bool, QueryError> {
-    let Some(TrieValue::U32(len)) = hash_trie.query(SUBKEY_LEN).await? else {
-        panic!("Unexpected MemValue variant")
+    let mut trie = trie.snapshot();
+    trie.descend(KEY_VAL_TABLE).await?;
+    let value = trie.query(vid.to_id()).await?;
+    let val = if let Some(TrieValue::Bytes(bytes)) = value {
+        let val = val_from_bytes(&bytes);
+        Some(val)
+    } else {
+        None
     };
-    if len as usize != bytes.len() {
-        return Ok(false);
-    }
-    let Some(TrieValue::U32(val_type)) = hash_trie.query(SUBKEY_VAL_TYPE).await? else {
-        panic!("Unexpected MemValue variant")
-    };
-    if val_type as u8 != bytes_type {
-        return Ok(false);
-    }
-    let mut u32_stream = u32::Stream::new(bytes, SUBKEY_BYTES);
-    loop {
-        match u32_stream.next() {
-            Some((u32_subkey, u32_value)) => {
-                let saved = hash_trie.query(u32_subkey).await?;
-                match saved {
-                    None => return Ok(false),
-                    Some(saved_mem_value) => {
-                        let TrieValue::U32(saved_u32) = saved_mem_value else {
-                            panic!("Unexpected MemValue variant")
-                        };
-                        if u32_value != saved_u32 {
-                            return Ok(false);
-                        }
-                        // Values match so continue to the next key.
-                    }
-                }
-            }
-            None => {
-                return Ok(true);
-            }
-        }
-    }
-}
-
-async fn find_hash_trie<T>(trie: &T, hash: i32) -> Result<Option<T::Snapshot>, QueryError>
-where
-    T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
-{
-    let mut snapshot = trie.snapshot();
-    snapshot.descend(KEY_VAL_TABLE).await?;
-    match snapshot.query(hash).await? {
-        None => Ok(None),
-        Some(_mem_value) => {
-            snapshot.descend(hash).await?;
-            Ok(Some(snapshot))
-        }
-    }
+    Ok(val)
 }
 
 #[cfg(test)]
