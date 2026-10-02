@@ -2,7 +2,7 @@ use crate::Ein;
 use crate::FindResult;
 use crate::Schema;
 use crate::crate_services::datalog::atom::Atom;
-use crate::db_trie;
+use crate::crate_services::db_trie;
 use crate::traits::Find;
 use sky_types::trie::*;
 use std::future::Future;

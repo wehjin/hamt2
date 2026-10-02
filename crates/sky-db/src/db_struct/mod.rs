@@ -1,11 +1,10 @@
-pub mod db_trie;
-pub mod internal_types;
 pub mod query;
 pub mod transact;
 
 use crate::Schema;
 use crate::attr_spec::DbSpec;
 use crate::attribute::Attribute;
+use crate::crate_services::db_trie;
 use crate::errors::ConnectError;
 use crate::internal_types::MaxEid;
 use crate::reader::DbReader;

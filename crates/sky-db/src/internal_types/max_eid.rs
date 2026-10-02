@@ -1,5 +1,5 @@
-use crate::internal_types::key::KEY_MAX_EID;
 use crate::Ein;
+use crate::internal_types::key::KEY_MAX_EID;
 use crate::{QueryError, TransactError};
 use sky_types::storage::{MemEdit, MemLoad};
 use sky_types::trie::*;

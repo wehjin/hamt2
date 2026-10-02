@@ -1,6 +1,7 @@
+use crate::crate_services::db_trie;
 use crate::traits::Find;
 use crate::types::Txid;
-use crate::{Db, Schema, db, db_trie};
+use crate::{Db, Schema, db};
 use crate::{Dir, TransactError};
 use schema_loader::SchemaLoader;
 use sky_types::storage::MemEdit;

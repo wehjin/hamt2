@@ -1,9 +1,10 @@
 use crate::Schema;
 use crate::TransactError;
 use crate::crate_services::datalog::atom::Atom;
+use crate::crate_services::db_trie;
 use crate::find::ValsInSlot;
 use crate::{Attr, Ein, FindResult, QueryError, Val};
-use crate::{Datom, Db, db_trie};
+use crate::{Datom, Db};
 use futures::FutureExt;
 use sky_types::trie::{QueryCursor, TrieQuery, TrieSnap, TrieStream};
 

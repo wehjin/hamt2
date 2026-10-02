@@ -1,7 +1,7 @@
 use crate::Schema;
 use crate::crate_services::datalog::atom::Atom;
+use crate::crate_services::db_trie;
 use crate::crate_services::val_table;
-use crate::db_trie;
 use crate::traits::Find;
 use crate::{Ein, Fill, FindResult};
 use sky_types::trie::{QueryCursor, TrieQuery, TrieSnap, TrieStream};
