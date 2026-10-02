@@ -1,5 +1,5 @@
-use crate::storage::edit::StoreEdit;
 use crate::storage::{MemView, SlotBuffer};
+use crate::trie::StoreEdit;
 use crate::trie::{
     Base, Buffer, BufferIndex, BufferMut, CursorPos, MapBase, TrieInsert, TrieSnap, TrieValue,
 };

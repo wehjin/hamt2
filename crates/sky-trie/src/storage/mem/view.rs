@@ -1,7 +1,7 @@
 use crate::storage::MemEdit;
 use crate::storage::mem::SlotBuffer;
-use crate::storage::traits::view::StoreView;
 use crate::trie::CursorPos;
+use crate::trie::StoreView;
 use crate::trie::{Base, Buffer, BufferIndex, MapBase, QueryCursor, TrieSnap};
 use std::sync::Arc;
 
