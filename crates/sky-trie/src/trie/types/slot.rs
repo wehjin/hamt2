@@ -1,8 +1,6 @@
 use crate::trie::map_base::{query_keys_values, query_value, two_kv};
 use crate::trie::types::key_value::KeyValue;
-use crate::trie::{
-    Base, Buffer, BufferMut, ByteData, HashKey, MapBase, SlotMap, TrieInsertError, TrieValue,
-};
+use crate::trie::{Base, Buffer, BufferMut, ByteData, HashKey, MapBase, SlotMap, TrieValue};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
@@ -13,13 +11,9 @@ pub enum Slot {
 }
 
 impl Slot {
-    pub async fn one_kv(
-        key: HashKey,
-        value: TrieValue,
-        buffer: &mut impl BufferMut,
-    ) -> Result<Self, TrieInsertError> {
-        let key_value = KeyValue::from_hash_key_trie_value(key, value, buffer).await?;
-        Ok(Slot::KeyValue(key_value))
+    pub async fn one_kv(key: HashKey, value: TrieValue, buffer: &mut impl BufferMut) -> Self {
+        let key_value = KeyValue::from_hash_key_trie_value(key, value, buffer).await;
+        Slot::KeyValue(key_value)
     }
     pub async fn two_kv<P: BufferMut>(
         a_key: HashKey,
@@ -27,7 +21,7 @@ impl Slot {
         b_key: HashKey,
         b_value: TrieValue,
         policy: &mut P,
-    ) -> Result<Self, TrieInsertError> {
+    ) -> Self {
         let (a_map_index, b_map_index) = (a_key.map_index(), b_key.map_index());
         if a_map_index == b_map_index {
             let map = SlotMap::set_map_index_bit(a_map_index);
@@ -38,25 +32,21 @@ impl Slot {
                 b_value,
                 policy,
             ))
-            .await?;
+            .await;
             let base = Base { slots: vec![slot] };
-            let id = policy.push_base(base).await?;
-            Ok(Slot::MapBase(MapBase { map, base: id }))
+            let id = policy.push_base(base).await;
+            Slot::MapBase(MapBase { map, base: id })
         } else {
-            let map_base = two_kv(a_key, a_value, b_key, b_value, policy).await?;
-            Ok(Slot::MapBase(map_base))
+            let map_base = two_kv(a_key, a_value, b_key, b_value, policy).await;
+            Slot::MapBase(map_base)
         }
     }
-    pub async fn replace_value(
-        self,
-        value: TrieValue,
-        buffer: &mut impl BufferMut,
-    ) -> Result<Self, TrieInsertError> {
+    pub async fn replace_value(self, value: TrieValue, buffer: &mut impl BufferMut) -> Self {
         let Slot::KeyValue(key_value) = self else {
             unreachable!("Should be a key-value slot, not a map-base slot:")
         };
-        let key_value = key_value.replace_value(value, buffer).await?;
-        Ok(Slot::KeyValue(key_value))
+        let key_value = key_value.replace_value(value, buffer).await;
+        Slot::KeyValue(key_value)
     }
     pub async fn query_key_values<P: Buffer>(&self, storage: &P) -> Vec<(i32, TrieValue)> {
         match self {

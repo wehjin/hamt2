@@ -1,6 +1,4 @@
-use crate::trie::{
-    CursorPos, InsertOption, MapBase, TrieInsert, TrieInsertError, TrieKey, TrieQuery, TrieValue,
-};
+use crate::trie::{CursorPos, InsertOption, MapBase, TrieInsert, TrieKey, TrieQuery, TrieValue};
 
 #[allow(async_fn_in_trait)]
 pub trait QueryCursor: TrieQuery {
@@ -66,8 +64,7 @@ pub trait InsertCursor: QueryCursor + TrieInsert {
         keys: impl IntoIterator<Item = impl Into<TrieKey>>,
         value: impl Into<TrieValue>,
         delete_others: bool,
-    ) -> Result<&mut Self, TrieInsertError> {
-        let start_pos = self.backup();
+    ) -> &mut Self {
         let (descend_keys, insert_key) = {
             let mut keys = keys.into_iter().map(|k| k.into()).collect::<Vec<_>>();
             let last_key = keys.pop().expect("too few keys");
@@ -79,14 +76,9 @@ pub trait InsertCursor: QueryCursor + TrieInsert {
         } else {
             vec![]
         };
-        if let Err(e) = self
-            .insert_with_options(insert_key.into(), value, insert_options)
-            .await
-        {
-            self.restore(start_pos);
-            return Err(e);
-        }
+        self.insert_with_options(insert_key.into(), value, insert_options)
+            .await;
         self.ascend_n(count);
-        Ok(self)
+        self
     }
 }

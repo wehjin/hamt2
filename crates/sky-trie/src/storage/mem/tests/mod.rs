@@ -34,7 +34,7 @@ async fn edit_inserts() {
     let insert_value = TrieValue::U32(34);
     let mut mem = MemView::new();
     mem.edit(async |edit| {
-        edit.insert(33, insert_value.clone()).await?;
+        edit.insert(33, insert_value.clone()).await;
         Ok(())
     })
     .await
@@ -98,7 +98,7 @@ mod fixtures {
         let out = trie
             .edit(async |edit| {
                 let value = TrieValue::U32(tag as u32 + 1);
-                edit.insert(tag, value.clone()).await?;
+                edit.insert(tag, value.clone()).await;
                 let query = edit.query(tag).await;
                 assert_eq!(query, Some(value));
                 Ok(tag + 2)
@@ -112,7 +112,7 @@ mod fixtures {
         let out = trie
             .edit::<_, ()>(async |edit| {
                 let value = TrieValue::U32(tag as u32 + 1);
-                edit.insert(tag, value.clone()).await?;
+                edit.insert(tag, value.clone()).await;
                 let query = edit.query(tag).await;
                 assert_eq!(query, Some(value));
                 Err(anyhow!("trouble in edit"))

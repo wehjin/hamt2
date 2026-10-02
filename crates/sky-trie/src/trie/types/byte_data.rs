@@ -1,4 +1,3 @@
-use crate::storage::WriteStorageError;
 use crate::trie::{Base, Buffer, BufferIndex, BufferMut, Slot};
 use serde::{Deserialize, Serialize};
 use std::ops::Index;
@@ -13,7 +12,7 @@ mod tests {
         let mut buffer = MemEdit::new();
         let mut bytes = b"hello"[..].to_vec();
         for _ in 0..7 {
-            let index = push_bytes_to_buffer(&bytes, &mut buffer).await.unwrap();
+            let index = push_bytes_to_buffer(&bytes, &mut buffer).await;
             let get_bytes = get_bytes_from_buffer(index, &mut buffer).await;
             assert_eq!(get_bytes, bytes);
             bytes.extend(bytes.clone());
@@ -42,7 +41,7 @@ impl Index<usize> for ByteData {
 pub async fn push_bytes_to_buffer(
     bytes: impl AsRef<[u8]>,
     buffer: &mut impl BufferMut,
-) -> Result<BufferIndex, WriteStorageError> {
+) -> BufferIndex {
     let base = build_base_with_bytes(bytes);
     buffer.push_base(base).await
 }

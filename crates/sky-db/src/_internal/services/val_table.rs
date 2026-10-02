@@ -62,7 +62,7 @@ pub async fn insert(trie: &mut MemEdit, val: Val) -> Result<Vid, TransactError> 
         for _ in 0..SEARCH_SIZE {
             match trie.query(vid.to_id()).await {
                 None => {
-                    trie.insert(vid.to_id(), TrieValue::Bytes(bytes)).await?;
+                    trie.insert(vid.to_id(), TrieValue::Bytes(bytes)).await;
                     trie.ascend();
                     return Ok(vid);
                 }

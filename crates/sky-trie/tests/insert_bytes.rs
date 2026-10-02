@@ -64,7 +64,7 @@ async fn assert_byte_tests<const N: usize>(tests: [(i32, &[u8]); N]) {
         for i in 0..tests.len() {
             let (id, value) = tests[i];
             let key = 100 + id;
-            edit.insert(key, value).await?;
+            edit.insert(key, value).await;
         }
         Ok(())
     })

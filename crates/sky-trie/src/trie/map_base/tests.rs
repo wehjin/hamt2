@@ -16,9 +16,7 @@ async fn test_stream_kvs_one_slot() {
     let key = HashKey::new(0);
     let value = TrieValue::from(11);
     let mut storage = MemEdit::new();
-    let map_base = one_kv(key, value.clone(), &mut storage)
-        .await
-        .expect("one_kv");
+    let map_base = one_kv(key, value.clone(), &mut storage).await;
     let stream = kv_stream(map_base, storage);
     let kvs = stream.collect::<Vec<_>>().await;
     assert_eq!(vec![(key.i32(), value)], kvs);
@@ -34,12 +32,12 @@ async fn test_stream_kvs_many_slots() -> anyhow::Result<()> {
         let mut map_base = {
             let key = HashKey::new(test_kvs[0].0);
             let value = test_kvs[0].1.clone();
-            one_kv(key, value, &mut storage).await.expect("one_kv")
+            one_kv(key, value, &mut storage).await
         };
         for kv in &test_kvs[1..] {
             let key = HashKey::new(kv.0);
             let value = kv.1.clone();
-            map_base = map_base::insert_kv(map_base, key, value, &mut storage).await?;
+            map_base = map_base::insert_kv(map_base, key, value, &mut storage).await;
         }
         map_base
     };

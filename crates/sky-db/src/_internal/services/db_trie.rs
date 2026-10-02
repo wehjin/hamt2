@@ -67,14 +67,14 @@ pub(crate) async fn with_update(
     let aevt_key = [KEY_AEVT, aid, eid, vid.to_id()];
     let replace_tail = attribute.cardinality() == Cardinality::One;
     let tx_value = Value { id: *txid, dir };
-    trie.insert_deep(eavt_key, tx_value, replace_tail).await?;
-    trie.insert_deep(aevt_key, tx_value, replace_tail).await?;
+    trie.insert_deep(eavt_key, tx_value, replace_tail).await;
+    trie.insert_deep(aevt_key, tx_value, replace_tail).await;
     Ok(())
 }
 
 pub(crate) async fn set_max_tx(trie: &mut MemEdit, max_tx: Txid) -> Result<(), TransactError> {
     trie.insert(KEY_MAX_TXID, TrieValue::from(max_tx.u32()))
-        .await?;
+        .await;
     Ok(())
 }
 

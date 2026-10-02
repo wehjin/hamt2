@@ -1,6 +1,6 @@
 use crate::trie::{
-    Buffer, BufferIndex, BufferMut, HashKey, TrieInsertError, TrieKey, TrieValue,
-    get_bytes_from_buffer, push_bytes_to_buffer,
+    Buffer, BufferIndex, BufferMut, HashKey, TrieKey, TrieValue, get_bytes_from_buffer,
+    push_bytes_to_buffer,
 };
 use serde::{Deserialize, Serialize};
 
@@ -29,14 +29,14 @@ impl KeyValue {
         key: HashKey,
         value: TrieValue,
         buffer: &mut impl BufferMut,
-    ) -> Result<KeyValue, TrieInsertError> {
+    ) -> KeyValue {
         Self::from_trie_key_trie_value(key.i32(), value, buffer).await
     }
     pub async fn from_trie_key_trie_value(
         key: i32,
         value: TrieValue,
         buffer: &mut impl BufferMut,
-    ) -> Result<KeyValue, TrieInsertError> {
+    ) -> KeyValue {
         let key = key as u32;
         debug_assert_eq!(key & KEY_MASK, key, "keys are 30 bits");
         let value = match value {
@@ -46,14 +46,14 @@ impl KeyValue {
             },
             TrieValue::SubTrie(map_base) => Self::Subtrie {
                 key: key | TRIE_KEY,
-                value: buffer.push_subtrie(map_base).await?,
+                value: buffer.push_subtrie(map_base).await,
             },
             TrieValue::Bytes(bytes) => Self::Bytes {
                 key: key | BYTES_KEY,
-                value: push_bytes_to_buffer(bytes.as_slice(), buffer).await?,
+                value: push_bytes_to_buffer(bytes.as_slice(), buffer).await,
             },
         };
-        Ok(value)
+        value
     }
     pub async fn to_trie_key_trie_value(&self, buffer: &impl Buffer) -> (i32, TrieValue) {
         let key = self.to_i32_key();
@@ -74,11 +74,7 @@ impl KeyValue {
             }
         }
     }
-    pub async fn replace_value(
-        self,
-        value: TrieValue,
-        buffer: &mut impl BufferMut,
-    ) -> Result<Self, TrieInsertError> {
+    pub async fn replace_value(self, value: TrieValue, buffer: &mut impl BufferMut) -> Self {
         let key = self.to_i32_key();
         Self::from_trie_key_trie_value(key, value, buffer).await
     }

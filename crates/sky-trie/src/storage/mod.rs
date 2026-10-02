@@ -1,11 +1,9 @@
 use crate::trie::{BufferIndex, MapBase};
 use serde::{Deserialize, Serialize};
 
-pub mod error;
 mod mem;
 mod traits;
 
-pub use error::*;
 pub use mem::*;
 pub use traits::*;
 

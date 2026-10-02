@@ -1,4 +1,4 @@
-use crate::trie::{Base, BufferMut, HashKey, Slot, TrieInsertError, TrieValue, map_base};
+use crate::trie::{Base, BufferMut, HashKey, Slot, TrieValue, map_base};
 
 /// Makes a copy of `base` where the kv already at `index` is moved into a new
 /// base containing both the old kv and a new kv.
@@ -11,7 +11,7 @@ pub async fn kick_kv<P>(
     key: HashKey,
     value: TrieValue,
     policy: &mut P,
-) -> Result<Base, TrieInsertError>
+) -> Base
 where
     P: BufferMut,
 {
@@ -22,9 +22,9 @@ where
         let (b_key, b_value) = b_key_value.to_trie_key_trie_value(policy).await;
         let b_key = key.sync(b_key);
         debug_assert!(b_key.i32() != key.i32());
-        Slot::two_kv(b_key.next(), b_value, key.next(), value, policy).await?
+        Slot::two_kv(b_key.next(), b_value, key.next(), value, policy).await
     };
-    Ok(base.replace_slot(index, post_slot))
+    base.replace_slot(index, post_slot)
 }
 
 /// Makes a copy of `base` where `key` and `value` are inserted into the
@@ -38,7 +38,7 @@ pub async fn merge_kv<P>(
     key: HashKey,
     value: TrieValue,
     policy: &mut P,
-) -> Result<Base, TrieInsertError>
+) -> Base
 where
     P: BufferMut,
 {
@@ -47,8 +47,8 @@ where
         let Slot::MapBase(pre_map_base) = pre_slot else {
             unreachable!("Should be a map-base slot, not a key-value slot:")
         };
-        let post_map_base = map_base::insert_kv(pre_map_base, key.next(), value, policy).await?;
+        let post_map_base = map_base::insert_kv(pre_map_base, key.next(), value, policy).await;
         Slot::MapBase(post_map_base)
     };
-    Ok(base.replace_slot(index, post_slot))
+    base.replace_slot(index, post_slot)
 }

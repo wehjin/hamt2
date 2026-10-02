@@ -35,7 +35,7 @@ impl MaxEid {
     pub async fn write(self, trie: &mut MemEdit) -> Result<(), TransactError> {
         if self.current > self.start {
             trie.insert(KEY_MAX_EID, TrieValue::from(self.current.to_i32() as u32))
-                .await?;
+                .await;
         }
         Ok(())
     }

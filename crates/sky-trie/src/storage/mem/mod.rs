@@ -1,7 +1,6 @@
 mod edit;
 mod view;
 
-use crate::storage::WriteStorageError;
 use crate::trie::{Base, Buffer, BufferIndex, BufferMut, MapBase, Slot};
 pub use edit::*;
 pub use view::*;
@@ -63,15 +62,14 @@ impl Buffer for SlotBuffer {
 }
 
 impl BufferMut for SlotBuffer {
-    async fn push_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
+    async fn push_root(&mut self, root: MapBase) {
         self.slots.push(Slot::MapBase(root));
         self.root_index = Some(self.slots.len() - 1);
-        Ok(())
     }
 
-    async fn push_base(&mut self, base: Base) -> Result<BufferIndex, WriteStorageError> {
+    async fn push_base(&mut self, base: Base) -> BufferIndex {
         let index = self.next_index();
         self.slots.extend(base.slots);
-        Ok(index)
+        index
     }
 }

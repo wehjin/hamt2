@@ -1,4 +1,4 @@
-use crate::trie::{BufferMut, HashKey, MapBase, TrieInsertError, TrieValue, map_base};
+use crate::trie::{BufferMut, HashKey, MapBase, TrieValue, map_base};
 use std::collections::HashSet;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -10,11 +10,7 @@ pub enum InsertOption {
 #[allow(async_fn_in_trait)]
 pub trait TrieInsert {
     /// Inserts `value` into the trie at position `key`.
-    async fn insert(
-        &mut self,
-        key: i32,
-        value: impl Into<TrieValue>,
-    ) -> Result<&mut Self, TrieInsertError> {
+    async fn insert(&mut self, key: i32, value: impl Into<TrieValue>) -> &mut Self {
         self.insert_with_options(key, value, []).await
     }
 
@@ -24,7 +20,7 @@ pub trait TrieInsert {
         key: i32,
         value: impl Into<TrieValue>,
         options: impl IntoIterator<Item = InsertOption>,
-    ) -> Result<&mut Self, TrieInsertError>;
+    ) -> &mut Self;
 }
 
 impl<T: BufferMut> TrieInsert for T {
@@ -33,7 +29,7 @@ impl<T: BufferMut> TrieInsert for T {
         key: i32,
         value: impl Into<TrieValue>,
         options: impl IntoIterator<Item = InsertOption>,
-    ) -> Result<&mut Self, TrieInsertError> {
+    ) -> &mut Self {
         let options = options.into_iter().collect::<HashSet<_>>();
         let pre_root = if options.contains(&InsertOption::DeleteOthers) {
             MapBase::empty()
@@ -42,8 +38,8 @@ impl<T: BufferMut> TrieInsert for T {
         };
         let value = value.into();
         let key = HashKey::new(key);
-        let root = map_base::insert_kv(pre_root, key, value, self).await?;
-        self.push_root(root).await?;
-        Ok(self)
+        let root = map_base::insert_kv(pre_root, key, value, self).await;
+        self.push_root(root).await;
+        self
     }
 }

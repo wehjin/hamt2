@@ -1,5 +1,5 @@
 use crate::storage::edit::StoreEdit;
-use crate::storage::{MemView, SlotBuffer, WriteStorageError};
+use crate::storage::{MemView, SlotBuffer};
 use crate::trie::{
     Base, Buffer, BufferIndex, BufferMut, CursorPos, MapBase, TrieInsert, TrieSnap, TrieValue,
 };
@@ -87,30 +87,25 @@ impl Buffer for MemEdit {
 }
 
 impl BufferMut for MemEdit {
-    async fn push_root(&mut self, root: MapBase) -> Result<(), WriteStorageError> {
-        let cursor_pos = self.cursor_pos.clone();
+    async fn push_root(&mut self, root: MapBase) {
         if let Some((key, _previous_active)) = self.cursor_pos.ascend() {
             // Make sure the ascended level has the updated value at key.
             let subtrie = TrieValue::SubTrie(root);
-            if let Err(e) = Box::pin(self.insert(key.into(), subtrie)).await {
-                self.cursor_pos = cursor_pos;
-                return Err(WriteStorageError::Anyhow(e.into()));
-            }
+            Box::pin(self.insert(key.into(), subtrie)).await;
             // Return to the original level.
             self.cursor_pos.descend(key, root);
         } else {
-            self.buffer.push_root(root).await?;
+            self.buffer.push_root(root).await;
             self.cursor_pos.active_root = root;
         }
-        Ok(())
     }
 
-    async fn push_base(&mut self, base: Base) -> Result<BufferIndex, WriteStorageError> {
+    async fn push_base(&mut self, base: Base) -> BufferIndex {
         let base_size = base.len();
-        let buffer_index = self.buffer.push_base(base).await?;
+        let buffer_index = self.buffer.push_base(base).await;
         let edit_index = self.start_id() + buffer_index.0;
         let next_index = self.next_index();
         debug_assert_eq!(next_index, edit_index + base_size);
-        Ok(edit_index)
+        edit_index
     }
 }

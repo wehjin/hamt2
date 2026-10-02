@@ -29,10 +29,8 @@ async fn empty_storage_root_is_empty() {
 #[tokio::test]
 async fn root_round_trip_works() {
     let mut edit = MemView::new().into_edit().await;
-    let root = one_kv(HashKey::new(7), TrieValue::U32(7), &mut edit)
-        .await
-        .expect("root");
-    edit.push_root(root).await.expect("write root");
+    let root = one_kv(HashKey::new(7), TrieValue::U32(7), &mut edit).await;
+    edit.push_root(root).await;
     assert_eq!(root, edit.get_root());
     let view = edit.commit().await;
     assert_eq!(root, view.get_root());
@@ -41,11 +39,9 @@ async fn root_round_trip_works() {
 #[tokio::test]
 async fn append_assigns_sequential_ids() {
     let mut storage = MemEdit::new();
-    let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7), &mut storage)
-        .await
-        .expect("base");
-    let id0 = storage.push_base(base.clone()).await.expect("append");
-    let id1 = storage.push_base(base.clone()).await.expect("append");
+    let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7), &mut storage).await;
+    let id0 = storage.push_base(base.clone()).await;
+    let id1 = storage.push_base(base.clone()).await;
     assert_eq!(BufferIndex(0), id0);
     assert_eq!(BufferIndex(1), id1);
     assert_eq!(BufferIndex(1), storage.max_index());
@@ -59,8 +55,8 @@ async fn mem_readonly_snapshot_does_not_see_new_bases() {
     let mut load = MemView::new();
     let (base, id) = load
         .edit(async |storage| {
-            let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7), storage).await?;
-            let id = storage.push_base(base.clone()).await.expect("append");
+            let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7), storage).await;
+            let id = storage.push_base(base.clone()).await;
             Ok((base, id))
         })
         .await
@@ -68,7 +64,7 @@ async fn mem_readonly_snapshot_does_not_see_new_bases() {
     let view = load.snapshot();
     let max_id = load
         .edit(async |storage| {
-            storage.push_base(base.clone()).await.expect("append");
+            storage.push_base(base.clone()).await;
             let max_id = storage.max_index();
             Ok(max_id)
         })
@@ -84,8 +80,8 @@ async fn reading_beyond_max_id_produces_empty() {
     let mut load = MemView::new();
     let base = load
         .edit(async |storage| {
-            let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7), storage).await?;
-            storage.push_base(base.clone()).await.expect("append");
+            let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7), storage).await;
+            storage.push_base(base.clone()).await;
             Ok(base)
         })
         .await
@@ -93,7 +89,7 @@ async fn reading_beyond_max_id_produces_empty() {
     let view = load.snapshot();
     let new_id = load
         .edit(async |storage| {
-            let new_id = storage.push_base(base.clone()).await?;
+            let new_id = storage.push_base(base.clone()).await;
             Ok(new_id)
         })
         .await
