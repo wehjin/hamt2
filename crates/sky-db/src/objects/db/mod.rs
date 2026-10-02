@@ -10,7 +10,7 @@ use crate::attribute::Attribute;
 use crate::errors::ConnectError;
 use crate::objects::reader::DbReader;
 use crate::trie::{Base, Buffer, BufferIndex, TrieSnap};
-use crate::trie_storage::{MemView, StorageStatus};
+use crate::trie_storage::MemView;
 use crate::types::Txid;
 
 #[derive(Debug)]
@@ -32,13 +32,6 @@ impl Db {
 impl Db {
     pub fn schema(&self) -> &Schema {
         &self.schema
-    }
-
-    pub fn status(&self) -> StorageStatus {
-        let view = self.trie.snapshot();
-        let max_id = view.max_index();
-        let root = view.get_root();
-        StorageStatus { max_id, root }
     }
 
     /// Keep until we figure out a better api for sky-server.

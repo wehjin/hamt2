@@ -18,8 +18,7 @@ pub use ent::*;
 pub use fill::*;
 pub use find_result::*;
 pub use schema::*;
-use crate::trie_storage::StorageStatus;
-use crate::trie::MapBase;
+
 pub use txid::*;
 pub use val::*;
 
@@ -35,19 +34,4 @@ pub struct Datom {
 pub enum Dir {
     In,
     Out,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
-pub struct DbStatus {
-    pub head: StorageStatus,
-    pub schema: Schema,
-}
-
-impl DbStatus {
-    pub fn with_root(&self, root: Option<MapBase>) -> Self {
-        let root = root.unwrap_or(self.head.root);
-        let Self { head, schema } = self.clone();
-        let head = StorageStatus { root, ..head };
-        Self { head, schema }
-    }
 }
