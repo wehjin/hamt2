@@ -53,31 +53,24 @@ async fn restore_on_err(
     }
 }
 
-const SEARCH_SIZE: i32 = 4000;
-
-fn search_start(bytes: &[u8]) -> i32 {
-    let u32_key = universal_hash::hash(&bytes, 0) & TrieKey::MASK;
-    let i32_key = u32_key as i32;
-    (i32::MAX - SEARCH_SIZE - 1).min(i32_key)
-}
+const SEARCH_SIZE: usize = 4000;
 pub async fn insert(trie: &mut MemEdit, val: Val) -> Result<Vid, TransactError> {
     let result = restore_on_err(trie, async |trie| {
         trie.descend(KEY_VAL_TABLE).await?;
         let bytes = bytes_from_val(&val);
-        let start = search_start(&bytes);
-        for i in 0..SEARCH_SIZE {
-            let vid = start + i;
-            match trie.query(vid).await? {
+        let mut vid = Vid::for_search(universal_hash::hash(&bytes, 0) & TrieKey::MASK);
+        for _ in 0..SEARCH_SIZE {
+            match trie.query(vid.to_id()).await? {
                 None => {
-                    trie.insert(vid, TrieValue::Bytes(bytes)).await?;
+                    trie.insert(vid.to_id(), TrieValue::Bytes(bytes)).await?;
                     trie.ascend();
-                    return Ok(Vid::from_id(vid));
+                    return Ok(vid);
                 }
                 Some(TrieValue::Bytes(existing)) if &existing == &bytes => {
                     trie.ascend();
-                    return Ok(Vid::from_id(vid));
+                    return Ok(vid);
                 }
-                Some(_) => (),
+                Some(_) => vid = vid.next_search(),
             }
         }
         Err(TransactError::NoSpaceInValueTable)
