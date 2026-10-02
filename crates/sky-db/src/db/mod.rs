@@ -6,7 +6,7 @@ pub mod types;
 use crate::db::attr_spec::DbSpec;
 use crate::db::attribute::Attribute;
 use crate::db::types::MaxEid;
-use crate::error::ConnectError;
+use crate::errors::ConnectError;
 use crate::reader::DbReader;
 use crate::schema;
 pub use crate::types::*;
