@@ -1,7 +1,7 @@
 use crate::Attr;
 use crate::FindResult;
 use crate::Schema;
-use crate::crate_services::datalog::atom::Atom;
+use crate::_internal::datalog::atom::Atom;
 use crate::traits::Find;
 use std::future::Future;
 

@@ -1,6 +1,6 @@
 use crate::QueryError;
-use crate::crate_services::db_trie;
-use crate::internal_types::key::KEY_MAX_TXID;
+use crate::_internal::KEY_MAX_TXID;
+use crate::_internal::db_trie;
 use crate::{Attr, Val};
 use crate::{Db, Txid};
 use sky_types::trie::{TrieQuery, TrieValue};

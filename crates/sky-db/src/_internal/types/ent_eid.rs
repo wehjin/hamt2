@@ -1,5 +1,5 @@
 use crate::Datom;
-use crate::internal_types::MaxEid;
+use crate::_internal::MaxEid;
 use crate::{Ein, Ent};
 use std::collections::HashMap;
 use std::ops::Index;

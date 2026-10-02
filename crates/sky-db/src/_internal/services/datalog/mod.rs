@@ -50,11 +50,11 @@ mod tests {
     use super::*;
     use crate::Db;
     use crate::Transact;
-    use crate::crate_services::datalog::atom::atom;
-    use crate::crate_services::datalog::rule::rule;
-    use crate::crate_services::datalog::term::term;
-    use crate::crate_services::datalog::var::var;
     use crate::datom;
+    use crate::_internal::datalog::atom::atom;
+    use crate::_internal::datalog::rule::rule;
+    use crate::_internal::datalog::term::term;
+    use crate::_internal::datalog::var::var;
     use crate::{Attr, ent, val};
     use sky_types::storage::MemLoad;
     use sky_types::storage::load::StoreLoad;

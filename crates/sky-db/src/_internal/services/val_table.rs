@@ -1,6 +1,6 @@
 use crate::Val;
-use crate::internal_types::Vid;
-use crate::internal_types::key::KEY_VAL_TABLE;
+use crate::_internal::Vid;
+use crate::_internal::KEY_VAL_TABLE;
 use crate::{QueryError, TransactError};
 use sky_types::storage::MemEdit;
 use sky_types::trie::*;

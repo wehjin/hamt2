@@ -1,6 +1,6 @@
 use crate::Schema;
-use crate::crate_services::datalog::atom::Atom;
-use crate::crate_services::db_trie;
+use crate::_internal::datalog::atom::Atom;
+use crate::_internal::db_trie;
 use crate::traits::Find;
 use crate::{Attr, Ein, FindResult};
 use sky_types::trie::*;

@@ -1,4 +1,4 @@
-use crate::crate_services::db_trie;
+use crate::_internal::db_trie;
 use crate::traits::Find;
 use crate::types::Txid;
 use crate::{Db, Schema, db};
