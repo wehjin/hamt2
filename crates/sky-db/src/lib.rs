@@ -14,4 +14,3 @@ pub use services::*;
 pub use traits::*;
 pub use types::*;
 pub use sky_trie::trie as trie;
-pub use sky_trie::storage as trie_storage;
