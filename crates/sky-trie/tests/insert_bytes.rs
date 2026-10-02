@@ -1,5 +1,5 @@
-use sky_trie::trie::MemView;
-use sky_trie::trie::{TrieInsert, TrieQuery, TrieValue};
+use sky_trie::MemView;
+use sky_trie::{TrieInsert, TrieQuery, TrieValue};
 
 #[tokio::test]
 async fn sequential_lengths() {

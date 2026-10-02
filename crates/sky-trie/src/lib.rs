@@ -1,3 +1,5 @@
 #[cfg(test)]
 mod tests;
-pub mod trie;
+mod trie;
+
+pub use trie::*;
