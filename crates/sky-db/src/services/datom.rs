@@ -1,5 +1,5 @@
-use crate::db::types::{Datom, Dir};
-use crate::db::{Attr, Dat, Ent};
+use crate::types::{Datom, Dir};
+use crate::{Attr, Dat, Ent};
 
 pub fn add(ent: impl Into<Ent>, attr: impl Into<Attr>, dat: impl Into<Dat>) -> Datom {
     Datom {

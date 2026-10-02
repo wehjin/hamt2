@@ -1,8 +1,8 @@
 use sky_db::Transact;
 use sky_db::datom;
-use sky_db::db_struct::Db;
+use sky_db::Db;
 use sky_db::find::EinsWithAttr;
-use sky_db::traits::DbQuery;
+use sky_db::DbQuery;
 use sky_db::{Attr, val};
 use sky_types::storage::MemLoad;
 use sky_types::storage::load::StoreLoad;

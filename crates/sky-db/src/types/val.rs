@@ -1,4 +1,4 @@
-use crate::db::{Ein, services};
+use crate::{Ein, services};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]

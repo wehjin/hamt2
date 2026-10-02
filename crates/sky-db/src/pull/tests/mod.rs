@@ -1,9 +1,8 @@
-use crate::Db;
-use crate::pull::Pull;
-use common::Basis;
-use crate::Transact;
 use crate::datom;
+use crate::pull::Pull;
 use crate::{Attr, Ein, Ent, Val, dat};
+use crate::{Db, Transact};
+use common::Basis;
 use sky_types::storage::MemLoad;
 use sky_types::storage::load::StoreLoad;
 

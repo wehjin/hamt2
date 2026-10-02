@@ -1,10 +1,18 @@
-use crate::crate_services::datalog::atom::Atom;
-use crate::{Db, db_trie};
-use crate::find::ValsInSlot;
-use futures::FutureExt;
 use crate::Schema;
+use crate::TransactError;
+use crate::crate_services::datalog::atom::Atom;
+use crate::find::ValsInSlot;
 use crate::{Attr, Ein, FindResult, QueryError, Val};
+use crate::{Datom, Db, db_trie};
+use futures::FutureExt;
 use sky_types::trie::{QueryCursor, TrieQuery, TrieSnap, TrieStream};
+
+#[allow(async_fn_in_trait)]
+pub trait Transact {
+    async fn transact(&mut self, datoms: impl Into<Vec<Datom>>) -> Result<&mut Self, TransactError>
+    where
+        Self: Sized;
+}
 
 #[allow(async_fn_in_trait)]
 pub trait DbQuery {

@@ -1,7 +1,7 @@
 use crate::routes::browser::Browser;
 use ratatui_kit::crossterm::event::{Event, KeyCode, KeyEventKind, KeyModifiers};
 use ratatui_kit::prelude::*;
-use sky_db::db_struct::Db;
+use sky_db::Db;
 use sky_db::reader::DbReader;
 use sky_db::{Transact, attr, datom, ent};
 use sky_types::storage::load::StoreLoad;

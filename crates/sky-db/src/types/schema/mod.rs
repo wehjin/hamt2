@@ -1,6 +1,6 @@
-use crate::db::Attr;
-use crate::db::Ein;
-use crate::db::attr_table::AttrTable;
+use crate::Attr;
+use crate::Ein;
+use crate::attr_table::AttrTable;
 use attribute::Attribute;
 use serde::{Deserialize, Serialize};
 use std::ops::{Deref, Index};

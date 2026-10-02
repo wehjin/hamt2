@@ -1,4 +1,4 @@
-use crate::db::{Attr, Dat, Ein, Ent, Val};
+use crate::{Attr, Dat, Ein, Ent, Val};
 
 pub mod datom;
 pub mod db;

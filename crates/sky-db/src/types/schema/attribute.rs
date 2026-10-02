@@ -1,6 +1,6 @@
-use crate::db::attr_spec::AttrSpec;
-use crate::db::cardinality::Cardinality;
-use crate::db::{Attr, Ein};
+use crate::attr_spec::AttrSpec;
+use crate::cardinality::Cardinality;
+use crate::{Attr, Ein};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]

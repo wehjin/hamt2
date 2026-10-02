@@ -1,5 +1,5 @@
-use crate::db::Attr;
-use crate::db::cardinality::Cardinality;
+use crate::Attr;
+use crate::cardinality::Cardinality;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

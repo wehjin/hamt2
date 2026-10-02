@@ -1,4 +1,4 @@
-use crate::db::Val;
+use crate::Val;
 use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
 

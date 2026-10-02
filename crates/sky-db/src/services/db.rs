@@ -1,4 +1,4 @@
-use crate::db::Attr;
+use crate::Attr;
 
 pub fn query() -> Attr {
     Attr::from("db/query")
