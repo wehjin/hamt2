@@ -10,7 +10,7 @@ use sky_types::storage::MemLoad;
 use sky_types::storage::load::StoreLoad;
 
 #[tokio::test]
-async fn test_cardinality_one() -> anyhow::Result<()> {
+async fn one() -> anyhow::Result<()> {
     let count = || Attr::from("counter/count");
     let schema = [AttrSpec {
         attr: count(),
@@ -30,7 +30,7 @@ async fn test_cardinality_one() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
-async fn test_cardinality_many() -> anyhow::Result<()> {
+async fn many() -> anyhow::Result<()> {
     let count = || Attr::from("counter/count");
     let schema = [AttrSpec {
         attr: count(),
