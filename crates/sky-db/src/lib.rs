@@ -2,7 +2,6 @@ pub mod find;
 pub mod local;
 pub mod pull;
 pub mod reader;
-pub mod schema_b;
 
 mod crate_services;
 mod db_struct;

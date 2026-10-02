@@ -4,3 +4,4 @@
 pub mod datalog;
 pub mod val_table;
 pub mod db_trie;
+pub mod schema;

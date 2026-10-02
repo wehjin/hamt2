@@ -5,10 +5,10 @@ use crate::Schema;
 use crate::attr_spec::DbSpec;
 use crate::attribute::Attribute;
 use crate::crate_services::db_trie;
+use crate::crate_services::schema;
 use crate::errors::ConnectError;
 use crate::internal_types::MaxEid;
 use crate::reader::DbReader;
-use crate::schema_b;
 use crate::types::Txid;
 use sky_types::storage::load::StoreLoad;
 use sky_types::storage::{MemLoad, MemView, StorageStatus};
@@ -63,7 +63,7 @@ impl Db {
                 schema.extend(attributes);
             }
             trie.edit(async |trie| {
-                schema_b::save(&schema, trie, Txid::SETUP).await?;
+                schema::save(&schema, trie, Txid::SETUP).await?;
                 db_trie::set_max_tx(trie, Txid::FLOOR).await?;
                 max_eid.write(trie).await?;
                 Ok(())
@@ -82,7 +82,7 @@ impl Db {
             trie: storage,
         };
         let db = Db {
-            schema: schema_b::load(&starter_db).await,
+            schema: schema::load(&starter_db).await,
             trie: starter_db.trie,
         };
         db

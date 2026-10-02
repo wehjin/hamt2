@@ -7,7 +7,7 @@ mod find_result;
 mod schema;
 mod val;
 
-pub use crate::schema_b::*;
+pub use crate::crate_services::schema::*;
 use serde::{Deserialize, Serialize};
 
 mod txid;
