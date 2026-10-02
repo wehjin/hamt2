@@ -4,6 +4,7 @@ use crate::trie::{
     Base, Buffer, BufferIndex, BufferMut, CursorPos, MapBase, TrieInsert, TrieSnap, TrieValue,
 };
 use crate::trie::{InsertCursor, QueryCursor};
+use std::ops::Deref;
 use std::sync::Arc;
 
 /// Deliberately non-Clone.
@@ -18,6 +19,13 @@ impl MemEdit {
     pub fn new() -> Self {
         Self::extend(MemView::new())
     }
+
+    pub async fn commit(self) -> MemView {
+        let mut past_buffer = self.past.buffer.deref().clone();
+        past_buffer.append(self.buffer);
+        MemView::with_buffer(past_buffer)
+    }
+
     pub fn extend(past: MemView) -> Self {
         let past = Arc::new(past);
         let buffer = SlotBuffer::new();

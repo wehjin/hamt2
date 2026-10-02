@@ -1,11 +1,9 @@
 mod edit;
-mod load;
 mod view;
 
 use crate::storage::WriteStorageError;
 use crate::trie::{Base, Buffer, BufferIndex, BufferMut, MapBase, Slot};
 pub use edit::*;
-pub use load::*;
 pub use view::*;
 
 #[cfg(test)]
@@ -24,11 +22,12 @@ impl SlotBuffer {
             root_index: None,
         }
     }
-    pub fn append(&mut self, other: SlotBuffer) {
-        if let Some(root_index) = other.root_index {
-            self.root_index = Some(root_index + self.slots.len());
+    pub fn append(&mut self, novel_slots: SlotBuffer) {
+        let legacy_slots_count = self.slots.len();
+        if let Some(novel_root) = novel_slots.root_index {
+            self.root_index = Some(novel_root + legacy_slots_count);
         }
-        self.slots.extend(other.slots);
+        self.slots.extend(novel_slots.slots);
     }
     pub fn len(&self) -> usize {
         self.slots.len()

@@ -10,14 +10,13 @@ use crate::attribute::Attribute;
 use crate::errors::ConnectError;
 use crate::objects::reader::DbReader;
 use crate::trie::{Base, Buffer, BufferIndex, TrieSnap};
-use crate::trie_storage::load::StoreLoad;
-use crate::trie_storage::{MemLoad, MemView, StorageStatus};
+use crate::trie_storage::{MemView, StorageStatus};
 use crate::types::Txid;
 
 #[derive(Debug)]
 pub struct Db {
     pub(crate) schema: Schema,
-    pub(crate) trie: MemLoad,
+    pub(crate) trie: MemView,
 }
 
 /// Production methods for Db
@@ -47,7 +46,7 @@ impl Db {
         self.trie.snapshot().get_base(id, size).await
     }
 
-    pub async fn new(storage: MemLoad, db_spec: impl Into<DbSpec>) -> Result<Self, ConnectError> {
+    pub async fn new(storage: MemView, db_spec: impl Into<DbSpec>) -> Result<Self, ConnectError> {
         let db_spec = db_spec.into();
         let attr_specs = db_spec.as_ref();
         let (schema, trie) = {
@@ -76,7 +75,7 @@ impl Db {
         Ok(db)
     }
 
-    pub async fn load(storage: MemLoad) -> Self {
+    pub async fn load(storage: MemView) -> Self {
         let starter_db = Db {
             schema: Schema::starter(),
             trie: storage,
@@ -90,7 +89,7 @@ impl Db {
 }
 
 impl Db {
-    pub fn close(self) -> MemLoad {
+    pub fn close(self) -> MemView {
         self.trie
     }
 }

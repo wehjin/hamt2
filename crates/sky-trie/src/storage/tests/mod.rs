@@ -1,5 +1,4 @@
-use crate::storage::load::StoreLoad;
-use crate::storage::{MemEdit, MemLoad};
+use crate::storage::{MemEdit, MemView};
 use crate::trie::TrieSnap;
 use crate::trie::map_base::one_kv;
 use crate::trie::{Base, Buffer, BufferIndex, BufferMut, HashKey, MapBase, TrieValue};
@@ -29,18 +28,13 @@ async fn empty_storage_root_is_empty() {
 
 #[tokio::test]
 async fn root_round_trip_works() {
-    let mut load = MemLoad::new();
-    let root = {
-        let mut storage = load.begin_edit().await.unwrap();
-        let root = one_kv(HashKey::new(7), TrieValue::U32(7), &mut storage)
-            .await
-            .expect("root");
-        storage.push_root(root).await.expect("write root");
-        assert_eq!(root, storage.get_root());
-        load.commit_edit(storage).await.unwrap();
-        root
-    };
-    let view = load.snapshot();
+    let mut edit = MemView::new().into_edit().await;
+    let root = one_kv(HashKey::new(7), TrieValue::U32(7), &mut edit)
+        .await
+        .expect("root");
+    edit.push_root(root).await.expect("write root");
+    assert_eq!(root, edit.get_root());
+    let view = edit.commit().await;
     assert_eq!(root, view.get_root());
 }
 
@@ -62,7 +56,7 @@ async fn append_assigns_sequential_ids() {
 
 #[tokio::test]
 async fn mem_readonly_snapshot_does_not_see_new_bases() {
-    let mut load = MemLoad::new();
+    let mut load = MemView::new();
     let (base, id) = load
         .edit(async |storage| {
             let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7), storage).await?;
@@ -87,7 +81,7 @@ async fn mem_readonly_snapshot_does_not_see_new_bases() {
 
 #[tokio::test]
 async fn reading_beyond_max_id_produces_empty() {
-    let mut load = MemLoad::new();
+    let mut load = MemView::new();
     let base = load
         .edit(async |storage| {
             let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7), storage).await?;
@@ -110,7 +104,7 @@ async fn reading_beyond_max_id_produces_empty() {
 
 #[tokio::test]
 async fn reading_unwritten_id_produces_empty() {
-    let storage = MemLoad::new().snapshot();
+    let storage = MemView::new().snapshot();
     let base = storage.get_base(BufferIndex(1), 0).await;
     assert_eq!(base, Base::empty())
 }

@@ -1,11 +1,10 @@
-use crate::Db;
-use crate::Transact;
 use crate::_internal::EntEid;
 use crate::_internal::MaxEid;
 use crate::_internal::db_trie;
+use crate::Db;
+use crate::Transact;
 use crate::{Dat, Ent, val};
 use crate::{Datom, TransactError};
-use crate::trie_storage::load::StoreLoad;
 
 impl Transact for Db {
     async fn transact(

@@ -1,5 +1,4 @@
-use sky_trie::storage::MemLoad;
-use sky_trie::storage::load::StoreLoad;
+use sky_trie::storage::MemView;
 use sky_trie::trie::{TrieInsert, TrieQuery, TrieValue};
 
 #[tokio::test]
@@ -60,7 +59,7 @@ async fn lengths_around_dword_boundaries() {
 }
 
 async fn assert_byte_tests<const N: usize>(tests: [(i32, &[u8]); N]) {
-    let mut trie = MemLoad::new();
+    let mut trie = MemView::new();
     trie.edit(async |edit| {
         for i in 0..tests.len() {
             let (id, value) = tests[i];

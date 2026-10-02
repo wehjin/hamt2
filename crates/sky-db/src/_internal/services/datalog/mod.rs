@@ -1,8 +1,8 @@
 use crate::Schema;
+use crate::trie::*;
 use atom::Atom;
 use kb::KnowledgeBase;
 use rule::Rule;
-use crate::trie::*;
 
 pub mod atom;
 pub mod kb;
@@ -48,16 +48,15 @@ impl Program {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Db;
-    use crate::Transact;
-    use crate::datom;
     use crate::_internal::datalog::atom::atom;
     use crate::_internal::datalog::rule::rule;
     use crate::_internal::datalog::term::term;
     use crate::_internal::datalog::var::var;
+    use crate::Db;
+    use crate::Transact;
+    use crate::datom;
+    use crate::trie_storage::MemView;
     use crate::{Attr, ent, val};
-    use crate::trie_storage::MemLoad;
-    use crate::trie_storage::load::StoreLoad;
 
     fn advisor() -> Attr {
         Attr::from("member/advisor")
@@ -78,7 +77,7 @@ mod tests {
     #[tokio::test]
     async fn program_test() -> anyhow::Result<()> {
         let schema = vec![advisor(), name()];
-        let mut storage = MemLoad::new();
+        let mut storage = MemView::new();
         {
             let mut db = Db::new(storage, schema.clone()).await?;
             db.transact([

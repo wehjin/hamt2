@@ -1,10 +1,9 @@
 use crate::datom;
 use crate::pull::Pull;
+use crate::trie_storage::MemView;
 use crate::{Attr, Ein, Ent, Val, dat};
 use crate::{Db, Transact};
 use common::Basis;
-use crate::trie_storage::MemLoad;
-use crate::trie_storage::load::StoreLoad;
 
 pub mod common;
 
@@ -18,7 +17,7 @@ async fn pull_test() {
             direction: -1,
         };
         let ent = Ent::from(27);
-        let mut db = Db::new(MemLoad::new(), Basis::attrs())
+        let mut db = Db::new(MemView::new(), Basis::attrs())
             .await
             .expect("Db::new");
         db.transact(basis.into_datoms(ent))

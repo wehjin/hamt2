@@ -1,3 +1,4 @@
+use crate::storage::MemEdit;
 use crate::storage::mem::SlotBuffer;
 use crate::storage::traits::view::StoreView;
 use crate::trie::CursorPos;
@@ -28,6 +29,22 @@ impl MemView {
 
     pub fn top_root(&self) -> MapBase {
         self.get_root()
+    }
+
+    pub async fn into_edit(self) -> MemEdit {
+        MemEdit::extend(self)
+    }
+
+    pub async fn edit<F, Out>(&mut self, f: F) -> anyhow::Result<Out>
+    where
+        F: AsyncFnOnce(&mut MemEdit) -> anyhow::Result<Out>,
+    {
+        let past = self.clone();
+        let mut edit = past.into_edit().await;
+        let out = f(&mut edit).await?;
+        let next = edit.commit().await;
+        *self = next;
+        Ok(out)
     }
 }
 

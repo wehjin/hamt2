@@ -1,9 +1,9 @@
-use crate::QueryError;
 use crate::_internal::KEY_MAX_TXID;
 use crate::_internal::db_trie;
+use crate::QueryError;
+use crate::trie::{TrieQuery, TrieValue};
 use crate::{Attr, Val};
 use crate::{Db, Txid};
-use crate::trie::{TrieQuery, TrieValue};
 
 impl Db {
     pub async fn max_tx(&self) -> Result<Txid, QueryError> {
@@ -23,16 +23,15 @@ mod tests {
     use super::*;
     use crate::Transact;
     use crate::datom;
+    use crate::trie_storage::MemView;
     use crate::{dat, ent};
     use futures::StreamExt;
-    use crate::trie_storage::MemLoad;
-    use crate::trie_storage::load::StoreLoad;
 
     #[tokio::test]
     async fn ev_stream_test() -> anyhow::Result<()> {
         let count = || Attr::from("counter/count");
         let schema = vec![count()];
-        let storage = MemLoad::new();
+        let storage = MemView::new();
         let mut db = Db::new(storage, schema.clone()).await?;
         db.transact(vec![
             datom::add(ent(10), count(), dat(Val::from(10))),

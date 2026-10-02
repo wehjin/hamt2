@@ -101,12 +101,11 @@ where
 mod tests {
     use super::*;
     use crate::{Val, val};
-    use crate::trie_storage::MemLoad;
-    use crate::trie_storage::load::StoreLoad;
+    use crate::trie_storage::MemView;
 
     #[tokio::test]
     async fn insert_and_query() {
-        let mut trie = MemLoad::new();
+        let mut trie = MemView::new();
         let (vids, vals) = trie
             .edit(async |trie| {
                 let mut vids = Vec::new();
@@ -137,7 +136,7 @@ mod tests {
 
     #[tokio::test]
     async fn same_value_inserted_twice() {
-        let mut trie = MemLoad::new();
+        let mut trie = MemView::new();
         let vid = trie
             .edit(async |trie| {
                 let vid = insert(trie, val(101)).await?;
@@ -153,7 +152,7 @@ mod tests {
 
     #[tokio::test]
     async fn string_insert_and_query() {
-        let mut trie = MemLoad::new();
+        let mut trie = MemView::new();
         let vid = trie
             .edit(async |trie| {
                 let vid = insert(trie, Val::String("hello".into())).await?;

@@ -4,8 +4,7 @@ use sky_db::Db;
 use sky_db::find::{AllEins, AttrsOfEin, EinsWithAttr};
 use sky_db::DbQuery;
 use sky_db::{Attr, ein, val};
-use sky_db::trie_storage::MemLoad;
-use sky_db::trie_storage::load::StoreLoad;
+use sky_db::trie_storage::MemView;
 
 fn attr_count() -> Attr {
     Attr::from("counter/count")
@@ -13,7 +12,7 @@ fn attr_count() -> Attr {
 
 #[tokio::test]
 async fn db_reader_works() -> anyhow::Result<()> {
-    let mut db = Db::new(MemLoad::new(), [attr_count()]).await?;
+    let mut db = Db::new(MemView::new(), [attr_count()]).await?;
     db.transact([
         datom::add(1, attr_count(), val(10)),
         datom::add(2, attr_count(), val(20)),
@@ -41,7 +40,7 @@ async fn db_reader_works() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn db_reader_finds_entities() {
-    let mut db = Db::new(MemLoad::new(), [attr_count()]).await.unwrap();
+    let mut db = Db::new(MemView::new(), [attr_count()]).await.unwrap();
     db.transact([datom::add(100, attr_count(), val(100))])
         .await
         .unwrap();
@@ -54,7 +53,7 @@ async fn db_reader_finds_entities() {
 
 #[tokio::test]
 async fn db_reader_lists_entity_attributes() {
-    let mut db = Db::new(MemLoad::new(), [attr_count()]).await.unwrap();
+    let mut db = Db::new(MemView::new(), [attr_count()]).await.unwrap();
     db.transact([datom::add(100, attr_count(), val(100))])
         .await
         .unwrap();

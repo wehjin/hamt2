@@ -3,8 +3,7 @@ use ratatui_kit::crossterm::event::{Event, KeyCode, KeyEventKind, KeyModifiers};
 use ratatui_kit::prelude::*;
 use sky_db::Db;
 use sky_db::DbReader;
-use sky_db::trie_storage::load::StoreLoad;
-use sky_db::trie_storage::{MemLoad, MemView};
+use sky_db::trie_storage::MemView;
 use sky_db::{Transact, attr, datom, ent};
 
 pub static DB_VIEW: Atom<Option<DbReader<MemView>>> = Atom::new(|| None);
@@ -16,7 +15,7 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
 
     hooks.use_future(async move {
         let attr_count = attr("counter/count");
-        let mut db = Db::new(MemLoad::new(), [attr_count.clone()])
+        let mut db = Db::new(MemView::new(), [attr_count.clone()])
             .await
             .expect("db");
         db.transact([datom::add(ent("a"), attr_count, 33)])

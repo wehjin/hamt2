@@ -19,19 +19,17 @@ pub use vals_in_slot::*;
 #[cfg(test)]
 mod tests {
     use crate::Db;
-    use crate::find::BindsForAttr;
-    use crate::traits::DbQuery;
-
     use crate::Transact;
     use crate::datom;
+    use crate::find::BindsForAttr;
+    use crate::traits::DbQuery;
+    use crate::trie_storage::MemView;
     use crate::{Attr, ein, val};
-    use crate::trie_storage::MemLoad;
-    use crate::trie_storage::load::StoreLoad;
 
     #[tokio::test]
     async fn find_with_reader() {
         let attr = Attr::from("Counter/count");
-        let store = MemLoad::new();
+        let store = MemView::new();
         let mut db = Db::new(store, [attr.clone()]).await.unwrap();
         db.transact([datom::add(10, attr.clone(), 42)])
             .await
