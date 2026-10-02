@@ -1,4 +1,4 @@
-use crate::mem::SlotBuffer;
+use crate::objects::SlotBuffer;
 use crate::CursorPos;
 use crate::MemEdit;
 use crate::StoreView;
