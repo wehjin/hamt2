@@ -6,9 +6,8 @@ mod fill;
 mod find_result;
 mod val;
 
-pub mod schema;
+mod schema;
 
-use crate::db::schema::Schema;
 use crate::storage::StorageStatus;
 use crate::trie::MapBase;
 use serde::{Deserialize, Serialize};
@@ -19,6 +18,7 @@ pub use ein::*;
 pub use ent::*;
 pub use fill::*;
 pub use find_result::*;
+pub use schema::*;
 pub use val::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

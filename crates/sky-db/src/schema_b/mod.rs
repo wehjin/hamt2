@@ -1,10 +1,8 @@
-use crate::db::{Db, db_trie};
 use crate::traits::Find;
 use crate::types::Txid;
+use crate::{Db, Schema, db, db_trie};
+use crate::{Dir, TransactError};
 use schema_loader::SchemaLoader;
-use sky_types::db;
-use sky_types::db::schema::Schema;
-use sky_types::db::{Dir, TransactError};
 use sky_types::storage::MemEdit;
 
 pub mod schema_loader;

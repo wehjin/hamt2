@@ -1,4 +1,4 @@
-use crate::db::Schema;
+use crate::Schema;
 use crate::traits::DbQuery;
 use crate::traits::Find;
 use sky_types::storage::view::StoreView;

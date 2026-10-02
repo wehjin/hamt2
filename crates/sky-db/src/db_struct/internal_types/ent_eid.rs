@@ -1,6 +1,6 @@
-use crate::db::types::MaxEid;
-use sky_types::db::Datom;
-use sky_types::db::{Ein, Ent};
+use crate::internal_types::MaxEid;
+use crate::Datom;
+use crate::{Ein, Ent};
 use std::collections::HashMap;
 use std::ops::Index;
 

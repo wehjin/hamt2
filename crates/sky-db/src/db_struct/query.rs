@@ -1,8 +1,8 @@
-use crate::db::db_trie;
-use crate::db::types::key::KEY_MAX_TXID;
-use crate::db::{Db, Txid};
-use sky_types::db::QueryError;
-use sky_types::db::{Attr, Val};
+use crate::db_trie;
+use crate::internal_types::key::KEY_MAX_TXID;
+use crate::{Db, Txid};
+use crate::QueryError;
+use crate::{Attr, Val};
 use sky_types::trie::{TrieQuery, TrieValue};
 
 impl Db {
@@ -22,9 +22,9 @@ impl Db {
 mod tests {
     use super::*;
     use futures::StreamExt;
-    use sky_types::db::Transact;
-    use sky_types::db::datom;
-    use sky_types::db::{dat, ent};
+    use crate::Transact;
+    use crate::datom;
+    use crate::{dat, ent};
     use sky_types::storage::MemLoad;
     use sky_types::storage::load::StoreLoad;
 

@@ -1,9 +1,9 @@
+use crate::Schema;
 use crate::crate_services::datalog::atom::Atom;
 use crate::crate_services::val_table;
-use crate::db::db_trie;
+use crate::db_trie;
 use crate::traits::Find;
-use sky_types::db::schema::Schema;
-use sky_types::db::{Ein, Fill, FindResult};
+use crate::{Ein, Fill, FindResult};
 use sky_types::trie::{QueryCursor, TrieQuery, TrieSnap, TrieStream};
 
 pub struct EntityFills(pub Ein);

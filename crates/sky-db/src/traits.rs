@@ -1,9 +1,9 @@
 use crate::crate_services::datalog::atom::Atom;
-use crate::db::{Db, db_trie};
+use crate::{Db, db_trie};
 use crate::find::ValsInSlot;
 use futures::FutureExt;
-use sky_types::db::schema::Schema;
-use sky_types::db::{Attr, Ein, FindResult, QueryError, Val};
+use crate::Schema;
+use crate::{Attr, Ein, FindResult, QueryError, Val};
 use sky_types::trie::{QueryCursor, TrieQuery, TrieSnap, TrieStream};
 
 #[allow(async_fn_in_trait)]

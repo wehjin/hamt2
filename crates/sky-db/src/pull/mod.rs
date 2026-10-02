@@ -1,8 +1,8 @@
-use crate::db::Db;
+use crate::Db;
 use serde::{Deserialize, Serialize};
-use sky_types::db::Datom;
-use sky_types::db::QueryError;
-use sky_types::db::{Attr, Ein, Ent};
+use crate::Datom;
+use crate::QueryError;
+use crate::{Attr, Ein, Ent};
 
 pub mod errors;
 #[cfg(test)]

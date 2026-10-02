@@ -1,5 +1,5 @@
-use crate::db::schema::attr_spec::AttrSpec;
-use crate::db::schema::cardinality::Cardinality;
+use crate::db::attr_spec::AttrSpec;
+use crate::db::cardinality::Cardinality;
 use crate::db::{Attr, Ein};
 use serde::{Deserialize, Serialize};
 

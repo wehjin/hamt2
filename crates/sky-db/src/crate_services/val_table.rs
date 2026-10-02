@@ -1,7 +1,7 @@
-use crate::db::types::key::KEY_VAL_TABLE;
-use crate::db::vid::Vid;
-use sky_types::db::Val;
-use sky_types::db::{QueryError, TransactError};
+use crate::Val;
+use crate::internal_types::Vid;
+use crate::internal_types::key::KEY_VAL_TABLE;
+use crate::{QueryError, TransactError};
 use sky_types::storage::MemEdit;
 use sky_types::trie::*;
 
@@ -100,7 +100,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sky_types::db::{Val, val};
+    use crate::{Val, val};
     use sky_types::storage::MemLoad;
     use sky_types::storage::load::StoreLoad;
 

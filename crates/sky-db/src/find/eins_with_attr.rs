@@ -2,7 +2,7 @@ use crate::crate_services::datalog::atom::{Atom, atom};
 use crate::crate_services::datalog::term::term;
 use crate::crate_services::datalog::var::var;
 use crate::traits::Find;
-use sky_types::db::{Attr, Ein, FindResult};
+use crate::{Attr, Ein, FindResult};
 
 pub struct EinsWithAttr {
     attr: Attr,

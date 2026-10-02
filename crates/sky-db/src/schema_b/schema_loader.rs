@@ -1,12 +1,11 @@
+use crate::FindResult;
+use crate::attr_spec::AttrSpec;
+use crate::attribute::Attribute;
 use crate::crate_services::datalog::atom::{Atom, atom};
 use crate::crate_services::datalog::term::term;
 use crate::crate_services::datalog::var::var;
+use crate::db;
 use crate::traits::Find;
-use sky_types::db;
-use sky_types::db::FindResult;
-use sky_types::db::schema::attr_spec::AttrSpec;
-use sky_types::db::schema::attribute::Attribute;
-
 pub struct SchemaLoader;
 
 impl Find for SchemaLoader {

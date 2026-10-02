@@ -1,6 +1,6 @@
 use ratatui_kit::Palette;
 use ratatui_kit::ratatui::prelude::{Line, Span, Style};
-use sky_types::db::{Attr, Ein, Fill, Val};
+use sky_db::{Attr, Ein, Fill, Val};
 
 pub fn print_ein<'a>(ein: Ein, palette: Palette, margins: bool) -> Line<'a> {
     let mut spans = vec![

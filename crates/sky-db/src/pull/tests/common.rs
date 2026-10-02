@@ -1,11 +1,11 @@
-use crate::db::Db;
+use crate::Db;
 use crate::pull::Pull;
 use crate::traits::DbQuery;
 use serde::{Deserialize, Serialize};
-use sky_types::db::Datom;
-use sky_types::db::QueryError;
-use sky_types::db::datom;
-use sky_types::db::{Attr, Ein, Ent};
+use crate::Datom;
+use crate::QueryError;
+use crate::datom;
+use crate::{Attr, Ein, Ent};
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename = "basis")]

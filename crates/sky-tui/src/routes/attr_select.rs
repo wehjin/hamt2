@@ -1,7 +1,7 @@
 use crate::styles::{border_style, highlight_style};
 use ratatui_kit::prelude::*;
 use ratatui_kit::ratatui::prelude::Line;
-use sky_types::db::Attr;
+use sky_db::Attr;
 use std::collections::HashMap;
 
 #[derive(Default, Props)]

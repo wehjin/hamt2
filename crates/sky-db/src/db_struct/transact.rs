@@ -1,10 +1,10 @@
-use crate::db::Db;
-use crate::db::db_trie;
-use crate::db::types::MaxEid;
-use crate::db::types::ent_eid::EntEid;
-use sky_types::db::Transact;
-use sky_types::db::{Dat, Ent, val};
-use sky_types::db::{Datom, TransactError};
+use crate::Db;
+use crate::db_trie;
+use crate::internal_types::MaxEid;
+use crate::internal_types::ent_eid::EntEid;
+use crate::Transact;
+use crate::{Dat, Ent, val};
+use crate::{Datom, TransactError};
 use sky_types::storage::load::StoreLoad;
 
 impl Transact for Db {

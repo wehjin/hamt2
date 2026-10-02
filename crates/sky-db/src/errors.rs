@@ -1,4 +1,4 @@
-use sky_types::db::{QueryError, TransactError};
+use crate::{QueryError, TransactError};
 use sky_types::storage::error::WriteStorageError;
 
 #[derive(thiserror::Error, Debug)]

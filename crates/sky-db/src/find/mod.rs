@@ -18,13 +18,13 @@ pub use vals_in_slot::*;
 
 #[cfg(test)]
 mod tests {
-    use crate::db::Db;
+    use crate::Db;
     use crate::find::BindsForAttr;
     use crate::traits::DbQuery;
 
-    use sky_types::db::Transact;
-    use sky_types::db::datom;
-    use sky_types::db::{Attr, ein, val};
+    use crate::Transact;
+    use crate::datom;
+    use crate::{Attr, ein, val};
     use sky_types::storage::MemLoad;
     use sky_types::storage::load::StoreLoad;
 

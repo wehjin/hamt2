@@ -11,7 +11,7 @@ use ratatui_kit::ratatui::widgets::Block;
 use sky_db::find::{AllAttrs, EinsWithAttr, EntityFills};
 use sky_db::reader::DbReader;
 use sky_db::traits::DbQuery;
-use sky_types::db::{Attr, Ein, Fill};
+use sky_db::{Attr, Ein, Fill};
 use sky_types::storage::MemView;
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]

@@ -1,5 +1,5 @@
 use crate::crate_services::datalog::var::Var;
-use sky_types::db::Val;
+use crate::Val;
 
 pub fn term(from: impl Into<Term>) -> Term {
     from.into()

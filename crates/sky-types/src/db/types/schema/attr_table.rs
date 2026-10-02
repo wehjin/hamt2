@@ -1,8 +1,7 @@
-use crate::db;
-use crate::db::schema::attr_spec::AttrSpec;
-use crate::db::schema::attribute::Attribute;
-use crate::db::schema::cardinality::Cardinality;
-use crate::db::{Attr, Ein};
+use crate::db::attr_spec::AttrSpec;
+use crate::db::attribute::Attribute;
+use crate::db::cardinality::Cardinality;
+use crate::db::{Attr, Ein, db};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::ops::{Deref, Index};

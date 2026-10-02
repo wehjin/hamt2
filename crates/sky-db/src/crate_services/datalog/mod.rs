@@ -1,4 +1,4 @@
-use crate::db::Schema;
+use crate::Schema;
 use atom::Atom;
 use kb::KnowledgeBase;
 use rule::Rule;
@@ -48,14 +48,14 @@ impl Program {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Db;
+    use crate::Transact;
     use crate::crate_services::datalog::atom::atom;
     use crate::crate_services::datalog::rule::rule;
     use crate::crate_services::datalog::term::term;
     use crate::crate_services::datalog::var::var;
-    use crate::db::Db;
-    use sky_types::db::Transact;
-    use sky_types::db::datom;
-    use sky_types::db::{Attr, ent, val};
+    use crate::datom;
+    use crate::{Attr, ent, val};
     use sky_types::storage::MemLoad;
     use sky_types::storage::load::StoreLoad;
 

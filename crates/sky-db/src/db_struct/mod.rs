@@ -1,19 +1,19 @@
 pub mod db_trie;
+pub mod internal_types;
 pub mod query;
 pub mod transact;
-pub mod types;
 
-use crate::db::attr_spec::DbSpec;
-use crate::db::attribute::Attribute;
-use crate::db::types::MaxEid;
+use crate::Schema;
+use crate::attr_spec::DbSpec;
+use crate::attribute::Attribute;
 use crate::errors::ConnectError;
+use crate::internal_types::MaxEid;
 use crate::reader::DbReader;
-use crate::schema;
-pub use crate::types::*;
+use crate::schema_b;
+use crate::types::Txid;
 use sky_types::storage::load::StoreLoad;
 use sky_types::storage::{MemLoad, MemView, StorageStatus};
 use sky_types::trie::{Base, Buffer, BufferIndex, TrieSnap};
-pub use types::*;
 
 #[derive(Debug)]
 pub struct Db {
@@ -64,7 +64,7 @@ impl Db {
                 schema.extend(attributes);
             }
             trie.edit(async |trie| {
-                schema::save(&schema, trie, Txid::SETUP).await?;
+                schema_b::save(&schema, trie, Txid::SETUP).await?;
                 db_trie::set_max_tx(trie, Txid::FLOOR).await?;
                 max_eid.write(trie).await?;
                 Ok(())
@@ -83,7 +83,7 @@ impl Db {
             trie: storage,
         };
         let db = Db {
-            schema: schema::load(&starter_db).await,
+            schema: schema_b::load(&starter_db).await,
             trie: starter_db.trie,
         };
         db

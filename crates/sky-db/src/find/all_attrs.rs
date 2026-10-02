@@ -1,8 +1,8 @@
+use crate::Attr;
+use crate::FindResult;
+use crate::Schema;
 use crate::crate_services::datalog::atom::Atom;
-use crate::db::Schema;
 use crate::traits::Find;
-use sky_types::db::Attr;
-use sky_types::db::FindResult;
 use std::future::Future;
 
 pub struct AllAttrs;

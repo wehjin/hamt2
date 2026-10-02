@@ -1,4 +1,4 @@
-use sky_types::db::Attr;
+use sky_db::Attr;
 
 pub fn attr_count() -> Attr {
     Attr::from("counter/count")

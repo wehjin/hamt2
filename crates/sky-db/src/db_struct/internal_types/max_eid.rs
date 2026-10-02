@@ -1,6 +1,6 @@
-use crate::db::types::key::KEY_MAX_EID;
-use sky_types::db::Ein;
-use sky_types::db::{QueryError, TransactError};
+use crate::internal_types::key::KEY_MAX_EID;
+use crate::Ein;
+use crate::{QueryError, TransactError};
 use sky_types::storage::{MemEdit, MemLoad};
 use sky_types::trie::*;
 

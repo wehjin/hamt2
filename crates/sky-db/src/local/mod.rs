@@ -1,5 +1,5 @@
-use crate::db::Db;
-use sky_types::db::schema::attr_spec::DbSpec;
+use crate::Db;
+use crate::attr_spec::DbSpec;
 use sky_types::storage::MemLoad;
 use sky_types::storage::load::StoreLoad;
 

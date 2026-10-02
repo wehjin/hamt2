@@ -1,7 +1,7 @@
-use sky_db::db::Db;
+use sky_db::db_struct::Db;
 use sky_db::find::EntityFills;
 use sky_db::traits::DbQuery;
-use sky_types::db::{Attr, Fill, Transact, Val, dat, datom, ein};
+use sky_db::{Attr, Fill, Transact, Val, dat, datom, ein};
 use sky_types::storage::MemLoad;
 use sky_types::storage::load::StoreLoad;
 

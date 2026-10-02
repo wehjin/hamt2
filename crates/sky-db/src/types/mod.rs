@@ -1,4 +1,4 @@
 pub mod txid;
 
-pub use sky_types::db::schema::*;
+pub use crate::schema_b::*;
 pub use txid::*;
