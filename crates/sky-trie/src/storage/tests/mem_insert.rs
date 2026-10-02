@@ -12,8 +12,7 @@ async fn max_u32_value_insertions_works() -> anyhow::Result<()> {
         Ok(())
     })
     .await?;
-    let value = trie.query_u32(100).await?.unwrap();
-    assert_eq!(value, u32::MAX);
+    assert_eq!(trie.query_u32(100).await, Some(u32::MAX));
     Ok(())
 }
 
@@ -42,8 +41,8 @@ async fn multiple_insertions_work() {
     assert_eq!(values.get(&1), Some(&1));
     trie.edit(async |edit| {
         edit.insert(2, 2).await?;
-        assert_eq!(TrieValue::U32(1), edit.query(1).await?.unwrap());
-        assert_eq!(TrieValue::U32(2), edit.query(2).await?.unwrap());
+        assert_eq!(TrieValue::U32(1), edit.query(1).await.unwrap());
+        assert_eq!(TrieValue::U32(2), edit.query(2).await.unwrap());
         Ok(())
     })
     .await
@@ -66,11 +65,8 @@ async fn snapshot_queries_work() {
     .unwrap();
 
     let snap = trie.snapshot();
-    assert_eq!(Some(42), snap.query_u32(1).await.unwrap());
-    assert_eq!(
-        Some(TrieValue::U32(242)),
-        snap.query_deep([2, 42]).await.unwrap()
-    );
+    assert_eq!(Some(42), snap.query_u32(1).await);
+    assert_eq!(Some(TrieValue::U32(242)), snap.query_deep([2, 42]).await);
 }
 
 #[tokio::test]
@@ -91,11 +87,11 @@ async fn multi_depth_saturation_in_multiple_edits_work() {
 
     // Check insertions are present in the next edit.
     trie.edit(async |trie| {
-        assert_eq!(Some(42), trie.query_u32(100).await?);
+        assert_eq!(Some(42), trie.query_u32(100).await);
         for a in 0..=32 {
             assert_eq!(
                 Some(TrieValue::U32(a as u32)),
-                trie.query_deep([3, a]).await?
+                trie.query_deep([3, a]).await
             );
         }
         Ok(())
@@ -135,7 +131,7 @@ async fn multi_depth_saturation_in_multiple_edits_work() {
     for a in 0..=64 {
         assert_eq!(
             Some(TrieValue::U32(a as u32)),
-            snap.query_deep([3, a]).await.unwrap()
+            snap.query_deep([3, a]).await
         );
     }
 }
@@ -148,12 +144,12 @@ async fn later_insertion_overwrites_earlier_insertion() {
             .await?
             .insert(1, TrieValue::U32(43))
             .await?;
-        assert_eq!(Some(43), trie.query_u32(1).await.unwrap());
+        assert_eq!(Some(43), trie.query_u32(1).await);
         Ok(())
     })
     .await
     .unwrap();
-    assert_eq!(Some(43), trie.query_u32(1).await.unwrap());
+    assert_eq!(Some(43), trie.query_u32(1).await);
 }
 
 #[tokio::test]
@@ -186,10 +182,7 @@ async fn deep_insertions_work_basic() {
     })
     .await
     .unwrap();
-    assert_eq!(
-        Some(TrieValue::U32(242)),
-        trie.query_deep([2, 42]).await.unwrap()
-    );
+    assert_eq!(Some(TrieValue::U32(242)), trie.query_deep([2, 42]).await);
 }
 
 #[tokio::test]
@@ -205,22 +198,22 @@ async fn deep_insertions_work_with_saturated_root() {
     .await
     .unwrap();
     {
-        let value = trie.query_deep([4]).await.unwrap();
+        let value = trie.query_deep([4]).await;
         let Some(TrieValue::SubTrie(map_base)) = value else {
             panic!("expected map_base");
         };
         assert_eq!(1, map_base.map.slot_count());
     }
     {
-        let value = trie.query_deep([4, 4]).await.unwrap();
+        let value = trie.query_deep([4, 4]).await;
         assert_eq!(Some(TrieValue::U32(4)), value);
     }
     {
-        let value = trie.query_deep([4, 1]).await.unwrap();
+        let value = trie.query_deep([4, 1]).await;
         assert_eq!(None, value);
     }
     {
-        let value = trie.query_deep([5, 2]).await.unwrap();
+        let value = trie.query_deep([5, 2]).await;
         assert_eq!(None, value);
     }
 }

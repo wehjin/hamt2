@@ -15,13 +15,10 @@ pub enum ConnectError {
     TrieEdit(#[source] anyhow::Error),
 }
 
-use crate::trie::{TrieInsertError, TrieQueryError};
+use crate::trie::TrieInsertError;
 
 #[derive(thiserror::Error, Debug)]
-pub enum QueryError {
-    #[error("TrieQueryError: {0}")]
-    TrieQueryError(#[from] TrieQueryError),
-}
+pub enum QueryError {}
 
 #[derive(thiserror::Error, Debug)]
 pub enum TransactError {
@@ -30,9 +27,6 @@ pub enum TransactError {
 
     #[error("WriteStorageError: {0}")]
     WriteStorageError(#[from] WriteStorageError),
-
-    #[error("TrieQueryError: {0}")]
-    TrieQueryError(#[from] TrieQueryError),
 
     #[error("TrieInsertError: {0}")]
     TrieInsertError(#[from] TrieInsertError),

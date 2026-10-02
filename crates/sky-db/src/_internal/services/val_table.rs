@@ -1,9 +1,9 @@
-use crate::Val;
-use crate::_internal::Vid;
 use crate::_internal::KEY_VAL_TABLE;
-use crate::{QueryError, TransactError};
-use crate::trie_storage::MemEdit;
+use crate::_internal::Vid;
+use crate::Val;
 use crate::trie::*;
+use crate::trie_storage::MemEdit;
+use crate::{QueryError, TransactError};
 
 const VAL_TYPE_U32: u8 = 16;
 const VAL_TYPE_STRING: u8 = 17;
@@ -56,11 +56,11 @@ async fn restore_on_err(
 const SEARCH_SIZE: usize = 4000;
 pub async fn insert(trie: &mut MemEdit, val: Val) -> Result<Vid, TransactError> {
     let result = restore_on_err(trie, async |trie| {
-        trie.descend(KEY_VAL_TABLE).await?;
+        trie.descend(KEY_VAL_TABLE).await;
         let bytes = bytes_from_val(&val);
         let mut vid = Vid::for_search(universal_hash::hash(&bytes, 0) & TrieKey::MASK);
         for _ in 0..SEARCH_SIZE {
-            match trie.query(vid.to_id()).await? {
+            match trie.query(vid.to_id()).await {
                 None => {
                     trie.insert(vid.to_id(), TrieValue::Bytes(bytes)).await?;
                     trie.ascend();
@@ -86,8 +86,8 @@ where
     T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
 {
     let mut trie = trie.snapshot();
-    trie.descend(KEY_VAL_TABLE).await?;
-    let value = trie.query(vid.to_id()).await?;
+    trie.descend(KEY_VAL_TABLE).await;
+    let value = trie.query(vid.to_id()).await;
     let val = if let Some(TrieValue::Bytes(bytes)) = value {
         let val = val_from_bytes(&bytes);
         Some(val)
@@ -100,8 +100,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Val, val};
     use crate::trie_storage::MemView;
+    use crate::{Val, val};
 
     #[tokio::test]
     async fn insert_and_query() {

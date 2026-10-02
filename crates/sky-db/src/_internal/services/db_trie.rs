@@ -1,23 +1,23 @@
-use crate::Schema;
-use crate::attr_table::AttrTable;
-use crate::cardinality::Cardinality;
-use crate::db;
+use crate::_internal::Vid;
 use crate::_internal::datalog::Program;
 use crate::_internal::datalog::atom::{Atom, atom};
 use crate::_internal::datalog::rule::rule;
 use crate::_internal::datalog::term::term;
 use crate::_internal::datalog::var::var;
 use crate::_internal::val_table;
-use crate::_internal::Vid;
 use crate::_internal::{KEY_AEVT, KEY_EAVT, KEY_MAX_TXID};
+use crate::Schema;
+use crate::attr_table::AttrTable;
+use crate::cardinality::Cardinality;
+use crate::db;
+use crate::trie::*;
+use crate::trie_storage::MemEdit;
 use crate::types::Txid;
 use crate::types::txid;
 use crate::{Attr, Dir, Ein, FindResult, TransactError, Val};
 use async_stream::stream;
 use futures::{StreamExt, pin_mut};
 use serde::{Deserialize, Serialize};
-use crate::trie_storage::MemEdit;
-use crate::trie::*;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -132,7 +132,6 @@ where
     if let Some(root) = eavt_root(trie).await {
         root.query_all()
             .await
-            .expect("read keys and values from evt root")
             .into_iter()
             .map(|(key, _)| Ein::from(key))
             .collect::<Vec<_>>()
@@ -166,7 +165,6 @@ where
     if let Some(root) = e_avt_subtrie(trie, ein).await {
         root.query_all()
             .await
-            .expect("read keys and values from trie")
             .into_iter()
             .map(|(key, _)| AttrEin::from(key))
             .collect::<Vec<_>>()
@@ -180,8 +178,8 @@ where
     T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
 {
     if let Some(root) = ea_vt_subtrie(trie, ein, attr_ein).await {
-        let keys_and_values = root.query_all().await.expect("read keys and values");
-        keys_and_values
+        root.query_all()
+            .await
             .into_iter()
             .map(|(key, _)| (attr_ein, Vid::from_id(key)))
             .collect::<Vec<_>>()
@@ -195,10 +193,7 @@ where
     T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
 {
     let mut snapshot = trie.snapshot();
-    snapshot
-        .descend(KEY_EAVT)
-        .await
-        .expect("should descend to eavt");
+    snapshot.descend(KEY_EAVT).await;
     Some(snapshot)
 }
 
@@ -209,8 +204,7 @@ where
     let mut snapshot = trie.snapshot();
     snapshot
         .descend_n([KEY_EAVT, ein.to_i32(), attr_ein.to_i32()])
-        .await
-        .expect("failed to descend to vt");
+        .await;
     Some(snapshot)
 }
 
@@ -219,10 +213,7 @@ where
     T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
 {
     let mut snapshot = trie.snapshot();
-    snapshot
-        .descend_n([KEY_EAVT, ein.to_i32()])
-        .await
-        .expect("failed to descend to avt");
+    snapshot.descend_n([KEY_EAVT, ein.to_i32()]).await;
     Some(snapshot)
 }
 
@@ -233,8 +224,8 @@ where
     let aid = schema[attr].ein().to_i32();
 
     let mut snapshot = trie.snapshot();
-    snapshot.descend(KEY_AEVT).await.expect("descend aevt");
-    snapshot.descend(aid).await.expect("descend aid");
+    snapshot.descend(KEY_AEVT).await;
+    snapshot.descend(aid).await;
     snapshot
 }
 
@@ -247,7 +238,7 @@ where
         pin_mut!(evt_roots);
         while let Some((eid, _vt_trie)) = evt_roots.next().await {
             let mut vt_subtrie = evt_subtrie.snapshot();
-            vt_subtrie.descend(eid).await.expect("failed to descend to vt_subtrie");
+            vt_subtrie.descend(eid).await;
 
             let vt_stream = vt_subtrie.u32_stream();
             pin_mut!(vt_stream);

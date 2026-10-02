@@ -1,6 +1,5 @@
 use crate::trie::{
-    CursorPos, InsertOption, MapBase, TrieInsert, TrieInsertError, TrieKey, TrieQuery,
-    TrieQueryError, TrieValue,
+    CursorPos, InsertOption, MapBase, TrieInsert, TrieInsertError, TrieKey, TrieQuery, TrieValue,
 };
 
 #[allow(async_fn_in_trait)]
@@ -27,29 +26,25 @@ pub trait QueryCursor: TrieQuery {
     }
 
     /// Moves down one level in the trie.
-    async fn descend(&mut self, key: impl Into<TrieKey>) -> Result<(), TrieQueryError> {
+    async fn descend(&mut self, key: impl Into<TrieKey>) {
         let key = key.into();
-        let lower_root = match self.query(key.into()).await? {
+        let lower_root = match self.query(key.into()).await {
             None => MapBase::empty(),
             Some(TrieValue::U32(_)) => panic!("key is occupied by a u32 value"),
             Some(TrieValue::Bytes(_)) => panic!("key is occupied by a bytes value"),
             Some(TrieValue::SubTrie(lower_root)) => lower_root,
         };
         self.cursor_pos_mut().descend(key, lower_root);
-        Ok(())
     }
 
     /// Moves down n levels in the trie.
-    async fn descend_n(
-        &mut self,
-        keys: impl IntoIterator<Item = impl Into<TrieKey>>,
-    ) -> Result<usize, TrieQueryError> {
+    async fn descend_n(&mut self, keys: impl IntoIterator<Item = impl Into<TrieKey>>) -> usize {
         let mut count = 0;
         for key in keys {
-            self.descend(key).await?;
+            self.descend(key).await;
             count += 1;
         }
-        Ok(count)
+        count
     }
 
     /// Provides the cursor position for later restoration.
@@ -78,13 +73,7 @@ pub trait InsertCursor: QueryCursor + TrieInsert {
             let last_key = keys.pop().expect("too few keys");
             (keys, last_key)
         };
-        let count = match self.descend_n(descend_keys).await {
-            Ok(count) => count,
-            Err(e) => {
-                self.restore(start_pos);
-                return Err(TrieInsertError::TrieQuery(e));
-            }
-        };
+        let count = self.descend_n(descend_keys).await;
         let insert_options = if delete_others {
             vec![InsertOption::DeleteOthers]
         } else {
