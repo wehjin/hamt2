@@ -4,7 +4,7 @@ use std::ops::Index;
 
 #[cfg(test)]
 mod tests {
-    use crate::storage::MemEdit;
+    use crate::trie::MemEdit;
     use crate::trie::{get_bytes_from_buffer, push_bytes_to_buffer};
 
     #[tokio::test]

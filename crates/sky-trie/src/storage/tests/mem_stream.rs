@@ -1,4 +1,4 @@
-use crate::storage::MemView;
+use crate::trie::MemView;
 use crate::trie::{InsertCursor, TrieInsert};
 use crate::trie::{TrieStream, TrieValue};
 use futures::StreamExt;

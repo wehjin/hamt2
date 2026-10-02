@@ -1,5 +1,5 @@
-use crate::storage::MemView;
-use crate::storage::mem::tests::fixtures::{
+use crate::trie::MemView;
+use crate::trie::mem::tests::fixtures::{
     edit_assert_trie, error_edit_assert_trie, start_assert_trie,
 };
 use crate::trie::{TrieInsert, TrieQuery, TrieSnap, TrieStream, TrieValue};
@@ -83,7 +83,7 @@ async fn main_rejects_second_err_edit() {
 }
 
 mod fixtures {
-    use crate::storage::MemView;
+    use crate::trie::MemView;
     use crate::trie::{TrieInsert, TrieQuery, TrieValue};
     use anyhow::anyhow;
 

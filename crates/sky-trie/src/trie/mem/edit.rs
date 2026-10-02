@@ -1,9 +1,9 @@
-use crate::storage::{MemView, SlotBuffer};
 use crate::trie::StoreEdit;
 use crate::trie::{
     Base, Buffer, BufferIndex, BufferMut, CursorPos, MapBase, TrieInsert, TrieSnap, TrieValue,
 };
 use crate::trie::{InsertCursor, QueryCursor};
+use crate::trie::{MemView, SlotBuffer};
 use std::ops::Deref;
 use std::sync::Arc;
 

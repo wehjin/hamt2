@@ -10,7 +10,7 @@ use crate::attribute::Attribute;
 use crate::errors::ConnectError;
 use crate::objects::reader::DbReader;
 use crate::trie::{Base, Buffer, BufferIndex, TrieSnap};
-use crate::trie_storage::MemView;
+use crate::trie::MemView;
 use crate::types::Txid;
 
 #[derive(Debug)]

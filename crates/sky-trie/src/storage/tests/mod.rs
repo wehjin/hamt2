@@ -1,7 +1,7 @@
-use crate::storage::{MemEdit, MemView};
 use crate::trie::TrieSnap;
 use crate::trie::map_base::one_kv;
 use crate::trie::{Base, Buffer, BufferIndex, BufferMut, HashKey, MapBase, TrieValue};
+use crate::trie::{MemEdit, MemView};
 
 mod edit;
 mod mem_insert;

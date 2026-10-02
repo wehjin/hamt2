@@ -23,7 +23,7 @@ mod tests {
     use crate::datom;
     use crate::find::BindsForAttr;
     use crate::traits::DbQuery;
-    use crate::trie_storage::MemView;
+    use crate::trie::MemView;
     use crate::{Attr, ein, val};
 
     #[tokio::test]

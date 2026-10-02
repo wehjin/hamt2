@@ -1,6 +1,6 @@
 use crate::datom;
 use crate::pull::Pull;
-use crate::trie_storage::MemView;
+use crate::trie::MemView;
 use crate::{Attr, Ein, Ent, Val, dat};
 use crate::{Db, Transact};
 use common::Basis;

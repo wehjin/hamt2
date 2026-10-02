@@ -2,7 +2,7 @@ use crate::_internal::KEY_VAL_TABLE;
 use crate::_internal::Vid;
 use crate::Val;
 use crate::trie::*;
-use crate::trie_storage::MemEdit;
+use crate::trie::MemEdit;
 use crate::{QueryError, TransactError};
 
 const VAL_TYPE_U32: u8 = 16;
@@ -100,7 +100,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::trie_storage::MemView;
+    use crate::trie::MemView;
     use crate::{Val, val};
 
     #[tokio::test]

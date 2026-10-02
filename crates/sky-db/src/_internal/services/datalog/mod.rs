@@ -55,7 +55,7 @@ mod tests {
     use crate::Db;
     use crate::Transact;
     use crate::datom;
-    use crate::trie_storage::MemView;
+    use crate::trie::MemView;
     use crate::{Attr, ent, val};
 
     fn advisor() -> Attr {

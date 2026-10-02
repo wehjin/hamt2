@@ -1,8 +1,8 @@
 use sky_db::Db;
-use sky_db::find::AllAttrs;
 use sky_db::DbQuery;
+use sky_db::find::AllAttrs;
+use sky_db::trie::MemView;
 use sky_db::{Attr, attr};
-use sky_db::trie_storage::MemView;
 
 fn attr_count() -> Attr {
     Attr::from("counter/count")

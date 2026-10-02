@@ -1,4 +1,4 @@
-use crate::storage::MemEdit;
+use crate::trie::MemEdit;
 use crate::trie::{InsertCursor, QueryCursor, TrieInsert, TrieQuery, TrieValue};
 
 #[tokio::test]

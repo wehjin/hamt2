@@ -2,7 +2,7 @@ use sky_db::Db;
 use sky_db::find::EntityFills;
 use sky_db::DbQuery;
 use sky_db::{Attr, Fill, Transact, Val, dat, datom, ein};
-use sky_db::trie_storage::MemView;
+use sky_db::trie::MemView;
 
 fn attr_count() -> Attr {
     Attr::from("counter/count")

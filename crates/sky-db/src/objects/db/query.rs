@@ -23,7 +23,7 @@ mod tests {
     use super::*;
     use crate::Transact;
     use crate::datom;
-    use crate::trie_storage::MemView;
+    use crate::trie::MemView;
     use crate::{dat, ent};
     use futures::StreamExt;
 

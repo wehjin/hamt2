@@ -4,7 +4,7 @@ use sky_db::Db;
 use sky_db::find::{AllEins, AttrsOfEin, EinsWithAttr};
 use sky_db::DbQuery;
 use sky_db::{Attr, ein, val};
-use sky_db::trie_storage::MemView;
+use sky_db::trie::MemView;
 
 fn attr_count() -> Attr {
     Attr::from("counter/count")

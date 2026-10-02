@@ -1,4 +1,4 @@
-use crate::storage::{MemEdit, MemView};
+use crate::trie::{MemEdit, MemView};
 use crate::trie::map_base::{kv_stream, one_kv};
 use crate::trie::{HashKey, MapBase, TrieValue, map_base};
 use futures::StreamExt;

@@ -4,7 +4,7 @@ use sky_db::Transact;
 use sky_db::Txid;
 use sky_db::datom;
 use sky_db::find::EinsWithAttr;
-use sky_db::trie_storage::MemView;
+use sky_db::trie::MemView;
 use sky_db::{Attr, ein, val};
 
 pub fn attr_count() -> Attr {

@@ -5,7 +5,7 @@ use sky_db::attr_spec::AttrSpec;
 use sky_db::cardinality::Cardinality;
 use sky_db::datom;
 use sky_db::find::ValsInSlot;
-use sky_db::trie_storage::MemView;
+use sky_db::trie::MemView;
 use sky_db::{Attr, val};
 
 #[tokio::test]

@@ -1,4 +1,4 @@
-use sky_trie::storage::MemView;
+use sky_trie::trie::MemView;
 use sky_trie::trie::{TrieInsert, TrieQuery, TrieValue};
 
 #[tokio::test]

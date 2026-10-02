@@ -11,7 +11,7 @@ use crate::attr_table::AttrTable;
 use crate::cardinality::Cardinality;
 use crate::db;
 use crate::trie::*;
-use crate::trie_storage::MemEdit;
+use crate::trie::MemEdit;
 use crate::types::Txid;
 use crate::types::txid;
 use crate::{Attr, Dir, Ein, FindResult, TransactError, Val};
