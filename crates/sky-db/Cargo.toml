@@ -13,5 +13,4 @@ sky-trie.workspace = true
 universal-hash.workspace = true
 
 [dev-dependencies]
-tempfile.workspace = true
 tokio = { workspace = true, features = ["macros", "full"] }
