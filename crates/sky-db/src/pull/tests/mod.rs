@@ -3,8 +3,8 @@ use crate::pull::Pull;
 use crate::{Attr, Ein, Ent, Val, dat};
 use crate::{Db, Transact};
 use common::Basis;
-use sky_types::storage::MemLoad;
-use sky_types::storage::load::StoreLoad;
+use crate::trie_storage::MemLoad;
+use crate::trie_storage::load::StoreLoad;
 
 pub mod common;
 

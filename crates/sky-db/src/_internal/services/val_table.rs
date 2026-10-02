@@ -2,8 +2,8 @@ use crate::Val;
 use crate::_internal::Vid;
 use crate::_internal::KEY_VAL_TABLE;
 use crate::{QueryError, TransactError};
-use sky_types::storage::MemEdit;
-use sky_types::trie::*;
+use crate::trie_storage::MemEdit;
+use crate::trie::*;
 
 const VAL_TYPE_U32: u8 = 16;
 const VAL_TYPE_STRING: u8 = 17;
@@ -101,8 +101,8 @@ where
 mod tests {
     use super::*;
     use crate::{Val, val};
-    use sky_types::storage::MemLoad;
-    use sky_types::storage::load::StoreLoad;
+    use crate::trie_storage::MemLoad;
+    use crate::trie_storage::load::StoreLoad;
 
     #[tokio::test]
     async fn insert_and_query() {

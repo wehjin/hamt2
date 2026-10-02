@@ -9,7 +9,7 @@ thiserror.workspace = true
 serde.workspace = true
 futures.workspace = true
 async-stream.workspace = true
-sky-types.workspace = true
+sky-trie.workspace = true
 universal-hash.workspace = true
 
 [dev-dependencies]

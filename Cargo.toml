@@ -5,7 +5,7 @@ members = [
 default-members = [
     "crates/sky-db",
     "crates/sky-tui",
-    "crates/sky-types",
+    "crates/sky-trie",
 ]
 resolver = "3"
 
@@ -27,7 +27,7 @@ async-stream = "0.3.6"
 log = "0.4.34"
 
 sky-db = { path = "crates/sky-db" }
-sky-types = { path = "crates/sky-types", default-features = false }
+sky-trie = { path = "crates/sky-trie", default-features = false }
 universal-hash = { path = "crates/universal-hash" }
 
 [profile.wasm-release]

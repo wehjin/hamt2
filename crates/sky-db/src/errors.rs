@@ -1,4 +1,4 @@
-use sky_types::storage::error::WriteStorageError;
+use crate::trie_storage::error::WriteStorageError;
 
 #[derive(thiserror::Error, Debug)]
 pub enum ConnectError {
@@ -15,7 +15,7 @@ pub enum ConnectError {
     TrieEdit(#[source] anyhow::Error),
 }
 
-use sky_types::trie::{TrieInsertError, TrieQueryError};
+use crate::trie::{TrieInsertError, TrieQueryError};
 
 #[derive(thiserror::Error, Debug)]
 pub enum QueryError {

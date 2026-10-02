@@ -4,9 +4,9 @@ use sky_db::Transact;
 use sky_db::Txid;
 use sky_db::datom;
 use sky_db::find::EinsWithAttr;
+use sky_db::trie_storage::MemLoad;
+use sky_db::trie_storage::load::StoreLoad;
 use sky_db::{Attr, ein, val};
-use sky_types::storage::MemLoad;
-use sky_types::storage::load::StoreLoad;
 
 pub fn attr_count() -> Attr {
     Attr::from("counter/count")

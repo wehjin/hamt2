@@ -1,4 +1,4 @@
-use sky_types::trie::TrieKey;
+use crate::trie::TrieKey;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Vid(i32);

@@ -1,6 +1,6 @@
-use sky_types::storage::MemLoad;
-use sky_types::storage::load::StoreLoad;
-use sky_types::trie::{TrieInsert, TrieQuery, TrieValue};
+use sky_trie::storage::MemLoad;
+use sky_trie::storage::load::StoreLoad;
+use sky_trie::trie::{TrieInsert, TrieQuery, TrieValue};
 
 #[tokio::test]
 async fn sequential_lengths() {

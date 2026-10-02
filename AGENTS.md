@@ -70,7 +70,7 @@ crate::trie::prelude::*` internally. sky-db does not re-export any storage types
       persisted root, mutations (`insert`, `deep_insert`) consume and return a new `Trie` (`-> TrieInsertError`),
       `.commit()` (`-> WriteStorageError`) writes the root, `.view()` gives a `TrieReader<S::Snapshot>` snapshot.
      Queries live on
-     the `TrieQuery` trait (defined in `sky-types` under `sky_types::trie`,
+     the `TrieQuery` trait (defined in `sky-trie` under `sky_types::trie`,
      alongside `TrieValue`; re-exported by the prelude; `root` (via `RootTrieQuery`), `query_value`,
      `query_keys_values` (via `ShallowTrieQuery`, which has a blanket impl for `RootTrieQuery + TrieBaseRead`),
      `deep_query_value`,
@@ -84,7 +84,7 @@ crate::trie::prelude::*` internally. sky-db does not re-export any storage types
      `TrieBaseRead { read_base(&self, id: SlotBaseId) -> Result<SlotBase, TrieQueryError> }`
      and `TrieBaseCommit: TrieBaseRead` (`commit_base(&mut self, base: SlotBase) -> Result<SlotBaseId,
      TrieInsertError>`) live in
-     `sky_types::trie::traits`; every storage implements `TrieBaseRead` (the four sky-types storages via a macro,
+     `sky_types::trie::traits`; every storage implements `TrieBaseRead` (the four sky-trie storages via a macro,
      downstream storages implement it directly), and every `ReadWriteStorage` gets `TrieBaseCommit` via a blanket
      impl. `subtrie_stream()` and `to_subtrie_in_value()` yield `Self::Subtrie`, so
      callers never name `TrieReader`. The `prelude` re-exports all of the above.
@@ -224,7 +224,7 @@ Within `crates/skybase/src`:
   `TrieQuery` in scope (it comes with `use crate::trie::prelude::*`); mutation methods (`insert`,
   `deep_insert`, `commit`) stay inherent on `Trie`. `subtrie_stream`/`to_subtrie_in_value` yield
   `Self::Subtrie`. `TrieReader` connects to a `ReadStorage` only (e.g. `storage.snapshot()`).
-- **Errors are layered.** sky-types owns the storage errors `ReadStorageError` (`Io`/`Decode`) and
+- **Errors are layered.** sky-trie owns the storage errors `ReadStorageError` (`Io`/`Decode`) and
   `WriteStorageError` (`Io`/`Encode`), plus the trie errors `TrieQueryError` (`SystemError`) and `TrieInsertError`
    (`ExpectedMapBaseAtKey`/`Query`); sky-db's `ConnectError` (`Query`/`Transact`/
    `TrieStorageWrite`) embed them, and `QueryError`/`TransactError`

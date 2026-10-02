@@ -3,9 +3,9 @@ use ratatui_kit::crossterm::event::{Event, KeyCode, KeyEventKind, KeyModifiers};
 use ratatui_kit::prelude::*;
 use sky_db::Db;
 use sky_db::DbReader;
+use sky_db::trie_storage::load::StoreLoad;
+use sky_db::trie_storage::{MemLoad, MemView};
 use sky_db::{Transact, attr, datom, ent};
-use sky_types::storage::load::StoreLoad;
-use sky_types::storage::{MemLoad, MemView};
 
 pub static DB_VIEW: Atom<Option<DbReader<MemView>>> = Atom::new(|| None);
 

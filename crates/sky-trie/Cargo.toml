@@ -1,5 +1,5 @@
 [package]
-name = "sky-types"
+name = "sky-trie"
 version.workspace = true
 edition.workspace = true
 

@@ -6,8 +6,8 @@ use sky_db::datom;
 use sky_db::find::ValsInSlot;
 use sky_db::DbQuery;
 use sky_db::{Attr, val};
-use sky_types::storage::MemLoad;
-use sky_types::storage::load::StoreLoad;
+use sky_db::trie_storage::MemLoad;
+use sky_db::trie_storage::load::StoreLoad;
 
 #[tokio::test]
 async fn one() -> anyhow::Result<()> {

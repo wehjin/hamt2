@@ -4,7 +4,7 @@ use crate::_internal::db_trie;
 use crate::_internal::val_table;
 use crate::traits::Find;
 use crate::{Ein, Fill, FindResult};
-use sky_types::trie::{QueryCursor, TrieQuery, TrieSnap, TrieStream};
+use crate::trie::{QueryCursor, TrieQuery, TrieSnap, TrieStream};
 
 pub struct EntityFills(pub Ein);
 

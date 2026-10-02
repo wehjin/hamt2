@@ -9,10 +9,10 @@ use ratatui_kit::prelude::*;
 use ratatui_kit::ratatui::layout::{Constraint, Direction};
 use ratatui_kit::ratatui::widgets::Block;
 use sky_db::DbQuery;
-use sky_db::find::{AllAttrs, EinsWithAttr, EntityFills};
 use sky_db::DbReader;
+use sky_db::find::{AllAttrs, EinsWithAttr, EntityFills};
+use sky_db::trie_storage::MemView;
 use sky_db::{Attr, Ein, Fill};
-use sky_types::storage::MemView;
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Layout {

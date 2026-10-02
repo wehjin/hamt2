@@ -18,8 +18,8 @@ pub use ent::*;
 pub use fill::*;
 pub use find_result::*;
 pub use schema::*;
-use sky_types::storage::StorageStatus;
-use sky_types::trie::MapBase;
+use crate::trie_storage::StorageStatus;
+use crate::trie::MapBase;
 pub use txid::*;
 pub use val::*;
 

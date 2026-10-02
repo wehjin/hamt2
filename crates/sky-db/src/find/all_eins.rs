@@ -4,7 +4,7 @@ use crate::Schema;
 use crate::_internal::datalog::atom::Atom;
 use crate::_internal::db_trie;
 use crate::traits::Find;
-use sky_types::trie::*;
+use crate::trie::*;
 use std::future::Future;
 
 pub struct AllEins;

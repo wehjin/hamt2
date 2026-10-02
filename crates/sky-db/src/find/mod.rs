@@ -25,8 +25,8 @@ mod tests {
     use crate::Transact;
     use crate::datom;
     use crate::{Attr, ein, val};
-    use sky_types::storage::MemLoad;
-    use sky_types::storage::load::StoreLoad;
+    use crate::trie_storage::MemLoad;
+    use crate::trie_storage::load::StoreLoad;
 
     #[tokio::test]
     async fn find_with_reader() {

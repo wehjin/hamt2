@@ -2,7 +2,7 @@ use crate::Schema;
 use atom::Atom;
 use kb::KnowledgeBase;
 use rule::Rule;
-use sky_types::trie::*;
+use crate::trie::*;
 
 pub mod atom;
 pub mod kb;
@@ -56,8 +56,8 @@ mod tests {
     use crate::_internal::datalog::term::term;
     use crate::_internal::datalog::var::var;
     use crate::{Attr, ent, val};
-    use sky_types::storage::MemLoad;
-    use sky_types::storage::load::StoreLoad;
+    use crate::trie_storage::MemLoad;
+    use crate::trie_storage::load::StoreLoad;
 
     fn advisor() -> Attr {
         Attr::from("member/advisor")

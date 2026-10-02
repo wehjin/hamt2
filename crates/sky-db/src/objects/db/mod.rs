@@ -1,18 +1,18 @@
 pub mod query;
 pub mod transact;
 
+use crate::_internal::MaxEid;
+use crate::_internal::db_trie;
+use crate::_internal::schema;
 use crate::Schema;
 use crate::attr_spec::DbSpec;
 use crate::attribute::Attribute;
 use crate::errors::ConnectError;
-use crate::_internal::MaxEid;
-use crate::_internal::db_trie;
-use crate::_internal::schema;
 use crate::objects::reader::DbReader;
+use crate::trie::{Base, Buffer, BufferIndex, TrieSnap};
+use crate::trie_storage::load::StoreLoad;
+use crate::trie_storage::{MemLoad, MemView, StorageStatus};
 use crate::types::Txid;
-use sky_types::storage::load::StoreLoad;
-use sky_types::storage::{MemLoad, MemView, StorageStatus};
-use sky_types::trie::{Base, Buffer, BufferIndex, TrieSnap};
 
 #[derive(Debug)]
 pub struct Db {

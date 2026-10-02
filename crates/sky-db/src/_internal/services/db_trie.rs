@@ -16,8 +16,8 @@ use crate::{Attr, Dir, Ein, FindResult, TransactError, Val};
 use async_stream::stream;
 use futures::{StreamExt, pin_mut};
 use serde::{Deserialize, Serialize};
-use sky_types::storage::MemEdit;
-use sky_types::trie::*;
+use crate::trie_storage::MemEdit;
+use crate::trie::*;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

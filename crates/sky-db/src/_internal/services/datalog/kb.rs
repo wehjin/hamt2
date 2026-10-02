@@ -7,7 +7,7 @@ use crate::_internal::db_trie;
 use crate::{Attr, Val};
 use async_stream::stream;
 use futures::{StreamExt, pin_mut};
-use sky_types::trie::*;
+use crate::trie::*;
 use std::collections::HashSet;
 
 #[derive(Debug, Clone)]

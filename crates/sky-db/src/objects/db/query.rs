@@ -3,7 +3,7 @@ use crate::_internal::KEY_MAX_TXID;
 use crate::_internal::db_trie;
 use crate::{Attr, Val};
 use crate::{Db, Txid};
-use sky_types::trie::{TrieQuery, TrieValue};
+use crate::trie::{TrieQuery, TrieValue};
 
 impl Db {
     pub async fn max_tx(&self) -> Result<Txid, QueryError> {
@@ -25,8 +25,8 @@ mod tests {
     use crate::datom;
     use crate::{dat, ent};
     use futures::StreamExt;
-    use sky_types::storage::MemLoad;
-    use sky_types::storage::load::StoreLoad;
+    use crate::trie_storage::MemLoad;
+    use crate::trie_storage::load::StoreLoad;
 
     #[tokio::test]
     async fn ev_stream_test() -> anyhow::Result<()> {

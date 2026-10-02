@@ -4,7 +4,7 @@ use crate::types::Txid;
 use crate::{Db, Schema, db};
 use crate::{Dir, TransactError};
 use schema_loader::SchemaLoader;
-use sky_types::storage::MemEdit;
+use crate::trie_storage::MemEdit;
 
 pub mod schema_loader;
 

@@ -5,7 +5,7 @@ use crate::_internal::MaxEid;
 use crate::_internal::db_trie;
 use crate::{Dat, Ent, val};
 use crate::{Datom, TransactError};
-use sky_types::storage::load::StoreLoad;
+use crate::trie_storage::load::StoreLoad;
 
 impl Transact for Db {
     async fn transact(

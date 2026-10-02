@@ -1,8 +1,8 @@
 use crate::Ein;
 use crate::_internal::KEY_MAX_EID;
 use crate::{QueryError, TransactError};
-use sky_types::storage::{MemEdit, MemLoad};
-use sky_types::trie::*;
+use crate::trie_storage::{MemEdit, MemLoad};
+use crate::trie::*;
 
 pub struct MaxEid {
     start: Ein,

@@ -6,7 +6,7 @@ use crate::_internal::db_trie;
 use crate::{Attr, Ein, FindResult, QueryError, Val};
 use crate::{Datom, Db};
 use futures::FutureExt;
-use sky_types::trie::{QueryCursor, TrieQuery, TrieSnap, TrieStream};
+use crate::trie::{QueryCursor, TrieQuery, TrieSnap, TrieStream};
 
 #[allow(async_fn_in_trait)]
 pub trait Transact {

@@ -1,7 +1,7 @@
 use crate::Schema;
 use crate::traits::DbQuery;
 use crate::traits::Find;
-use sky_types::storage::view::StoreView;
+use crate::trie_storage::view::StoreView;
 
 /// A read-only snapshot of a [`Db`], for running queries only.
 #[derive(Debug, Clone, Eq, PartialEq)]
