@@ -15,7 +15,6 @@ async-stream.workspace = true
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros"] }
-tempfile.workspace = true
 
 [features]
 default = ["fs"]

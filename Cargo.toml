@@ -4,10 +4,8 @@ members = [
 ]
 default-members = [
     "crates/sky-db",
-    "crates/sky-server",
     "crates/sky-tui",
     "crates/sky-types",
-    "crates/skybase",
 ]
 resolver = "3"
 
@@ -29,7 +27,6 @@ async-stream = "0.3.6"
 log = "0.4.34"
 
 sky-db = { path = "crates/sky-db" }
-sky-server = { path = "crates/sky-server" }
 sky-types = { path = "crates/sky-types", default-features = false }
 universal-hash = { path = "crates/universal-hash" }
 
