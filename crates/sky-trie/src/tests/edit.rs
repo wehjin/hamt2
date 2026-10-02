@@ -1,5 +1,5 @@
-use crate::trie::MemEdit;
-use crate::trie::{InsertCursor, TrieInsert, TrieQuery, TrieValue};
+use crate::MemEdit;
+use crate::{InsertCursor, TrieInsert, TrieQuery, TrieValue};
 
 #[tokio::test]
 async fn query_value_exists_works() {

@@ -1,6 +1,6 @@
-use crate::trie::MemView;
-use crate::trie::{InsertCursor, TrieInsert};
-use crate::trie::{TrieStream, TrieValue};
+use crate::MemView;
+use crate::{InsertCursor, TrieInsert};
+use crate::{TrieStream, TrieValue};
 use futures::StreamExt;
 
 #[tokio::test]

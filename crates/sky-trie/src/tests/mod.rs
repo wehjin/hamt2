@@ -1,9 +1,11 @@
-use crate::trie::TrieSnap;
-use crate::trie::map_base::one_kv;
-use crate::trie::{Base, Buffer, BufferIndex, BufferMut, HashKey, MapBase, TrieValue};
-use crate::trie::{MemEdit, MemView};
+use crate::TrieSnap;
+use crate::services::map_base::one_kv;
+use crate::{Base, Buffer, BufferIndex, BufferMut, HashKey, MapBase, TrieValue};
+use crate::{MemEdit, MemView};
 
 mod edit;
+mod edit_tests;
+mod edit_walks;
 mod mem_insert;
 mod mem_stream;
 

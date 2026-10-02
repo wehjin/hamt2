@@ -1,6 +1,6 @@
-use crate::trie::MemView;
-use crate::trie::{InsertCursor, TrieInsert, TrieQuery, TrieValue};
-use crate::trie::{TrieSnap, TrieStream};
+use crate::MemView;
+use crate::{InsertCursor, TrieInsert, TrieQuery, TrieValue};
+use crate::{TrieSnap, TrieStream};
 use futures::StreamExt;
 use std::collections::HashMap;
 
