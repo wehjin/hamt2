@@ -2,11 +2,10 @@ use crate::routes::browser::Browser;
 use ratatui_kit::crossterm::event::{Event, KeyCode, KeyEventKind, KeyModifiers};
 use ratatui_kit::prelude::*;
 use sky_db::Db;
-use sky_db::DbReader;
 use sky_db::trie::SkyMap;
 use sky_db::{Transact, attr, datom, ent};
 
-pub static DB_VIEW: Atom<Option<DbReader<SkyMap>>> = Atom::new(|| None);
+pub static DB_VIEW: Atom<Option<Db>> = Atom::new(|| None);
 
 #[component]
 pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
@@ -21,7 +20,7 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
         db.transact([datom::add(ent("a"), attr_count, 33)])
             .await
             .expect("transact");
-        let snap = db.to_reader();
+        let snap = db.clone();
         db_view.set(Some(snap));
     });
 

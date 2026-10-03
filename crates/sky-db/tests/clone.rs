@@ -1,17 +1,17 @@
+use sky_db::Db;
+use sky_db::DbQuery;
 use sky_db::Transact;
 use sky_db::datom;
-use sky_db::Db;
-use sky_db::find::{AllEins, AttrsOfEin, EinsWithAttr};
-use sky_db::DbQuery;
-use sky_db::{Attr, ein, val};
+use sky_db::find::{AllEins, AttrsOfEin, BindsForAttr, EinsWithAttr};
 use sky_db::trie::SkyMap;
+use sky_db::{Attr, ein, val};
 
 fn attr_count() -> Attr {
     Attr::from("counter/count")
 }
 
 #[tokio::test]
-async fn db_reader_works() -> anyhow::Result<()> {
+async fn clone_works() -> anyhow::Result<()> {
     let mut db = Db::new(SkyMap::new(), [attr_count()]).await?;
     db.transact([
         datom::add(1, attr_count(), val(10)),
@@ -24,7 +24,7 @@ async fn db_reader_works() -> anyhow::Result<()> {
     eins.sort();
     assert_eq!(vec![ein(1), ein(2), ein(3)], eins);
 
-    let reader = db.to_reader();
+    let reader = db.clone();
     assert_eq!(Some(val(10)), reader.find_val(1, attr_count()).await?);
     assert_eq!(Some(val(20)), reader.find_val(2, attr_count()).await?);
     assert_eq!(Some(val(30)), reader.find_val(3, attr_count()).await?);
@@ -39,25 +39,38 @@ async fn db_reader_works() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
-async fn db_reader_finds_entities() {
+async fn clone_finds_binds() {
+    let attr = Attr::from("Counter/count");
+    let store = SkyMap::new();
+    let mut db = Db::new(store, [attr.clone()]).await.unwrap();
+    db.transact([datom::add(10, attr.clone(), 42)])
+        .await
+        .unwrap();
+    let reader = db.clone();
+    let found = reader.find(BindsForAttr::new(attr)).await;
+    assert_eq!(&[(ein(10), val(42))], found.as_slice());
+}
+
+#[tokio::test]
+async fn clone_finds_entities() {
     let mut db = Db::new(SkyMap::new(), [attr_count()]).await.unwrap();
     db.transact([datom::add(100, attr_count(), val(100))])
         .await
         .unwrap();
 
-    let self1 = &db.to_reader();
+    let self1 = db.clone();
     let mut eins = (async move { self1.find(AllEins).await }).await;
     eins.sort();
     assert_eq!(vec![ein(0), ein(1), ein(2), ein(100)], eins);
 }
 
 #[tokio::test]
-async fn db_reader_lists_entity_attributes() {
+async fn clone_lists_entity_attributes() {
     let mut db = Db::new(SkyMap::new(), [attr_count()]).await.unwrap();
     db.transact([datom::add(100, attr_count(), val(100))])
         .await
         .unwrap();
-    let reader = db.to_reader();
+    let reader = db.clone();
     let find = AttrsOfEin::new(100);
     let attrs = (async move { reader.find(find).await }).await;
     assert_eq!(&[attr_count()], &attrs[..]);

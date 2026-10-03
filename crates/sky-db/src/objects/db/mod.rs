@@ -8,24 +8,13 @@ use crate::Schema;
 use crate::attr_spec::DbSpec;
 use crate::attribute::Attribute;
 use crate::errors::ConnectError;
-use crate::objects::reader::DbReader;
 use crate::trie::SkyMap;
-use crate::trie::Snap;
 use crate::types::Txid;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Db {
     pub(crate) schema: Schema,
     pub(crate) trie: SkyMap,
-}
-
-/// Production methods for Db
-impl Db {
-    pub fn to_reader(&self) -> DbReader<SkyMap> {
-        let schema = self.schema.clone();
-        let read_trie = self.trie.snapshot();
-        DbReader::start(schema, read_trie)
-    }
 }
 
 /// Construction methods for Db
