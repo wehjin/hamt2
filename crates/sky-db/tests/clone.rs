@@ -1,9 +1,8 @@
-use sky_db::Pod;
 use sky_db::DbQuery;
+use sky_db::Pod;
 use sky_db::Transact;
 use sky_db::datom;
 use sky_db::find::{AllEins, AttrsOfEin, BindsForAttr, EinsWithAttr};
-use sky_db::trie::SkyTrie;
 use sky_db::{Attr, ein, val};
 
 fn attr_count() -> Attr {
@@ -12,7 +11,7 @@ fn attr_count() -> Attr {
 
 #[tokio::test]
 async fn clone_works() -> anyhow::Result<()> {
-    let mut db = Pod::new(SkyTrie::new(), [attr_count()]).await?;
+    let mut db = Pod::new([attr_count()]).await?;
     db.transact([
         datom::add(1, attr_count(), val(10)),
         datom::add(2, attr_count(), val(20)),
@@ -41,8 +40,7 @@ async fn clone_works() -> anyhow::Result<()> {
 #[tokio::test]
 async fn clone_finds_binds() {
     let attr = Attr::from("Counter/count");
-    let store = SkyTrie::new();
-    let mut db = Pod::new(store, [attr.clone()]).await.unwrap();
+    let mut db = Pod::new([attr.clone()]).await.unwrap();
     db.transact([datom::add(10, attr.clone(), 42)])
         .await
         .unwrap();
@@ -53,7 +51,7 @@ async fn clone_finds_binds() {
 
 #[tokio::test]
 async fn clone_finds_entities() {
-    let mut db = Pod::new(SkyTrie::new(), [attr_count()]).await.unwrap();
+    let mut db = Pod::new([attr_count()]).await.unwrap();
     db.transact([datom::add(100, attr_count(), val(100))])
         .await
         .unwrap();
@@ -66,7 +64,7 @@ async fn clone_finds_entities() {
 
 #[tokio::test]
 async fn clone_lists_entity_attributes() {
-    let mut db = Pod::new(SkyTrie::new(), [attr_count()]).await.unwrap();
+    let mut db = Pod::new([attr_count()]).await.unwrap();
     db.transact([datom::add(100, attr_count(), val(100))])
         .await
         .unwrap();

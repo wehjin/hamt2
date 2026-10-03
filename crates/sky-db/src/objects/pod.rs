@@ -17,7 +17,8 @@ pub struct Pod {
 
 /// Constructors
 impl Pod {
-    pub async fn new(storage: SkyTrie, db_spec: impl Into<DbSpec>) -> Result<Self, ConnectError> {
+    pub async fn new(db_spec: impl Into<DbSpec>) -> Result<Self, ConnectError> {
+        let storage = SkyTrie::new();
         let db_spec = db_spec.into();
         let attr_specs = db_spec.as_ref();
         let (schema, trie) = {
@@ -44,22 +45,6 @@ impl Pod {
         };
         let db = Pod { schema, trie };
         Ok(db)
-    }
-
-    pub async fn load(storage: SkyTrie) -> Self {
-        let starter_db = Pod {
-            schema: Schema::starter(),
-            trie: storage,
-        };
-        let db = Pod {
-            schema: schema::load(&starter_db).await,
-            trie: starter_db.trie,
-        };
-        db
-    }
-
-    pub fn close(self) -> SkyTrie {
-        self.trie
     }
 }
 

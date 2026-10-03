@@ -55,7 +55,6 @@ mod tests {
     use crate::Pod;
     use crate::Transact;
     use crate::datom;
-    use crate::trie::SkyTrie;
     use crate::{Attr, ent, val};
 
     fn advisor() -> Attr {
@@ -77,20 +76,16 @@ mod tests {
     #[tokio::test]
     async fn program_test() -> anyhow::Result<()> {
         let schema = vec![advisor(), name()];
-        let mut storage = SkyTrie::new();
-        {
-            let mut db = Pod::new(storage, schema.clone()).await?;
-            db.transact([
-                datom::add("a", name(), val("Alice")),
-                datom::add("b", name(), val("Bob")),
-                datom::add("c", name(), val("Clark")),
-                datom::add("a", advisor(), ent("c")),
-                datom::add("b", advisor(), ent("c")),
-            ])
-            .await?;
-            storage = db.close();
-        }
-        let db = Pod::load(storage).await;
+        let mut db = Pod::new(schema.clone()).await?;
+        db.transact([
+            datom::add("a", name(), val("Alice")),
+            datom::add("b", name(), val("Bob")),
+            datom::add("c", name(), val("Clark")),
+            datom::add("a", advisor(), ent("c")),
+            datom::add("b", advisor(), ent("c")),
+        ])
+        .await?;
+        let db = db.clone();
         let query1 = rule(
             atom(query_1(), [term(var("name"))]),
             [

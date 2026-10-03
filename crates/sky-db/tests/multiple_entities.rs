@@ -1,10 +1,9 @@
-use sky_db::Pod;
 use sky_db::DbQuery;
+use sky_db::Pod;
 use sky_db::Transact;
 use sky_db::Txid;
 use sky_db::datom;
 use sky_db::find::EinsWithAttr;
-use sky_db::trie::SkyTrie;
 use sky_db::{Attr, ein, val};
 
 pub fn attr_count() -> Attr {
@@ -12,19 +11,8 @@ pub fn attr_count() -> Attr {
 }
 
 #[tokio::test]
-async fn load_works() -> anyhow::Result<()> {
-    let storage = SkyTrie::new();
-    let mut db = Pod::new(storage, [attr_count()]).await?;
-    db.transact([datom::add(1, attr_count(), 1)]).await?;
-    let storage = db.close();
-    let db = Pod::load(storage).await;
-    assert_eq!(Some(val(1)), db.find_val(1, attr_count()).await?);
-    Ok(())
-}
-
-#[tokio::test]
 async fn transact_and_pull_simple() -> anyhow::Result<()> {
-    let mut db = Pod::new(SkyTrie::new(), [attr_count()]).await?;
+    let mut db = Pod::new([attr_count()]).await?;
     db.transact([datom::add(15, attr_count(), 15)]).await?;
     assert_eq!(Some(val(15)), db.find_val(15, attr_count()).await?);
     Ok(())
@@ -32,7 +20,7 @@ async fn transact_and_pull_simple() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn entities_with_attr_works_for_single_entity() -> anyhow::Result<()> {
-    let mut db = Pod::new(SkyTrie::new(), [attr_count()]).await?;
+    let mut db = Pod::new([attr_count()]).await?;
     db.transact([datom::add(15, attr_count(), 15)]).await?;
     let eins = db.find(EinsWithAttr::new(attr_count())).await;
     assert_eq!(vec![ein(15)], eins);
@@ -41,7 +29,7 @@ async fn entities_with_attr_works_for_single_entity() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn entities_with_attr_works_for_two_entities() -> anyhow::Result<()> {
-    let mut db = Pod::new(SkyTrie::new(), [attr_count()]).await?;
+    let mut db = Pod::new([attr_count()]).await?;
     db.transact([
         datom::add(3, attr_count(), 4),
         datom::add(5, attr_count(), 6),
@@ -56,7 +44,7 @@ async fn entities_with_attr_works_for_two_entities() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn transact_assigns_id_to_temporary_ent() -> anyhow::Result<()> {
-    let mut db = Pod::new(SkyTrie::new(), [attr_count()]).await?;
+    let mut db = Pod::new([attr_count()]).await?;
     db.transact([datom::add("new_count", attr_count(), 35)])
         .await?;
     let db = db
@@ -70,7 +58,7 @@ async fn transact_assigns_id_to_temporary_ent() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_multiple_entities() -> anyhow::Result<()> {
     // Construct a new database.
-    let mut db = Pod::new(SkyTrie::new(), [attr_count()]).await?;
+    let mut db = Pod::new([attr_count()]).await?;
     assert_eq!(Txid::FLOOR, db.max_tx().await?);
 
     // Add a few datoms to different entities.

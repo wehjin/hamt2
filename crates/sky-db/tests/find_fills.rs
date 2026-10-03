@@ -1,8 +1,7 @@
+use sky_db::DbQuery;
 use sky_db::Pod;
 use sky_db::find::EntityFills;
-use sky_db::DbQuery;
 use sky_db::{Attr, Fill, Transact, Val, dat, datom, ein};
-use sky_db::trie::SkyTrie;
 
 fn attr_count() -> Attr {
     Attr::from("counter/count")
@@ -12,7 +11,7 @@ fn attr_count() -> Attr {
 async fn find_fills_works() {
     let ein = ein(300);
 
-    let mut db = Pod::new(SkyTrie::new(), [attr_count()]).await.unwrap();
+    let mut db = Pod::new([attr_count()]).await.unwrap();
     db.transact([datom::add(ein, attr_count(), dat(300))])
         .await
         .unwrap();

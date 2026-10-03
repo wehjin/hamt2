@@ -1,13 +1,11 @@
 use futures::StreamExt;
 use sky_db::{Attr, Pod, Transact, Val, dat, datom, ent};
-use sky_trie::SkyTrie;
 
 #[tokio::test]
 async fn ev_stream_test() -> anyhow::Result<()> {
     let count = || Attr::from("counter/count");
     let schema = vec![count()];
-    let storage = SkyTrie::new();
-    let mut db = Pod::new(storage, schema.clone()).await?;
+    let mut db = Pod::new(schema.clone()).await?;
     db.transact(vec![
         datom::add(ent(10), count(), dat(10)),
         datom::add(ent(11), count(), dat(Val::from(11))),

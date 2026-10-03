@@ -1,6 +1,5 @@
 use crate::datom;
 use crate::pull::Pull;
-use crate::trie::SkyTrie;
 use crate::{Attr, Ein, Ent, Val, dat};
 use crate::{Pod, Transact};
 use common::Basis;
@@ -9,34 +8,28 @@ pub mod common;
 
 #[tokio::test]
 async fn pull_test() {
-    let storage = {
-        let basis = Basis {
+    let basis = Basis {
+        symbol: "ABC".to_string(),
+        shares: 100,
+        price_each: 101,
+        direction: -1,
+    };
+    let ent = Ent::from(27);
+    let mut db = Pod::new(Basis::attrs()).await.expect("Db::new");
+    db.transact(basis.into_datoms(ent))
+        .await
+        .expect("db.transact");
+
+    let db = db.clone();
+    assert_eq!(
+        Basis {
             symbol: "ABC".to_string(),
             shares: 100,
             price_each: 101,
             direction: -1,
-        };
-        let ent = Ent::from(27);
-        let mut db = Pod::new(SkyTrie::new(), Basis::attrs())
-            .await
-            .expect("Db::new");
-        db.transact(basis.into_datoms(ent))
-            .await
-            .expect("db.transact");
-        db.close()
-    };
-    {
-        let db = Pod::load(storage).await;
-        assert_eq!(
-            Basis {
-                symbol: "ABC".to_string(),
-                shares: 100,
-                price_each: 101,
-                direction: -1,
-            },
-            Basis::pull(&db, Ein(27)).await.expect("Basis::pull")
-        )
-    }
+        },
+        Basis::pull(&db, Ein(27)).await.expect("Basis::pull")
+    )
 }
 
 #[test]
