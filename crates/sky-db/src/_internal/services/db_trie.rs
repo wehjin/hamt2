@@ -11,7 +11,7 @@ use crate::attr_table::AttrTable;
 use crate::cardinality::Cardinality;
 use crate::db;
 use crate::trie::*;
-use crate::trie::SkyKvsMut;
+use crate::trie::SkyMapMut;
 use crate::types::Txid;
 use crate::types::txid;
 use crate::{Attr, Dir, Ein, FindResult, TransactError, Val};
@@ -51,7 +51,7 @@ impl From<u32> for Value {
 }
 
 pub(crate) async fn with_update(
-    trie: &mut SkyKvsMut,
+    trie: &mut SkyMapMut,
     attr_map: &AttrTable,
     ein: Ein,
     attr: Attr,
@@ -72,7 +72,7 @@ pub(crate) async fn with_update(
     Ok(())
 }
 
-pub(crate) async fn set_max_tx(trie: &mut SkyKvsMut, max_tx: Txid) -> Result<(), TransactError> {
+pub(crate) async fn set_max_tx(trie: &mut SkyMapMut, max_tx: Txid) -> Result<(), TransactError> {
     trie.insert(KEY_MAX_TXID, TrieValue::from(max_tx.u32()))
         .await;
     Ok(())

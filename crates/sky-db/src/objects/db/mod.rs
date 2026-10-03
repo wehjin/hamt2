@@ -10,18 +10,18 @@ use crate::attribute::Attribute;
 use crate::errors::ConnectError;
 use crate::objects::reader::DbReader;
 use crate::trie::{Base, Buffer, BufferIndex, Snap};
-use crate::trie::SkyKvs;
+use crate::trie::SkyMap;
 use crate::types::Txid;
 
 #[derive(Debug)]
 pub struct Db {
     pub(crate) schema: Schema,
-    pub(crate) trie: SkyKvs,
+    pub(crate) trie: SkyMap,
 }
 
 /// Production methods for Db
 impl Db {
-    pub fn to_reader(&self) -> DbReader<SkyKvs> {
+    pub fn to_reader(&self) -> DbReader<SkyMap> {
         let schema = self.schema.clone();
         let read_trie = self.trie.snapshot();
         DbReader::start(schema, read_trie)
@@ -39,7 +39,7 @@ impl Db {
         self.trie.snapshot().get_base(id, size).await
     }
 
-    pub async fn new(storage: SkyKvs, db_spec: impl Into<DbSpec>) -> Result<Self, ConnectError> {
+    pub async fn new(storage: SkyMap, db_spec: impl Into<DbSpec>) -> Result<Self, ConnectError> {
         let db_spec = db_spec.into();
         let attr_specs = db_spec.as_ref();
         let (schema, trie) = {
@@ -68,7 +68,7 @@ impl Db {
         Ok(db)
     }
 
-    pub async fn load(storage: SkyKvs) -> Self {
+    pub async fn load(storage: SkyMap) -> Self {
         let starter_db = Db {
             schema: Schema::starter(),
             trie: storage,
@@ -82,7 +82,7 @@ impl Db {
 }
 
 impl Db {
-    pub fn close(self) -> SkyKvs {
+    pub fn close(self) -> SkyMap {
         self.trie
     }
 }

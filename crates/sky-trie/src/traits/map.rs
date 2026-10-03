@@ -1,7 +1,7 @@
 use crate::QueryCursor;
 use crate::{Query, Snap, KvStream};
 
-pub trait Kvs:
+pub trait Map:
     QueryCursor
     + KvStream
     + Snap<Snapshot = Self>

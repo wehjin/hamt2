@@ -1,10 +1,10 @@
 use crate::{Base, Buffer, BufferIndex, BufferMut, MapBase, Slot};
 
-mod sky_kvs_mut;
-mod sky_kvs;
+mod sky_map_mut;
+mod sky_map;
 
-pub use sky_kvs_mut::*;
-pub use sky_kvs::*;
+pub use sky_map_mut::*;
+pub use sky_map::*;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct VecBuffer {

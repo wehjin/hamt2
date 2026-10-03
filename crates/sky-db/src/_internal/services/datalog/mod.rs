@@ -55,7 +55,7 @@ mod tests {
     use crate::Db;
     use crate::Transact;
     use crate::datom;
-    use crate::trie::SkyKvs;
+    use crate::trie::SkyMap;
     use crate::{Attr, ent, val};
 
     fn advisor() -> Attr {
@@ -77,7 +77,7 @@ mod tests {
     #[tokio::test]
     async fn program_test() -> anyhow::Result<()> {
         let schema = vec![advisor(), name()];
-        let mut storage = SkyKvs::new();
+        let mut storage = SkyMap::new();
         {
             let mut db = Db::new(storage, schema.clone()).await?;
             db.transact([

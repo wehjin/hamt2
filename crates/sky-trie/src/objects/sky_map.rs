@@ -1,18 +1,18 @@
 use crate::CursorPos;
-use crate::Kvs;
-use crate::SkyKvsMut;
+use crate::Map;
+use crate::SkyMapMut;
 use crate::objects::VecBuffer;
 use crate::{Base, Buffer, BufferIndex, MapBase, QueryCursor, Snap};
 use std::sync::Arc;
 
 #[derive(Debug, Clone)]
-pub struct SkyKvs {
+pub struct SkyMap {
     pub(crate) buffer: Arc<VecBuffer>,
     pub(crate) max_id: BufferIndex,
     pub(crate) cursor_pos: CursorPos,
 }
 
-impl SkyKvs {
+impl SkyMap {
     pub fn new() -> Self {
         Self::with_buffer(VecBuffer::new())
     }
@@ -31,13 +31,13 @@ impl SkyKvs {
         self.get_root()
     }
 
-    pub async fn into_edit(self) -> SkyKvsMut {
-        SkyKvsMut::extend(self)
+    pub async fn into_edit(self) -> SkyMapMut {
+        SkyMapMut::extend(self)
     }
 
     pub async fn edit<F, Out>(&mut self, f: F) -> anyhow::Result<Out>
     where
-        F: AsyncFnOnce(&mut SkyKvsMut) -> anyhow::Result<Out>,
+        F: AsyncFnOnce(&mut SkyMapMut) -> anyhow::Result<Out>,
     {
         let past = self.clone();
         let mut edit = past.into_edit().await;
@@ -48,7 +48,7 @@ impl SkyKvs {
     }
 }
 
-impl QueryCursor for SkyKvs {
+impl QueryCursor for SkyMap {
     fn cursor_pos(&self) -> &CursorPos {
         &self.cursor_pos
     }
@@ -58,9 +58,9 @@ impl QueryCursor for SkyKvs {
     }
 }
 
-impl Eq for SkyKvs {}
+impl Eq for SkyMap {}
 
-impl PartialEq for SkyKvs {
+impl PartialEq for SkyMap {
     fn eq(&self, other: &Self) -> bool {
         self.cursor_pos == other.cursor_pos
             && self.max_id == other.max_id
@@ -68,7 +68,7 @@ impl PartialEq for SkyKvs {
     }
 }
 
-impl Buffer for SkyKvs {
+impl Buffer for SkyMap {
     fn max_index(&self) -> BufferIndex {
         self.max_id
     }
@@ -86,7 +86,7 @@ impl Buffer for SkyKvs {
     }
 }
 
-impl Snap for SkyKvs {
+impl Snap for SkyMap {
     type Snapshot = Self;
 
     fn snapshot(&self) -> Self::Snapshot {
@@ -94,4 +94,4 @@ impl Snap for SkyKvs {
     }
 }
 
-impl Kvs for SkyKvs {}
+impl Map for SkyMap {}
