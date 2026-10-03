@@ -52,7 +52,7 @@ mod tests {
     use crate::_internal::datalog::rule::rule;
     use crate::_internal::datalog::term::term;
     use crate::_internal::datalog::var::var;
-    use crate::Db;
+    use crate::Pod;
     use crate::Transact;
     use crate::datom;
     use crate::trie::SkyTrie;
@@ -79,7 +79,7 @@ mod tests {
         let schema = vec![advisor(), name()];
         let mut storage = SkyTrie::new();
         {
-            let mut db = Db::new(storage, schema.clone()).await?;
+            let mut db = Pod::new(storage, schema.clone()).await?;
             db.transact([
                 datom::add("a", name(), val("Alice")),
                 datom::add("b", name(), val("Bob")),
@@ -90,7 +90,7 @@ mod tests {
             .await?;
             storage = db.close();
         }
-        let db = Db::load(storage).await;
+        let db = Pod::load(storage).await;
         let query1 = rule(
             atom(query_1(), [term(var("name"))]),
             [

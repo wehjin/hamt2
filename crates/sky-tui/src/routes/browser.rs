@@ -10,7 +10,7 @@ use ratatui_kit::ratatui::layout::{Constraint, Direction};
 use ratatui_kit::ratatui::widgets::Block;
 use sky_db::find::{AllAttrs, EinsWithAttr, EntityFills};
 use sky_db::{Attr, Ein, Fill};
-use sky_db::{Db, DbQuery};
+use sky_db::{Pod, DbQuery};
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Layout {
@@ -26,7 +26,7 @@ pub enum Focus {
     Attr,
 }
 
-async fn attrs_in_view(opt_view: &Option<Db>) -> Option<Vec<Attr>> {
+async fn attrs_in_view(opt_view: &Option<Pod>) -> Option<Vec<Attr>> {
     if let Some(view) = opt_view {
         let view_attrs = view.find(AllAttrs).await;
         Some(view_attrs)
@@ -36,7 +36,7 @@ async fn attrs_in_view(opt_view: &Option<Db>) -> Option<Vec<Attr>> {
 }
 
 async fn eins_with_attr_in_view(
-    opt_view: &Option<Db>,
+    opt_view: &Option<Pod>,
     opt_attr: &Option<Attr>,
 ) -> Option<Vec<Ein>> {
     if let (Some(view), Some(attr)) = (opt_view, opt_attr) {
@@ -47,7 +47,7 @@ async fn eins_with_attr_in_view(
     }
 }
 
-async fn fills_of_ein_in_view(opt_view: &Option<Db>, opt_ein: &Option<Ein>) -> Option<Vec<Fill>> {
+async fn fills_of_ein_in_view(opt_view: &Option<Pod>, opt_ein: &Option<Ein>) -> Option<Vec<Fill>> {
     if let (Some(view), Some(ein)) = (opt_view, opt_ein) {
         let view_fills = view.find(EntityFills(*ein)).await;
         Some(view_fills)

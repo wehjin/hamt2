@@ -2,7 +2,7 @@ use crate::datom;
 use crate::pull::Pull;
 use crate::trie::SkyTrie;
 use crate::{Attr, Ein, Ent, Val, dat};
-use crate::{Db, Transact};
+use crate::{Pod, Transact};
 use common::Basis;
 
 pub mod common;
@@ -17,7 +17,7 @@ async fn pull_test() {
             direction: -1,
         };
         let ent = Ent::from(27);
-        let mut db = Db::new(SkyTrie::new(), Basis::attrs())
+        let mut db = Pod::new(SkyTrie::new(), Basis::attrs())
             .await
             .expect("Db::new");
         db.transact(basis.into_datoms(ent))
@@ -26,7 +26,7 @@ async fn pull_test() {
         db.close()
     };
     {
-        let db = Db::load(storage).await;
+        let db = Pod::load(storage).await;
         assert_eq!(
             Basis {
                 symbol: "ABC".to_string(),

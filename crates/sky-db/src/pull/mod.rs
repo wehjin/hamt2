@@ -1,4 +1,4 @@
-use crate::Db;
+use crate::Pod;
 use serde::{Deserialize, Serialize};
 use crate::Datom;
 use crate::QueryError;
@@ -11,5 +11,5 @@ mod tests;
 pub trait Pull<'a>: Sized + Serialize + Deserialize<'a> {
     fn attrs() -> Vec<Attr>;
     fn into_datoms(self, ent: Ent) -> Vec<Datom>;
-    fn pull(db: &Db, eid: Ein) -> impl Future<Output = Result<Self, QueryError>>;
+    fn pull(db: &Pod, eid: Ein) -> impl Future<Output = Result<Self, QueryError>>;
 }

@@ -4,7 +4,7 @@ use crate::find::ValsInSlot;
 use crate::_internal::datalog::atom::Atom;
 use crate::_internal::db_trie;
 use crate::{Attr, Ein, FindResult, QueryError, Val};
-use crate::{Datom, Db};
+use crate::{Datom, Pod};
 use futures::FutureExt;
 use crate::trie::{QueryCursor, Query, Snap, KvStream};
 
@@ -34,7 +34,7 @@ pub trait DbQuery {
     }
 }
 
-impl DbQuery for Db {
+impl DbQuery for Pod {
     async fn find<F: Find>(&self, find: F) -> Vec<F::Output> {
         find.apply(&self.trie, &self.schema).await
     }
