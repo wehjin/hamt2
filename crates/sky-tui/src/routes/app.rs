@@ -1,4 +1,4 @@
-use crate::routes::browser::Browser;
+use crate::routes::home::Home;
 use ratatui_kit::crossterm::event::{Event, KeyCode, KeyEventKind, KeyModifiers};
 use ratatui_kit::prelude::*;
 use sky_db::Pod;
@@ -37,5 +37,5 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
         }
         EventResult::Ignored
     });
-    element!(Browser {})
+    element!(Home {})
 }
