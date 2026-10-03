@@ -1,8 +1,9 @@
-use crate::CursorPos;
-use crate::Trie;
 use crate::SkyTrieMut;
+use crate::Trie;
 use crate::objects::VecBuffer;
 use crate::{Base, Buffer, BufferIndex, MapBase, QueryCursor, Snap};
+use crate::{CursorPos, KvStream};
+use futures::StreamExt;
 use std::sync::Arc;
 
 #[derive(Debug, Clone)]
@@ -12,6 +13,7 @@ pub struct SkyTrie {
     pub(crate) cursor_pos: CursorPos,
 }
 
+/// Constructors
 impl SkyTrie {
     pub fn new() -> Self {
         Self::with_buffer(VecBuffer::new())
@@ -25,10 +27,6 @@ impl SkyTrie {
             max_id,
             cursor_pos,
         }
-    }
-
-    pub fn top_root(&self) -> MapBase {
-        self.get_root()
     }
 
     pub async fn into_edit(self) -> SkyTrieMut {
@@ -45,6 +43,25 @@ impl SkyTrie {
         let next = edit.commit().await;
         *self = next;
         Ok(out)
+    }
+}
+
+/// Queries
+impl SkyTrie {
+    pub fn top_root(&self) -> MapBase {
+        self.get_root()
+    }
+
+    pub async fn list_keys(&self) -> Vec<i32> {
+        let mut out = vec![];
+        {
+            let kv_stream = self.kv_stream();
+            tokio::pin!(kv_stream);
+            while let Some(kv) = kv_stream.next().await {
+                out.push(kv.0);
+            }
+        }
+        out
     }
 }
 

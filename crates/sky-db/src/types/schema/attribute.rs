@@ -3,13 +3,13 @@ use crate::cardinality::Cardinality;
 use crate::{Attr, Ein};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
-pub struct Attribute {
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
+pub struct AttributeDetails {
     pub ein: Ein,
     pub spec: AttrSpec,
 }
 
-impl Attribute {
+impl AttributeDetails {
     pub fn new(ein: Ein, spec: AttrSpec) -> Self {
         Self { ein, spec }
     }

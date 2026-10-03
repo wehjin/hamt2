@@ -1,15 +1,15 @@
-use crate::FindResult;
-use crate::attr_spec::AttrSpec;
-use crate::attribute::Attribute;
-use crate::db;
 use crate::_internal::datalog::atom::{Atom, atom};
 use crate::_internal::datalog::term::term;
 use crate::_internal::datalog::var::var;
+use crate::FindResult;
+use crate::attr_spec::AttrSpec;
+use crate::attribute::AttributeDetails;
+use crate::db;
 use crate::traits::Find;
 pub struct SchemaLoader;
 
 impl Find for SchemaLoader {
-    type Output = Attribute;
+    type Output = AttributeDetails;
 
     fn select(&self) -> Vec<&'static str> {
         vec!["ein", "ident", "cardinality"]
@@ -32,7 +32,7 @@ impl Find for SchemaLoader {
                 let ein = map.get("ein").cloned().unwrap();
                 let ident = map.get("ident").unwrap().as_str();
                 let cardinality = map.get("cardinality").cloned().unwrap();
-                Attribute {
+                AttributeDetails {
                     ein: ein.into(),
                     spec: AttrSpec {
                         attr: ident.into(),

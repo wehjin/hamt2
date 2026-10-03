@@ -2,14 +2,16 @@ use crate::_internal::schema;
 use crate::_internal::{EntEid, db_trie};
 use crate::_internal::{KEY_MAX_TXID, MaxEid};
 use crate::attr_spec::DbSpec;
-use crate::attribute::Attribute;
+use crate::attribute::AttributeDetails;
 use crate::errors::ConnectError;
 use crate::trie::SkyTrie;
 use crate::types::Txid;
-use crate::{Attr, Dat, Datom, Ent, QueryError, Schema, Transact, TransactError, Val, val};
+use crate::{
+    Attr, Attribute, Dat, Datom, Ent, QueryError, Schema, Transact, TransactError, Val, val,
+};
 use sky_trie::{Query, TrieValue};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Pod {
     pub(crate) schema: Schema,
     pub(crate) trie: SkyTrie,
@@ -26,11 +28,13 @@ impl Pod {
             let mut max_eid = MaxEid::read(&trie).await?;
             let mut schema = Schema::starter();
             {
-                let eins = max_eid.take(attr_specs.len());
-                let attributes = eins
+                let attr_eins = max_eid.take(attr_specs.len());
+                let attributes = attr_eins
+                    .clone()
                     .into_iter()
                     .zip(attr_specs)
-                    .map(|(ein, spec)| Attribute::new(ein, spec.clone()));
+                    .map(|(ein, spec)| AttributeDetails::new(ein, spec.clone()))
+                    .collect::<Vec<_>>();
                 schema.extend(attributes);
             }
             trie.edit(async |trie| {
@@ -62,6 +66,14 @@ impl Pod {
 
     pub fn ev_stream(&self, a: Attr) -> impl futures::Stream<Item = (i32, Val)> {
         db_trie::ev_stream(&self.trie, a, &self.schema)
+    }
+
+    pub async fn list_attributes(&self) -> Vec<Attribute> {
+        self.schema
+            .list_details()
+            .into_iter()
+            .map(|details| Attribute::new(details, self.clone()))
+            .collect::<Vec<_>>()
     }
 }
 

@@ -2,7 +2,7 @@ use crate::Attr;
 use crate::cardinality::Cardinality;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 pub struct AttrSpec {
     pub attr: Attr,
     pub cardinality: Cardinality,

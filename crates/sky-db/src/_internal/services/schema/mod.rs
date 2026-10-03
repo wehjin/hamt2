@@ -1,10 +1,8 @@
 use crate::_internal::db_trie;
-use crate::traits::Find;
-use crate::types::Txid;
-use crate::{Pod, Schema, db};
-use crate::{Dir, TransactError};
-use schema_loader::SchemaLoader;
 use crate::trie::SkyTrieMut;
+use crate::types::Txid;
+use crate::{Dir, TransactError};
+use crate::{Schema, db};
 
 pub mod schema_loader;
 
@@ -33,11 +31,4 @@ pub async fn save(schema: &Schema, trie: &mut SkyTrieMut, txid: Txid) -> Result<
         .await?
     }
     Ok(())
-}
-pub async fn load(db: &Pod) -> Schema {
-    let mut schema = db.schema.clone();
-    let loader = SchemaLoader;
-    let attributes = loader.apply(&db.trie, &db.schema).await;
-    schema.extend(attributes);
-    schema
 }

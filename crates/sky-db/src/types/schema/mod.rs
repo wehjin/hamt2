@@ -1,7 +1,7 @@
 use crate::Attr;
 use crate::Ein;
 use crate::attr_table::AttrTable;
-use attribute::Attribute;
+use attribute::AttributeDetails;
 use serde::{Deserialize, Serialize};
 use std::ops::{Deref, Index};
 
@@ -27,13 +27,16 @@ impl Schema {
             attr_table: AttrTable::starter(),
         }
     }
+    pub fn list_details(&self) -> Vec<AttributeDetails> {
+        self.attr_table.list()
+    }
     pub fn contains(&self, attr: &Attr) -> bool {
         self.attr_table.contains_key(attr)
     }
-    pub fn insert(&mut self, attribute: Attribute) {
+    pub fn insert(&mut self, attribute: AttributeDetails) {
         self.attr_table.insert(attribute);
     }
-    pub fn extend(&mut self, attributes: impl IntoIterator<Item = Attribute>) {
+    pub fn extend(&mut self, attributes: impl IntoIterator<Item = AttributeDetails>) {
         self.attr_table.extend(attributes);
     }
     pub fn find_attr(&self, ein: Ein) -> Option<&Attr> {
@@ -46,7 +49,7 @@ impl Schema {
 }
 
 impl Index<Attr> for Schema {
-    type Output = Attribute;
+    type Output = AttributeDetails;
     fn index(&self, key: Attr) -> &Self::Output {
         &self.attr_table[key]
     }
