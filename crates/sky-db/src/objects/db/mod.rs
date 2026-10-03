@@ -9,8 +9,8 @@ use crate::attr_spec::DbSpec;
 use crate::attribute::Attribute;
 use crate::errors::ConnectError;
 use crate::objects::reader::DbReader;
-use crate::trie::{Base, Buffer, BufferIndex, Snap};
 use crate::trie::SkyMap;
+use crate::trie::Snap;
 use crate::types::Txid;
 
 #[derive(Debug)]
@@ -33,12 +33,6 @@ impl Db {
     pub fn schema(&self) -> &Schema {
         &self.schema
     }
-
-    /// Keep until we figure out a better api for sky-server.
-    pub async fn read_base(&self, id: BufferIndex, size: usize) -> Base {
-        self.trie.snapshot().get_base(id, size).await
-    }
-
     pub async fn new(storage: SkyMap, db_spec: impl Into<DbSpec>) -> Result<Self, ConnectError> {
         let db_spec = db_spec.into();
         let attr_specs = db_spec.as_ref();
