@@ -1,7 +1,7 @@
-use crate::{CursorPos, InsertOption, MapBase, TrieInsert, TrieKey, TrieQuery, TrieValue};
+use crate::{CursorPos, InsertOption, MapBase, Insert, TrieKey, Query, TrieValue};
 
 #[allow(async_fn_in_trait)]
-pub trait QueryCursor: TrieQuery {
+pub trait QueryCursor: Query {
     fn cursor_pos(&self) -> &CursorPos;
 
     fn cursor_pos_mut(&mut self) -> &mut CursorPos;
@@ -57,7 +57,7 @@ pub trait QueryCursor: TrieQuery {
 }
 
 #[allow(async_fn_in_trait)]
-pub trait InsertCursor: QueryCursor + TrieInsert {
+pub trait InsertCursor: QueryCursor + Insert {
     /// Inserts `value` into the trie after descending the path marked by `keys`.
     async fn insert_deep(
         &mut self,

@@ -13,7 +13,7 @@ use std::collections::HashSet;
 #[derive(Debug, Clone)]
 pub struct KnowledgeBase<'a, T>
 where
-    T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
+    T: QueryCursor + KvStream + Snap + Query,
 {
     db_trie: &'a T,
     schema: &'a Schema,
@@ -22,7 +22,7 @@ where
 
 impl<'a, T> KnowledgeBase<'a, T>
 where
-    T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
+    T: QueryCursor + KvStream + Snap + Query,
 {
     pub fn from_facts(db_trie: &'a T, schema: &'a Schema, facts: Vec<Atom>) -> Self {
         debug_assert!(facts.iter().all(|atom| atom.is_grounded()));
@@ -108,11 +108,11 @@ where
 
 impl<'a, T> PartialEq for KnowledgeBase<'a, T>
 where
-    T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
+    T: QueryCursor + KvStream + Snap + Query,
 {
     fn eq(&self, other: &Self) -> bool {
         self.facts == other.facts
     }
 }
 
-impl<'a, T> Eq for KnowledgeBase<'a, T> where T: QueryCursor + TrieStream + TrieSnap + TrieQuery {}
+impl<'a, T> Eq for KnowledgeBase<'a, T> where T: QueryCursor + KvStream + Snap + Query {}

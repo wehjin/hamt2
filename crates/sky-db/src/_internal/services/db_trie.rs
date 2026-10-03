@@ -11,7 +11,7 @@ use crate::attr_table::AttrTable;
 use crate::cardinality::Cardinality;
 use crate::db;
 use crate::trie::*;
-use crate::trie::MemEdit;
+use crate::trie::SkyKvsMut;
 use crate::types::Txid;
 use crate::types::txid;
 use crate::{Attr, Dir, Ein, FindResult, TransactError, Val};
@@ -51,7 +51,7 @@ impl From<u32> for Value {
 }
 
 pub(crate) async fn with_update(
-    trie: &mut MemEdit,
+    trie: &mut SkyKvsMut,
     attr_map: &AttrTable,
     ein: Ein,
     attr: Attr,
@@ -72,7 +72,7 @@ pub(crate) async fn with_update(
     Ok(())
 }
 
-pub(crate) async fn set_max_tx(trie: &mut MemEdit, max_tx: Txid) -> Result<(), TransactError> {
+pub(crate) async fn set_max_tx(trie: &mut SkyKvsMut, max_tx: Txid) -> Result<(), TransactError> {
     trie.insert(KEY_MAX_TXID, TrieValue::from(max_tx.u32()))
         .await;
     Ok(())
@@ -85,7 +85,7 @@ pub async fn find<'a, T>(
     where_: impl Into<Vec<Atom>>,
 ) -> FindResult
 where
-    T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
+    T: QueryCursor + KvStream + Snap + Query,
 {
     let select = select.into();
     let query_terms = select.iter().map(|s| term(var(*s))).collect::<Vec<_>>();
@@ -112,7 +112,7 @@ where
 
 pub fn ev_stream<T>(trie: &T, a: Attr, schema: &Schema) -> impl futures::Stream<Item = (i32, Val)>
 where
-    T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
+    T: QueryCursor + KvStream + Snap + Query,
 {
     stream! {
         let evt_subtrie = evt_subtrie(trie, a, schema).await;
@@ -127,7 +127,7 @@ where
 
 pub async fn list_entities<T>(trie: &T) -> Vec<Ein>
 where
-    T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
+    T: QueryCursor + KvStream + Snap + Query,
 {
     if let Some(root) = eavt_root(trie).await {
         root.query_all()
@@ -160,7 +160,7 @@ impl From<i32> for AttrEin {
 
 pub async fn list_entity_attributes<T>(trie: &T, ein: Ein) -> Vec<AttrEin>
 where
-    T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
+    T: QueryCursor + KvStream + Snap + Query,
 {
     if let Some(root) = e_avt_subtrie(trie, ein).await {
         root.query_all()
@@ -175,7 +175,7 @@ where
 
 pub async fn list_entity_fills<T>(trie: &T, ein: Ein, attr_ein: AttrEin) -> Vec<(AttrEin, Vid)>
 where
-    T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
+    T: QueryCursor + KvStream + Snap + Query,
 {
     if let Some(root) = ea_vt_subtrie(trie, ein, attr_ein).await {
         root.query_all()
@@ -190,7 +190,7 @@ where
 
 async fn eavt_root<T>(trie: &T) -> Option<T::Snapshot>
 where
-    T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
+    T: QueryCursor + KvStream + Snap + Query,
 {
     let mut snapshot = trie.snapshot();
     snapshot.descend(KEY_EAVT).await;
@@ -199,7 +199,7 @@ where
 
 async fn ea_vt_subtrie<T>(trie: &T, ein: Ein, attr_ein: AttrEin) -> Option<T::Snapshot>
 where
-    T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
+    T: QueryCursor + KvStream + Snap + Query,
 {
     let mut snapshot = trie.snapshot();
     snapshot
@@ -210,7 +210,7 @@ where
 
 async fn e_avt_subtrie<T>(trie: &T, ein: Ein) -> Option<T::Snapshot>
 where
-    T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
+    T: QueryCursor + KvStream + Snap + Query,
 {
     let mut snapshot = trie.snapshot();
     snapshot.descend_n([KEY_EAVT, ein.to_i32()]).await;
@@ -219,7 +219,7 @@ where
 
 async fn evt_subtrie<T>(trie: &T, attr: Attr, schema: &Schema) -> T::Snapshot
 where
-    T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
+    T: QueryCursor + KvStream + Snap + Query,
 {
     let aid = schema[attr].ein().to_i32();
 
@@ -231,7 +231,7 @@ where
 
 fn evid_stream<T>(evt_subtrie: T) -> impl futures::Stream<Item = (i32, i32)>
 where
-    T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
+    T: QueryCursor + KvStream + Snap + Query,
 {
     stream! {
         let evt_roots = evt_subtrie.map_base_stream();

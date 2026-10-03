@@ -1,7 +1,7 @@
 use crate::_internal::KEY_MAX_TXID;
 use crate::_internal::db_trie;
 use crate::QueryError;
-use crate::trie::{TrieQuery, TrieValue};
+use crate::trie::{Query, TrieValue};
 use crate::{Attr, Val};
 use crate::{Db, Txid};
 
@@ -23,7 +23,7 @@ mod tests {
     use super::*;
     use crate::Transact;
     use crate::datom;
-    use crate::trie::MemView;
+    use crate::trie::SkyKvs;
     use crate::{dat, ent};
     use futures::StreamExt;
 
@@ -31,7 +31,7 @@ mod tests {
     async fn ev_stream_test() -> anyhow::Result<()> {
         let count = || Attr::from("counter/count");
         let schema = vec![count()];
-        let storage = MemView::new();
+        let storage = SkyKvs::new();
         let mut db = Db::new(storage, schema.clone()).await?;
         db.transact(vec![
             datom::add(ent(10), count(), dat(Val::from(10))),

@@ -4,11 +4,11 @@ use crate::types::Txid;
 use crate::{Db, Schema, db};
 use crate::{Dir, TransactError};
 use schema_loader::SchemaLoader;
-use crate::trie::MemEdit;
+use crate::trie::SkyKvsMut;
 
 pub mod schema_loader;
 
-pub async fn save(schema: &Schema, trie: &mut MemEdit, txid: Txid) -> Result<(), TransactError> {
+pub async fn save(schema: &Schema, trie: &mut SkyKvsMut, txid: Txid) -> Result<(), TransactError> {
     for (_, attribute) in schema.attr_table.iter() {
         let ein = attribute.ein;
         db_trie::with_update(

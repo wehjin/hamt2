@@ -23,13 +23,13 @@ mod tests {
     use crate::datom;
     use crate::find::BindsForAttr;
     use crate::traits::DbQuery;
-    use crate::trie::MemView;
+    use crate::trie::SkyKvs;
     use crate::{Attr, ein, val};
 
     #[tokio::test]
     async fn find_with_reader() {
         let attr = Attr::from("Counter/count");
-        let store = MemView::new();
+        let store = SkyKvs::new();
         let mut db = Db::new(store, [attr.clone()]).await.unwrap();
         db.transact([datom::add(10, attr.clone(), 42)])
             .await

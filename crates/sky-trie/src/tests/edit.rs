@@ -1,9 +1,9 @@
-use crate::MemEdit;
-use crate::{InsertCursor, TrieInsert, TrieQuery, TrieValue};
+use crate::SkyKvsMut;
+use crate::{InsertCursor, Insert, Query, TrieValue};
 
 #[tokio::test]
 async fn query_value_exists_works() {
-    let mut m = MemEdit::new();
+    let mut m = SkyKvsMut::new();
     m.insert(32, TrieValue::U32(33)).await;
     let v = m.query(32).await;
     assert_eq!(v, Some(TrieValue::U32(33)));
@@ -11,7 +11,7 @@ async fn query_value_exists_works() {
 
 #[tokio::test]
 async fn deep_insert_and_query_works() {
-    let mut m = MemEdit::new();
+    let mut m = SkyKvsMut::new();
     m.insert_deep([1, 2, 3], 45, false).await;
     let v = m.query_deep([1, 2, 3]).await;
     assert_eq!(v, Some(TrieValue::U32(45)));

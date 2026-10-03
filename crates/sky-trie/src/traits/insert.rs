@@ -9,7 +9,7 @@ pub enum InsertOption {
 }
 
 #[allow(async_fn_in_trait)]
-pub trait TrieInsert {
+pub trait Insert {
     /// Inserts `value` into the trie at position `key`.
     async fn insert(&mut self, key: i32, value: impl Into<TrieValue>) -> &mut Self {
         self.insert_with_options(key, value, []).await
@@ -24,7 +24,7 @@ pub trait TrieInsert {
     ) -> &mut Self;
 }
 
-impl<T: BufferMut> TrieInsert for T {
+impl<T: BufferMut> Insert for T {
     async fn insert_with_options(
         &mut self,
         key: i32,

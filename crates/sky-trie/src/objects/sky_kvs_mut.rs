@@ -1,34 +1,32 @@
-use crate::StoreEdit;
-use crate::{
-    Base, Buffer, BufferIndex, BufferMut, CursorPos, MapBase, TrieInsert, TrieSnap, TrieValue,
-};
+use crate::KvsMut;
+use crate::{Base, Buffer, BufferIndex, BufferMut, CursorPos, Insert, MapBase, Snap, TrieValue};
 use crate::{InsertCursor, QueryCursor};
-use crate::{MemView, SlotBuffer};
+use crate::{SkyKvs, VecBuffer};
 use std::ops::Deref;
 use std::sync::Arc;
 
 /// Deliberately non-Clone.
 #[derive(Debug)]
-pub struct MemEdit {
-    pub(crate) past: Arc<MemView>,
-    pub(crate) buffer: SlotBuffer,
+pub struct SkyKvsMut {
+    pub(crate) past: Arc<SkyKvs>,
+    pub(crate) buffer: VecBuffer,
     pub(crate) cursor_pos: CursorPos,
 }
 
-impl MemEdit {
+impl SkyKvsMut {
     pub fn new() -> Self {
-        Self::extend(MemView::new())
+        Self::extend(SkyKvs::new())
     }
 
-    pub async fn commit(self) -> MemView {
+    pub async fn commit(self) -> SkyKvs {
         let mut past_buffer = self.past.buffer.deref().clone();
         past_buffer.append(self.buffer);
-        MemView::with_buffer(past_buffer)
+        SkyKvs::with_buffer(past_buffer)
     }
 
-    pub fn extend(past: MemView) -> Self {
+    pub fn extend(past: SkyKvs) -> Self {
         let past = Arc::new(past);
-        let buffer = SlotBuffer::new();
+        let buffer = VecBuffer::new();
         let cursor_pos = past.cursor_pos().clone().ascend_top();
         Self {
             past,
@@ -42,7 +40,9 @@ impl MemEdit {
     }
 }
 
-impl QueryCursor for MemEdit {
+impl KvsMut for SkyKvsMut {}
+
+impl QueryCursor for SkyKvsMut {
     fn cursor_pos(&self) -> &CursorPos {
         &self.cursor_pos
     }
@@ -50,11 +50,10 @@ impl QueryCursor for MemEdit {
         &mut self.cursor_pos
     }
 }
-impl InsertCursor for MemEdit {}
-impl StoreEdit for MemEdit {}
+impl InsertCursor for SkyKvsMut {}
 
-impl TrieSnap for MemEdit {
-    type Snapshot = MemEdit;
+impl Snap for SkyKvsMut {
+    type Snapshot = SkyKvsMut;
 
     fn snapshot(&self) -> Self::Snapshot {
         Self {
@@ -64,7 +63,7 @@ impl TrieSnap for MemEdit {
         }
     }
 }
-impl Buffer for MemEdit {
+impl Buffer for SkyKvsMut {
     fn max_index(&self) -> BufferIndex {
         self.past.max_index() + self.buffer.len()
     }
@@ -86,7 +85,7 @@ impl Buffer for MemEdit {
     }
 }
 
-impl BufferMut for MemEdit {
+impl BufferMut for SkyKvsMut {
     async fn push_root(&mut self, root: MapBase) {
         if let Some((key, _previous_active)) = self.cursor_pos.ascend() {
             // Make sure the ascended level has the updated value at key.

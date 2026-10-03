@@ -1,9 +1,9 @@
-use crate::MemEdit;
-use crate::{InsertCursor, QueryCursor, TrieInsert, TrieQuery, TrieValue};
+use crate::SkyKvsMut;
+use crate::{InsertCursor, QueryCursor, Insert, Query, TrieValue};
 
 #[tokio::test]
 async fn insert_deep() {
-    let mut edit = MemEdit::new();
+    let mut edit = SkyKvsMut::new();
     edit.insert_deep([1, 2, 10], 10, false).await;
     edit.insert_deep([1, 2, 11], 11, false).await;
     edit.descend_n([1, 2]).await;
@@ -27,7 +27,7 @@ async fn insert_deep() {
 
 #[tokio::test]
 async fn single_hop_works() {
-    let mut edit = MemEdit::new();
+    let mut edit = SkyKvsMut::new();
 
     // Insert at top level and descend.
     edit.insert(33, 1).await;
@@ -51,7 +51,7 @@ async fn single_hop_works() {
 
 #[tokio::test]
 async fn multi_hop_works() {
-    let mut edit = MemEdit::new();
+    let mut edit = SkyKvsMut::new();
     edit.insert(33, 1).await;
     assert_eq!(edit.query(33).await, Some(TrieValue::U32(1)));
     edit.descend(40).await;

@@ -6,7 +6,7 @@ use crate::_internal::db_trie;
 use crate::{Attr, Ein, FindResult, QueryError, Val};
 use crate::{Datom, Db};
 use futures::FutureExt;
-use crate::trie::{QueryCursor, TrieQuery, TrieSnap, TrieStream};
+use crate::trie::{QueryCursor, Query, Snap, KvStream};
 
 #[allow(async_fn_in_trait)]
 pub trait Transact {
@@ -50,7 +50,7 @@ pub trait Find {
     fn apply<T>(self, trie: &T, schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
     where
         Self: Sized,
-        T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
+        T: QueryCursor + KvStream + Snap + Query,
     {
         async move {
             let select = self.select();

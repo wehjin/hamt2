@@ -1,11 +1,11 @@
-use crate::MemView;
-use crate::{InsertCursor, TrieInsert};
-use crate::{TrieStream, TrieValue};
+use crate::SkyKvs;
+use crate::{InsertCursor, Insert};
+use crate::{KvStream, TrieValue};
 use futures::StreamExt;
 
 #[tokio::test]
 async fn u32_stream() -> anyhow::Result<()> {
-    let mut trie = MemView::new();
+    let mut trie = SkyKvs::new();
     trie.edit(async |trie| {
         trie.insert(1, TrieValue::U32(1)).await;
         trie.insert(2, TrieValue::U32(2)).await;

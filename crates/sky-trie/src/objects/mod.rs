@@ -1,25 +1,25 @@
 use crate::{Base, Buffer, BufferIndex, BufferMut, MapBase, Slot};
 
-mod edit;
-mod view;
+mod sky_kvs_mut;
+mod sky_kvs;
 
-pub use edit::*;
-pub use view::*;
+pub use sky_kvs_mut::*;
+pub use sky_kvs::*;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct SlotBuffer {
+pub struct VecBuffer {
     slots: Vec<Slot>,
     root_index: Option<usize>,
 }
 
-impl SlotBuffer {
+impl VecBuffer {
     pub fn new() -> Self {
         Self {
             slots: vec![],
             root_index: None,
         }
     }
-    pub fn append(&mut self, novel_slots: SlotBuffer) {
+    pub fn append(&mut self, novel_slots: VecBuffer) {
         let legacy_slots_count = self.slots.len();
         if let Some(novel_root) = novel_slots.root_index {
             self.root_index = Some(novel_root + legacy_slots_count);
@@ -31,7 +31,7 @@ impl SlotBuffer {
     }
 }
 
-impl Buffer for SlotBuffer {
+impl Buffer for VecBuffer {
     fn max_index(&self) -> BufferIndex {
         BufferIndex(self.slots.len() as i32 - 1)
     }
@@ -59,7 +59,7 @@ impl Buffer for SlotBuffer {
     }
 }
 
-impl BufferMut for SlotBuffer {
+impl BufferMut for VecBuffer {
     async fn push_root(&mut self, root: MapBase) {
         self.slots.push(Slot::MapBase(root));
         self.root_index = Some(self.slots.len() - 1);

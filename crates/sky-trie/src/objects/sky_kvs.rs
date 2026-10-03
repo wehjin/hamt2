@@ -1,23 +1,23 @@
-use crate::objects::SlotBuffer;
 use crate::CursorPos;
-use crate::MemEdit;
-use crate::StoreView;
-use crate::{Base, Buffer, BufferIndex, MapBase, QueryCursor, TrieSnap};
+use crate::Kvs;
+use crate::SkyKvsMut;
+use crate::objects::VecBuffer;
+use crate::{Base, Buffer, BufferIndex, MapBase, QueryCursor, Snap};
 use std::sync::Arc;
 
 #[derive(Debug, Clone)]
-pub struct MemView {
-    pub(crate) buffer: Arc<SlotBuffer>,
+pub struct SkyKvs {
+    pub(crate) buffer: Arc<VecBuffer>,
     pub(crate) max_id: BufferIndex,
     pub(crate) cursor_pos: CursorPos,
 }
 
-impl MemView {
+impl SkyKvs {
     pub fn new() -> Self {
-        Self::with_buffer(SlotBuffer::new())
+        Self::with_buffer(VecBuffer::new())
     }
 
-    pub fn with_buffer(buffer: SlotBuffer) -> Self {
+    pub fn with_buffer(buffer: VecBuffer) -> Self {
         let max_id = buffer.max_index();
         let cursor_pos = CursorPos::new(buffer.get_root());
         Self {
@@ -31,13 +31,13 @@ impl MemView {
         self.get_root()
     }
 
-    pub async fn into_edit(self) -> MemEdit {
-        MemEdit::extend(self)
+    pub async fn into_edit(self) -> SkyKvsMut {
+        SkyKvsMut::extend(self)
     }
 
     pub async fn edit<F, Out>(&mut self, f: F) -> anyhow::Result<Out>
     where
-        F: AsyncFnOnce(&mut MemEdit) -> anyhow::Result<Out>,
+        F: AsyncFnOnce(&mut SkyKvsMut) -> anyhow::Result<Out>,
     {
         let past = self.clone();
         let mut edit = past.into_edit().await;
@@ -48,7 +48,7 @@ impl MemView {
     }
 }
 
-impl QueryCursor for MemView {
+impl QueryCursor for SkyKvs {
     fn cursor_pos(&self) -> &CursorPos {
         &self.cursor_pos
     }
@@ -58,9 +58,9 @@ impl QueryCursor for MemView {
     }
 }
 
-impl Eq for MemView {}
+impl Eq for SkyKvs {}
 
-impl PartialEq for MemView {
+impl PartialEq for SkyKvs {
     fn eq(&self, other: &Self) -> bool {
         self.cursor_pos == other.cursor_pos
             && self.max_id == other.max_id
@@ -68,7 +68,7 @@ impl PartialEq for MemView {
     }
 }
 
-impl Buffer for MemView {
+impl Buffer for SkyKvs {
     fn max_index(&self) -> BufferIndex {
         self.max_id
     }
@@ -86,7 +86,7 @@ impl Buffer for MemView {
     }
 }
 
-impl TrieSnap for MemView {
+impl Snap for SkyKvs {
     type Snapshot = Self;
 
     fn snapshot(&self) -> Self::Snapshot {
@@ -94,4 +94,4 @@ impl TrieSnap for MemView {
     }
 }
 
-impl StoreView for MemView {}
+impl Kvs for SkyKvs {}

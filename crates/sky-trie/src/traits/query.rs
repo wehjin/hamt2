@@ -3,7 +3,7 @@ use crate::services::map_base;
 use crate::{Buffer, HashKey};
 
 #[allow(async_fn_in_trait)]
-pub trait TrieQuery {
+pub trait Query {
     /// Returns the value stored at the given key or none if the key is absent.
     async fn query(&self, key: i32) -> Option<TrieValue>;
 
@@ -16,7 +16,7 @@ pub trait TrieQuery {
     async fn query_deep<const N: usize>(&self, key: [i32; N]) -> Option<TrieValue>;
 }
 
-impl<T: Buffer> TrieQuery for T {
+impl<T: Buffer> Query for T {
     async fn query(&self, key: i32) -> Option<TrieValue> {
         map_base::query_value(self.get_root(), HashKey::new(key), self).await
     }

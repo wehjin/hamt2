@@ -26,7 +26,7 @@ impl Program {
 
     pub async fn solve<'a, T>(self, db_trie: &'a T, schema: &'a Schema) -> KnowledgeBase<'a, T>
     where
-        T: QueryCursor + TrieStream + TrieSnap + TrieQuery,
+        T: QueryCursor + KvStream + Snap + Query,
     {
         for rule in &self.rules {
             if !rule.is_range_restricted() {
@@ -55,7 +55,7 @@ mod tests {
     use crate::Db;
     use crate::Transact;
     use crate::datom;
-    use crate::trie::MemView;
+    use crate::trie::SkyKvs;
     use crate::{Attr, ent, val};
 
     fn advisor() -> Attr {
@@ -77,7 +77,7 @@ mod tests {
     #[tokio::test]
     async fn program_test() -> anyhow::Result<()> {
         let schema = vec![advisor(), name()];
-        let mut storage = MemView::new();
+        let mut storage = SkyKvs::new();
         {
             let mut db = Db::new(storage, schema.clone()).await?;
             db.transact([

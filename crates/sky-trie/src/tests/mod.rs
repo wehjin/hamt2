@@ -1,7 +1,7 @@
-use crate::TrieSnap;
+use crate::Snap;
 use crate::services::map_base::one_kv;
 use crate::{Base, Buffer, BufferIndex, BufferMut, HashKey, MapBase, TrieValue};
-use crate::{MemEdit, MemView};
+use crate::{SkyKvsMut, SkyKvs};
 
 mod edit;
 mod edit_tests;
@@ -11,26 +11,26 @@ mod mem_stream;
 
 #[tokio::test]
 async fn empty_storage_max_id_is_nil() {
-    let storage = MemEdit::new();
+    let storage = SkyKvsMut::new();
     assert_eq!(BufferIndex::NIL, storage.max_index());
     assert_eq!(BufferIndex::ZERO, storage.next_index());
 }
 
 #[tokio::test]
 async fn base_id_zero_is_the_empty_base() {
-    let storage = MemEdit::new();
+    let storage = SkyKvsMut::new();
     assert_eq!(Base::empty(), storage.get_base(BufferIndex::ZERO, 1).await);
 }
 
 #[tokio::test]
 async fn empty_storage_root_is_empty() {
-    let storage = MemEdit::new();
+    let storage = SkyKvsMut::new();
     assert_eq!(MapBase::empty(), storage.get_root());
 }
 
 #[tokio::test]
 async fn root_round_trip_works() {
-    let mut edit = MemView::new().into_edit().await;
+    let mut edit = SkyKvs::new().into_edit().await;
     let root = one_kv(HashKey::new(7), TrieValue::U32(7), &mut edit).await;
     edit.push_root(root).await;
     assert_eq!(root, edit.get_root());
@@ -40,7 +40,7 @@ async fn root_round_trip_works() {
 
 #[tokio::test]
 async fn append_assigns_sequential_ids() {
-    let mut storage = MemEdit::new();
+    let mut storage = SkyKvsMut::new();
     let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7), &mut storage).await;
     let id0 = storage.push_base(base.clone()).await;
     let id1 = storage.push_base(base.clone()).await;
@@ -54,7 +54,7 @@ async fn append_assigns_sequential_ids() {
 
 #[tokio::test]
 async fn mem_readonly_snapshot_does_not_see_new_bases() {
-    let mut load = MemView::new();
+    let mut load = SkyKvs::new();
     let (base, id) = load
         .edit(async |storage| {
             let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7), storage).await;
@@ -79,7 +79,7 @@ async fn mem_readonly_snapshot_does_not_see_new_bases() {
 
 #[tokio::test]
 async fn reading_beyond_max_id_produces_empty() {
-    let mut load = MemView::new();
+    let mut load = SkyKvs::new();
     let base = load
         .edit(async |storage| {
             let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7), storage).await;
@@ -102,7 +102,7 @@ async fn reading_beyond_max_id_produces_empty() {
 
 #[tokio::test]
 async fn reading_unwritten_id_produces_empty() {
-    let storage = MemView::new().snapshot();
+    let storage = SkyKvs::new().snapshot();
     let base = storage.get_base(BufferIndex(1), 0).await;
     assert_eq!(base, Base::empty())
 }
