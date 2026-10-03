@@ -1,30 +1,30 @@
-use crate::MapMut;
+use crate::TrieMut;
 use crate::{Base, Buffer, BufferIndex, BufferMut, CursorPos, Insert, MapBase, Snap, TrieValue};
 use crate::{InsertCursor, QueryCursor};
-use crate::{SkyMap, VecBuffer};
+use crate::{SkyTrie, VecBuffer};
 use std::ops::Deref;
 use std::sync::Arc;
 
 /// Deliberately non-Clone.
 #[derive(Debug)]
-pub struct SkyMapMut {
-    pub(crate) past: Arc<SkyMap>,
+pub struct SkyTrieMut {
+    pub(crate) past: Arc<SkyTrie>,
     pub(crate) buffer: VecBuffer,
     pub(crate) cursor_pos: CursorPos,
 }
 
-impl SkyMapMut {
+impl SkyTrieMut {
     pub fn new() -> Self {
-        Self::extend(SkyMap::new())
+        Self::extend(SkyTrie::new())
     }
 
-    pub async fn commit(self) -> SkyMap {
+    pub async fn commit(self) -> SkyTrie {
         let mut past_buffer = self.past.buffer.deref().clone();
         past_buffer.append(self.buffer);
-        SkyMap::with_buffer(past_buffer)
+        SkyTrie::with_buffer(past_buffer)
     }
 
-    pub fn extend(past: SkyMap) -> Self {
+    pub fn extend(past: SkyTrie) -> Self {
         let past = Arc::new(past);
         let buffer = VecBuffer::new();
         let cursor_pos = past.cursor_pos().clone().ascend_top();
@@ -40,9 +40,9 @@ impl SkyMapMut {
     }
 }
 
-impl MapMut for SkyMapMut {}
+impl TrieMut for SkyTrieMut {}
 
-impl QueryCursor for SkyMapMut {
+impl QueryCursor for SkyTrieMut {
     fn cursor_pos(&self) -> &CursorPos {
         &self.cursor_pos
     }
@@ -50,10 +50,10 @@ impl QueryCursor for SkyMapMut {
         &mut self.cursor_pos
     }
 }
-impl InsertCursor for SkyMapMut {}
+impl InsertCursor for SkyTrieMut {}
 
-impl Snap for SkyMapMut {
-    type Snapshot = SkyMapMut;
+impl Snap for SkyTrieMut {
+    type Snapshot = SkyTrieMut;
 
     fn snapshot(&self) -> Self::Snapshot {
         Self {
@@ -63,7 +63,7 @@ impl Snap for SkyMapMut {
         }
     }
 }
-impl Buffer for SkyMapMut {
+impl Buffer for SkyTrieMut {
     fn max_index(&self) -> BufferIndex {
         self.past.max_index() + self.buffer.len()
     }
@@ -85,7 +85,7 @@ impl Buffer for SkyMapMut {
     }
 }
 
-impl BufferMut for SkyMapMut {
+impl BufferMut for SkyTrieMut {
     async fn push_root(&mut self, root: MapBase) {
         if let Some((key, _previous_active)) = self.cursor_pos.ascend() {
             // Make sure the ascended level has the updated value at key.

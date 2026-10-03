@@ -23,7 +23,7 @@ mod tests {
     use super::*;
     use crate::Transact;
     use crate::datom;
-    use crate::trie::SkyMap;
+    use crate::trie::SkyTrie;
     use crate::{dat, ent};
     use futures::StreamExt;
 
@@ -31,7 +31,7 @@ mod tests {
     async fn ev_stream_test() -> anyhow::Result<()> {
         let count = || Attr::from("counter/count");
         let schema = vec![count()];
-        let storage = SkyMap::new();
+        let storage = SkyTrie::new();
         let mut db = Db::new(storage, schema.clone()).await?;
         db.transact(vec![
             datom::add(ent(10), count(), dat(Val::from(10))),

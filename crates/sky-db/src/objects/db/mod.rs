@@ -8,13 +8,13 @@ use crate::Schema;
 use crate::attr_spec::DbSpec;
 use crate::attribute::Attribute;
 use crate::errors::ConnectError;
-use crate::trie::SkyMap;
+use crate::trie::SkyTrie;
 use crate::types::Txid;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Db {
     pub(crate) schema: Schema,
-    pub(crate) trie: SkyMap,
+    pub(crate) trie: SkyTrie,
 }
 
 /// Construction methods for Db
@@ -22,7 +22,7 @@ impl Db {
     pub fn schema(&self) -> &Schema {
         &self.schema
     }
-    pub async fn new(storage: SkyMap, db_spec: impl Into<DbSpec>) -> Result<Self, ConnectError> {
+    pub async fn new(storage: SkyTrie, db_spec: impl Into<DbSpec>) -> Result<Self, ConnectError> {
         let db_spec = db_spec.into();
         let attr_specs = db_spec.as_ref();
         let (schema, trie) = {
@@ -51,7 +51,7 @@ impl Db {
         Ok(db)
     }
 
-    pub async fn load(storage: SkyMap) -> Self {
+    pub async fn load(storage: SkyTrie) -> Self {
         let starter_db = Db {
             schema: Schema::starter(),
             trie: storage,
@@ -65,7 +65,7 @@ impl Db {
 }
 
 impl Db {
-    pub fn close(self) -> SkyMap {
+    pub fn close(self) -> SkyTrie {
         self.trie
     }
 }

@@ -3,7 +3,7 @@ use sky_db::DbQuery;
 use sky_db::Transact;
 use sky_db::datom;
 use sky_db::find::EinsWithAttr;
-use sky_db::trie::SkyMap;
+use sky_db::trie::SkyTrie;
 use sky_db::{Attr, val};
 
 fn attr_count() -> Attr {
@@ -12,7 +12,7 @@ fn attr_count() -> Attr {
 
 #[tokio::test]
 async fn mem_db_works() -> anyhow::Result<()> {
-    let mut db = Db::new(SkyMap::new(), [attr_count()]).await?;
+    let mut db = Db::new(SkyTrie::new(), [attr_count()]).await?;
     db.transact([
         datom::add(1, attr_count(), val(10)),
         datom::add(2, attr_count(), val(20)),

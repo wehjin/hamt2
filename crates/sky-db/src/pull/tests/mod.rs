@@ -1,6 +1,6 @@
 use crate::datom;
 use crate::pull::Pull;
-use crate::trie::SkyMap;
+use crate::trie::SkyTrie;
 use crate::{Attr, Ein, Ent, Val, dat};
 use crate::{Db, Transact};
 use common::Basis;
@@ -17,7 +17,7 @@ async fn pull_test() {
             direction: -1,
         };
         let ent = Ent::from(27);
-        let mut db = Db::new(SkyMap::new(), Basis::attrs())
+        let mut db = Db::new(SkyTrie::new(), Basis::attrs())
             .await
             .expect("Db::new");
         db.transact(basis.into_datoms(ent))

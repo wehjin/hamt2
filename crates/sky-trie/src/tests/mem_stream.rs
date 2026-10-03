@@ -1,11 +1,11 @@
-use crate::SkyMap;
+use crate::SkyTrie;
 use crate::{InsertCursor, Insert};
 use crate::{KvStream, TrieValue};
 use futures::StreamExt;
 
 #[tokio::test]
 async fn u32_stream() -> anyhow::Result<()> {
-    let mut trie = SkyMap::new();
+    let mut trie = SkyTrie::new();
     trie.edit(async |trie| {
         trie.insert(1, TrieValue::U32(1)).await;
         trie.insert(2, TrieValue::U32(2)).await;

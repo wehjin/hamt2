@@ -4,12 +4,12 @@ use std::ops::Index;
 
 #[cfg(test)]
 mod tests {
-    use crate::SkyMapMut;
+    use crate::SkyTrieMut;
     use crate::{get_bytes_from_buffer, push_bytes_to_buffer};
 
     #[tokio::test]
     async fn buffer_pushes_and_gets_bytes() {
-        let mut buffer = SkyMapMut::new();
+        let mut buffer = SkyTrieMut::new();
         let mut bytes = b"hello"[..].to_vec();
         for _ in 0..7 {
             let index = push_bytes_to_buffer(&bytes, &mut buffer).await;

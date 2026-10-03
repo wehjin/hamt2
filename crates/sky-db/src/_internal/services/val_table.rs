@@ -2,7 +2,7 @@ use crate::_internal::KEY_VAL_TABLE;
 use crate::_internal::Vid;
 use crate::Val;
 use crate::trie::*;
-use crate::trie::SkyMapMut;
+use crate::trie::SkyTrieMut;
 use crate::{QueryError, TransactError};
 
 const VAL_TYPE_U32: u8 = 16;
@@ -35,8 +35,8 @@ fn val_from_bytes(bytes: &[u8]) -> Val {
 }
 
 async fn restore_on_err(
-    trie: &mut SkyMapMut,
-    f: impl AsyncFnOnce(&mut SkyMapMut) -> Result<Vid, TransactError>,
+    trie: &mut SkyTrieMut,
+    f: impl AsyncFnOnce(&mut SkyTrieMut) -> Result<Vid, TransactError>,
 ) -> Result<Vid, TransactError> {
     let start = trie.backup();
     match f(trie).await {
@@ -54,7 +54,7 @@ async fn restore_on_err(
 }
 
 const SEARCH_SIZE: usize = 4000;
-pub async fn insert(trie: &mut SkyMapMut, val: Val) -> Result<Vid, TransactError> {
+pub async fn insert(trie: &mut SkyTrieMut, val: Val) -> Result<Vid, TransactError> {
     let result = restore_on_err(trie, async |trie| {
         trie.descend(KEY_VAL_TABLE).await;
         let bytes = bytes_from_val(&val);
@@ -100,12 +100,12 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::trie::SkyMap;
+    use crate::trie::SkyTrie;
     use crate::{Val, val};
 
     #[tokio::test]
     async fn insert_and_query() {
-        let mut trie = SkyMap::new();
+        let mut trie = SkyTrie::new();
         let (vids, vals) = trie
             .edit(async |trie| {
                 let mut vids = Vec::new();
@@ -128,7 +128,7 @@ mod tests {
 
     #[tokio::test]
     async fn negative_numbers() {
-        let mut trie = SkyMapMut::new();
+        let mut trie = SkyTrieMut::new();
         let vid = insert(&mut trie, val(-1)).await.expect("Failed to insert");
         let table_val = query(&trie, vid).await.expect("Failed to query");
         assert_eq!(Some(val(-1)), table_val);
@@ -136,7 +136,7 @@ mod tests {
 
     #[tokio::test]
     async fn same_value_inserted_twice() {
-        let mut trie = SkyMap::new();
+        let mut trie = SkyTrie::new();
         let vid = trie
             .edit(async |trie| {
                 let vid = insert(trie, val(101)).await?;
@@ -152,7 +152,7 @@ mod tests {
 
     #[tokio::test]
     async fn string_insert_and_query() {
-        let mut trie = SkyMap::new();
+        let mut trie = SkyTrie::new();
         let vid = trie
             .edit(async |trie| {
                 let vid = insert(trie, Val::String("hello".into())).await?;

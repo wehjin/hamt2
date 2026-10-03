@@ -1,8 +1,8 @@
 use crate::_internal::KEY_MAX_EID;
 use crate::Ein;
 use crate::trie::*;
-use crate::trie::SkyMapMut;
-use crate::trie::SkyMap;
+use crate::trie::SkyTrieMut;
+use crate::trie::SkyTrie;
 use crate::{QueryError, TransactError};
 
 pub struct MaxEid {
@@ -17,7 +17,7 @@ impl MaxEid {
             current: eid,
         }
     }
-    pub async fn read(trie: &SkyMap) -> Result<Self, QueryError> {
+    pub async fn read(trie: &SkyTrie) -> Result<Self, QueryError> {
         if let Some(TrieValue::U32(value)) = trie.query(KEY_MAX_EID).await {
             Ok(Self::new(Ein(value as i32)))
         } else {
@@ -32,7 +32,7 @@ impl MaxEid {
         }
         taken
     }
-    pub async fn write(self, trie: &mut SkyMapMut) -> Result<(), TransactError> {
+    pub async fn write(self, trie: &mut SkyTrieMut) -> Result<(), TransactError> {
         if self.current > self.start {
             trie.insert(KEY_MAX_EID, TrieValue::from(self.current.to_i32() as u32))
                 .await;

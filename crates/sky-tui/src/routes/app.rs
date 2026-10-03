@@ -2,7 +2,7 @@ use crate::routes::browser::Browser;
 use ratatui_kit::crossterm::event::{Event, KeyCode, KeyEventKind, KeyModifiers};
 use ratatui_kit::prelude::*;
 use sky_db::Db;
-use sky_db::trie::SkyMap;
+use sky_db::trie::SkyTrie;
 use sky_db::{Transact, attr, datom, ent};
 
 pub static DB_VIEW: Atom<Option<Db>> = Atom::new(|| None);
@@ -14,7 +14,7 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
 
     hooks.use_future(async move {
         let attr_count = attr("counter/count");
-        let mut db = Db::new(SkyMap::new(), [attr_count.clone()])
+        let mut db = Db::new(SkyTrie::new(), [attr_count.clone()])
             .await
             .expect("db");
         db.transact([datom::add(ent("a"), attr_count, 33)])

@@ -1,4 +1,4 @@
-use sky_trie::SkyMap;
+use sky_trie::SkyTrie;
 use sky_trie::{Insert, Query, TrieValue};
 
 #[tokio::test]
@@ -59,7 +59,7 @@ async fn lengths_around_dword_boundaries() {
 }
 
 async fn assert_byte_tests<const N: usize>(tests: [(i32, &[u8]); N]) {
-    let mut kvs = SkyMap::new();
+    let mut kvs = SkyTrie::new();
     kvs.edit(async |kvs| {
         for i in 0..tests.len() {
             let (id, value) = tests[i];
