@@ -2,7 +2,7 @@ use crate::_internal::datalog::atom::Atom;
 use crate::_internal::db_trie;
 use crate::Schema;
 use crate::traits::Find;
-use crate::trie::*;
+use crate::trie::SkyTrie;
 use crate::{Attr, Ein, FindResult};
 use std::future::Future;
 
@@ -29,10 +29,9 @@ impl Find for AttrsOfEin {
         unreachable!()
     }
 
-    fn apply<T>(self, trie: &T, schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
+    fn apply(self, trie: &SkyTrie, schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
     where
         Self: Sized,
-        T: QueryCursor + KvStream + Snap,
     {
         async move {
             // For now, use custom function `list_entity_attributes`. Later maybe make a program

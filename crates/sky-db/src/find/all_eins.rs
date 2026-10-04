@@ -4,7 +4,7 @@ use crate::Schema;
 use crate::_internal::datalog::atom::Atom;
 use crate::_internal::db_trie;
 use crate::traits::Find;
-use crate::trie::*;
+use crate::trie::SkyTrie;
 use std::future::Future;
 
 pub struct AllEins;
@@ -30,10 +30,9 @@ impl Find for AllEins {
         unreachable!()
     }
 
-    fn apply<T>(self, trie: &T, _schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
+    fn apply(self, trie: &SkyTrie, _schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
     where
         Self: Sized,
-        T: QueryCursor + KvStream + Snap,
     {
         async move { db_trie::list_entities(trie) }
     }

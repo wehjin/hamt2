@@ -3,7 +3,6 @@ use crate::_internal::datalog::kb::KnowledgeBase;
 use crate::_internal::datalog::sub::Substitution;
 use crate::_internal::datalog::term::Term;
 use crate::_internal::datalog::var::Var;
-use crate::trie::*;
 
 pub fn atom(attr: impl Into<Attr>, terms: impl Into<Vec<Term>>) -> Atom {
     Atom::new(attr.into(), terms)
@@ -55,20 +54,17 @@ impl Atom {
     }
 
     #[must_use]
-    pub async fn derive_body_atom_subs<'a, T>(
+    pub fn derive_body_atom_subs(
         &self,
         subs: Vec<Substitution>,
-        kb: &KnowledgeBase<'a, T>,
-    ) -> Vec<Substitution>
-    where
-        T: QueryCursor + KvStream + Snap + Query,
-    {
+        kb: &KnowledgeBase,
+    ) -> Vec<Substitution> {
         let mut new_subs = Vec::new();
         for sub in subs {
             // Try improving the atom by replacing variables with values.
             let earth_atom = self.ground(&sub);
             // Try improving the substitution using facts from the KB.
-            let kb_subs = kb.unify_earth_atom(&earth_atom, &sub).await;
+            let kb_subs = kb.unify_earth_atom(&earth_atom, &sub);
             new_subs.extend(kb_subs);
         }
         new_subs

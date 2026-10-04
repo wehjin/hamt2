@@ -1,7 +1,6 @@
 use crate::_internal::datalog::atom::Atom;
 use crate::_internal::datalog::kb::KnowledgeBase;
 use crate::_internal::datalog::sub::Substitution;
-use crate::trie::*;
 use std::collections::HashSet;
 
 pub fn rule(head: impl Into<Atom>, body: impl Into<Vec<Atom>>) -> Rule {
@@ -22,12 +21,9 @@ impl Rule {
         }
     }
 
-    pub async fn derive_facts<'a, T>(&self, kb: &KnowledgeBase<'a, T>) -> Vec<Atom>
-    where
-        T: QueryCursor + KvStream + Snap + Query,
-    {
+    pub fn derive_facts(&self, kb: &KnowledgeBase) -> Vec<Atom> {
         let mut new_facts = Vec::new();
-        for body_sub in self.derive_body_subs(kb).await {
+        for body_sub in self.derive_body_subs(kb) {
             let new_fact = self.head.ground(&body_sub);
             debug_assert!(new_fact.is_grounded());
             new_facts.push(new_fact);
@@ -35,13 +31,10 @@ impl Rule {
         new_facts
     }
 
-    async fn derive_body_subs<'a, T>(&self, kb: &KnowledgeBase<'a, T>) -> Vec<Substitution>
-    where
-        T: QueryCursor + KvStream + Snap + Query,
-    {
+    fn derive_body_subs(&self, kb: &KnowledgeBase) -> Vec<Substitution> {
         let mut subs = vec![Substitution::new()];
         for body_atom in self.body.iter() {
-            subs = body_atom.derive_body_atom_subs(subs, kb).await;
+            subs = body_atom.derive_body_atom_subs(subs, kb);
         }
         subs
     }

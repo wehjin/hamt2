@@ -4,7 +4,7 @@ use crate::_internal::db_trie;
 use crate::_internal::val_table;
 use crate::traits::Find;
 use crate::{Ein, Fill, FindResult};
-use crate::trie::{QueryCursor, Query, Snap, KvStream};
+use crate::trie::SkyTrie;
 
 pub struct EntityFills(pub Ein);
 
@@ -29,10 +29,9 @@ impl Find for EntityFills {
         unreachable!()
     }
 
-    fn apply<T>(self, trie: &T, schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
+    fn apply(self, trie: &SkyTrie, schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
     where
         Self: Sized,
-        T: QueryCursor + KvStream + Snap + Query,
     {
         async move {
             // For now, use custom function `list_entity_attributes`. Later maybe make a program

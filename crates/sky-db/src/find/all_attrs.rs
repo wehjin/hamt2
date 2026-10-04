@@ -3,6 +3,7 @@ use crate::FindResult;
 use crate::Schema;
 use crate::_internal::datalog::atom::Atom;
 use crate::traits::Find;
+use crate::trie::SkyTrie;
 use std::future::Future;
 
 pub struct AllAttrs;
@@ -28,7 +29,7 @@ impl Find for AllAttrs {
         unreachable!()
     }
 
-    fn apply<T>(self, _trie: &T, schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
+    fn apply(self, _trie: &SkyTrie, schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
     where
         Self: Sized,
     {

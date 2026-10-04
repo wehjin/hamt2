@@ -1,5 +1,4 @@
-use crate::Schema;
-use crate::trie::*;
+use crate::Pod;
 use atom::Atom;
 use kb::KnowledgeBase;
 use rule::Rule;
@@ -24,18 +23,15 @@ impl Program {
         }
     }
 
-    pub async fn solve<'a, T>(self, db_trie: &'a T, schema: &'a Schema) -> KnowledgeBase<'a, T>
-    where
-        T: QueryCursor + KvStream + Snap + Query,
-    {
+    pub fn solve(self, pod: Pod) -> KnowledgeBase {
         for rule in &self.rules {
             if !rule.is_range_restricted() {
                 panic!("The program is not range restricted: {:?}", rule);
             }
         }
-        let mut kb = KnowledgeBase::from_facts(db_trie, schema, self.facts);
+        let mut kb = KnowledgeBase::from_facts(pod, self.facts);
         loop {
-            let new_kb = kb.step(&self.rules).await;
+            let new_kb = kb.step(&self.rules);
             if new_kb == kb {
                 return kb;
             } else {
@@ -110,7 +106,7 @@ mod tests {
             ],
         );
         let program = Program::new([], [query1, query2, query3]);
-        let kb = program.solve(&db.trie, &db.schema).await;
+        let kb = program.solve(db.clone());
         let q1_result = kb.query(query_1());
         let mut answers = q1_result.into_iter().flatten().collect::<Vec<_>>();
         answers.sort();
