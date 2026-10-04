@@ -2,8 +2,10 @@ mod all_attrs;
 mod all_eins;
 mod attrs_of_ein;
 mod binds_for_attr;
+pub(crate) mod datalog;
 mod eins_with_attr;
 mod fills_of_ein;
+pub(crate) mod run;
 mod vals_in_slot;
 
 pub mod types;

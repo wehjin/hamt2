@@ -1,6 +1,6 @@
-use crate::_internal::datalog::atom::{Atom, atom};
-use crate::_internal::datalog::term::term;
-use crate::_internal::datalog::var::var;
+use crate::find::datalog::atom::{Atom, atom};
+use crate::find::datalog::term::term;
+use crate::find::datalog::var::var;
 use crate::traits::Find;
 use crate::{Attr, Ein, FindResult, Val};
 

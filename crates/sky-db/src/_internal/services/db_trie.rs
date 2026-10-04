@@ -1,22 +1,15 @@
 use crate::_internal::Vid;
-use crate::_internal::datalog::Program;
-use crate::_internal::datalog::atom::{Atom, atom};
-use crate::_internal::datalog::rule::rule;
-use crate::_internal::datalog::term::term;
-use crate::_internal::datalog::var::var;
 use crate::_internal::val_table;
 use crate::_internal::{KEY_AEVT, KEY_EAVT, KEY_MAX_TXID};
 use crate::Schema;
 use crate::attr_table::AttrTable;
 use crate::cardinality::Cardinality;
-use crate::db;
 use crate::trie::SkyTrieMut;
 use crate::trie::*;
 use crate::types::Txid;
 use crate::types::txid;
-use crate::{Attr, Dir, Ein, FindResult, Pod, TransactError, Val};
+use crate::{Attr, Dir, Ein, TransactError, Val};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Value {
@@ -74,39 +67,6 @@ pub(crate) async fn set_max_tx(trie: &mut SkyTrieMut, max_tx: Txid) -> Result<()
     trie.insert(KEY_MAX_TXID, TrieValue::from(max_tx.u32()))
         .await;
     Ok(())
-}
-
-pub async fn find(
-    trie: &SkyTrie,
-    schema: &Schema,
-    select: impl Into<Vec<&'static str>>,
-    where_: impl Into<Vec<Atom>>,
-) -> FindResult {
-    let select = select.into();
-    let query_terms = select.iter().map(|s| term(var(*s))).collect::<Vec<_>>();
-    let query_attr = db::query();
-    let query_rule = rule(atom(query_attr.clone(), query_terms), where_.into());
-    let program = Program::new([], [query_rule]);
-    let pod = Pod {
-        schema: schema.clone(),
-        trie: trie.clone(),
-    };
-    let kb = program.solve(pod);
-    let query_result = kb.query(query_attr);
-    let mut found = FindResult::new();
-    for row in query_result {
-        let mut map = HashMap::new();
-        if !row.is_empty() {
-            let zipped = select
-                .iter()
-                .map(|s| s.to_string())
-                .zip(row)
-                .collect::<Vec<_>>();
-            map.extend(zipped);
-        }
-        found.push(map);
-    }
-    found
 }
 
 pub fn list_entities<T>(trie: &T) -> Vec<Ein>

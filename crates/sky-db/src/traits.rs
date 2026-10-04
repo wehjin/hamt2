@@ -1,12 +1,9 @@
-use crate::Schema;
 use crate::TransactError;
 use crate::find::ValsInSlot;
-use crate::_internal::datalog::atom::Atom;
-use crate::_internal::db_trie;
+use crate::find::datalog::atom::Atom;
 use crate::{Attr, Ein, FindResult, QueryError, Val};
 use crate::{Datom, Pod};
 use futures::FutureExt;
-use crate::trie::SkyTrie;
 
 #[allow(async_fn_in_trait)]
 pub trait Transact {
@@ -36,7 +33,7 @@ pub trait DbQuery {
 
 impl DbQuery for Pod {
     async fn find<F: Find>(&self, find: F) -> Vec<F::Output> {
-        find.apply(&self.trie, &self.schema).await
+        find.apply(self).await
     }
 }
 
@@ -47,14 +44,14 @@ pub trait Find {
     fn where_(&self) -> Vec<Atom>;
     fn process(self, result: FindResult) -> Vec<Self::Output>;
 
-    fn apply(self, trie: &SkyTrie, schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
+    fn apply(self, pod: &Pod) -> impl Future<Output = Vec<Self::Output>>
     where
         Self: Sized,
     {
         async move {
             let select = self.select();
             let where_ = self.where_();
-            let result = db_trie::find(trie, schema, select, where_).await;
+            let result = crate::find::run::run_find(pod, select, where_);
             self.process(result)
         }
     }

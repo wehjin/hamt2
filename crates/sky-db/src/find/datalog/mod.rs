@@ -44,10 +44,10 @@ impl Program {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::_internal::datalog::atom::atom;
-    use crate::_internal::datalog::rule::rule;
-    use crate::_internal::datalog::term::term;
-    use crate::_internal::datalog::var::var;
+    use crate::find::datalog::atom::atom;
+    use crate::find::datalog::rule::rule;
+    use crate::find::datalog::term::term;
+    use crate::find::datalog::var::var;
     use crate::Pod;
     use crate::Transact;
     use crate::datom;

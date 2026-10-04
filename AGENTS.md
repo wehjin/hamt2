@@ -51,23 +51,26 @@ Layered, each layer building on the one below.
    `objects`, `services`, `traits`, `types` private, re-exports them at the root, and `pub use sky_trie as trie`.
     - `objects/` — `Pod { schema: Schema, trie: SkyTrie }` (`Clone` is a snapshot; async
       `Pod::new(db_spec: impl Into<DbSpec>) -> Result<Self, ConnectError>` takes no storage; there is no
-      `load`/`close`; `schema()`, `max_tx()`, `ev_iter(attr)`, `get_attribute`, `list_attributes`), `Entity`,
+      `load`/`close`; `schema()`, `max_tx()`, `ev_iter(attr)`, `get_attribute`, `list_attributes`; plus
+      `pub(crate)` find helpers `list_entities`/`list_attr_eins`/`list_fills`), `Entity`,
       `Attribute` (`ident`/`cardinality`/`list_binds`), and `Bind(Entity, Val)`.
     - `traits.rs` — `Transact` (`async fn transact(&mut self, ...) -> Result<&mut Self, TransactError>`,
       implemented by `Pod`), `DbQuery` (`find`/`find_val`/`get_val`), and `Find` (associated `type Output`;
-      `select`/`where_`/`process`; default `apply` runs `db_trie::find`).
+      `select`/`where_`/`process`; default `apply(self, pod: &Pod)` runs `find::run::run_find`).
     - `errors.rs` — `ConnectError`, `TransactError` (both wrap `anyhow`), and `QueryError` (currently an empty
       enum).
     - `services/` — `datom::add`/`del`, `db::query`/`ident`/`cardinality`, plus free constructors
       `val`/`dat`/`attr`/`ein`/`ent`.
     - `types/` — `Attr`, `Dat`, `Ein`, `Ent`, `Fill`, `FindResult`, `Val`, `Txid`, `Datom`/`Dir`, and `schema/`
       (`Schema`, `AttrTable`, `AttributeDetails`, `AttrSpec`, `DbSpec`, `Cardinality`).
-    - `_internal/` — crate-internal services and types. `services/` holds `datalog` (`Program`, `KnowledgeBase`,
-      `Rule`, `Atom`, `Term`, `Var`, `Substitution`), `val_table` (hash-consed `Val`s, returns a `Vid`),
-      `db_trie` (storage layout + `with_update`/`find`/`ev_iter`), and `schema` (`save` + `schema_loader`).
-      `types/` holds `ent_eid`, `key` (the `KEY_*` prefixes), `max_eid`, `vid`.
+    - `_internal/` — crate-internal services and types. `services/` holds `val_table` (hash-consed `Val`s,
+      returns a `Vid`), `db_trie` (storage layout + `with_update`/`ev_iter`), and `schema` (`save` +
+      `schema_loader`; the latter is currently unused). `types/` holds `ent_eid`, `key` (the `KEY_*` prefixes),
+      `max_eid`, `vid`.
     - `find/` — `Find` impls `AllAttrs`, `AllEins`, `AttrsOfEin`, `BindsForAttr`, `EinsWithAttr`, `EntityFills`,
-      `ValsInSlot` (several override `apply`; `find/types` is currently empty).
+      `ValsInSlot` (several override `apply(self, pod: &Pod)` and call `Pod` find helpers; `find/types` is
+      currently empty); `run::run_find(pod, select, where_)` orchestrates a datalog query; `datalog/` (`Program`,
+      `KnowledgeBase`, `Rule`, `Atom`, `Term`, `Var`, `Substitution`) is a `pub(crate)` submodule owning a `Pod`.
     - `pull/` — `Pull<'a>` (`attrs`/`into_datoms`/`pull`) and `errors::RegisterError`.
     - The query machinery (`find`, datalog, `val_table::query`) is generic over
       `T: QueryCursor + Snap + Query`, so `SkyTrie` and snapshots both work.

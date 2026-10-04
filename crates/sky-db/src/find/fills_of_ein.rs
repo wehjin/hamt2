@@ -1,10 +1,7 @@
-use crate::Schema;
-use crate::_internal::datalog::atom::Atom;
-use crate::_internal::db_trie;
-use crate::_internal::val_table;
+use crate::find::datalog::atom::Atom;
 use crate::traits::Find;
-use crate::{Ein, Fill, FindResult};
-use crate::trie::SkyTrie;
+use crate::{Ein, Fill, FindResult, Pod};
+use std::future::Future;
 
 pub struct EntityFills(pub Ein);
 
@@ -29,30 +26,10 @@ impl Find for EntityFills {
         unreachable!()
     }
 
-    fn apply(self, trie: &SkyTrie, schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
+    fn apply(self, pod: &Pod) -> impl Future<Output = Vec<Self::Output>>
     where
         Self: Sized,
     {
-        async move {
-            // For now, use custom function `list_entity_attributes`. Later maybe make a program
-            // where the ein is the relator instead of attr.
-            let mut fills = Vec::new();
-            let mut pre_fills = Vec::new();
-            for attr_ein in db_trie::list_entity_attributes(trie, self.0) {
-                let attr_fills = db_trie::list_entity_fills(trie, self.0, attr_ein);
-                pre_fills.extend(attr_fills);
-            }
-            for (attr_ein, vid) in pre_fills {
-                let attr = schema
-                    .find_attr(attr_ein.ein())
-                    .cloned()
-                    .expect("attr should exist for attr-ein");
-                let val = val_table::query(trie, vid)
-                    .expect("table should find val")
-                    .expect("val should exist");
-                fills.push(Fill(attr, val))
-            }
-            fills
-        }
+        async move { pod.list_fills(self.0) }
     }
 }

@@ -1,5 +1,5 @@
 use crate::Val;
-use crate::_internal::datalog::var::Var;
+use super::var::Var;
 
 pub fn term(from: impl Into<Term>) -> Term {
     from.into()

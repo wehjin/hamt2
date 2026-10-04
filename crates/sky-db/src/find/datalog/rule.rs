@@ -1,6 +1,6 @@
-use crate::_internal::datalog::atom::Atom;
-use crate::_internal::datalog::kb::KnowledgeBase;
-use crate::_internal::datalog::sub::Substitution;
+use super::atom::Atom;
+use super::kb::KnowledgeBase;
+use super::sub::Substitution;
 use std::collections::HashSet;
 
 pub fn rule(head: impl Into<Atom>, body: impl Into<Vec<Atom>>) -> Rule {

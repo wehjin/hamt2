@@ -1,8 +1,8 @@
 use crate::Pod;
-use crate::_internal::datalog::atom::Atom;
-use crate::_internal::datalog::rule::Rule;
-use crate::_internal::datalog::sub::Substitution;
-use crate::_internal::datalog::term::Term;
+use super::atom::Atom;
+use super::rule::Rule;
+use super::sub::Substitution;
+use super::term::Term;
 use crate::{Attr, Val};
 use std::collections::HashSet;
 

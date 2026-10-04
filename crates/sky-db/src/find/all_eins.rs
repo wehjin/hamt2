@@ -1,10 +1,8 @@
 use crate::Ein;
 use crate::FindResult;
-use crate::Schema;
-use crate::_internal::datalog::atom::Atom;
-use crate::_internal::db_trie;
+use crate::find::datalog::atom::Atom;
 use crate::traits::Find;
-use crate::trie::SkyTrie;
+use crate::Pod;
 use std::future::Future;
 
 pub struct AllEins;
@@ -30,10 +28,10 @@ impl Find for AllEins {
         unreachable!()
     }
 
-    fn apply(self, trie: &SkyTrie, _schema: &Schema) -> impl Future<Output = Vec<Self::Output>>
+    fn apply(self, pod: &Pod) -> impl Future<Output = Vec<Self::Output>>
     where
         Self: Sized,
     {
-        async move { db_trie::list_entities(trie) }
+        async move { pod.list_entities() }
     }
 }
