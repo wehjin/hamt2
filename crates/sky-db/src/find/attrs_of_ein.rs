@@ -37,7 +37,7 @@ impl Find for AttrsOfEin {
         async move {
             // For now, use custom function `list_entity_attributes`. Later maybe make a program
             // where the ein is the relator instead of attr.
-            let attr_eins = db_trie::list_entity_attributes(trie, self.0).await;
+            let attr_eins = db_trie::list_entity_attributes(trie, self.0);
             let attrs = attr_eins
                 .into_iter()
                 .filter_map(|attr_ein| schema.find_attr(attr_ein.ein()).cloned())

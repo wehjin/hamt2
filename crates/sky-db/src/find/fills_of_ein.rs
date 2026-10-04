@@ -39,8 +39,8 @@ impl Find for EntityFills {
             // where the ein is the relator instead of attr.
             let mut fills = Vec::new();
             let mut pre_fills = Vec::new();
-            for attr_ein in db_trie::list_entity_attributes(trie, self.0).await {
-                let attr_fills = db_trie::list_entity_fills(trie, self.0, attr_ein).await;
+            for attr_ein in db_trie::list_entity_attributes(trie, self.0) {
+                let attr_fills = db_trie::list_entity_fills(trie, self.0, attr_ein);
                 pre_fills.extend(attr_fills);
             }
             for (attr_ein, vid) in pre_fills {

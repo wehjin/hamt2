@@ -35,6 +35,6 @@ impl Find for AllEins {
         Self: Sized,
         T: QueryCursor + KvStream + Snap,
     {
-        db_trie::list_entities(trie)
+        async move { db_trie::list_entities(trie) }
     }
 }

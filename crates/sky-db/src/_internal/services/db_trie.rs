@@ -115,7 +115,7 @@ where
     T: QueryCursor + KvStream + Snap + Query,
 {
     stream! {
-        let evt_subtrie = evt_subtrie(trie, a, schema).await;
+        let evt_subtrie = evt_subtrie(trie, a, schema);
         let evid_stream = evid_stream(evt_subtrie);
         pin_mut!(evid_stream);
         while let Some((eid, vid)) = evid_stream.next().await {
@@ -125,18 +125,15 @@ where
     }
 }
 
-pub async fn list_entities<T>(trie: &T) -> Vec<Ein>
+pub fn list_entities<T>(trie: &T) -> Vec<Ein>
 where
-    T: QueryCursor + KvStream + Snap + Query,
+    T: QueryCursor + Snap + Query,
 {
-    if let Some(root) = eavt_root(trie).await {
-        root.query_all()
-            .into_iter()
-            .map(|(key, _)| Ein::from(key))
-            .collect::<Vec<_>>()
-    } else {
-        vec![]
-    }
+    eavt_root(trie)
+        .query_all()
+        .into_iter()
+        .map(|(key, _)| Ein::from(key))
+        .collect::<Vec<_>>()
 }
 
 /// An attr-ein is an Ein that refers to an attribute.
@@ -157,64 +154,58 @@ impl From<i32> for AttrEin {
     }
 }
 
-pub async fn list_entity_attributes<T>(trie: &T, ein: Ein) -> Vec<AttrEin>
+pub fn list_entity_attributes<T>(trie: &T, ein: Ein) -> Vec<AttrEin>
 where
-    T: QueryCursor + KvStream + Snap + Query,
+    T: QueryCursor + Snap + Query,
 {
-    if let Some(root) = e_avt_subtrie(trie, ein).await {
-        root.query_all()
-            .into_iter()
-            .map(|(key, _)| AttrEin::from(key))
-            .collect::<Vec<_>>()
-    } else {
-        vec![]
-    }
+    e_avt_subtrie(trie, ein)
+        .query_all()
+        .into_iter()
+        .map(|(key, _)| AttrEin::from(key))
+        .collect::<Vec<_>>()
 }
 
-pub async fn list_entity_fills<T>(trie: &T, ein: Ein, attr_ein: AttrEin) -> Vec<(AttrEin, Vid)>
+pub fn list_entity_fills<T>(trie: &T, ein: Ein, attr_ein: AttrEin) -> Vec<(AttrEin, Vid)>
 where
-    T: QueryCursor + KvStream + Snap + Query,
+    T: QueryCursor + Snap + Query,
 {
-    if let Some(root) = ea_vt_subtrie(trie, ein, attr_ein).await {
-        root.query_all()
-            .into_iter()
-            .map(|(key, _)| (attr_ein, Vid::from_id(key)))
-            .collect::<Vec<_>>()
-    } else {
-        vec![]
-    }
+    ea_vt_subtrie(trie, ein, attr_ein)
+        .query_all()
+        .into_iter()
+        .map(|(key, _)| (attr_ein, Vid::from_id(key)))
+        .collect::<Vec<_>>()
 }
 
-async fn eavt_root<T>(trie: &T) -> Option<T::Snapshot>
+fn eavt_root<T>(trie: &T) -> T::Snapshot
 where
-    T: QueryCursor + KvStream + Snap + Query,
+    T: QueryCursor + Snap + Query,
 {
     let mut snapshot = trie.snapshot();
     snapshot.descend(KEY_EAVT);
-    Some(snapshot)
+    snapshot
 }
 
-async fn ea_vt_subtrie<T>(trie: &T, ein: Ein, attr_ein: AttrEin) -> Option<T::Snapshot>
+fn ea_vt_subtrie<T>(trie: &T, ein: Ein, attr_ein: AttrEin) -> T::Snapshot
 where
-    T: QueryCursor + KvStream + Snap + Query,
+    T: QueryCursor + Snap + Query,
 {
     let mut snapshot = trie.snapshot();
     snapshot.descend_n([KEY_EAVT, ein.to_i32(), attr_ein.to_i32()]);
-    Some(snapshot)
+    snapshot
 }
 
-async fn e_avt_subtrie<T>(trie: &T, ein: Ein) -> Option<T::Snapshot>
+fn e_avt_subtrie<T>(trie: &T, ein: Ein) -> T::Snapshot
 where
-    T: QueryCursor + KvStream + Snap + Query,
+    T: QueryCursor + Snap + Query,
 {
     let mut snapshot = trie.snapshot();
     snapshot.descend_n([KEY_EAVT, ein.to_i32()]);
-    Some(snapshot)
+    snapshot
 }
 
-async fn evt_subtrie<T>(trie: &T, attr: Attr, schema: &Schema) -> T::Snapshot
+fn evt_subtrie<T>(trie: &T, attr: Attr, schema: &Schema) -> T::Snapshot
 where
-    T: QueryCursor + KvStream + Snap + Query,
+    T: QueryCursor + Snap + Query,
 {
     let aid = schema[attr].ein().to_i32();
 
