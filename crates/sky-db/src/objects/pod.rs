@@ -47,8 +47,8 @@ impl Pod {
             .map_err(|e| ConnectError::TrieEdit(e))?;
             (schema, trie)
         };
-        let db = Pod { schema, trie };
-        Ok(db)
+        let pod = Pod { schema, trie };
+        Ok(pod)
     }
 }
 

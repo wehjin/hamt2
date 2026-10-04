@@ -10,20 +10,20 @@ fn attr_count() -> Attr {
 }
 
 #[tokio::test]
-async fn mem_db_works() -> anyhow::Result<()> {
-    let mut db = Pod::new([attr_count()]).await?;
-    db.transact([
+async fn pod_works() -> anyhow::Result<()> {
+    let mut pod = Pod::new([attr_count()]).await?;
+    pod.transact([
         datom::add(1, attr_count(), val(10)),
         datom::add(2, attr_count(), val(20)),
         datom::add(3, attr_count(), val(30)),
     ])
     .await?;
 
-    let mut eins = db.find(EinsWithAttr::new(attr_count())).await;
+    let mut eins = pod.find(EinsWithAttr::new(attr_count())).await;
     eins.sort();
 
     for ein in eins {
-        let count = db.find_val(ein, attr_count()).await?;
+        let count = pod.find_val(ein, attr_count()).await?;
         println!("entity {:?} -> {:?}", ein, count);
     }
 

@@ -13,11 +13,11 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
 
     hooks.use_future(async move {
         let attr_count = attr("counter/count");
-        let mut db = Pod::new([attr_count.clone()]).await.expect("db");
-        db.transact([datom::add(ent("a"), attr_count, 33)])
+        let mut pod = Pod::new([attr_count.clone()]).await.expect("pod");
+        pod.transact([datom::add(ent("a"), attr_count, 33)])
             .await
             .expect("transact");
-        let snap = db.clone();
+        let snap = pod.clone();
         db_view.set(Some(snap));
     });
 

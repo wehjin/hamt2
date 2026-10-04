@@ -72,8 +72,8 @@ mod tests {
     #[tokio::test]
     async fn program_test() -> anyhow::Result<()> {
         let schema = vec![advisor(), name()];
-        let mut db = Pod::new(schema.clone()).await?;
-        db.transact([
+        let mut pod = Pod::new(schema.clone()).await?;
+        pod.transact([
             datom::add("a", name(), val("Alice")),
             datom::add("b", name(), val("Bob")),
             datom::add("c", name(), val("Clark")),
@@ -81,7 +81,7 @@ mod tests {
             datom::add("b", advisor(), ent("c")),
         ])
         .await?;
-        let db = db.clone();
+        let pod = pod.clone();
         let query1 = rule(
             atom(query_1(), [term(var("name"))]),
             [
@@ -106,7 +106,7 @@ mod tests {
             ],
         );
         let program = Program::new([], [query1, query2, query3]);
-        let kb = program.solve(db.clone());
+        let kb = program.solve(pod.clone());
         let q1_result = kb.query(query_1());
         let mut answers = q1_result.into_iter().flatten().collect::<Vec<_>>();
         answers.sort();

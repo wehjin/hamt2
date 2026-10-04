@@ -15,12 +15,12 @@ async fn pull_test() {
         direction: -1,
     };
     let ent = Ent::from(27);
-    let mut db = Pod::new(Basis::attrs()).await.expect("Db::new");
-    db.transact(basis.into_datoms(ent))
+    let mut pod = Pod::new(Basis::attrs()).await.expect("Pod::new");
+    pod.transact(basis.into_datoms(ent))
         .await
-        .expect("db.transact");
+        .expect("pod.transact");
 
-    let db = db.clone();
+    let pod = pod.clone();
     assert_eq!(
         Basis {
             symbol: "ABC".to_string(),
@@ -28,7 +28,7 @@ async fn pull_test() {
             price_each: 101,
             direction: -1,
         },
-        Basis::pull(&db, Ein(27)).await.expect("Basis::pull")
+        Basis::pull(&pod, Ein(27)).await.expect("Basis::pull")
     )
 }
 

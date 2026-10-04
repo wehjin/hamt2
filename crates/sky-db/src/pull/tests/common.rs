@@ -50,14 +50,14 @@ impl<'a> Pull<'a> for Basis {
         ]
     }
 
-    async fn pull(db: &Pod, eid: Ein) -> Result<Self, QueryError> {
-        let symbol = db.find_val(eid, Self::symbol()).await?.expect("symbol");
-        let shares = db.find_val(eid, Self::shares()).await?.expect("shares");
-        let price_each = db
+    async fn pull(pod: &Pod, eid: Ein) -> Result<Self, QueryError> {
+        let symbol = pod.find_val(eid, Self::symbol()).await?.expect("symbol");
+        let shares = pod.find_val(eid, Self::shares()).await?.expect("shares");
+        let price_each = pod
             .find_val(eid, Self::price_each())
             .await?
             .expect("price_each");
-        let direction = db
+        let direction = pod
             .find_val(eid, Self::direction())
             .await?
             .expect("direction");

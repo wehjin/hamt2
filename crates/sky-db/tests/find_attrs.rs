@@ -9,8 +9,8 @@ fn attr_count() -> Attr {
 
 #[tokio::test]
 async fn find_attrs_works() {
-    let db = Pod::new([attr_count()]).await.unwrap();
-    let mut attrs = db.find(AllAttrs).await;
+    let pod = Pod::new([attr_count()]).await.unwrap();
+    let mut attrs = pod.find(AllAttrs).await;
     attrs.sort();
     assert_eq!(
         attrs,

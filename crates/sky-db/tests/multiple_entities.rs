@@ -12,31 +12,31 @@ pub fn attr_count() -> Attr {
 
 #[tokio::test]
 async fn transact_and_pull_simple() -> anyhow::Result<()> {
-    let mut db = Pod::new([attr_count()]).await?;
-    db.transact([datom::add(15, attr_count(), 15)]).await?;
-    assert_eq!(Some(val(15)), db.find_val(15, attr_count()).await?);
+    let mut pod = Pod::new([attr_count()]).await?;
+    pod.transact([datom::add(15, attr_count(), 15)]).await?;
+    assert_eq!(Some(val(15)), pod.find_val(15, attr_count()).await?);
     Ok(())
 }
 
 #[tokio::test]
 async fn entities_with_attr_works_for_single_entity() -> anyhow::Result<()> {
-    let mut db = Pod::new([attr_count()]).await?;
-    db.transact([datom::add(15, attr_count(), 15)]).await?;
-    let eins = db.find(EinsWithAttr::new(attr_count())).await;
+    let mut pod = Pod::new([attr_count()]).await?;
+    pod.transact([datom::add(15, attr_count(), 15)]).await?;
+    let eins = pod.find(EinsWithAttr::new(attr_count())).await;
     assert_eq!(vec![ein(15)], eins);
     Ok(())
 }
 
 #[tokio::test]
 async fn entities_with_attr_works_for_two_entities() -> anyhow::Result<()> {
-    let mut db = Pod::new([attr_count()]).await?;
-    db.transact([
+    let mut pod = Pod::new([attr_count()]).await?;
+    pod.transact([
         datom::add(3, attr_count(), 4),
         datom::add(5, attr_count(), 6),
     ])
     .await?;
 
-    let mut eins = db.find(EinsWithAttr::new(attr_count())).await;
+    let mut eins = pod.find(EinsWithAttr::new(attr_count())).await;
     eins.sort();
     assert_eq!(vec![ein(3), ein(5)], eins);
     Ok(())
@@ -44,13 +44,13 @@ async fn entities_with_attr_works_for_two_entities() -> anyhow::Result<()> {
 
 #[tokio::test]
 async fn transact_assigns_id_to_temporary_ent() -> anyhow::Result<()> {
-    let mut db = Pod::new([attr_count()]).await?;
-    db.transact([datom::add("new_count", attr_count(), 35)])
+    let mut pod = Pod::new([attr_count()]).await?;
+    pod.transact([datom::add("new_count", attr_count(), 35)])
         .await?;
-    let db = db
+    let pod = pod
         .transact([datom::add("new_count", attr_count(), 35)])
         .await?;
-    let eins = db.find(EinsWithAttr::new(attr_count())).await;
+    let eins = pod.find(EinsWithAttr::new(attr_count())).await;
     assert_eq!(2, eins.len());
     Ok(())
 }
@@ -58,21 +58,21 @@ async fn transact_assigns_id_to_temporary_ent() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_multiple_entities() -> anyhow::Result<()> {
     // Construct a new database.
-    let mut db = Pod::new([attr_count()]).await?;
-    assert_eq!(Txid::FLOOR, db.max_tx().await?);
+    let mut pod = Pod::new([attr_count()]).await?;
+    assert_eq!(Txid::FLOOR, pod.max_tx().await?);
 
     // Add a few datoms to different entities.
-    db.transact([
+    pod.transact([
         datom::add(15, attr_count(), 15),
         datom::add(5, attr_count(), val(5)),
     ])
     .await?;
-    assert_eq!(Txid::FLOOR + 1, db.max_tx().await?);
-    assert_eq!(Some(val(15)), db.find_val(15, attr_count()).await?);
-    assert_eq!(Some(val(5)), db.find_val(5, attr_count()).await?);
+    assert_eq!(Txid::FLOOR + 1, pod.max_tx().await?);
+    assert_eq!(Some(val(15)), pod.find_val(15, attr_count()).await?);
+    assert_eq!(Some(val(5)), pod.find_val(5, attr_count()).await?);
 
     // Discover the entities with an attribute.
-    let mut eins = db.find(EinsWithAttr::new(attr_count())).await;
+    let mut eins = pod.find(EinsWithAttr::new(attr_count())).await;
     eins.sort();
     assert_eq!(vec![ein(5), ein(15)], eins);
     Ok(())

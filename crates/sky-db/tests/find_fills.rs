@@ -11,11 +11,11 @@ fn attr_count() -> Attr {
 async fn find_fills_works() {
     let ein = ein(300);
 
-    let mut db = Pod::new([attr_count()]).await.unwrap();
-    db.transact([datom::add(ein, attr_count(), dat(300))])
+    let mut pod = Pod::new([attr_count()]).await.unwrap();
+    pod.transact([datom::add(ein, attr_count(), dat(300))])
         .await
         .unwrap();
 
-    let fills = db.find(EntityFills(ein)).await;
+    let fills = pod.find(EntityFills(ein)).await;
     assert_eq!(fills, vec![Fill(attr_count(), Val::U32(300))]);
 }
