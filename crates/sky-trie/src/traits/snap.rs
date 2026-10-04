@@ -1,7 +1,5 @@
-use crate::{QueryCursor, Query, KvStream};
+use crate::{KvStream, Query, QueryCursor};
 
-/// These are the core functions of a read-only trie.
-#[allow(async_fn_in_trait)]
 pub trait Snap: Sized {
     type Snapshot: QueryCursor + KvStream + Snap + Query + Send;
 
