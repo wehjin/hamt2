@@ -27,9 +27,13 @@ impl Schema {
             attr_table: AttrTable::starter(),
         }
     }
+    pub fn get_details(&self, attr: impl Into<Attr>) -> Option<AttributeDetails> {
+        self.attr_table.get(attr)
+    }
     pub fn list_details(&self) -> Vec<AttributeDetails> {
         self.attr_table.list()
     }
+
     pub fn contains(&self, attr: &Attr) -> bool {
         self.attr_table.contains_key(attr)
     }

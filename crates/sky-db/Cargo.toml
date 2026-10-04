@@ -11,6 +11,8 @@ futures.workspace = true
 async-stream.workspace = true
 sky-trie.workspace = true
 universal-hash.workspace = true
+tokio = { workspace = true, features = ["macros"] }
+
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "full"] }

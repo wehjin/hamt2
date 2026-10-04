@@ -67,7 +67,14 @@ impl Pod {
     pub fn ev_stream(&self, a: Attr) -> impl futures::Stream<Item = (i32, Val)> {
         db_trie::ev_stream(&self.trie, a, &self.schema)
     }
+}
 
+/// Attributes
+impl Pod {
+    pub fn get_attribute(&self, attr: impl Into<Attr>) -> Option<Attribute> {
+        let details = self.schema.get_details(attr);
+        details.map(|details| Attribute::new(details, self.clone()))
+    }
     pub async fn list_attributes(&self) -> Vec<Attribute> {
         self.schema
             .list_details()

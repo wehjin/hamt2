@@ -1,0 +1,23 @@
+use sky_db;
+use sky_db::{Bind, Pod, Transact, datom};
+
+#[tokio::test]
+async fn list_binds_works() {
+    let mut pod = Pod::new(["counter/count"]).await.unwrap();
+    {
+        let attribute = pod.get_attribute("counter/count").unwrap();
+        let binds = attribute.list_binds().await;
+        assert_eq!(binds, vec![]);
+    }
+
+    let datoms = [
+        datom::add(33, "counter/count", 33),
+        datom::add(37, "counter/count", 37),
+    ];
+    pod.transact(datoms).await.unwrap();
+    {
+        let attribute = pod.get_attribute("counter/count").unwrap();
+        let binds = attribute.list_binds().await;
+        assert_eq!(binds, vec![Bind::new(33, 33), Bind::new(37, 37)]);
+    }
+}

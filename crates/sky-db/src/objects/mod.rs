@@ -6,3 +6,6 @@ pub use entity::*;
 
 mod attribute;
 pub use attribute::*;
+
+mod bind;
+pub use bind::*;

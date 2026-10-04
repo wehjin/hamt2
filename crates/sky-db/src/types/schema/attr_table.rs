@@ -28,6 +28,10 @@ impl AttrTable {
         self.by_ein.get(&ein)
     }
 
+    pub fn get(&self, attr: impl Into<Attr>) -> Option<AttributeDetails> {
+        self.map.get(&attr.into()).cloned()
+    }
+
     pub fn list(&self) -> Vec<AttributeDetails> {
         self.map.values().cloned().collect()
     }
