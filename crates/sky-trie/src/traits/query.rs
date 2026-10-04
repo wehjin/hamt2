@@ -2,7 +2,6 @@ use crate::TrieValue;
 use crate::services::map_base;
 use crate::{Buffer, HashKey};
 
-#[allow(async_fn_in_trait)]
 pub trait Query {
     /// Returns the value stored at the given key or none if the key is absent.
     fn query(&self, key: i32) -> Option<TrieValue>;
@@ -10,7 +9,7 @@ pub trait Query {
     fn query_u32(&self, key: i32) -> Option<u32>;
 
     /// Returns all keys and values in this trie.
-    async fn query_all(&self) -> Vec<(i32, TrieValue)>;
+    fn query_all(&self) -> Vec<(i32, TrieValue)>;
 
     /// Returns the value stored at the given deep key.
     fn query_deep<const N: usize>(&self, key: [i32; N]) -> Option<TrieValue>;
@@ -29,8 +28,8 @@ impl<T: Buffer> Query for T {
         }
     }
 
-    async fn query_all(&self) -> Vec<(i32, TrieValue)> {
-        map_base::query_keys_values(self.get_root(), self).await
+    fn query_all(&self) -> Vec<(i32, TrieValue)> {
+        map_base::query_keys_values(self.get_root(), self)
     }
 
     fn query_deep<const N: usize>(&self, key: [i32; N]) -> Option<TrieValue> {

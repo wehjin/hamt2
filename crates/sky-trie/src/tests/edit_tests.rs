@@ -6,14 +6,14 @@ use futures::StreamExt;
 #[tokio::test]
 async fn view_has_query() {
     let mem = SkyTrie::new().snapshot();
-    let values = mem.query_all().await;
+    let values = mem.query_all();
     assert_eq!(values, vec![]);
 }
 
 #[tokio::test]
 async fn view_has_snap() {
     let mem = SkyTrie::new().snapshot();
-    let values = mem.snapshot().query_all().await;
+    let values = mem.snapshot().query_all();
     assert_eq!(values, vec![]);
 }
 
@@ -42,7 +42,7 @@ async fn edit_inserts() {
 async fn main_accumulates_ok_edit() {
     let mut trie = start_assert_trie().await;
     edit_assert_trie(&mut trie, 62).await;
-    let values = trie.query_all().await;
+    let values = trie.query_all();
     assert_eq!(values, vec![(62, TrieValue::U32(63))]);
 }
 
@@ -50,7 +50,7 @@ async fn main_accumulates_ok_edit() {
 async fn main_rejects_err_edit() {
     let mut trie = start_assert_trie().await;
     error_edit_assert_trie(&mut trie, 62).await;
-    let values = trie.query_all().await;
+    let values = trie.query_all();
     assert_eq!(values.len(), 0);
 }
 
@@ -59,7 +59,7 @@ async fn main_accumulates_second_ok_edit() {
     let mut trie = start_assert_trie().await;
     edit_assert_trie(&mut trie, 20).await;
     edit_assert_trie(&mut trie, 30).await;
-    let mut values = trie.query_all().await;
+    let mut values = trie.query_all();
     values.sort_by(|(a, _), (b, _)| a.cmp(b));
     assert_eq!(
         values,
@@ -72,7 +72,7 @@ async fn main_rejects_second_err_edit() {
     let mut trie = start_assert_trie().await;
     edit_assert_trie(&mut trie, 20).await;
     error_edit_assert_trie(&mut trie, 30).await;
-    let mut values = trie.query_all().await;
+    let mut values = trie.query_all();
     values.sort_by(|(a, _), (b, _)| a.cmp(b));
     assert_eq!(values, vec![(20, TrieValue::U32(21))]);
 }
@@ -84,7 +84,7 @@ mod fixtures {
 
     pub async fn start_assert_trie() -> SkyTrie {
         let trie = SkyTrie::new();
-        let values = trie.query_all().await;
+        let values = trie.query_all();
         assert_eq!(values.len(), 0);
         trie
     }

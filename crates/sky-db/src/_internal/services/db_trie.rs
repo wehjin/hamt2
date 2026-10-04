@@ -131,7 +131,6 @@ where
 {
     if let Some(root) = eavt_root(trie).await {
         root.query_all()
-            .await
             .into_iter()
             .map(|(key, _)| Ein::from(key))
             .collect::<Vec<_>>()
@@ -164,7 +163,6 @@ where
 {
     if let Some(root) = e_avt_subtrie(trie, ein).await {
         root.query_all()
-            .await
             .into_iter()
             .map(|(key, _)| AttrEin::from(key))
             .collect::<Vec<_>>()
@@ -179,7 +177,6 @@ where
 {
     if let Some(root) = ea_vt_subtrie(trie, ein, attr_ein).await {
         root.query_all()
-            .await
             .into_iter()
             .map(|(key, _)| (attr_ein, Vid::from_id(key)))
             .collect::<Vec<_>>()

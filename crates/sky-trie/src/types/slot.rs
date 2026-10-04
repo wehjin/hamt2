@@ -48,13 +48,13 @@ impl Slot {
         let key_value = key_value.replace_value(value, buffer).await;
         Slot::KeyValue(key_value)
     }
-    pub async fn query_key_values<P: Buffer>(&self, storage: &P) -> Vec<(i32, TrieValue)> {
+    pub fn query_key_values<P: Buffer>(&self, storage: &P) -> Vec<(i32, TrieValue)> {
         match self {
             Slot::KeyValue(key_value) => {
                 let key_value = key_value.to_trie_key_trie_value(storage);
                 vec![key_value]
             }
-            Slot::MapBase(map_base) => query_keys_values(*map_base, storage).await,
+            Slot::MapBase(map_base) => query_keys_values(*map_base, storage),
             Slot::ByteData(_) => unreachable!("byte-data should not appear at this level"),
         }
     }

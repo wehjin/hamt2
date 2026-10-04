@@ -63,7 +63,7 @@ pub fn kv_stream<S: Buffer>(
     }
 }
 
-pub async fn query_keys_values<P: Buffer>(map_base: MapBase, storage: &P) -> Vec<(i32, TrieValue)> {
+pub fn query_keys_values<P: Buffer>(map_base: MapBase, storage: &P) -> Vec<(i32, TrieValue)> {
     let MapBase { map, base: base_id } = map_base;
     let mut out = Vec::new();
     let slot_count = map.slot_count();
@@ -71,7 +71,7 @@ pub async fn query_keys_values<P: Buffer>(map_base: MapBase, storage: &P) -> Vec
     let base_ref = base.as_ref();
     debug_assert_eq!(slot_count, base_ref.len());
     for base_index in 0..slot_count {
-        let keys_values = Box::pin(base_ref[base_index].query_key_values(storage)).await;
+        let keys_values = base_ref[base_index].query_key_values(storage);
         out.extend(keys_values);
     }
     out
