@@ -1,7 +1,7 @@
 # AGENTS.md
 
-Datomic-like database library in Rust (edition 2024), built on persistent Hash Array Mapped Tries
-(HAMT). A Cargo workspace: `sky-trie` (the HAMT, `crates/sky-trie`) under `sky-db` (the Datomic layer,
+Datomic-like database library in Rust (edition 2024), built on persistent Hash Array Mapped Tries (HAMT). A Cargo
+workspace: `sky-trie` (the HAMT, `crates/sky-trie`) under `sky-db` (the Datomic layer,
 `crates/sky-db`), plus `sky-tui` (a ratatui-kit terminal UI, `crates/sky-tui`) and `universal-hash`
 (the hashing primitive, `crates/universal-hash`). Everything is in-memory; there is no file
 persistence. No CI, no README.
@@ -22,8 +22,6 @@ persistence. No CI, no README.
 - `cargo nextest run` — optional; `.config/nextest.toml` is present.
 - `cargo clippy` — lint/check (opencode.json configures clippy as the LSP check command).
 - `cargo run -p sky-tui` — runs the terminal UI (binary `sky-tui`).
-- `rust-analyzer` (CLI) — occasional read-only semantic checks: `rust-analyzer analysis-stats crates/sky-trie`
-  and `rust-analyzer diagnostics .`. Flags are unstable; prefer `cargo check` day-to-day.
 
 ## Architecture (read top-down in this order)
 
@@ -33,46 +31,46 @@ Layered, each layer building on the one below.
    prelude (`universal_hash::hash`); not re-exported.
 2. `crates/sky-trie` — the HAMT. An in-memory, cursor-based persistent trie. There is no storage trait and no
    file persistence: a `VecBuffer` (a `Vec<Slot>` plus a root index) is the only backing.
-   - `objects/` — `SkyTrie` (immutable; `Clone` is a snapshot; edit via `trie.edit(async |t: &mut SkyTrieMut| ...)`)
-     and `SkyTrieMut` (a deliberately non-`Clone` edit buffer; `extend(trie)` and `commit()` -> `SkyTrie`).
-     `VecBuffer` implements the buffer traits.
-   - `traits/` — `Buffer` (`max_index`/`next_index`/`get_root`/`get_base`/`get_subtrie`), `BufferMut`
-     (`push_root`/`push_base`/`push_subtrie`), `Query` (`query`/`query_u32`/`query_all`/`query_deep`),
-     `KvStream` (`kv_stream`/`map_base_stream`/`u32_stream`), `Snap` (`type Snapshot` + `snapshot`),
-     `QueryCursor` (cursor nav: `ascend`/`descend`/`backup`/`restore`/`top_root`), `InsertCursor`
-     (`insert_deep`), `Insert` (`insert`/`insert_with_options`, `InsertOption::DeleteOthers`), and the marker
-     traits `Trie`/`TrieMut`. `Query`/`Insert`/`KvStream` have blanket impls over `Buffer`/`BufferMut`.
-   - `types/` — `MapBase { map: SlotMap, base: BufferIndex }`, `Base { slots: Vec<Slot> }`,
-     `Slot::{KeyValue, MapBase, ByteData}`, `KeyValue::{Int, Subtrie, Bytes}` (top-2-bit tag + 30-bit key),
-     `TrieValue::{U32, SubTrie, Bytes}`, `SlotMap(u32)` bitmap, `BufferIndex(i32)` (`ZERO`/`NIL`),
-     `HashKey`/`DeepKey`, `TrieKey`/`CursorPos`/`Leg`, and `ByteData([u8; 8])` with LEB128-length-prefixed
-     byte storage (`push_bytes_to_buffer`/`get_bytes_from_buffer`).
-   - `services/` — `base` (`form_kv`/`insert_kv`/`swap_v`, `kick_kv`/`merge_kv`) and `map_base`
-     (`one_kv`/`two_kv`, `insert_kv`, `query_value`/`query_keys_values`/`kv_stream`, `query_value_deep`).
+    - `objects/` — `SkyTrie` (immutable; `Clone` is a snapshot; edit via `trie.edit(async |t: &mut SkyTrieMut| ...)`)
+      and `SkyTrieMut` (a deliberately non-`Clone` edit buffer; `extend(trie)` and `commit()` -> `SkyTrie`).
+      `VecBuffer` implements the buffer traits.
+    - `traits/` — `Buffer` (`max_index`/`next_index`/`get_root`/`get_base`/`get_subtrie`), `BufferMut`
+      (`push_root`/`push_base`/`push_subtrie`), `Query` (`query`/`query_u32`/`query_all`/`query_deep`),
+      `KvStream` (`kv_stream`/`map_base_stream`/`u32_stream`), `Snap` (`type Snapshot` + `snapshot`),
+      `QueryCursor` (cursor nav: `ascend`/`descend`/`backup`/`restore`/`top_root`), `InsertCursor`
+      (`insert_deep`), `Insert` (`insert`/`insert_with_options`, `InsertOption::DeleteOthers`), and the marker
+      traits `Trie`/`TrieMut`. `Query`/`Insert`/`KvStream` have blanket impls over `Buffer`/`BufferMut`.
+    - `types/` — `MapBase { map: SlotMap, base: BufferIndex }`, `Base { slots: Vec<Slot> }`,
+      `Slot::{KeyValue, MapBase, ByteData}`, `KeyValue::{Int, Subtrie, Bytes}` (top-2-bit tag + 30-bit key),
+      `TrieValue::{U32, SubTrie, Bytes}`, `SlotMap(u32)` bitmap, `BufferIndex(i32)` (`ZERO`/`NIL`),
+      `HashKey`/`DeepKey`, `TrieKey`/`CursorPos`/`Leg`, and `ByteData([u8; 8])` with LEB128-length-prefixed
+      byte storage (`push_bytes_to_buffer`/`get_bytes_from_buffer`).
+    - `services/` — `base` (`form_kv`/`insert_kv`/`swap_v`, `kick_kv`/`merge_kv`) and `map_base`
+      (`one_kv`/`two_kv`, `insert_kv`, `query_value`/`query_keys_values`/`kv_stream`, `query_value_deep`).
 3. `crates/sky-db` — the Datomic layer. `lib.rs` exposes `find` and `pull`, keeps `_internal`, `errors`,
    `objects`, `services`, `traits`, `types` private, re-exports them at the root, and `pub use sky_trie as trie`.
-   - `objects/` — `Pod { schema: Schema, trie: SkyTrie }` (`Clone` is a snapshot; async
-     `Pod::new(db_spec: impl Into<DbSpec>) -> Result<Self, ConnectError>` takes no storage; there is no
-     `load`/`close`; `schema()`, `max_tx()`, `ev_stream(attr)`, `get_attribute`, `list_attributes`), `Entity`,
-     `Attribute` (`ident`/`cardinality`/`list_binds`), and `Bind(Entity, Val)`.
-   - `traits.rs` — `Transact` (`async fn transact(&mut self, ...) -> Result<&mut Self, TransactError>`,
-     implemented by `Pod`), `DbQuery` (`find`/`find_val`/`get_val`), and `Find` (associated `type Output`;
-     `select`/`where_`/`process`; default `apply` runs `db_trie::find`).
-   - `errors.rs` — `ConnectError`, `TransactError` (both wrap `anyhow`), and `QueryError` (currently an empty
-     enum).
-   - `services/` — `datom::add`/`del`, `db::query`/`ident`/`cardinality`, plus free constructors
-     `val`/`dat`/`attr`/`ein`/`ent`.
-   - `types/` — `Attr`, `Dat`, `Ein`, `Ent`, `Fill`, `FindResult`, `Val`, `Txid`, `Datom`/`Dir`, and `schema/`
-     (`Schema`, `AttrTable`, `AttributeDetails`, `AttrSpec`, `DbSpec`, `Cardinality`).
-   - `_internal/` — crate-internal services and types. `services/` holds `datalog` (`Program`, `KnowledgeBase`,
-     `Rule`, `Atom`, `Term`, `Var`, `Substitution`), `val_table` (hash-consed `Val`s, returns a `Vid`),
-     `db_trie` (storage layout + `with_update`/`find`/`ev_stream`), and `schema` (`save` + `schema_loader`).
-     `types/` holds `ent_eid`, `key` (the `KEY_*` prefixes), `max_eid`, `vid`.
-   - `find/` — `Find` impls `AllAttrs`, `AllEins`, `AttrsOfEin`, `BindsForAttr`, `EinsWithAttr`, `EntityFills`,
-     `ValsInSlot` (several override `apply`; `find/types` is currently empty).
-   - `pull/` — `Pull<'a>` (`attrs`/`into_datoms`/`pull`) and `errors::RegisterError`.
-   - The query machinery (`find`, datalog, `ev_stream`, `val_table::query`) is generic over
-     `T: QueryCursor + KvStream + Snap + Query`, so `SkyTrie` and snapshots both work.
+    - `objects/` — `Pod { schema: Schema, trie: SkyTrie }` (`Clone` is a snapshot; async
+      `Pod::new(db_spec: impl Into<DbSpec>) -> Result<Self, ConnectError>` takes no storage; there is no
+      `load`/`close`; `schema()`, `max_tx()`, `ev_stream(attr)`, `get_attribute`, `list_attributes`), `Entity`,
+      `Attribute` (`ident`/`cardinality`/`list_binds`), and `Bind(Entity, Val)`.
+    - `traits.rs` — `Transact` (`async fn transact(&mut self, ...) -> Result<&mut Self, TransactError>`,
+      implemented by `Pod`), `DbQuery` (`find`/`find_val`/`get_val`), and `Find` (associated `type Output`;
+      `select`/`where_`/`process`; default `apply` runs `db_trie::find`).
+    - `errors.rs` — `ConnectError`, `TransactError` (both wrap `anyhow`), and `QueryError` (currently an empty
+      enum).
+    - `services/` — `datom::add`/`del`, `db::query`/`ident`/`cardinality`, plus free constructors
+      `val`/`dat`/`attr`/`ein`/`ent`.
+    - `types/` — `Attr`, `Dat`, `Ein`, `Ent`, `Fill`, `FindResult`, `Val`, `Txid`, `Datom`/`Dir`, and `schema/`
+      (`Schema`, `AttrTable`, `AttributeDetails`, `AttrSpec`, `DbSpec`, `Cardinality`).
+    - `_internal/` — crate-internal services and types. `services/` holds `datalog` (`Program`, `KnowledgeBase`,
+      `Rule`, `Atom`, `Term`, `Var`, `Substitution`), `val_table` (hash-consed `Val`s, returns a `Vid`),
+      `db_trie` (storage layout + `with_update`/`find`/`ev_stream`), and `schema` (`save` + `schema_loader`).
+      `types/` holds `ent_eid`, `key` (the `KEY_*` prefixes), `max_eid`, `vid`.
+    - `find/` — `Find` impls `AllAttrs`, `AllEins`, `AttrsOfEin`, `BindsForAttr`, `EinsWithAttr`, `EntityFills`,
+      `ValsInSlot` (several override `apply`; `find/types` is currently empty).
+    - `pull/` — `Pull<'a>` (`attrs`/`into_datoms`/`pull`) and `errors::RegisterError`.
+    - The query machinery (`find`, datalog, `ev_stream`, `val_table::query`) is generic over
+      `T: QueryCursor + KvStream + Snap + Query`, so `SkyTrie` and snapshots both work.
 4. `crates/sky-tui` — the ratatui-kit terminal UI. `main.rs` runs `element!(App).fullscreen()`; `routes/` holds
    `app` (with the global `DB_VIEW: Atom<Option<Pod>>`), `home`, and `attribute_binds_table`; `components/`
    holds `loading`; `lines.rs`/`styles.rs` are support modules. When working here, load the `ratatui-kit` skill
