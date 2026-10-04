@@ -9,11 +9,11 @@ mod tests {
 
     #[tokio::test]
     async fn buffer_pushes_and_gets_bytes() {
-        let mut buffer = SkyTrieMut::new();
+        let mut trie = SkyTrieMut::new();
         let mut bytes = b"hello"[..].to_vec();
         for _ in 0..7 {
-            let index = push_bytes_to_buffer(&bytes, &mut buffer).await;
-            let get_bytes = get_bytes_from_buffer(index, &mut buffer);
+            let index = push_bytes_to_buffer(&bytes, &mut trie).await;
+            let get_bytes = get_bytes_from_buffer(index, &mut trie);
             assert_eq!(get_bytes, bytes);
             bytes.extend(bytes.clone());
         }

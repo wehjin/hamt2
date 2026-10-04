@@ -48,23 +48,23 @@ impl Slot {
         let key_value = key_value.replace_value(value, buffer).await;
         Slot::KeyValue(key_value)
     }
-    pub fn query_key_values<P: Buffer>(&self, storage: &P) -> Vec<(i32, TrieValue)> {
+    pub fn query_key_values<P: Buffer>(&self, buffer: &P) -> Vec<(i32, TrieValue)> {
         match self {
             Slot::KeyValue(key_value) => {
-                let key_value = key_value.to_trie_key_trie_value(storage);
+                let key_value = key_value.to_trie_key_trie_value(buffer);
                 vec![key_value]
             }
-            Slot::MapBase(map_base) => query_keys_values(*map_base, storage),
+            Slot::MapBase(map_base) => query_keys_values(*map_base, buffer),
             Slot::ByteData(_) => unreachable!("byte-data should not appear at this level"),
         }
     }
-    pub fn query_value<P: Buffer>(&self, key: HashKey, storage: &P) -> Option<TrieValue> {
+    pub fn query_value<P: Buffer>(&self, key: HashKey, buffer: &P) -> Option<TrieValue> {
         match self {
             Slot::KeyValue(kv) => {
-                let (k, v) = kv.to_trie_key_trie_value(storage);
+                let (k, v) = kv.to_trie_key_trie_value(buffer);
                 if k != key.i32() { None } else { Some(v) }
             }
-            Slot::MapBase(map_base) => query_value(*map_base, key.next(), storage),
+            Slot::MapBase(map_base) => query_value(*map_base, key.next(), buffer),
             Slot::ByteData(_) => unreachable!("byte-data should not appear at this level"),
         }
     }

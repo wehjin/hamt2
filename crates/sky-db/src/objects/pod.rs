@@ -20,11 +20,10 @@ pub struct Pod {
 /// Constructors
 impl Pod {
     pub async fn new(db_spec: impl Into<DbSpec>) -> Result<Self, ConnectError> {
-        let storage = SkyTrie::new();
         let db_spec = db_spec.into();
         let attr_specs = db_spec.as_ref();
         let (schema, trie) = {
-            let mut trie = storage;
+            let mut trie = SkyTrie::new();
             let mut max_eid = MaxEid::read(&trie).await?;
             let mut schema = Schema::starter();
             {

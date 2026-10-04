@@ -59,12 +59,12 @@ async fn lengths_around_dword_boundaries() {
 }
 
 async fn assert_byte_tests<const N: usize>(tests: [(i32, &[u8]); N]) {
-    let mut kvs = SkyTrie::new();
-    kvs.edit(async |kvs| {
+    let mut trie = SkyTrie::new();
+    trie.edit(async |trie_mut| {
         for i in 0..tests.len() {
             let (id, value) = tests[i];
             let key = 100 + id;
-            kvs.insert(key, value).await;
+            trie_mut.insert(key, value).await;
         }
         Ok(())
     })
@@ -73,7 +73,7 @@ async fn assert_byte_tests<const N: usize>(tests: [(i32, &[u8]); N]) {
     for i in 0..tests.len() {
         let (id, value) = tests[i];
         let key = 100 + id;
-        let TrieValue::Bytes(bytes) = kvs.query(key).unwrap() else {
+        let TrieValue::Bytes(bytes) = trie.query(key).unwrap() else {
             panic!("value should be bytes");
         };
         assert_eq!(&bytes, value)
