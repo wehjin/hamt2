@@ -1,5 +1,6 @@
 use crate::components::loading::Loading;
 use crate::routes::app::DB_VIEW;
+use crate::routes::attribute_binds_table::AttributeBindsTable;
 use ratatui_kit::prelude::*;
 use ratatui_kit::ratatui::prelude::{Constraint, Direction, Line, Style, Stylize};
 use ratatui_kit::ratatui::style::Styled;
@@ -13,6 +14,7 @@ pub fn Home(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
     let mut attributes = hooks.use_state(|| None::<Vec<Attribute>>);
     let mut selected_index = hooks.use_state(|| None::<usize>);
     let mut detail = hooks.use_state(|| None::<AttrDetails>);
+    let mut attribute = hooks.use_state(|| None::<Attribute>);
 
     let attrs_pod = pod.read().clone();
     let attrs_deps = attrs_pod.clone();
@@ -35,18 +37,22 @@ pub fn Home(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
     );
 
     {
-        let detail_attributes = attributes.read().clone();
-        let detail_index = selected_index.read().clone();
-        let detail_deps = (detail_attributes.clone(), detail_index.clone());
+        let fx_attributes = attributes.read().clone();
+        let fx_selected_index = selected_index.read().clone();
+        let fx_deps = (fx_attributes.clone(), fx_selected_index.clone());
         hooks.use_effect(
-            || match (detail_attributes, detail_index) {
+            || match (fx_attributes, fx_selected_index) {
                 (Some(attributes), Some(index)) if index < attributes.len() => {
-                    let next = AttrDetails::from(&attributes[index]);
-                    detail.set(Some(next))
+                    let selected = attributes[index].clone();
+                    detail.set(Some(AttrDetails::from(&selected)));
+                    attribute.set(Some(selected));
                 }
-                _ => detail.set(None),
+                _ => {
+                    detail.set(None);
+                    attributes.set(None);
+                }
             },
-            detail_deps,
+            fx_deps,
         );
     }
 
@@ -74,10 +80,10 @@ pub fn Home(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
                             selected_index.set(index);
                         }
                     )
-                    if let Some(detail) = detail.read().clone() {
-                        View(
-                            flex_direction: Direction::Vertical,
-                        ) {
+                    View(
+                        flex_direction: Direction::Vertical,
+                    ) {
+                        if let Some(detail) = detail.read().clone() {
                             Border(
                                 padding: Padding::new(1, 1, 0, 0),
                                 border_style: Style::new().fg(palette.surface),
@@ -85,11 +91,10 @@ pub fn Home(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
                             ) {
                                 Detail(label: "cardinality".to_string(), value: detail.cardinality.clone())
                             }
-                            Border(
-                                padding: Padding::new(1, 1, 0, 0),
-                                border_style: Style::new().fg(palette.surface),
-                                top_title: Line::from("[ hosts ]").centered(),
-                            ) {
+                        }
+                        if let Some(attribute) = attribute.read().clone() {
+                            ContextProvider(value: Context::owned(attribute)) {
+                               AttributeBindsTable()
                             }
                         }
                     }

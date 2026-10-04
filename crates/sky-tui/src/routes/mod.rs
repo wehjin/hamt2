@@ -1,5 +1,3 @@
 pub mod app;
-pub mod attr_select;
-pub mod browser;
-pub mod ein_select;
+pub mod attribute_binds_table;
 pub mod home;
