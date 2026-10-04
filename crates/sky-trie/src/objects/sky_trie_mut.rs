@@ -1,7 +1,8 @@
+use super::VecBuffer;
+use crate::SkyTrie;
 use crate::TrieMut;
 use crate::{Base, Buffer, BufferIndex, BufferMut, CursorPos, Insert, MapBase, Snap, TrieValue};
 use crate::{InsertCursor, QueryCursor};
-use crate::{SkyTrie, VecBuffer};
 use std::ops::Deref;
 use std::sync::Arc;
 

@@ -1,6 +1,6 @@
+use super::VecBuffer;
 use crate::SkyTrieMut;
 use crate::Trie;
-use crate::objects::VecBuffer;
 use crate::{Base, Buffer, BufferIndex, MapBase, QueryCursor, Snap};
 use crate::{CursorPos, KvStream};
 use futures::StreamExt;
