@@ -1,7 +1,7 @@
 use crate::Snap;
 use crate::services::map_base::one_kv;
 use crate::{Base, Buffer, BufferIndex, BufferMut, HashKey, MapBase, TrieValue};
-use crate::{SkyTrieMut, SkyTrie};
+use crate::{SkyTrie, SkyTrieMut};
 
 mod edit;
 mod edit_tests;
@@ -19,7 +19,7 @@ async fn empty_storage_max_id_is_nil() {
 #[tokio::test]
 async fn base_id_zero_is_the_empty_base() {
     let storage = SkyTrieMut::new();
-    assert_eq!(Base::empty(), storage.get_base(BufferIndex::ZERO, 1).await);
+    assert_eq!(Base::empty(), storage.get_base(BufferIndex::ZERO, 1));
 }
 
 #[tokio::test]
@@ -48,8 +48,8 @@ async fn append_assigns_sequential_ids() {
     assert_eq!(BufferIndex(1), id1);
     assert_eq!(BufferIndex(1), storage.max_index());
     assert_eq!(BufferIndex(2), storage.next_index());
-    assert_eq!(base, storage.get_base(id0, base.slots.len()).await);
-    assert_eq!(base, storage.get_base(id1, base.slots.len()).await);
+    assert_eq!(base, storage.get_base(id0, base.slots.len()));
+    assert_eq!(base, storage.get_base(id1, base.slots.len()));
 }
 
 #[tokio::test]
@@ -74,7 +74,7 @@ async fn mem_readonly_snapshot_does_not_see_new_bases() {
         .unwrap();
     assert_eq!(BufferIndex(1), max_id);
     assert_eq!(id, view.max_index());
-    assert_eq!(base, view.get_base(id, base.slots.len()).await);
+    assert_eq!(base, view.get_base(id, base.slots.len()));
 }
 
 #[tokio::test]
@@ -96,13 +96,13 @@ async fn reading_beyond_max_id_produces_empty() {
         })
         .await
         .unwrap();
-    let get_base = view.get_base(new_id, base.slots.len()).await;
+    let get_base = view.get_base(new_id, base.slots.len());
     assert_eq!(get_base, Base::empty())
 }
 
 #[tokio::test]
 async fn reading_unwritten_id_produces_empty() {
     let storage = SkyTrie::new().snapshot();
-    let base = storage.get_base(BufferIndex(1), 0).await;
+    let base = storage.get_base(BufferIndex(1), 0);
     assert_eq!(base, Base::empty())
 }

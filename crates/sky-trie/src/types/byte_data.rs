@@ -123,7 +123,7 @@ impl ByteCursor {
 }
 
 async fn get_byte_data_from_buffer(index: BufferIndex, buffer: &impl Buffer) -> ByteData {
-    let mut base = buffer.get_base(index, 1).await;
+    let mut base = buffer.get_base(index, 1);
     let slot = base.slots.pop().expect("slot not found");
     let Slot::ByteData(byte_data) = slot else {
         unreachable!("slot should contain byte-data");

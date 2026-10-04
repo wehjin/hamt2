@@ -72,13 +72,13 @@ impl Buffer for SkyTrieMut {
         self.cursor_pos.active_root()
     }
 
-    async fn get_base(&self, id: BufferIndex, slots: usize) -> Base {
+    fn get_base(&self, id: BufferIndex, slots: usize) -> Base {
         let start_id = self.start_id();
         if id < start_id {
-            self.past.get_base(id, slots).await
+            self.past.get_base(id, slots)
         } else if id <= self.max_index() {
             let buffer_index = BufferIndex(id.0 - start_id.0);
-            self.buffer.get_base(buffer_index, slots).await
+            self.buffer.get_base(buffer_index, slots)
         } else {
             Base::empty()
         }

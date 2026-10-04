@@ -94,11 +94,11 @@ impl Buffer for SkyTrie {
         self.cursor_pos.active_root
     }
 
-    async fn get_base(&self, id: BufferIndex, slots: usize) -> Base {
+    fn get_base(&self, id: BufferIndex, slots: usize) -> Base {
         if id < BufferIndex::ZERO || id > self.max_id {
             Base::empty()
         } else {
-            self.buffer.get_base(id, slots).await
+            self.buffer.get_base(id, slots)
         }
     }
 }

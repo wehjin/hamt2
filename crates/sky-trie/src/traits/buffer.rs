@@ -1,6 +1,5 @@
 use crate::{Base, BufferIndex, MapBase, Slot};
 
-#[allow(async_fn_in_trait)]
 pub trait Buffer {
     /// Get the maximum base id available for reading.
     fn max_index(&self) -> BufferIndex;
@@ -15,11 +14,11 @@ pub trait Buffer {
 
     /// Reads a base with `size` slots from the trie's buffer
     /// at position `id`.
-    async fn get_base(&self, id: BufferIndex, size: usize) -> Base;
+    fn get_base(&self, id: BufferIndex, size: usize) -> Base;
 
     /// Reads a subtrie.
-    async fn get_subtrie(&self, id: BufferIndex) -> MapBase {
-        let mut base = self.get_base(id, 1).await;
+    fn get_subtrie(&self, id: BufferIndex) -> MapBase {
+        let mut base = self.get_base(id, 1);
         let slot = base.slots.pop().expect("slot not found");
         let Slot::MapBase(map_base) = slot else {
             panic!("subtrie id should have a map-base")

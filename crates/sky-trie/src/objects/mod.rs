@@ -47,7 +47,7 @@ impl Buffer for VecBuffer {
         }
     }
 
-    async fn get_base(&self, id: BufferIndex, size: usize) -> Base {
+    fn get_base(&self, id: BufferIndex, size: usize) -> Base {
         if id.0 < 0 || id.0 > self.slots.len() as i32 {
             return Base::empty();
         }

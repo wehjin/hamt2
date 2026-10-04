@@ -63,7 +63,7 @@ impl KeyValue {
                 (key, value)
             }
             KeyValue::Subtrie { value, .. } => {
-                let map_base = buffer.get_subtrie(*value).await;
+                let map_base = buffer.get_subtrie(*value);
                 let value = TrieValue::SubTrie(map_base);
                 (key, value)
             }
