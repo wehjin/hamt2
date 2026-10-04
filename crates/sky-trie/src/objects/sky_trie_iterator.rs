@@ -10,6 +10,21 @@ impl SkyTrieIterator {
         let jobs = Job::start(&trie.get_root()).into_iter().collect();
         Self { trie, jobs }
     }
+
+    pub fn u32s(self) -> impl Iterator<Item = (i32, u32)> {
+        self.filter_map(|(k, v)| match v {
+            TrieValue::U32(v) => Some((k, v)),
+            TrieValue::SubTrie(_) => None,
+            TrieValue::Bytes(_) => None,
+        })
+    }
+    pub fn map_bases(self) -> impl Iterator<Item = (i32, MapBase)> {
+        self.filter_map(|(k, v)| match v {
+            TrieValue::U32(_) => None,
+            TrieValue::SubTrie(v) => Some((k, v)),
+            TrieValue::Bytes(_) => None,
+        })
+    }
 }
 
 impl Iterator for SkyTrieIterator {
