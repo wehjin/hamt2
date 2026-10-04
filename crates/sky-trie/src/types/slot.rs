@@ -51,7 +51,7 @@ impl Slot {
     pub async fn query_key_values<P: Buffer>(&self, storage: &P) -> Vec<(i32, TrieValue)> {
         match self {
             Slot::KeyValue(key_value) => {
-                let key_value = key_value.to_trie_key_trie_value(storage).await;
+                let key_value = key_value.to_trie_key_trie_value(storage);
                 vec![key_value]
             }
             Slot::MapBase(map_base) => query_keys_values(*map_base, storage).await,
@@ -61,17 +61,17 @@ impl Slot {
     pub async fn query_value<P: Buffer>(&self, key: HashKey, storage: &P) -> Option<TrieValue> {
         match self {
             Slot::KeyValue(kv) => {
-                let (k, v) = kv.to_trie_key_trie_value(storage).await;
+                let (k, v) = kv.to_trie_key_trie_value(storage);
                 if k != key.i32() { None } else { Some(v) }
             }
             Slot::MapBase(map_base) => query_value(*map_base, key.next(), storage).await,
             Slot::ByteData(_) => unreachable!("byte-data should not appear at this level"),
         }
     }
-    pub async fn test_kv(&self, key: &HashKey, value: &TrieValue, buffer: &impl Buffer) -> KvTest {
+    pub fn test_kv(&self, key: &HashKey, value: &TrieValue, buffer: &impl Buffer) -> KvTest {
         match self {
             Slot::KeyValue(key_value) => {
-                let (slot_key, slot_value) = key_value.to_trie_key_trie_value(buffer).await;
+                let (slot_key, slot_value) = key_value.to_trie_key_trie_value(buffer);
                 if key.i32() == slot_key {
                     if value == &slot_value {
                         KvTest::SameValue

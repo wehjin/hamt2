@@ -55,7 +55,7 @@ impl KeyValue {
         };
         value
     }
-    pub async fn to_trie_key_trie_value(&self, buffer: &impl Buffer) -> (i32, TrieValue) {
+    pub fn to_trie_key_trie_value(&self, buffer: &impl Buffer) -> (i32, TrieValue) {
         let key = self.to_i32_key();
         match self {
             KeyValue::Int { value, .. } => {
@@ -68,7 +68,7 @@ impl KeyValue {
                 (key, value)
             }
             KeyValue::Bytes { value, .. } => {
-                let bytes = get_bytes_from_buffer(*value, buffer).await;
+                let bytes = get_bytes_from_buffer(*value, buffer);
                 let value = TrieValue::Bytes(bytes);
                 (key, value)
             }

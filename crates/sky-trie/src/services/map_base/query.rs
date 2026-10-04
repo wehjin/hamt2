@@ -38,7 +38,7 @@ pub fn kv_stream<S: Buffer>(
                 Slot::KeyValue(key_value) => {
                     // Found a key and value. We finish by moving the current
                     // job forward and yielding the key-value pair.
-                    let kv = key_value.to_trie_key_trie_value( &state.storage ).await;
+                    let kv = key_value.to_trie_key_trie_value( &state.storage );
                     if job.next() {
                         state.jobs.push(job);
                     }

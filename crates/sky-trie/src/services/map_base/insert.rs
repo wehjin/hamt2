@@ -12,10 +12,7 @@ pub async fn insert_kv<P: BufferMut>(
     match map.try_base_index(key) {
         Some(base_index) => {
             let read_base = base_commit.get_base(base_id, slot_count);
-            match read_base.as_ref()[base_index]
-                .test_kv(&key, &value, base_commit)
-                .await
-            {
+            match read_base.as_ref()[base_index].test_kv(&key, &value, base_commit) {
                 KvTest::SameValue => MapBase { map, base: base_id },
                 KvTest::ValueConflict => {
                     let post_base = base::swap_v(read_base, base_index, value, base_commit).await;

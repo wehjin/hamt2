@@ -20,7 +20,7 @@ where
         let Slot::KeyValue(b_key_value) = base[index].clone() else {
             unreachable!("Should be a key-value slot, not a map-base slot:")
         };
-        let (b_key, b_value) = b_key_value.to_trie_key_trie_value(policy).await;
+        let (b_key, b_value) = b_key_value.to_trie_key_trie_value(policy);
         let b_key = key.sync(b_key);
         debug_assert!(b_key.i32() != key.i32());
         Slot::two_kv(b_key.next(), b_value, key.next(), value, policy).await

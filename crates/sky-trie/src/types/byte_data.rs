@@ -13,7 +13,7 @@ mod tests {
         let mut bytes = b"hello"[..].to_vec();
         for _ in 0..7 {
             let index = push_bytes_to_buffer(&bytes, &mut buffer).await;
-            let get_bytes = get_bytes_from_buffer(index, &mut buffer).await;
+            let get_bytes = get_bytes_from_buffer(index, &mut buffer);
             assert_eq!(get_bytes, bytes);
             bytes.extend(bytes.clone());
         }
@@ -70,13 +70,13 @@ fn build_base_with_bytes(bytes: impl AsRef<[u8]>) -> Base {
     }
     base
 }
-pub async fn get_bytes_from_buffer(index: BufferIndex, buffer: &impl Buffer) -> Vec<u8> {
-    let mut cursor = ByteCursor::new(index, buffer).await;
+pub fn get_bytes_from_buffer(index: BufferIndex, buffer: &impl Buffer) -> Vec<u8> {
+    let mut cursor = ByteCursor::new(index, buffer);
     let len = {
         let mut len: usize = 0;
         let mut shift: usize = 0;
         loop {
-            let byte = cursor.next_byte(buffer).await;
+            let byte = cursor.next_byte(buffer);
             len |= ((byte & 0x7F) as usize) << shift;
             if (byte & 0x80) == 0 {
                 break;
@@ -87,7 +87,7 @@ pub async fn get_bytes_from_buffer(index: BufferIndex, buffer: &impl Buffer) -> 
     };
     let mut vec = Vec::with_capacity(len);
     for _ in 0..len {
-        let byte = cursor.next_byte(buffer).await;
+        let byte = cursor.next_byte(buffer);
         vec.push(byte);
     }
     vec
@@ -101,20 +101,20 @@ struct ByteCursor {
 }
 
 impl ByteCursor {
-    pub async fn new(start_index: BufferIndex, buffer: &impl Buffer) -> Self {
+    pub fn new(start_index: BufferIndex, buffer: &impl Buffer) -> Self {
         Self {
             start_index,
             slot_offset: 0,
             byte_offset: 0,
-            byte_data: get_byte_data_from_buffer(start_index, buffer).await,
+            byte_data: get_byte_data_from_buffer(start_index, buffer),
         }
     }
-    pub async fn next_byte(&mut self, buffer: &impl Buffer) -> u8 {
+    pub fn next_byte(&mut self, buffer: &impl Buffer) -> u8 {
         if self.byte_offset >= 8 {
             self.slot_offset += 1;
             self.byte_offset = 0;
             self.byte_data =
-                get_byte_data_from_buffer(self.start_index + self.slot_offset, buffer).await;
+                get_byte_data_from_buffer(self.start_index + self.slot_offset, buffer);
         }
         let byte = self.byte_data[self.byte_offset];
         self.byte_offset += 1;
@@ -122,7 +122,7 @@ impl ByteCursor {
     }
 }
 
-async fn get_byte_data_from_buffer(index: BufferIndex, buffer: &impl Buffer) -> ByteData {
+fn get_byte_data_from_buffer(index: BufferIndex, buffer: &impl Buffer) -> ByteData {
     let mut base = buffer.get_base(index, 1);
     let slot = base.slots.pop().expect("slot not found");
     let Slot::ByteData(byte_data) = slot else {
