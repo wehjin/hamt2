@@ -23,7 +23,7 @@ pub fn AttributeBindsTable(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
                 let mut new_infos = vec![];
                 for bind in binds {
                     let info = BindInfo {
-                        ein_string: format!("◆ {}", bind.0.to_i32()),
+                        ein_string: format!("◆ {}", bind.ein().to_i32()),
                         val_string: print_val(&fx_attribute, &bind.1),
                     };
                     new_infos.push(info);

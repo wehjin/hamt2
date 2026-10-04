@@ -1,5 +1,5 @@
 use sky_db;
-use sky_db::{Bind, Pod, Transact, datom};
+use sky_db::{Pod, Transact, datom, val};
 
 #[tokio::test]
 async fn list_binds_works() {
@@ -18,6 +18,10 @@ async fn list_binds_works() {
     {
         let attribute = pod.get_attribute("counter/count").unwrap();
         let binds = attribute.list_binds().await;
-        assert_eq!(binds, vec![Bind::new(33, 33), Bind::new(37, 37)]);
+        let vals = binds
+            .iter()
+            .map(|bind| bind.val().clone())
+            .collect::<Vec<_>>();
+        assert_eq!(vals, vec![val(33), val(37)]);
     }
 }

@@ -1,6 +1,6 @@
 use crate::attribute::AttributeDetails;
 use crate::cardinality::Cardinality;
-use crate::{Bind, Pod};
+use crate::{Bind, Ein, Entity, Pod};
 use futures::StreamExt;
 use std::cmp::Ordering;
 use std::fmt;
@@ -29,7 +29,10 @@ impl Attribute {
             .collect::<Vec<_>>()
             .await
             .into_iter()
-            .map(Bind::from)
+            .map(|(ein, val)| {
+                let entity = Entity::new(Ein::from(ein), self.pod.clone());
+                Bind::new(entity, val)
+            })
             .collect::<Vec<_>>()
     }
 }
