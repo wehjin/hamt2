@@ -119,7 +119,7 @@ where
         let evid_stream = evid_stream(evt_subtrie);
         pin_mut!(evid_stream);
         while let Some((eid, vid)) = evid_stream.next().await {
-            let val = val_table::query(trie, Vid::from_id(vid)).await.ok().flatten().expect("val not found");
+            let val = val_table::query(trie, Vid::from_id(vid)).ok().flatten().expect("val not found");
             yield (eid, val);
         }
     }

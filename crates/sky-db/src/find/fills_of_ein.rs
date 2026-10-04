@@ -49,7 +49,6 @@ impl Find for EntityFills {
                     .cloned()
                     .expect("attr should exist for attr-ein");
                 let val = val_table::query(trie, vid)
-                    .await
                     .expect("table should find val")
                     .expect("val should exist");
                 fills.push(Fill(attr, val))

@@ -76,14 +76,14 @@ pub async fn insert(trie: &mut SkyTrieMut, val: Val) -> Result<Vid, TransactErro
         Err(TransactError::NoSpaceInValueTable)
     })
     .await?;
-    let query_val = query(trie, result).await.expect("should find val");
+    let query_val = query(trie, result).expect("should find val");
     debug_assert_eq!(query_val, Some(val));
     Ok(result)
 }
 
-pub async fn query<T>(trie: &T, vid: Vid) -> Result<Option<Val>, QueryError>
+pub fn query<T>(trie: &T, vid: Vid) -> Result<Option<Val>, QueryError>
 where
-    T: QueryCursor + KvStream + Snap + Query,
+    T: QueryCursor + Snap + Query,
 {
     let mut trie = trie.snapshot();
     trie.descend(KEY_VAL_TABLE);
@@ -121,7 +121,7 @@ mod tests {
             .await
             .unwrap();
         for (vid, val) in vids.into_iter().zip(vals) {
-            let table_val = query(&trie, vid).await.expect("Failed to query");
+            let table_val = query(&trie, vid).expect("Failed to query");
             assert_eq!(Some(val), table_val);
         }
     }
@@ -130,7 +130,7 @@ mod tests {
     async fn negative_numbers() {
         let mut trie = SkyTrieMut::new();
         let vid = insert(&mut trie, val(-1)).await.expect("Failed to insert");
-        let table_val = query(&trie, vid).await.expect("Failed to query");
+        let table_val = query(&trie, vid).expect("Failed to query");
         assert_eq!(Some(val(-1)), table_val);
     }
 
@@ -146,7 +146,7 @@ mod tests {
             })
             .await
             .unwrap();
-        let table_val = query(&trie, vid).await.expect("Failed to query");
+        let table_val = query(&trie, vid).expect("Failed to query");
         assert_eq!(Some(val(101)), table_val);
     }
 
@@ -160,7 +160,7 @@ mod tests {
             })
             .await
             .unwrap();
-        let val = query(&trie, vid).await.expect("Failed to query");
+        let val = query(&trie, vid).expect("Failed to query");
         assert_eq!(Some(Val::String("hello".into())), val);
     }
 }
