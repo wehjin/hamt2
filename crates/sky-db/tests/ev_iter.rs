@@ -1,8 +1,7 @@
-use futures::StreamExt;
 use sky_db::{Attr, Pod, Transact, Val, dat, datom, ent};
 
 #[tokio::test]
-async fn ev_stream_test() -> anyhow::Result<()> {
+async fn ev_iter_test() -> anyhow::Result<()> {
     let count = || Attr::from("counter/count");
     let schema = vec![count()];
     let mut db = Pod::new(schema.clone()).await?;
@@ -12,8 +11,7 @@ async fn ev_stream_test() -> anyhow::Result<()> {
     ])
     .await?;
 
-    let ev_stream = db.ev_stream(count());
-    let mut ev_vec = ev_stream.collect::<Vec<_>>().await;
+    let mut ev_vec = db.ev_iter(count()).collect::<Vec<_>>();
     ev_vec.sort_by_key(|ev| ev.0);
     assert_eq!(vec![(10, Val::from(10)), (11, Val::from(11))], ev_vec);
     Ok(())

@@ -64,8 +64,8 @@ impl Pod {
         Ok(Txid::from(value))
     }
 
-    pub fn ev_stream(&self, a: Attr) -> impl futures::Stream<Item = (i32, Val)> {
-        db_trie::ev_stream(&self.trie, a, &self.schema)
+    pub fn ev_iter(&self, a: Attr) -> impl Iterator<Item = (i32, Val)> {
+        db_trie::ev_iter(&self.trie, a, &self.schema)
     }
 }
 

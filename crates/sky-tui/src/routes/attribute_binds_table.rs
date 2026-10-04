@@ -18,7 +18,7 @@ pub fn AttributeBindsTable(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
         let fx_deps = fx_attribute.clone();
         hooks.use_async_effect(
             async move {
-                let mut binds = fx_attribute.list_binds().await;
+                let mut binds = fx_attribute.list_binds();
                 binds.sort();
                 let mut new_infos = vec![];
                 for bind in binds {

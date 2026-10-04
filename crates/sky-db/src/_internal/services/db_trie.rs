@@ -237,3 +237,35 @@ where
         }
     }
 }
+
+pub fn evid_iter(evt_subtrie: SkyTrie) -> impl Iterator<Item = (i32, i32)> {
+    let template = evt_subtrie.clone();
+    evt_subtrie
+        .into_iter()
+        .map_bases()
+        .flat_map(move |(eid, _)| {
+            let mut vt = template.clone();
+            vt.descend(eid);
+            vt.into_iter()
+                .u32s()
+                .filter_map(move |(vid, tx)| (Value::from(tx).dir == Dir::In).then_some((eid, vid)))
+        })
+}
+
+pub fn ev_iter(
+    trie: &SkyTrie,
+    a: Attr,
+    schema: &Schema,
+) -> impl Iterator<Item = (i32, Val)> {
+    let aid = schema[a].ein().to_i32();
+    let mut evt = trie.clone();
+    evt.descend(KEY_AEVT);
+    evt.descend(aid);
+    evid_iter(evt).map(move |(eid, vid)| {
+        let val = val_table::query(trie, Vid::from_id(vid))
+            .ok()
+            .flatten()
+            .expect("val not found");
+        (eid, val)
+    })
+}

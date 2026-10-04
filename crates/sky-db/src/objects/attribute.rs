@@ -1,7 +1,6 @@
 use crate::attribute::AttributeDetails;
 use crate::cardinality::Cardinality;
 use crate::{Bind, Ein, Entity, Pod};
-use futures::StreamExt;
 use std::cmp::Ordering;
 use std::fmt;
 
@@ -21,14 +20,10 @@ impl Attribute {
     pub fn cardinality(&self) -> Cardinality {
         self.details.cardinality()
     }
-    pub async fn list_binds(&self) -> Vec<Bind> {
+    pub fn list_binds(&self) -> Vec<Bind> {
         let attr = self.details.attr();
-        let stream = self.pod.ev_stream(attr);
-        tokio::pin!(stream);
-        stream
-            .collect::<Vec<_>>()
-            .await
-            .into_iter()
+        self.pod
+            .ev_iter(attr)
             .map(|(ein, val)| {
                 let entity = Entity::new(Ein::from(ein), self.pod.clone());
                 Bind::new(entity, val)

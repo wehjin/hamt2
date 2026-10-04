@@ -6,7 +6,7 @@ async fn list_binds_works() {
     let mut pod = Pod::new(["counter/count"]).await.unwrap();
     {
         let attribute = pod.get_attribute("counter/count").unwrap();
-        let binds = attribute.list_binds().await;
+        let binds = attribute.list_binds();
         assert_eq!(binds, vec![]);
     }
 
@@ -17,7 +17,7 @@ async fn list_binds_works() {
     pod.transact(datoms).await.unwrap();
     {
         let attribute = pod.get_attribute("counter/count").unwrap();
-        let binds = attribute.list_binds().await;
+        let binds = attribute.list_binds();
         let vals = binds
             .iter()
             .map(|bind| bind.val().clone())
