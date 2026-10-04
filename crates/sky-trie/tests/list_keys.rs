@@ -11,7 +11,7 @@ async fn list_keys_works() {
     .await
     .unwrap();
 
-    let mut keys = trie.list_keys().await;
+    let mut keys = trie.list_keys();
     keys.sort();
     assert_eq!(keys, vec![33, 34])
 }

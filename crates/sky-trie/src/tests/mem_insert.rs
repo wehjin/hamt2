@@ -1,7 +1,6 @@
 use crate::SkyTrie;
-use crate::{InsertCursor, Insert, Query, TrieValue};
-use crate::{Snap, KvStream};
-use futures::StreamExt;
+use crate::Snap;
+use crate::{Insert, InsertCursor, Query, TrieValue};
 use std::collections::HashMap;
 
 #[tokio::test]
@@ -37,7 +36,11 @@ async fn multiple_insertions_work() {
     })
     .await
     .unwrap();
-    let values = trie.u32_stream().collect::<HashMap<i32, u32>>().await;
+    let values = trie
+        .clone()
+        .into_iter()
+        .u32s()
+        .collect::<HashMap<i32, u32>>();
     assert_eq!(values.get(&1), Some(&1));
     trie.edit(async |edit| {
         edit.insert(2, 2).await;
@@ -47,7 +50,7 @@ async fn multiple_insertions_work() {
     })
     .await
     .unwrap();
-    let values = trie.u32_stream().collect::<HashMap<i32, u32>>().await;
+    let values = trie.into_iter().u32s().collect::<HashMap<i32, u32>>();
     assert_eq!(values.get(&1), Some(&1));
     assert_eq!(values.get(&2), Some(&2));
 }
@@ -157,7 +160,7 @@ async fn different_keys_store_different_values() {
     })
     .await
     .unwrap();
-    let values = trie.u32_stream().collect::<HashMap<i32, u32>>().await;
+    let values = trie.into_iter().u32s().collect::<HashMap<i32, u32>>();
     let expected = keys
         .iter()
         .map(|k| (*k, *k as u32))

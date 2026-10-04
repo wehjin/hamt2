@@ -1,9 +1,8 @@
 use super::VecBuffer;
+use crate::CursorPos;
 use crate::SkyTrieMut;
 use crate::Trie;
 use crate::{Base, Buffer, BufferIndex, MapBase, QueryCursor, Snap};
-use crate::{CursorPos, KvStream};
-use futures::StreamExt;
 use std::sync::Arc;
 
 #[derive(Debug, Clone)]
@@ -52,16 +51,8 @@ impl SkyTrie {
         self.get_root()
     }
 
-    pub async fn list_keys(&self) -> Vec<i32> {
-        let mut out = vec![];
-        {
-            let kv_stream = self.kv_stream();
-            tokio::pin!(kv_stream);
-            while let Some(kv) = kv_stream.next().await {
-                out.push(kv.0);
-            }
-        }
-        out
+    pub fn list_keys(&self) -> Vec<i32> {
+        self.clone().into_iter().map(|(key, _)| key).collect()
     }
 }
 
