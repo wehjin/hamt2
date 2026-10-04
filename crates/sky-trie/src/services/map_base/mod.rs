@@ -7,6 +7,3 @@ pub use cons::*;
 pub use deep_query::*;
 pub use insert::*;
 pub use query::*;
-
-#[cfg(test)]
-mod tests;

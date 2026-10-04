@@ -36,22 +36,22 @@ Layered, each layer building on the one below.
       `VecBuffer` implements the buffer traits.
     - `traits/` — `Buffer` (`max_index`/`next_index`/`get_root`/`get_base`/`get_subtrie`), `BufferMut`
       (`push_root`/`push_base`/`push_subtrie`), `Query` (`query`/`query_u32`/`query_all`/`query_deep`),
-      `KvStream` (`kv_stream`/`map_base_stream`/`u32_stream`), `Snap` (`type Snapshot` + `snapshot`),
+      `Snap` (`type Snapshot` + `snapshot`),
       `QueryCursor` (cursor nav: `ascend`/`descend`/`backup`/`restore`/`top_root`), `InsertCursor`
       (`insert_deep`), `Insert` (`insert`/`insert_with_options`, `InsertOption::DeleteOthers`), and the marker
-      traits `Trie`/`TrieMut`. `Query`/`Insert`/`KvStream` have blanket impls over `Buffer`/`BufferMut`.
+      traits `Trie`/`TrieMut`. `Query`/`Insert` have blanket impls over `Buffer`/`BufferMut`.
     - `types/` — `MapBase { map: SlotMap, base: BufferIndex }`, `Base { slots: Vec<Slot> }`,
       `Slot::{KeyValue, MapBase, ByteData}`, `KeyValue::{Int, Subtrie, Bytes}` (top-2-bit tag + 30-bit key),
       `TrieValue::{U32, SubTrie, Bytes}`, `SlotMap(u32)` bitmap, `BufferIndex(i32)` (`ZERO`/`NIL`),
       `HashKey`/`DeepKey`, `TrieKey`/`CursorPos`/`Leg`, and `ByteData([u8; 8])` with LEB128-length-prefixed
       byte storage (`push_bytes_to_buffer`/`get_bytes_from_buffer`).
     - `services/` — `base` (`form_kv`/`insert_kv`/`swap_v`, `kick_kv`/`merge_kv`) and `map_base`
-      (`one_kv`/`two_kv`, `insert_kv`, `query_value`/`query_keys_values`/`kv_stream`, `query_value_deep`).
+      (`one_kv`/`two_kv`, `insert_kv`, `query_value`/`query_keys_values`, `query_value_deep`).
 3. `crates/sky-db` — the Datomic layer. `lib.rs` exposes `find` and `pull`, keeps `_internal`, `errors`,
    `objects`, `services`, `traits`, `types` private, re-exports them at the root, and `pub use sky_trie as trie`.
     - `objects/` — `Pod { schema: Schema, trie: SkyTrie }` (`Clone` is a snapshot; async
       `Pod::new(db_spec: impl Into<DbSpec>) -> Result<Self, ConnectError>` takes no storage; there is no
-      `load`/`close`; `schema()`, `max_tx()`, `ev_stream(attr)`, `get_attribute`, `list_attributes`), `Entity`,
+      `load`/`close`; `schema()`, `max_tx()`, `ev_iter(attr)`, `get_attribute`, `list_attributes`), `Entity`,
       `Attribute` (`ident`/`cardinality`/`list_binds`), and `Bind(Entity, Val)`.
     - `traits.rs` — `Transact` (`async fn transact(&mut self, ...) -> Result<&mut Self, TransactError>`,
       implemented by `Pod`), `DbQuery` (`find`/`find_val`/`get_val`), and `Find` (associated `type Output`;
@@ -64,13 +64,13 @@ Layered, each layer building on the one below.
       (`Schema`, `AttrTable`, `AttributeDetails`, `AttrSpec`, `DbSpec`, `Cardinality`).
     - `_internal/` — crate-internal services and types. `services/` holds `datalog` (`Program`, `KnowledgeBase`,
       `Rule`, `Atom`, `Term`, `Var`, `Substitution`), `val_table` (hash-consed `Val`s, returns a `Vid`),
-      `db_trie` (storage layout + `with_update`/`find`/`ev_stream`), and `schema` (`save` + `schema_loader`).
+      `db_trie` (storage layout + `with_update`/`find`/`ev_iter`), and `schema` (`save` + `schema_loader`).
       `types/` holds `ent_eid`, `key` (the `KEY_*` prefixes), `max_eid`, `vid`.
     - `find/` — `Find` impls `AllAttrs`, `AllEins`, `AttrsOfEin`, `BindsForAttr`, `EinsWithAttr`, `EntityFills`,
       `ValsInSlot` (several override `apply`; `find/types` is currently empty).
     - `pull/` — `Pull<'a>` (`attrs`/`into_datoms`/`pull`) and `errors::RegisterError`.
-    - The query machinery (`find`, datalog, `ev_stream`, `val_table::query`) is generic over
-      `T: QueryCursor + KvStream + Snap + Query`, so `SkyTrie` and snapshots both work.
+    - The query machinery (`find`, datalog, `val_table::query`) is generic over
+      `T: QueryCursor + Snap + Query`, so `SkyTrie` and snapshots both work.
 4. `crates/sky-tui` — the ratatui-kit terminal UI. `main.rs` runs `element!(App).fullscreen()`; `routes/` holds
    `app` (with the global `DB_VIEW: Atom<Option<Pod>>`), `home`, and `attribute_binds_table`; `components/`
    holds `loading`; `lines.rs`/`styles.rs` are support modules. When working here, load the `ratatui-kit` skill

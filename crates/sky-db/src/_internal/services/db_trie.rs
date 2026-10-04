@@ -15,8 +15,6 @@ use crate::trie::*;
 use crate::types::Txid;
 use crate::types::txid;
 use crate::{Attr, Dir, Ein, FindResult, Pod, TransactError, Val};
-use async_stream::stream;
-use futures::{StreamExt, pin_mut};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -111,21 +109,6 @@ pub async fn find(
     found
 }
 
-pub fn ev_stream<T>(trie: &T, a: Attr, schema: &Schema) -> impl futures::Stream<Item = (i32, Val)>
-where
-    T: QueryCursor + KvStream + Snap + Query,
-{
-    stream! {
-        let evt_subtrie = evt_subtrie(trie, a, schema);
-        let evid_stream = evid_stream(evt_subtrie);
-        pin_mut!(evid_stream);
-        while let Some((eid, vid)) = evid_stream.next().await {
-            let val = val_table::query(trie, Vid::from_id(vid)).ok().flatten().expect("val not found");
-            yield (eid, val);
-        }
-    }
-}
-
 pub fn list_entities<T>(trie: &T) -> Vec<Ein>
 where
     T: QueryCursor + Snap + Query,
@@ -202,41 +185,6 @@ where
     let mut snapshot = trie.snapshot();
     snapshot.descend_n([KEY_EAVT, ein.to_i32()]);
     snapshot
-}
-
-fn evt_subtrie<T>(trie: &T, attr: Attr, schema: &Schema) -> T::Snapshot
-where
-    T: QueryCursor + Snap + Query,
-{
-    let aid = schema[attr].ein().to_i32();
-
-    let mut snapshot = trie.snapshot();
-    snapshot.descend(KEY_AEVT);
-    snapshot.descend(aid);
-    snapshot
-}
-
-fn evid_stream<T>(evt_subtrie: T) -> impl futures::Stream<Item = (i32, i32)>
-where
-    T: QueryCursor + KvStream + Snap + Query,
-{
-    stream! {
-        let evt_roots = evt_subtrie.map_base_stream();
-        pin_mut!(evt_roots);
-        while let Some((eid, _vt_trie)) = evt_roots.next().await {
-            let mut vt_subtrie = evt_subtrie.snapshot();
-            vt_subtrie.descend(eid);
-
-            let vt_stream = vt_subtrie.u32_stream();
-            pin_mut!(vt_stream);
-            while let Some((vid, tx_u32)) = vt_stream.next().await {
-                let tx_value = Value::from(tx_u32);
-                if tx_value.dir == Dir::In {
-                    yield (eid, vid);
-                }
-            }
-        }
-    }
 }
 
 pub fn evid_iter(evt_subtrie: SkyTrie) -> impl Iterator<Item = (i32, i32)> {

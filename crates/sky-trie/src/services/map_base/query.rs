@@ -1,11 +1,4 @@
-use crate::{Buffer, BufferIndex, HashKey, MapBase, Slot, TrieValue};
-use async_stream::stream;
-use futures::Stream;
-
-pub struct State<S: Buffer> {
-    storage: S,
-    jobs: Vec<Job>,
-}
+use crate::{Buffer, HashKey, MapBase, TrieValue};
 
 pub fn query_value<S: Buffer>(
     map_base: MapBase,
@@ -23,46 +16,6 @@ pub fn query_value<S: Buffer>(
     value
 }
 
-pub fn kv_stream<S: Buffer>(
-    map_base: MapBase,
-    trie_read: S,
-) -> impl Stream<Item = (i32, TrieValue)> {
-    stream! {
-        let mut state = State {
-            storage: trie_read,
-            jobs: Job::start(&map_base).into_iter().collect::<Vec<_>>(),
-        };
-        while let Some(mut job) = state.jobs.pop() {
-            let base = state.storage.get_base(job.base, job.slot_count);
-            match &base.as_ref()[job.slot_offset] {
-                Slot::KeyValue(key_value) => {
-                    // Found a key and value. We finish by moving the current
-                    // job forward and yielding the key-value pair.
-                    let kv = key_value.to_trie_key_trie_value( &state.storage );
-                    if job.next() {
-                        state.jobs.push(job);
-                    }
-                    yield kv;
-                }
-                Slot::MapBase(lower_map_base) => {
-                    // Found a lower map-base. We will move the current job
-                    // forward and start a new job for the lower map-base.
-                    let lower_job = Job::start(lower_map_base);
-                    if job.next() {
-                        state.jobs.push(job);
-                    }
-                    if let Some(new_job) = lower_job {
-                        state.jobs.push(new_job);
-                    }
-                }
-                Slot::ByteData(_) => {
-                    unreachable!("base should contain no byte-data slots")
-                }
-            }
-        }
-    }
-}
-
 pub fn query_keys_values<P: Buffer>(map_base: MapBase, storage: &P) -> Vec<(i32, TrieValue)> {
     let MapBase { map, base: base_id } = map_base;
     let mut out = Vec::new();
@@ -75,28 +28,4 @@ pub fn query_keys_values<P: Buffer>(map_base: MapBase, storage: &P) -> Vec<(i32,
         out.extend(keys_values);
     }
     out
-}
-
-struct Job {
-    slot_offset: usize,
-    slot_count: usize,
-    base: BufferIndex,
-}
-impl Job {
-    pub fn start(map_base: &MapBase) -> Option<Self> {
-        let slot_count = map_base.map.slot_count();
-        if slot_count == 0 {
-            None
-        } else {
-            Some(Self {
-                slot_offset: 0,
-                slot_count,
-                base: map_base.base,
-            })
-        }
-    }
-    pub fn next(&mut self) -> bool {
-        self.slot_offset += 1;
-        self.slot_offset < self.slot_count
-    }
 }

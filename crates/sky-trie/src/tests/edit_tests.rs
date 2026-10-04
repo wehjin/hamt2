@@ -1,7 +1,6 @@
 use crate::SkyTrie;
-use crate::{Insert, KvStream, Query, Snap, TrieValue};
+use crate::{Insert, Query, Snap, TrieValue};
 use fixtures::{edit_assert_trie, error_edit_assert_trie, start_assert_trie};
-use futures::StreamExt;
 
 #[tokio::test]
 async fn view_has_query() {
@@ -14,13 +13,6 @@ async fn view_has_query() {
 async fn view_has_snap() {
     let mem = SkyTrie::new().snapshot();
     let values = mem.snapshot().query_all();
-    assert_eq!(values, vec![]);
-}
-
-#[tokio::test]
-async fn view_has_stream() {
-    let mem = SkyTrie::new().snapshot();
-    let values = mem.u32_stream().collect::<Vec<_>>().await;
     assert_eq!(values, vec![]);
 }
 

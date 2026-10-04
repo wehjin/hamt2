@@ -7,7 +7,6 @@ mod edit;
 mod edit_tests;
 mod edit_walks;
 mod mem_insert;
-mod mem_stream;
 
 #[tokio::test]
 async fn empty_storage_max_id_is_nil() {
