@@ -7,7 +7,7 @@ pub struct State<S: Buffer> {
     jobs: Vec<Job>,
 }
 
-pub async fn query_value<S: Buffer>(
+pub fn query_value<S: Buffer>(
     map_base: MapBase,
     key: HashKey,
     base_read: &S,
@@ -16,7 +16,7 @@ pub async fn query_value<S: Buffer>(
     let value = match map.try_base_index(key) {
         Some(base_index) => {
             let base = base_read.get_base(base_id, map.slot_count());
-            Box::pin(base.as_ref()[base_index].query_value(key, base_read)).await
+            base.as_ref()[base_index].query_value(key, base_read)
         }
         None => None,
     };

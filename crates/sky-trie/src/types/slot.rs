@@ -58,13 +58,13 @@ impl Slot {
             Slot::ByteData(_) => unreachable!("byte-data should not appear at this level"),
         }
     }
-    pub async fn query_value<P: Buffer>(&self, key: HashKey, storage: &P) -> Option<TrieValue> {
+    pub fn query_value<P: Buffer>(&self, key: HashKey, storage: &P) -> Option<TrieValue> {
         match self {
             Slot::KeyValue(kv) => {
                 let (k, v) = kv.to_trie_key_trie_value(storage);
                 if k != key.i32() { None } else { Some(v) }
             }
-            Slot::MapBase(map_base) => query_value(*map_base, key.next(), storage).await,
+            Slot::MapBase(map_base) => query_value(*map_base, key.next(), storage),
             Slot::ByteData(_) => unreachable!("byte-data should not appear at this level"),
         }
     }

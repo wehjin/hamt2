@@ -56,11 +56,11 @@ async fn restore_on_err(
 const SEARCH_SIZE: usize = 4000;
 pub async fn insert(trie: &mut SkyTrieMut, val: Val) -> Result<Vid, TransactError> {
     let result = restore_on_err(trie, async |trie| {
-        trie.descend(KEY_VAL_TABLE).await;
+        trie.descend(KEY_VAL_TABLE);
         let bytes = bytes_from_val(&val);
         let mut vid = Vid::for_search(universal_hash::hash(&bytes, 0) & TrieKey::MASK);
         for _ in 0..SEARCH_SIZE {
-            match trie.query(vid.to_id()).await {
+            match trie.query(vid.to_id()) {
                 None => {
                     trie.insert(vid.to_id(), TrieValue::Bytes(bytes)).await;
                     trie.ascend();
@@ -86,8 +86,8 @@ where
     T: QueryCursor + KvStream + Snap + Query,
 {
     let mut trie = trie.snapshot();
-    trie.descend(KEY_VAL_TABLE).await;
-    let value = trie.query(vid.to_id()).await;
+    trie.descend(KEY_VAL_TABLE);
+    let value = trie.query(vid.to_id());
     let val = if let Some(TrieValue::Bytes(bytes)) = value {
         let val = val_from_bytes(&bytes);
         Some(val)

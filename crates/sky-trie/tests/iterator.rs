@@ -87,7 +87,7 @@ async fn into_iter_descended() {
     .unwrap();
 
     let mut sub = trie.clone();
-    sub.descend(3).await;
+    sub.descend(3);
 
     let mut kvs = sub.into_iter().collect::<Vec<_>>();
     kvs.sort_by_key(|(key, _)| *key);

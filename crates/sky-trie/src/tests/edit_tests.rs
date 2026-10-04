@@ -1,5 +1,5 @@
 use crate::SkyTrie;
-use crate::{Insert, Query, Snap, KvStream, TrieValue};
+use crate::{Insert, KvStream, Query, Snap, TrieValue};
 use fixtures::{edit_assert_trie, error_edit_assert_trie, start_assert_trie};
 use futures::StreamExt;
 
@@ -34,7 +34,7 @@ async fn edit_inserts() {
     })
     .await
     .unwrap();
-    let query_value = mem.query(33).await.unwrap();
+    let query_value = mem.query(33).unwrap();
     assert_eq!(query_value, insert_value)
 }
 
@@ -94,7 +94,7 @@ mod fixtures {
             .edit(async |edit| {
                 let value = TrieValue::U32(tag as u32 + 1);
                 edit.insert(tag, value.clone()).await;
-                let query = edit.query(tag).await;
+                let query = edit.query(tag);
                 assert_eq!(query, Some(value));
                 Ok(tag + 2)
             })
@@ -108,7 +108,7 @@ mod fixtures {
             .edit::<_, ()>(async |edit| {
                 let value = TrieValue::U32(tag as u32 + 1);
                 edit.insert(tag, value.clone()).await;
-                let query = edit.query(tag).await;
+                let query = edit.query(tag);
                 assert_eq!(query, Some(value));
                 Err(anyhow!("trouble in edit"))
             })

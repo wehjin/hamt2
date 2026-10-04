@@ -18,7 +18,7 @@ impl MaxEid {
         }
     }
     pub async fn read(trie: &SkyTrie) -> Result<Self, QueryError> {
-        if let Some(TrieValue::U32(value)) = trie.query(KEY_MAX_EID).await {
+        if let Some(TrieValue::U32(value)) = trie.query(KEY_MAX_EID) {
             Ok(Self::new(Ein(value as i32)))
         } else {
             Ok(Self::new(Ein::DB_MAX))

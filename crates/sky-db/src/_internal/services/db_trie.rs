@@ -10,8 +10,8 @@ use crate::Schema;
 use crate::attr_table::AttrTable;
 use crate::cardinality::Cardinality;
 use crate::db;
-use crate::trie::*;
 use crate::trie::SkyTrieMut;
+use crate::trie::*;
 use crate::types::Txid;
 use crate::types::txid;
 use crate::{Attr, Dir, Ein, FindResult, TransactError, Val};
@@ -51,13 +51,13 @@ impl From<u32> for Value {
 }
 
 pub(crate) async fn with_update(
-	trie: &mut SkyTrieMut,
-	attr_map: &AttrTable,
-	ein: Ein,
-	attr: Attr,
-	val: Val,
-	dir: Dir,
-	txid: &Txid,
+    trie: &mut SkyTrieMut,
+    attr_map: &AttrTable,
+    ein: Ein,
+    attr: Attr,
+    val: Val,
+    dir: Dir,
+    txid: &Txid,
 ) -> Result<(), TransactError> {
     let attribute = &attr_map[attr];
     let eid = ein.to_i32();
@@ -193,7 +193,7 @@ where
     T: QueryCursor + KvStream + Snap + Query,
 {
     let mut snapshot = trie.snapshot();
-    snapshot.descend(KEY_EAVT).await;
+    snapshot.descend(KEY_EAVT);
     Some(snapshot)
 }
 
@@ -202,9 +202,7 @@ where
     T: QueryCursor + KvStream + Snap + Query,
 {
     let mut snapshot = trie.snapshot();
-    snapshot
-        .descend_n([KEY_EAVT, ein.to_i32(), attr_ein.to_i32()])
-        .await;
+    snapshot.descend_n([KEY_EAVT, ein.to_i32(), attr_ein.to_i32()]);
     Some(snapshot)
 }
 
@@ -213,7 +211,7 @@ where
     T: QueryCursor + KvStream + Snap + Query,
 {
     let mut snapshot = trie.snapshot();
-    snapshot.descend_n([KEY_EAVT, ein.to_i32()]).await;
+    snapshot.descend_n([KEY_EAVT, ein.to_i32()]);
     Some(snapshot)
 }
 
@@ -224,8 +222,8 @@ where
     let aid = schema[attr].ein().to_i32();
 
     let mut snapshot = trie.snapshot();
-    snapshot.descend(KEY_AEVT).await;
-    snapshot.descend(aid).await;
+    snapshot.descend(KEY_AEVT);
+    snapshot.descend(aid);
     snapshot
 }
 
@@ -238,7 +236,7 @@ where
         pin_mut!(evt_roots);
         while let Some((eid, _vt_trie)) = evt_roots.next().await {
             let mut vt_subtrie = evt_subtrie.snapshot();
-            vt_subtrie.descend(eid).await;
+            vt_subtrie.descend(eid);
 
             let vt_stream = vt_subtrie.u32_stream();
             pin_mut!(vt_stream);
