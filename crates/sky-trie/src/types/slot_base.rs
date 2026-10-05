@@ -1,4 +1,4 @@
-use crate::{BufferMut, HashKey, Slot, TrieValue};
+use crate::{BufferMut, HashKey, MapBase, Slot, TrieValue};
 use serde::{Deserialize, Serialize};
 use std::ops::{Deref, DerefMut, Index};
 
@@ -39,6 +39,11 @@ impl DerefMut for Base {
 impl Base {
     pub fn empty() -> Self {
         Self { slots: vec![] }
+    }
+    pub fn seed() -> Self {
+        Self {
+            slots: vec![Slot::MapBase(MapBase::empty())],
+        }
     }
     pub async fn new_kv(key: HashKey, value: TrieValue, buffer: &mut impl BufferMut) -> Self {
         let slot = Slot::one_kv(key, value, buffer).await;

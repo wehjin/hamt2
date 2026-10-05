@@ -45,5 +45,5 @@ impl Into<usize> for BufferIndex {
 
 impl BufferIndex {
     pub const ZERO: BufferIndex = BufferIndex(0);
-    pub const NIL: BufferIndex = BufferIndex(-1);
+    pub const ONE: BufferIndex = BufferIndex(1);
 }

@@ -9,16 +9,16 @@ mod edit_walks;
 mod mem_insert;
 
 #[tokio::test]
-async fn empty_trie_max_id_is_nil() {
+async fn empty_trie_max_id_is_zero() {
     let trie = SkyTrieMut::new();
-    assert_eq!(BufferIndex::NIL, trie.max_index());
-    assert_eq!(BufferIndex::ZERO, trie.next_index());
+    assert_eq!(BufferIndex::ZERO, trie.max_index());
+    assert_eq!(BufferIndex::ONE, trie.next_index());
 }
 
 #[tokio::test]
-async fn base_id_zero_is_the_empty_base() {
+async fn base_id_zero_is_the_seed_base() {
     let trie = SkyTrieMut::new();
-    assert_eq!(Base::empty(), trie.get_base(BufferIndex::ZERO, 1));
+    assert_eq!(Base::seed(), trie.get_base(BufferIndex::ZERO, 1));
 }
 
 #[tokio::test]
@@ -43,10 +43,10 @@ async fn append_assigns_sequential_ids() {
     let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7), &mut trie).await;
     let id0 = trie.push_base(base.clone()).await;
     let id1 = trie.push_base(base.clone()).await;
-    assert_eq!(BufferIndex(0), id0);
-    assert_eq!(BufferIndex(1), id1);
-    assert_eq!(BufferIndex(1), trie.max_index());
-    assert_eq!(BufferIndex(2), trie.next_index());
+    assert_eq!(BufferIndex(1), id0);
+    assert_eq!(BufferIndex(2), id1);
+    assert_eq!(BufferIndex(2), trie.max_index());
+    assert_eq!(BufferIndex(3), trie.next_index());
     assert_eq!(base, trie.get_base(id0, base.slots.len()));
     assert_eq!(base, trie.get_base(id1, base.slots.len()));
 }
@@ -71,7 +71,7 @@ async fn mem_readonly_snapshot_does_not_see_new_bases() {
         })
         .await
         .unwrap();
-    assert_eq!(BufferIndex(1), max_id);
+    assert_eq!(BufferIndex(2), max_id);
     assert_eq!(id, view.max_index());
     assert_eq!(base, view.get_base(id, base.slots.len()));
 }

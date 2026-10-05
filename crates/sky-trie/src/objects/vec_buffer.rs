@@ -7,10 +7,17 @@ pub struct VecBuffer {
 }
 
 impl VecBuffer {
-    pub fn new() -> Self {
-        Self {
-            slots: vec![],
-            root_index: None,
+    pub fn new(seed: Option<Slot>) -> Self {
+        if let Some(slot) = seed {
+            Self {
+                slots: vec![slot],
+                root_index: Some(0),
+            }
+        } else {
+            Self {
+                slots: vec![],
+                root_index: None,
+            }
         }
     }
     pub fn append(&mut self, novel_slots: VecBuffer) {

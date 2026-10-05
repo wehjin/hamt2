@@ -27,7 +27,7 @@ impl SkyTrieMut {
 
     pub fn extend(past: SkyTrie) -> Self {
         let past = Arc::new(past);
-        let buffer = VecBuffer::new();
+        let buffer = VecBuffer::new(None);
         let cursor_pos = past.cursor_pos().clone().ascend_top();
         Self {
             past,

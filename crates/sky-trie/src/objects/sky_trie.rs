@@ -1,8 +1,8 @@
 use super::VecBuffer;
-use crate::CursorPos;
 use crate::SkyTrieMut;
 use crate::Trie;
 use crate::{Base, Buffer, BufferIndex, MapBase, QueryCursor, Snap};
+use crate::{CursorPos, Slot};
 use std::sync::Arc;
 
 #[derive(Debug, Clone)]
@@ -15,7 +15,11 @@ pub struct SkyTrie {
 /// Constructors
 impl SkyTrie {
     pub fn new() -> Self {
-        Self::with_buffer(VecBuffer::new())
+        // All tries start with a single slot containing the empty MapBase.
+        // This is the root of the trie.
+        let seed = Slot::MapBase(MapBase::empty());
+        let buffer = VecBuffer::new(Some(seed));
+        Self::with_buffer(buffer)
     }
 
     pub fn with_buffer(buffer: VecBuffer) -> Self {
