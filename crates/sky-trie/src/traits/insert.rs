@@ -1,6 +1,4 @@
-use crate::services::map_base;
-use crate::{BufferMut, HashKey, MapBase, QueryCursor, TrieValue};
-use std::collections::HashSet;
+use crate::{MapBase, TrieValue};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum InsertOption {
@@ -10,6 +8,9 @@ pub enum InsertOption {
 
 #[allow(async_fn_in_trait)]
 pub trait Insert {
+    /// Commits a new `root` into the trie.
+    async fn push_root(&mut self, root: MapBase);
+
     /// Inserts `value` into the trie at position `key`.
     async fn insert(&mut self, key: i32, value: impl Into<TrieValue>) -> &mut Self {
         self.insert_with_options(key, value, []).await
@@ -22,25 +23,4 @@ pub trait Insert {
         value: impl Into<TrieValue>,
         options: impl IntoIterator<Item = InsertOption>,
     ) -> &mut Self;
-}
-
-impl<T: BufferMut + QueryCursor> Insert for T {
-    async fn insert_with_options(
-        &mut self,
-        key: i32,
-        value: impl Into<TrieValue>,
-        options: impl IntoIterator<Item = InsertOption>,
-    ) -> &mut Self {
-        let options = options.into_iter().collect::<HashSet<_>>();
-        let pre_root = if options.contains(&InsertOption::DeleteOthers) {
-            MapBase::empty()
-        } else {
-            self.active_root()
-        };
-        let value = value.into();
-        let key = HashKey::new(key);
-        let root = map_base::insert_kv(pre_root, key, value, self).await;
-        self.push_root(root).await;
-        self
-    }
 }

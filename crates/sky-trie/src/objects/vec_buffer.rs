@@ -1,4 +1,4 @@
-use crate::{Base, Buffer, BufferIndex, BufferMut, MapBase, Slot};
+use crate::{Base, Buffer, BufferIndex, BufferMut, Slot};
 use std::ops::Deref;
 use std::sync::Arc;
 
@@ -72,11 +72,6 @@ impl Buffer for VecBuffer {
 }
 
 impl BufferMut for VecBuffer {
-    async fn push_root(&mut self, root: MapBase) {
-        let slot = Slot::MapBase(root);
-        self.slots.push(slot);
-    }
-
     async fn push_base(&mut self, base: Base) -> BufferIndex {
         let index = self.next_index();
         self.slots.extend(base.slots);
