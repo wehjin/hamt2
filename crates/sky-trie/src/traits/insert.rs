@@ -1,5 +1,5 @@
 use crate::services::map_base;
-use crate::{BufferMut, HashKey, MapBase, TrieValue};
+use crate::{BufferMut, HashKey, MapBase, QueryCursor, TrieValue};
 use std::collections::HashSet;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -24,7 +24,7 @@ pub trait Insert {
     ) -> &mut Self;
 }
 
-impl<T: BufferMut> Insert for T {
+impl<T: BufferMut + QueryCursor> Insert for T {
     async fn insert_with_options(
         &mut self,
         key: i32,
@@ -35,7 +35,7 @@ impl<T: BufferMut> Insert for T {
         let pre_root = if options.contains(&InsertOption::DeleteOthers) {
             MapBase::empty()
         } else {
-            self.get_root()
+            self.active_root()
         };
         let value = value.into();
         let key = HashKey::new(key);

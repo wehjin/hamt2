@@ -10,6 +10,11 @@ pub trait QueryCursor: Query {
         self.cursor_pos().top_root()
     }
 
+    /// Returns the active root of the trie
+    fn active_root(&self) -> MapBase {
+        self.cursor_pos().active_root()
+    }
+
     /// Moves up one level in the trie.
     fn ascend(&mut self) -> Option<(TrieKey, MapBase)> {
         self.cursor_pos_mut().ascend()

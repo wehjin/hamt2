@@ -1,33 +1,39 @@
 use super::VecBuffer;
-use crate::SkyTrieMut;
-use crate::Trie;
-use crate::{Base, Buffer, BufferIndex, MapBase, QueryCursor, Snap};
+use crate::{Base, Trie};
+use crate::{Buffer, BufferIndex, MapBase, QueryCursor, Snap};
 use crate::{CursorPos, Slot};
+use crate::{HashKey, Query, SkyTrieMut, TrieValue, map_base};
 use std::sync::Arc;
 
 #[derive(Debug, Clone)]
 pub struct SkyTrie {
     pub(crate) buffer: Arc<VecBuffer>,
-    pub(crate) max_id: BufferIndex,
     pub(crate) cursor_pos: CursorPos,
+}
+impl Eq for SkyTrie {}
+
+impl PartialEq for SkyTrie {
+    fn eq(&self, other: &Self) -> bool {
+        self.cursor_pos == other.cursor_pos
+            && self.buffer == other.buffer
+    }
 }
 
 /// Constructors
 impl SkyTrie {
     pub fn new() -> Self {
-        // All tries start with a single slot containing the empty MapBase.
-        // This is the root of the trie.
+        // All tries start with a single slot containing the root of the trie.
         let seed = Slot::MapBase(MapBase::empty());
-        let buffer = VecBuffer::new(Some(seed));
+        let buffer = VecBuffer::new(seed);
         Self::with_buffer(buffer)
     }
 
     pub fn with_buffer(buffer: VecBuffer) -> Self {
         let max_id = buffer.max_index();
-        let cursor_pos = CursorPos::new(buffer.get_root());
+        let root = buffer.get_subtrie(max_id);
+        let cursor_pos = CursorPos::new(root);
         Self {
             buffer: Arc::new(buffer),
-            max_id,
             cursor_pos,
         }
     }
@@ -51,10 +57,6 @@ impl SkyTrie {
 
 /// Queries
 impl SkyTrie {
-    pub fn top_root(&self) -> MapBase {
-        self.get_root()
-    }
-
     pub fn list_keys(&self) -> Vec<i32> {
         self.clone().into_iter().map(|(key, _)| key).collect()
     }
@@ -70,31 +72,31 @@ impl QueryCursor for SkyTrie {
     }
 }
 
-impl Eq for SkyTrie {}
+impl Query for SkyTrie {
+    fn get_root(&self) -> MapBase {
+        self.active_root()
+    }
 
-impl PartialEq for SkyTrie {
-    fn eq(&self, other: &Self) -> bool {
-        self.cursor_pos == other.cursor_pos
-            && self.max_id == other.max_id
-            && self.buffer == other.buffer
+    fn query(&self, key: i32) -> Option<TrieValue> {
+        map_base::query_value(self.get_root(), HashKey::new(key), self)
+    }
+
+    fn query_all(&self) -> Vec<(i32, TrieValue)> {
+        map_base::query_keys_values(self.get_root(), self)
+    }
+
+    fn query_deep<const N: usize>(&self, key: [i32; N]) -> Option<TrieValue> {
+        map_base::query_value_deep(self.get_root(), key, self)
     }
 }
 
 impl Buffer for SkyTrie {
     fn max_index(&self) -> BufferIndex {
-        self.max_id
+        self.buffer.max_index()
     }
 
-    fn get_root(&self) -> MapBase {
-        self.cursor_pos.active_root
-    }
-
-    fn get_base(&self, id: BufferIndex, slots: usize) -> Base {
-        if id < BufferIndex::ZERO || id > self.max_id {
-            Base::empty()
-        } else {
-            self.buffer.get_base(id, slots)
-        }
+    fn get_base(&self, id: BufferIndex, size: usize) -> Base {
+        self.buffer.get_base(id, size)
     }
 }
 

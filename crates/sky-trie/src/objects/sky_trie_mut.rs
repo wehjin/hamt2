@@ -1,9 +1,8 @@
 use super::VecBuffer;
-use crate::SkyTrie;
 use crate::TrieMut;
 use crate::{Base, Buffer, BufferIndex, BufferMut, CursorPos, Insert, MapBase, Snap, TrieValue};
+use crate::{HashKey, Query, SkyTrie, map_base};
 use crate::{InsertCursor, QueryCursor};
-use std::ops::Deref;
 use std::sync::Arc;
 
 /// Deliberately non-Clone.
@@ -19,25 +18,19 @@ impl SkyTrieMut {
         Self::extend(SkyTrie::new())
     }
 
-    pub async fn commit(self) -> SkyTrie {
-        let mut past_buffer = self.past.buffer.deref().clone();
-        past_buffer.append(self.buffer);
-        SkyTrie::with_buffer(past_buffer)
-    }
-
     pub fn extend(past: SkyTrie) -> Self {
-        let past = Arc::new(past);
-        let buffer = VecBuffer::new(None);
         let cursor_pos = past.cursor_pos().clone().ascend_top();
+        let buffer = VecBuffer::extend(past.buffer.clone());
+        let past = Arc::new(past);
         Self {
             past,
             buffer,
             cursor_pos,
         }
     }
-
-    fn start_id(&self) -> BufferIndex {
-        self.past.max_index() + 1
+    pub async fn commit(self) -> SkyTrie {
+        let buffer = self.buffer.retract();
+        SkyTrie::with_buffer(buffer)
     }
 }
 
@@ -51,6 +44,33 @@ impl QueryCursor for SkyTrieMut {
         &mut self.cursor_pos
     }
 }
+
+impl Query for SkyTrieMut {
+    fn get_root(&self) -> MapBase {
+        self.active_root()
+    }
+    fn query(&self, key: i32) -> Option<TrieValue> {
+        map_base::query_value(self.get_root(), HashKey::new(key), self)
+    }
+
+    fn query_all(&self) -> Vec<(i32, TrieValue)> {
+        map_base::query_keys_values(self.get_root(), self)
+    }
+
+    fn query_deep<const N: usize>(&self, key: [i32; N]) -> Option<TrieValue> {
+        map_base::query_value_deep(self.get_root(), key, self)
+    }
+}
+
+impl Buffer for SkyTrieMut {
+    fn max_index(&self) -> BufferIndex {
+        self.buffer.max_index()
+    }
+
+    fn get_base(&self, id: BufferIndex, size: usize) -> Base {
+        self.buffer.get_base(id, size)
+    }
+}
 impl InsertCursor for SkyTrieMut {}
 
 impl Snap for SkyTrieMut {
@@ -61,27 +81,6 @@ impl Snap for SkyTrieMut {
             past: self.past.clone(),
             buffer: self.buffer.clone(),
             cursor_pos: self.cursor_pos.clone(),
-        }
-    }
-}
-impl Buffer for SkyTrieMut {
-    fn max_index(&self) -> BufferIndex {
-        self.past.max_index() + self.buffer.len()
-    }
-
-    fn get_root(&self) -> MapBase {
-        self.cursor_pos.active_root()
-    }
-
-    fn get_base(&self, id: BufferIndex, slots: usize) -> Base {
-        let start_id = self.start_id();
-        if id < start_id {
-            self.past.get_base(id, slots)
-        } else if id <= self.max_index() {
-            let buffer_index = BufferIndex(id.0 - start_id.0);
-            self.buffer.get_base(buffer_index, slots)
-        } else {
-            Base::empty()
         }
     }
 }
@@ -101,11 +100,6 @@ impl BufferMut for SkyTrieMut {
     }
 
     async fn push_base(&mut self, base: Base) -> BufferIndex {
-        let base_size = base.len();
-        let buffer_index = self.buffer.push_base(base).await;
-        let edit_index = self.start_id() + buffer_index.0;
-        let next_index = self.next_index();
-        debug_assert_eq!(next_index, edit_index + base_size);
-        edit_index
+        self.buffer.push_base(base).await
     }
 }

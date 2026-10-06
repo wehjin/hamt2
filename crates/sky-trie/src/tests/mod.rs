@@ -1,6 +1,6 @@
-use crate::Snap;
 use crate::services::map_base::one_kv;
 use crate::{Base, Buffer, BufferIndex, BufferMut, HashKey, MapBase, TrieValue};
+use crate::{Insert, Query, Snap};
 use crate::{SkyTrie, SkyTrieMut};
 
 mod edit;
@@ -53,50 +53,43 @@ async fn append_assigns_sequential_ids() {
 
 #[tokio::test]
 async fn mem_readonly_snapshot_does_not_see_new_bases() {
-    let mut load = SkyTrie::new();
-    let (base, id) = load
-        .edit(async |trie| {
-            let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7), trie).await;
-            let id = trie.push_base(base.clone()).await;
-            Ok((base, id))
-        })
-        .await
-        .unwrap();
-    let view = load.snapshot();
-    let max_id = load
-        .edit(async |trie| {
-            trie.push_base(base.clone()).await;
-            let max_id = trie.max_index();
-            Ok(max_id)
-        })
-        .await
-        .unwrap();
-    assert_eq!(BufferIndex(2), max_id);
-    assert_eq!(id, view.max_index());
-    assert_eq!(base, view.get_base(id, base.slots.len()));
+    let mut trie = SkyTrie::new();
+    trie.edit(async |trie| {
+        trie.insert(7, 7).await;
+        Ok(())
+    })
+    .await
+    .unwrap();
+    let index1 = trie.max_index();
+    let view = trie.snapshot();
+    trie.edit(async |trie| {
+        trie.insert(8, 8).await;
+        Ok(())
+    })
+    .await
+    .unwrap();
+    assert_ne!(view.max_index(), trie.max_index());
+    assert_eq!(view.max_index(), index1);
 }
 
 #[tokio::test]
 async fn reading_beyond_max_id_produces_empty() {
-    let mut load = SkyTrie::new();
-    let base = load
-        .edit(async |trie| {
-            let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7), trie).await;
-            trie.push_base(base.clone()).await;
-            Ok(base)
-        })
-        .await
-        .unwrap();
-    let view = load.snapshot();
-    let new_id = load
-        .edit(async |trie| {
-            let new_id = trie.push_base(base.clone()).await;
-            Ok(new_id)
-        })
-        .await
-        .unwrap();
-    let get_base = view.get_base(new_id, base.slots.len());
-    assert_eq!(get_base, Base::empty())
+    let mut trie = SkyTrie::new();
+    trie.edit(async |trie| {
+        trie.insert(7, 7).await;
+        Ok(())
+    })
+    .await
+    .unwrap();
+    let view = trie.snapshot();
+    trie.edit(async |trie| {
+        trie.insert(8, 8).await;
+        Ok(())
+    })
+    .await
+    .unwrap();
+    assert_ne!(view.max_index(), trie.max_index());
+    assert_eq!(view.get_base(trie.max_index(), 1), Base::empty());
 }
 
 #[tokio::test]

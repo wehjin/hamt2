@@ -1,4 +1,4 @@
-use crate::{Buffer, BufferIndex, MapBase, SkyTrie, Slot, TrieValue};
+use crate::{Buffer, BufferIndex, MapBase, Query, SkyTrie, Slot, TrieValue};
 
 pub struct SkyTrieIterator {
     trie: SkyTrie,
