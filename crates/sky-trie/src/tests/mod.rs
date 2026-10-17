@@ -1,6 +1,6 @@
+use crate::Insert;
 use crate::services::map_base::one_kv;
 use crate::{Base, Buffer, BufferIndex, BufferMut, HashKey, MapBase, TrieValue};
-use crate::{Insert, Query};
 use crate::{SkyTrie, SkyTrieMut};
 use crate::{Slot, Snap};
 

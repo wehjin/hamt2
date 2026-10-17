@@ -1,8 +1,6 @@
-use crate::{MapBase, TrieValue};
+use crate::TrieValue;
 
 pub trait Query {
-    fn get_root(&self) -> MapBase;
-
     /// Returns the value stored at the given key or none if the key is absent.
     fn query(&self, key: i32) -> Option<TrieValue>;
 

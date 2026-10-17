@@ -49,9 +49,6 @@ impl QueryCursor for SkyTrieMut {
 }
 
 impl Query for SkyTrieMut {
-    fn get_root(&self) -> MapBase {
-        self.active_root()
-    }
     fn query(&self, key: i32) -> Option<TrieValue> {
         map_base::query_value(self.get_root(), HashKey::new(key), self)
     }
@@ -70,6 +67,10 @@ impl Buffer for SkyTrieMut {
         self.buffer.max_index()
     }
 
+    fn get_root(&self) -> MapBase {
+        self.active_root()
+    }
+
     fn get_base(&self, id: BufferIndex, size: usize) -> &[Slot] {
         self.buffer.get_base(id, size)
     }
@@ -77,18 +78,6 @@ impl Buffer for SkyTrieMut {
 impl InsertCursor for SkyTrieMut {}
 
 impl Insert for SkyTrieMut {
-    async fn push_root(&mut self, root: MapBase) {
-        if let Some((key, _previous_active)) = self.cursor_pos.ascend() {
-            // Make sure the ascended level has the updated value at key.
-            let subtrie = TrieValue::SubTrie(root);
-            Box::pin(self.insert(key.into(), subtrie)).await;
-            // Return to the original level.
-            self.cursor_pos.descend(key, root);
-        } else {
-            self.buffer.push_subtrie(root).await;
-            self.cursor_pos.active_root = root;
-        }
-    }
     async fn insert_with_options(
         &mut self,
         key: i32,
@@ -122,6 +111,19 @@ impl Snap for SkyTrieMut {
 }
 
 impl BufferMut for SkyTrieMut {
+    async fn push_root(&mut self, root: MapBase) {
+        if let Some((key, _previous_active)) = self.cursor_pos.ascend() {
+            // Make sure the ascended level has the updated value at key.
+            let subtrie = TrieValue::SubTrie(root);
+            Box::pin(self.insert(key.into(), subtrie)).await;
+            // Return to the original level.
+            self.cursor_pos.descend(key, root);
+        } else {
+            self.buffer.push_root(root).await;
+            self.cursor_pos.active_root = root;
+        }
+    }
+
     async fn push_base(&mut self, base: Base) -> BufferIndex {
         self.buffer.push_base(base).await
     }

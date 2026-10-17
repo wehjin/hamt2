@@ -77,10 +77,6 @@ impl QueryCursor for SkyTrie {
 }
 
 impl Query for SkyTrie {
-    fn get_root(&self) -> MapBase {
-        self.active_root()
-    }
-
     fn query(&self, key: i32) -> Option<TrieValue> {
         map_base::query_value(self.get_root(), HashKey::new(key), self)
     }
@@ -97,6 +93,10 @@ impl Query for SkyTrie {
 impl Buffer for SkyTrie {
     fn max_index(&self) -> BufferIndex {
         self.buffer.max_index()
+    }
+
+    fn get_root(&self) -> MapBase {
+        self.active_root()
     }
 
     fn get_base(&self, id: BufferIndex, size: usize) -> &[Slot] {

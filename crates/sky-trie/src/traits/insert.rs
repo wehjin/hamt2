@@ -1,4 +1,4 @@
-use crate::{MapBase, TrieValue};
+use crate::TrieValue;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum InsertOption {
@@ -8,9 +8,6 @@ pub enum InsertOption {
 
 #[allow(async_fn_in_trait)]
 pub trait Insert {
-    /// Commits a new `root` into the trie.
-    async fn push_root(&mut self, root: MapBase);
-
     /// Inserts `value` into the trie at position `key`.
     async fn insert(&mut self, key: i32, value: impl Into<TrieValue>) -> &mut Self {
         self.insert_with_options(key, value, []).await

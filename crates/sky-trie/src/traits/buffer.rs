@@ -9,6 +9,8 @@ pub trait Buffer {
         self.max_index() + 1
     }
 
+    fn get_root(&self) -> MapBase;
+
     /// Reads a base with `size` slots from the trie's buffer
     /// at position `id`.
     fn get_base(&self, id: BufferIndex, size: usize) -> &[Slot];
