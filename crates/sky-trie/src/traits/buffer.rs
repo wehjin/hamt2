@@ -1,4 +1,4 @@
-use crate::{Base, BufferIndex, MapBase, Slot};
+use crate::{BufferIndex, MapBase, Slot};
 
 pub trait Buffer {
     /// Get the maximum base id available for reading.
@@ -11,15 +11,15 @@ pub trait Buffer {
 
     /// Reads a base with `size` slots from the trie's buffer
     /// at position `id`.
-    fn get_base(&self, id: BufferIndex, size: usize) -> Base;
+    fn get_base(&self, id: BufferIndex, size: usize) -> &[Slot];
 
     /// Reads a subtrie.
     fn get_subtrie(&self, id: BufferIndex) -> MapBase {
-        let mut base = self.get_base(id, 1);
-        let slot = base.slots.pop().expect("slot not found");
+        let base = self.get_base(id, 1);
+        let slot = base.first().expect("slot not found");
         let Slot::MapBase(map_base) = slot else {
             panic!("subtrie id should have a map-base")
         };
-        map_base
+        map_base.clone()
     }
 }

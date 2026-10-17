@@ -1,5 +1,5 @@
 use super::VecBuffer;
-use crate::{Base, Trie};
+use crate::Trie;
 use crate::{Buffer, BufferIndex, MapBase, QueryCursor, Snap};
 use crate::{CursorPos, Slot};
 use crate::{HashKey, Query, SkyTrieMut, TrieValue, map_base};
@@ -10,12 +10,12 @@ pub struct SkyTrie {
     pub(crate) buffer: Arc<VecBuffer>,
     pub(crate) cursor_pos: CursorPos,
 }
+
 impl Eq for SkyTrie {}
 
 impl PartialEq for SkyTrie {
     fn eq(&self, other: &Self) -> bool {
-        self.cursor_pos == other.cursor_pos
-            && self.buffer == other.buffer
+        self.cursor_pos == other.cursor_pos && self.buffer == other.buffer
     }
 }
 
@@ -57,6 +57,10 @@ impl SkyTrie {
 
 /// Queries
 impl SkyTrie {
+    pub fn top_root(&self) -> MapBase {
+        self.get_root()
+    }
+
     pub fn list_keys(&self) -> Vec<i32> {
         self.clone().into_iter().map(|(key, _)| key).collect()
     }
@@ -95,7 +99,7 @@ impl Buffer for SkyTrie {
         self.buffer.max_index()
     }
 
-    fn get_base(&self, id: BufferIndex, size: usize) -> Base {
+    fn get_base(&self, id: BufferIndex, size: usize) -> &[Slot] {
         self.buffer.get_base(id, size)
     }
 }

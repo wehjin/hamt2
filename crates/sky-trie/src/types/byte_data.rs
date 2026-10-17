@@ -113,8 +113,7 @@ impl ByteCursor {
         if self.byte_offset >= 8 {
             self.slot_offset += 1;
             self.byte_offset = 0;
-            self.byte_data =
-                get_byte_data_from_buffer(self.start_index + self.slot_offset, buffer);
+            self.byte_data = get_byte_data_from_buffer(self.start_index + self.slot_offset, buffer);
         }
         let byte = self.byte_data[self.byte_offset];
         self.byte_offset += 1;
@@ -123,10 +122,10 @@ impl ByteCursor {
 }
 
 fn get_byte_data_from_buffer(index: BufferIndex, buffer: &impl Buffer) -> ByteData {
-    let mut base = buffer.get_base(index, 1);
-    let slot = base.slots.pop().expect("slot not found");
+    let base = buffer.get_base(index, 1);
+    let slot = base.first().expect("slot not found");
     let Slot::ByteData(byte_data) = slot else {
         unreachable!("slot should contain byte-data");
     };
-    byte_data
+    byte_data.clone()
 }

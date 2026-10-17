@@ -1,8 +1,10 @@
 use super::VecBuffer;
+use crate::SkyTrie;
+use crate::Slot;
+use crate::TrieMut;
 use crate::{Base, Buffer, BufferIndex, BufferMut, CursorPos, Insert, MapBase, Snap, TrieValue};
-use crate::{HashKey, Query, SkyTrie, map_base};
+use crate::{HashKey, InsertOption, Query, map_base};
 use crate::{InsertCursor, QueryCursor};
-use crate::{InsertOption, TrieMut};
 use std::collections::HashSet;
 use std::sync::Arc;
 
@@ -68,7 +70,7 @@ impl Buffer for SkyTrieMut {
         self.buffer.max_index()
     }
 
-    fn get_base(&self, id: BufferIndex, size: usize) -> Base {
+    fn get_base(&self, id: BufferIndex, size: usize) -> &[Slot] {
         self.buffer.get_base(id, size)
     }
 }

@@ -15,7 +15,7 @@ pub async fn insert_kv(
     buffer: &mut impl BufferMut,
 ) -> Base {
     let slot = Slot::one_kv(key, value, buffer).await;
-    base.as_ref().insert_slot(index, slot)
+    base.insert_slot(index, slot)
 }
 
 /// Makes a copy of `base` in which the slot at `index` contains `value` in place

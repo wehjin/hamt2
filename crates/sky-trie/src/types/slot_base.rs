@@ -8,12 +8,9 @@ pub struct Base {
 }
 
 impl Base {
-    pub fn new(count: usize, slots: &[Slot]) -> Self {
-        let mut base_slots = vec![];
-        for i in 0..count {
-            base_slots.push(slots[i].clone());
-        }
-        Self { slots: base_slots }
+    pub fn new(slots: &[Slot]) -> Self {
+        let slots = slots.to_vec();
+        Self { slots }
     }
 }
 

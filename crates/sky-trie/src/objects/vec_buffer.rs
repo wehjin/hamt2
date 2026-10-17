@@ -49,9 +49,9 @@ impl Buffer for VecBuffer {
         BufferIndex(len as i32 - 1)
     }
 
-    fn get_base(&self, id: BufferIndex, size: usize) -> Base {
+    fn get_base(&self, id: BufferIndex, size: usize) -> &[Slot] {
         if id.0 < 0 {
-            return Base::empty();
+            return &[];
         }
         let mut start = id.0 as usize;
         if let Some(past) = &self.past {
@@ -62,12 +62,11 @@ impl Buffer for VecBuffer {
             start -= past_len;
         }
         if start >= self.slots.len() {
-            return Base::empty();
+            return &[];
         }
         let end = start + size;
         debug_assert!(end <= self.slots.len(), "too few slots in the buffer");
-        let slots = &self.slots[start..end];
-        Base::new(size, slots)
+        &self.slots[start..end]
     }
 }
 
