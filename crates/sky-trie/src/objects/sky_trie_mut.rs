@@ -70,6 +70,10 @@ impl Buffer for SkyTrieMut {
     fn get_base(&self, id: BufferIndex, size: usize) -> &[Slot] {
         self.buffer.get_base(id, size)
     }
+
+    fn get_bytes(&self, index: BufferIndex) -> Vec<u8> {
+        self.buffer.get_bytes(index)
+    }
 }
 impl InsertCursor for SkyTrieMut {}
 
@@ -122,5 +126,9 @@ impl BufferMut for SkyTrieMut {
 
     async fn push_base(&mut self, base: Base) -> BufferIndex {
         self.buffer.push_base(base).await
+    }
+
+    async fn push_bytes(&mut self, bytes: impl AsRef<[u8]>) -> BufferIndex {
+        self.buffer.push_bytes(bytes).await
     }
 }

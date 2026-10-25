@@ -7,6 +7,9 @@ pub trait Buffer {
     /// at position `id`.
     fn get_base(&self, id: BufferIndex, size: usize) -> &[Slot];
 
+    /// Reads the bytes stored at `index`.
+    fn get_bytes(&self, index: BufferIndex) -> Vec<u8>;
+
     /// Reads a subtrie.
     fn get_subtrie(&self, id: BufferIndex) -> MapBase {
         let base = self.get_base(id, 1);

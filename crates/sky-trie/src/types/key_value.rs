@@ -1,7 +1,4 @@
-use crate::{
-    Buffer, BufferIndex, BufferMut, HashKey, TrieKey, TrieValue, get_bytes_from_buffer,
-    push_bytes_to_buffer,
-};
+use crate::{Buffer, BufferIndex, BufferMut, HashKey, TrieKey, TrieValue};
 use serde::{Deserialize, Serialize};
 
 const INT_KEY: u32 = 0x0000_0000;
@@ -50,7 +47,7 @@ impl KeyValue {
             },
             TrieValue::Bytes(bytes) => Self::Bytes {
                 key: key | BYTES_KEY,
-                value: push_bytes_to_buffer(bytes.as_slice(), buffer).await,
+                value: buffer.push_bytes(bytes.as_slice()).await,
             },
         };
         value
@@ -68,7 +65,7 @@ impl KeyValue {
                 (key, value)
             }
             KeyValue::Bytes { value, .. } => {
-                let bytes = get_bytes_from_buffer(*value, buffer);
+                let bytes = buffer.get_bytes(*value);
                 let value = TrieValue::Bytes(bytes);
                 (key, value)
             }

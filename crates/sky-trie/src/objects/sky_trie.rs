@@ -97,6 +97,10 @@ impl Buffer for SkyTrie {
     fn get_base(&self, id: BufferIndex, size: usize) -> &[Slot] {
         self.buffer.get_base(id, size)
     }
+
+    fn get_bytes(&self, index: BufferIndex) -> Vec<u8> {
+        self.buffer.get_bytes(index)
+    }
 }
 
 impl Snap for SkyTrie {

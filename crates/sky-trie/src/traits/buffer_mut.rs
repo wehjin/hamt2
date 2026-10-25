@@ -7,6 +7,9 @@ pub trait BufferMut: Buffer {
     /// Commits a base and returns its assigned handle.
     async fn push_base(&mut self, base: Base) -> BufferIndex;
 
+    /// Commits bytes and returns their assigned handle.
+    async fn push_bytes(&mut self, bytes: impl AsRef<[u8]>) -> BufferIndex;
+
     /// Commits a subtrie.
     async fn push_subtrie(&mut self, map_base: MapBase) -> BufferIndex {
         let slot = Slot::MapBase(map_base);

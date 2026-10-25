@@ -34,8 +34,8 @@ Layered, each layer building on the one below.
     - `objects/` — `SkyTrie` (immutable; `Clone` is a snapshot; edit via `trie.edit(async |t: &mut SkyTrieMut| ...)`)
       and `SkyTrieMut` (a deliberately non-`Clone` edit buffer; `extend(trie)` and `commit()` -> `SkyTrie`).
       `VecBuffer` implements the buffer traits.
-    - `traits/` — `Buffer` (`get_root`/`get_base`/`get_subtrie`), `BufferMut`
-      (`push_root`/`push_base`/`push_subtrie`), `Query` (`query`/`query_u32`/`query_all`/`query_deep`),
+    - `traits/` — `Buffer` (`get_root`/`get_base`/`get_subtrie`/`get_bytes`), `BufferMut`
+      (`push_root`/`push_base`/`push_subtrie`/`push_bytes`), `Query` (`query`/`query_u32`/`query_all`/`query_deep`),
       `Snap` (`type Snapshot` + `snapshot`),
       `QueryCursor` (cursor nav: `ascend`/`descend`/`backup`/`restore`/`top_root`), `InsertCursor`
       (`insert_deep`), `Insert` (`insert`/`insert_with_options`, `InsertOption::DeleteOthers`), and the marker
@@ -44,7 +44,8 @@ Layered, each layer building on the one below.
       `Slot::{KeyValue, MapBase, ByteData}`, `KeyValue::{Int, Subtrie, Bytes}` (top-2-bit tag + 30-bit key),
       `TrieValue::{U32, SubTrie, Bytes}`, `SlotMap(u32)` bitmap, `BufferIndex(i32)` (`ZERO`/`NIL`),
       `HashKey`/`DeepKey`, `TrieKey`/`CursorPos`/`Leg`, and `ByteData([u8; 8])` with LEB128-length-prefixed
-      byte storage (`push_bytes_to_buffer`/`get_bytes_from_buffer`).
+      byte storage (the `Buffer`/`BufferMut` `get_bytes`/`push_bytes` methods; `VecBuffer` owns the
+      `ByteData`-slot encoding).
     - `services/` — `base` (`form_kv`/`insert_kv`/`swap_v`, `kick_kv`/`merge_kv`) and `map_base`
       (`one_kv`/`two_kv`, `insert_kv`, `query_value`/`query_keys_values`, `query_value_deep`).
 3. `crates/sky-db` — the Datomic layer. `lib.rs` exposes `find` and `pull`, keeps `_internal`, `errors`,
