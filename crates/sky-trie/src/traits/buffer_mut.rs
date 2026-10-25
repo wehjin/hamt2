@@ -1,9 +1,6 @@
 use crate::{Base, Buffer, BufferIndex, MapBase, Slot};
 #[allow(async_fn_in_trait)]
-pub trait BufferMut: Buffer
-where
-    Self: Sized,
-{
+pub trait BufferMut: Buffer {
     /// Commits a new `root` into the trie.
     async fn push_root(&mut self, root: MapBase);
 
