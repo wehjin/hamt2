@@ -44,13 +44,8 @@ impl VecBuffer {
 }
 
 impl Buffer for VecBuffer {
-    fn max_index(&self) -> BufferIndex {
-        let len = self.len();
-        BufferIndex(len as i32 - 1)
-    }
-
     fn get_root(&self) -> MapBase {
-        self.get_subtrie(self.max_index())
+        self.get_subtrie(BufferIndex(self.len() as i32 - 1))
     }
 
     fn get_base(&self, id: BufferIndex, size: usize) -> &[Slot] {
@@ -79,8 +74,8 @@ impl BufferMut for VecBuffer {
         self.push_subtrie(root).await;
     }
 
-    async fn push_base(&mut self, base: Base) -> BufferIndex {
-        let index = self.next_index();
+async fn push_base(&mut self, base: Base) -> BufferIndex {
+        let index = BufferIndex(self.len() as i32);
         self.slots.extend(base.slots);
         index
     }

@@ -63,10 +63,6 @@ impl Query for SkyTrieMut {
 }
 
 impl Buffer for SkyTrieMut {
-    fn max_index(&self) -> BufferIndex {
-        self.buffer.max_index()
-    }
-
     fn get_root(&self) -> MapBase {
         self.active_root()
     }

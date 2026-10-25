@@ -34,7 +34,7 @@ Layered, each layer building on the one below.
     - `objects/` — `SkyTrie` (immutable; `Clone` is a snapshot; edit via `trie.edit(async |t: &mut SkyTrieMut| ...)`)
       and `SkyTrieMut` (a deliberately non-`Clone` edit buffer; `extend(trie)` and `commit()` -> `SkyTrie`).
       `VecBuffer` implements the buffer traits.
-    - `traits/` — `Buffer` (`max_index`/`next_index`/`get_root`/`get_base`/`get_subtrie`), `BufferMut`
+    - `traits/` — `Buffer` (`get_root`/`get_base`/`get_subtrie`), `BufferMut`
       (`push_root`/`push_base`/`push_subtrie`), `Query` (`query`/`query_u32`/`query_all`/`query_deep`),
       `Snap` (`type Snapshot` + `snapshot`),
       `QueryCursor` (cursor nav: `ascend`/`descend`/`backup`/`restore`/`top_root`), `InsertCursor`
@@ -85,8 +85,8 @@ Layered, each layer building on the one below.
   of a `KeyValue` key tag Int/Subtrie/Bytes. `BufferIndex` (non-negative `i32`) is the base handle. `Ein` is a
   non-negative `i32`. The EAVT/AEVT index values still pack `Dir` into bit 28 (`0x1000_0000`) plus a 28-bit
   `Txid`, capping tx ids below 2^28.
-- **`BufferIndex::ZERO` is the empty base**; `NIL` is the empty-buffer sentinel. Reads outside `max_index`
-  return `Base::empty()`.
+- **`BufferIndex::ZERO` is the empty base**; `NIL` is the empty-buffer sentinel. Reads of unwritten
+  indexes return `Base::empty()`.
 - **`Attr` owns a `String`** (attribute idents). Schema attrs must be declared up front: `Pod::new(db_spec)`
   takes `impl Into<DbSpec>` (`[&str; N]`/`Vec<&str>`, `[Attr; N]`, `Vec<Attr>`, `[AttrSpec; N]`). Build an
   `Attr` with `Attr::from("...")`. Entity ids 0–2 are reserved (`Ein::DB_IDENT`, `DB_CARDINALITY`, `DB_MAX`);

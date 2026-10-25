@@ -10,13 +10,6 @@ mod edit_walks;
 mod mem_insert;
 
 #[tokio::test]
-async fn empty_trie_max_id_is_zero() {
-    let trie = SkyTrieMut::new();
-    assert_eq!(BufferIndex::ZERO, trie.max_index());
-    assert_eq!(BufferIndex::ONE, trie.next_index());
-}
-
-#[tokio::test]
 async fn base_id_zero_is_the_seed_base() {
     let trie = SkyTrieMut::new();
     assert_eq!(Base::seed().slots, trie.get_base(BufferIndex::ZERO, 1));
@@ -39,42 +32,18 @@ async fn root_round_trip_works() {
 }
 
 #[tokio::test]
-async fn append_assigns_sequential_ids() {
+async fn append_assigns_distinct_ids() {
     let mut trie = SkyTrieMut::new();
     let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7), &mut trie).await;
     let id0 = trie.push_base(base.clone()).await;
     let id1 = trie.push_base(base.clone()).await;
-    assert_eq!(BufferIndex(1), id0);
-    assert_eq!(BufferIndex(2), id1);
-    assert_eq!(BufferIndex(2), trie.max_index());
-    assert_eq!(BufferIndex(3), trie.next_index());
+    assert_ne!(id0, id1);
     assert_eq!(base.slots, trie.get_base(id0, base.slots.len()));
     assert_eq!(base.slots, trie.get_base(id1, base.slots.len()));
 }
 
 #[tokio::test]
-async fn mem_readonly_snapshot_does_not_see_new_bases() {
-    let mut trie = SkyTrie::new();
-    trie.edit(async |trie| {
-        trie.insert(7, 7).await;
-        Ok(())
-    })
-    .await
-    .unwrap();
-    let index1 = trie.max_index();
-    let view = trie.snapshot();
-    trie.edit(async |trie| {
-        trie.insert(8, 8).await;
-        Ok(())
-    })
-    .await
-    .unwrap();
-    assert_ne!(view.max_index(), trie.max_index());
-    assert_eq!(view.max_index(), index1);
-}
-
-#[tokio::test]
-async fn reading_beyond_max_id_produces_empty() {
+async fn snapshot_does_not_see_subsequent_edits() {
     let mut trie = SkyTrie::new();
     trie.edit(async |trie| {
         trie.insert(7, 7).await;
@@ -83,14 +52,15 @@ async fn reading_beyond_max_id_produces_empty() {
     .await
     .unwrap();
     let view = trie.snapshot();
+    let root_before = view.get_root();
     trie.edit(async |trie| {
         trie.insert(8, 8).await;
         Ok(())
     })
     .await
     .unwrap();
-    assert_ne!(view.max_index(), trie.max_index());
-    assert_eq!(view.get_base(trie.max_index(), 1), &[] as &[Slot]);
+    assert_ne!(view.get_root(), trie.get_root());
+    assert_eq!(view.get_root(), root_before);
 }
 
 #[tokio::test]

@@ -29,8 +29,7 @@ impl SkyTrie {
     }
 
     pub fn with_buffer(buffer: VecBuffer) -> Self {
-        let max_id = buffer.max_index();
-        let root = buffer.get_subtrie(max_id);
+        let root = buffer.get_root();
         let cursor_pos = CursorPos::new(root);
         Self {
             buffer: Arc::new(buffer),
@@ -91,10 +90,6 @@ impl Query for SkyTrie {
 }
 
 impl Buffer for SkyTrie {
-    fn max_index(&self) -> BufferIndex {
-        self.buffer.max_index()
-    }
-
     fn get_root(&self) -> MapBase {
         self.active_root()
     }
