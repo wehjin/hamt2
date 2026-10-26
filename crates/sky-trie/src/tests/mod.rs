@@ -10,12 +10,6 @@ mod edit_walks;
 mod mem_insert;
 
 #[tokio::test]
-async fn base_id_zero_is_the_seed_base() {
-    let trie = SkyTrieMut::new();
-    assert_eq!(Base::seed().slots, trie.get_base(BufferIndex::ZERO, 1));
-}
-
-#[tokio::test]
 async fn empty_trie_root_is_empty() {
     let trie = SkyTrieMut::new();
     assert_eq!(MapBase::empty(), trie.get_root());
