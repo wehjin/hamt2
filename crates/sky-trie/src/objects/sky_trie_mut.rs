@@ -6,12 +6,10 @@ use crate::{Base, Buffer, BufferIndex, BufferMut, CursorPos, Insert, MapBase, Sn
 use crate::{HashKey, InsertOption, Query, map_base};
 use crate::{InsertCursor, QueryCursor};
 use std::collections::HashSet;
-use std::sync::Arc;
 
 /// Deliberately non-Clone.
 #[derive(Debug)]
 pub struct SkyTrieMut {
-    pub(crate) past: Arc<SkyTrie>,
     pub(crate) buffer: VecBuffer,
     pub(crate) cursor_pos: CursorPos,
 }
@@ -24,12 +22,7 @@ impl SkyTrieMut {
     pub fn extend(past: SkyTrie) -> Self {
         let cursor_pos = past.cursor_pos().clone().ascend_top();
         let buffer = VecBuffer::extend(past.buffer.clone());
-        let past = Arc::new(past);
-        Self {
-            past,
-            buffer,
-            cursor_pos,
-        }
+        Self { buffer, cursor_pos }
     }
     pub async fn commit(self) -> SkyTrie {
         let buffer = self.buffer.retract();
@@ -103,7 +96,6 @@ impl Snap for SkyTrieMut {
 
     fn snapshot(&self) -> Self::Snapshot {
         Self {
-            past: self.past.clone(),
             buffer: self.buffer.clone(),
             cursor_pos: self.cursor_pos.clone(),
         }
