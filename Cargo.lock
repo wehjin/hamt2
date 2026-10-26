@@ -4209,7 +4209,6 @@ name = "sky-db"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "async-stream",
  "data-encoding",
  "futures",
  "iroh",
