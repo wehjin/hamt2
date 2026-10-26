@@ -6,6 +6,7 @@ use crate::{Base, Buffer, BufferIndex, BufferMut, CursorPos, Insert, MapBase, Sn
 use crate::{HashKey, InsertOption, Query, map_base};
 use crate::{InsertCursor, QueryCursor};
 use std::collections::HashSet;
+use std::sync::Arc;
 
 /// Deliberately non-Clone.
 #[derive(Debug)]
@@ -92,11 +93,11 @@ impl Insert for SkyTrieMut {
 }
 
 impl Snap for SkyTrieMut {
-    type Snapshot = SkyTrieMut;
+    type Snapshot = SkyTrie;
 
     fn snapshot(&self) -> Self::Snapshot {
-        Self {
-            buffer: self.buffer.clone(),
+        SkyTrie {
+            buffer: Arc::new(self.buffer.clone()),
             cursor_pos: self.cursor_pos.clone(),
         }
     }
