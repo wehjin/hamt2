@@ -56,10 +56,6 @@ impl SkyTrie {
 
 /// Queries
 impl SkyTrie {
-    pub fn top_root(&self) -> MapBase {
-        self.get_root()
-    }
-
     pub fn list_keys(&self) -> Vec<i32> {
         self.clone().into_iter().map(|(key, _)| key).collect()
     }
