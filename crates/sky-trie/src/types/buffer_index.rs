@@ -1,33 +1,18 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fmt::Display;
-use std::ops::{Add, Sub};
 
-#[derive(
-    Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize, Default,
-)]
-pub struct BufferIndex(pub i32);
+/// A handle into the trie's buffer.
+///
+/// This is a content address: the BLAKE3 hash of the serialized base or byte
+/// array it refers to. It is the same value iroh uses to store and fetch the
+/// corresponding blob, so the in-memory and persisted representations agree.
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct BufferIndex(pub blake3::Hash);
 
-impl Add<i32> for BufferIndex {
-    type Output = Self;
-
-    fn add(self, rhs: i32) -> Self::Output {
-        Self(self.0 + rhs)
-    }
-}
-
-impl Sub<i32> for BufferIndex {
-    type Output = Self;
-
-    fn sub(self, rhs: i32) -> Self::Output {
-        Self(self.0 - rhs)
-    }
-}
-
-impl Add<usize> for BufferIndex {
-    type Output = Self;
-    fn add(self, rhs: usize) -> Self::Output {
-        Self(self.0 + rhs as i32)
+impl Default for BufferIndex {
+    fn default() -> Self {
+        Self::NIL
     }
 }
 
@@ -37,12 +22,8 @@ impl Display for BufferIndex {
     }
 }
 
-impl Into<usize> for BufferIndex {
-    fn into(self) -> usize {
-        self.0 as usize
-    }
-}
-
 impl BufferIndex {
-    pub const NIL: BufferIndex = BufferIndex(-1);
+    /// The empty-buffer sentinel. Never dereferenced; used as the `base` of an
+    /// empty [`MapBase`](crate::MapBase).
+    pub const NIL: BufferIndex = BufferIndex(blake3::Hash::from_bytes([0; 32]));
 }

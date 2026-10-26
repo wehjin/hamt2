@@ -337,6 +337,7 @@ dependencies = [
  "cfg-if",
  "constant_time_eq",
  "cpufeatures 0.3.1",
+ "serde",
 ]
 
 [[package]]
@@ -4230,6 +4231,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-stream",
+ "blake3",
  "futures",
  "postcard",
  "serde",

@@ -26,14 +26,20 @@ async fn root_round_trip_works() {
 }
 
 #[tokio::test]
-async fn append_assigns_distinct_ids() {
+async fn push_base_is_content_addressed() {
     let mut trie = SkyTrieMut::new();
     let base = Base::new_kv(HashKey::new(7), TrieValue::U32(7), &mut trie).await;
     let id0 = trie.push_base(base.clone()).await;
     let id1 = trie.push_base(base.clone()).await;
-    assert_ne!(id0, id1);
+    // Content-addressing is idempotent: the same base hashes to the same id.
+    assert_eq!(id0, id1);
     assert_eq!(base.slots, trie.get_base(id0, base.slots.len()));
-    assert_eq!(base.slots, trie.get_base(id1, base.slots.len()));
+
+    // A different base hashes to a different id.
+    let other = Base::new_kv(HashKey::new(8), TrieValue::U32(8), &mut trie).await;
+    let id2 = trie.push_base(other.clone()).await;
+    assert_ne!(id0, id2);
+    assert_eq!(other.slots, trie.get_base(id2, other.slots.len()));
 }
 
 #[tokio::test]
@@ -60,6 +66,6 @@ async fn snapshot_does_not_see_subsequent_edits() {
 #[tokio::test]
 async fn reading_unwritten_id_produces_empty() {
     let trie = SkyTrie::new().snapshot();
-    let base = trie.get_base(BufferIndex(1), 0);
+    let base = trie.get_base(BufferIndex(blake3::Hash::from_bytes([1; 32])), 0);
     assert_eq!(base, &[] as &[Slot])
 }

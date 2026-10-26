@@ -1,4 +1,4 @@
-use super::VecBuffer;
+use super::ContentBuffer;
 use crate::Trie;
 use crate::{Buffer, BufferIndex, MapBase, QueryCursor, Snap};
 use crate::{CursorPos, Slot};
@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 #[derive(Debug, Clone)]
 pub struct SkyTrie {
-    pub(crate) buffer: Arc<VecBuffer>,
+    pub(crate) buffer: Arc<ContentBuffer>,
     pub(crate) cursor_pos: CursorPos,
 }
 
@@ -22,13 +22,11 @@ impl PartialEq for SkyTrie {
 /// Constructors
 impl SkyTrie {
     pub fn new() -> Self {
-        // All tries start with a single slot containing the root of the trie.
-        let seed = Slot::MapBase(MapBase::empty());
-        let buffer = VecBuffer::new(seed);
+        let buffer = ContentBuffer::new();
         Self::with_buffer(buffer)
     }
 
-    pub fn with_buffer(buffer: VecBuffer) -> Self {
+    pub fn with_buffer(buffer: ContentBuffer) -> Self {
         let root = buffer.get_root();
         let cursor_pos = CursorPos::new(root);
         Self {

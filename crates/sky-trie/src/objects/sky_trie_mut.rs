@@ -1,4 +1,4 @@
-use super::VecBuffer;
+use super::ContentBuffer;
 use crate::SkyTrie;
 use crate::Slot;
 use crate::TrieMut;
@@ -11,7 +11,7 @@ use std::sync::Arc;
 /// Deliberately non-Clone.
 #[derive(Debug)]
 pub struct SkyTrieMut {
-    pub(crate) buffer: VecBuffer,
+    pub(crate) buffer: ContentBuffer,
     pub(crate) cursor_pos: CursorPos,
 }
 
@@ -22,7 +22,7 @@ impl SkyTrieMut {
 
     pub fn extend(past: SkyTrie) -> Self {
         let cursor_pos = past.cursor_pos().clone().ascend_top();
-        let buffer = VecBuffer::extend(past.buffer.clone());
+        let buffer = ContentBuffer::extend(past.buffer.clone());
         Self { buffer, cursor_pos }
     }
     pub async fn commit(self) -> SkyTrie {

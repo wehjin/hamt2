@@ -50,7 +50,6 @@ impl Iterator for SkyTrieIterator {
                         self.jobs.push(lower_job);
                     }
                 }
-                Slot::ByteData(_) => unreachable!("base should contain no byte-data slots"),
             }
         }
         None

@@ -1,13 +1,12 @@
 use crate::services::map_base::{query_keys_values, query_value, two_kv};
 use crate::types::key_value::KeyValue;
-use crate::{Base, Buffer, BufferMut, ByteData, HashKey, MapBase, SlotMap, TrieValue};
+use crate::{Base, Buffer, BufferMut, HashKey, MapBase, SlotMap, TrieValue};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub enum Slot {
     KeyValue(KeyValue),
     MapBase(MapBase),
-    ByteData(ByteData),
 }
 
 impl Slot {
@@ -55,7 +54,6 @@ impl Slot {
                 vec![key_value]
             }
             Slot::MapBase(map_base) => query_keys_values(*map_base, buffer),
-            Slot::ByteData(_) => unreachable!("byte-data should not appear at this level"),
         }
     }
     pub fn query_value<P: Buffer>(&self, key: HashKey, buffer: &P) -> Option<TrieValue> {
@@ -65,7 +63,6 @@ impl Slot {
                 if k != key.i32() { None } else { Some(v) }
             }
             Slot::MapBase(map_base) => query_value(*map_base, key.next(), buffer),
-            Slot::ByteData(_) => unreachable!("byte-data should not appear at this level"),
         }
     }
     pub fn test_kv(&self, key: &HashKey, value: &TrieValue, buffer: &impl Buffer) -> KvTest {
@@ -83,7 +80,6 @@ impl Slot {
                 }
             }
             Slot::MapBase(_) => KvTest::MapBaseConflict,
-            Slot::ByteData(_) => unreachable!("byte-data should not appear at this level"),
         }
     }
 }

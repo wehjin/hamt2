@@ -1,5 +1,4 @@
 mod buffer_index;
-mod byte_data;
 mod cursor;
 mod deep_key;
 mod hash_key;
@@ -11,7 +10,6 @@ mod slot_map;
 mod trie_value;
 
 pub use buffer_index::*;
-pub use byte_data::*;
 pub use cursor::*;
 pub use deep_key::*;
 pub use hash_key::*;
