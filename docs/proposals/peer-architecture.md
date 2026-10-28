@@ -694,6 +694,71 @@ Files touched and the key changes:
 
 ---
 
+## 14. Implementation stages
+
+The work is broken into two phases. **Phase A** is a set of refactors that keep the system
+single-writer and behaviorally unchanged, each testable against the existing suite. **Phase B** adds
+the peer model itself. Each stage compiles and passes tests on its own.
+
+### Phase A — Refactors (single-writer, no behavior change)
+
+**Stage 1 — Widen the value type.**
+Add `U64` and `Bytes` to `Val` (and, optionally, `Ein`), and teach the value table to encode/decode
+them. This is a pure extension — existing `U32`/`String` values are untouched. *Done when:* the value
+table round-trips every variant and all existing tests still pass.
+
+**Stage 2 — Switch to a history-preserving index.**
+Replace the packed `txid + dir` leaf with a deeper `[entity, attr, value, tx] → dir` layout, and stop
+overwriting on cardinality-one. "Current value" becomes a query-time computation (latest tx wins)
+instead of a write-time overwrite. *Done when:* existing tests return identical results, and new
+tests show history is retained.
+
+**Stage 3 — Derive entity ids from nonces.**
+Stop allocating entity ids from a shared counter; mint a random nonce per temp entity and derive its
+id from it. *Done when:* temp entities get unique, stable ids with no counter, and existing tests
+pass.
+
+### Phase B — Peer model (new capabilities)
+
+**Stage 4 — Make every transaction an entity.**
+Give each transaction a nonce-derived id, a content hash, and metadata attributes (`:tx/author`,
+`:tx/prev`, `:tx/nonce`, `:tx/instant`). The transaction id replaces the old monotonic `Txid` as the
+index key. *Done when:* each transaction produces a queryable entity carrying its own metadata.
+
+**Stage 5 — Treat the schema as data.**
+Replace the fixed, up-front schema with a genesis transaction that declares the initial attributes,
+and derive the schema by replaying the log. *Done when:* the schema is declared via a transaction
+and reconstructed from the log, with "declare before use" enforced.
+
+**Stage 6 — Linearize and replay.**
+Add the hash chain (`prev` pointer), the deterministic linearization (topological sort + hash
+tiebreak), and the replay loop that inserts datoms and computes the order. *Done when:* concurrent
+transactions merge deterministically and every peer computes the same order.
+
+**Stage 7 — Wire up iroh-docs.**
+Add the actual log: append transactions to an iroh-docs replica, sync on startup, and replay
+incrementally on live updates. *Done when:* two peers sync and converge on the same index.
+
+### Why this order
+
+- **Stage 2 is the hard prerequisite, done first in isolation.** The existing `replace_tail` is
+  fundamentally incompatible with the peer model (it destroys history, and LWW-by-insertion-order
+  can't handle concurrent writes). Doing it while still single-writer (monotonic `Txid` as the tx
+  key, "max `Txid`" as the merge) isolates the riskiest storage change from the riskiest algorithm
+  change.
+- **Stages 1 and 3 are independent of Stage 2** and of each other, so they can be done in any order —
+  or in parallel if the work is split across contributors.
+- **Stage 4 is the pivot.** It swaps the tx key from monotonic `Txid` to the transaction entity's
+  nonce-derived `Ein`, and introduces the content hash. Everything after it builds on the transaction
+  entity.
+- **Stages 5 and 6 are orthogonal** (schema evolution vs. ordering) and both sit on Stage 4, so they
+  can be done in either order once 4 lands.
+- **Stage 7 is last** because it is the only stage with an external dependency (iroh) and networking,
+  and it is the thinnest once 6 is in place — the log is just "append a serialized `Tx`, replay on
+  `subscribe`."
+
+---
+
 ## Appendix: key invariants
 
 - The trie is append-only; only the linearized order changes.
