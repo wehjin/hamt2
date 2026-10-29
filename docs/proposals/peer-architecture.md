@@ -721,9 +721,10 @@ pass.
 ### Phase B — Peer model (new capabilities)
 
 **Stage 4 — Make every transaction an entity.**
-Give each transaction a nonce-derived id, a content hash, and metadata attributes (`:tx/author`,
-`:tx/prev`, `:tx/nonce`, `:tx/instant`). The transaction id replaces the old monotonic `Txid` as the
-index key. *Done when:* each transaction produces a queryable entity carrying its own metadata.
+Give each transaction a nonce-derived id and metadata attributes (`:tx/nonce`, `:tx/instant`; the
+`:tx/author` and `:tx/prev` values, plus the content hash, wait for the log in Stages 6–7). The
+monotonic `Txid` remains the index key for now. *Done when:* each transaction produces a queryable
+entity carrying its own metadata.
 
 **Stage 5 — Treat the schema as data.**
 Replace the fixed, up-front schema with a genesis transaction that declares the initial attributes,
@@ -732,7 +733,9 @@ and reconstructed from the log, with "declare before use" enforced.
 
 **Stage 6 — Linearize and replay.**
 Add the hash chain (`prev` pointer), the deterministic linearization (topological sort + hash
-tiebreak), and the replay loop that inserts datoms and computes the order. *Done when:* concurrent
+tiebreak), and the replay loop that inserts datoms and computes the order. This is also where the
+index key swaps from the monotonic `Txid` to the transaction entity's nonce-derived `Ein` — the
+linearized order supplies the ordering that "current value" resolution needs. *Done when:* concurrent
 transactions merge deterministically and every peer computes the same order.
 
 **Stage 7 — Wire up iroh-docs.**
@@ -748,9 +751,10 @@ incrementally on live updates. *Done when:* two peers sync and converge on the s
   change.
 - **Stages 1 and 3 are independent of Stage 2** and of each other, so they can be done in any order —
   or in parallel if the work is split across contributors.
-- **Stage 4 is the pivot.** It swaps the tx key from monotonic `Txid` to the transaction entity's
-  nonce-derived `Ein`, and introduces the content hash. Everything after it builds on the transaction
-  entity.
+- **Stage 4 introduces the transaction entity** (nonce-derived id + `:tx/*` metadata) but keeps the
+  monotonic `Txid` as the index key. The key swap to the transaction entity's `Ein` is coupled to
+  Stage 6, because "current value" resolution needs an ordering — the monotonic `Txid` provides it
+  today, and the linearized order replaces it in Stage 6.
 - **Stages 5 and 6 are orthogonal** (schema evolution vs. ordering) and both sit on Stage 4, so they
   can be done in either order once 4 lands.
 - **Stage 7 is last** because it is the only stage with an external dependency (iroh) and networking,

@@ -2,6 +2,7 @@ use crate::{Attr, Dat, Ein, Ent, Val};
 
 pub mod datom;
 pub mod db;
+pub mod tx;
 
 pub fn val(from: impl Into<Val>) -> Val {
     from.into()

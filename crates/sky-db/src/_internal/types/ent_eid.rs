@@ -7,7 +7,7 @@ use std::ops::Index;
 /// to the same entity everywhere in a transaction.
 pub struct EntEid(HashMap<String, Ein>);
 
-fn rand_nonce() -> [u8; 16] {
+pub fn rand_nonce() -> [u8; 16] {
     let mut buf = [0u8; 16];
     getrandom::fill(&mut buf).expect("os rng");
     buf

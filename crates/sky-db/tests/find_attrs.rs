@@ -17,7 +17,11 @@ async fn find_attrs_works() {
         vec![
             attr("counter/count"),
             attr("db/cardinality"),
-            attr("db/ident")
+            attr("db/ident"),
+            attr("tx/author"),
+            attr("tx/instant"),
+            attr("tx/nonce"),
+            attr("tx/prev")
         ]
     );
 }

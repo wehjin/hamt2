@@ -1,5 +1,5 @@
 use crate::_internal::schema;
-use crate::_internal::{EntEid, db_trie, val_table};
+use crate::_internal::{EntEid, db_trie, rand_nonce, val_table};
 use crate::_internal::KEY_MAX_TXID;
 use crate::attr_spec::DbSpec;
 use crate::attribute::AttributeDetails;
@@ -7,7 +7,8 @@ use crate::errors::ConnectError;
 use crate::trie::SkyTrie;
 use crate::types::Txid;
 use crate::{
-    Attr, Attribute, Dat, Datom, Ein, Ent, Fill, QueryError, Schema, Transact, TransactError, Val, val,
+    Attr, Attribute, Dat, Datom, Dir, Ein, Ent, Fill, QueryError, Schema, Transact, TransactError,
+    Val, tx, val,
 };
 use sky_trie::{Query, TrieValue};
 
@@ -123,6 +124,8 @@ impl Transact for Pod {
         if datoms.is_empty() {
             return Ok(self);
         }
+        let nonce = rand_nonce();
+        let tx_ein = Ein::tx(&nonce);
         let tx = self.max_tx().await?;
         self.trie
             .edit(async |trie| {
@@ -146,6 +149,31 @@ impl Transact for Pod {
                     let dir = datom.dir;
                     db_trie::with_update(trie, &self.schema, eid, attr, val, dir, &tx).await?;
                 }
+                // Emit the transaction entity's metadata.
+                db_trie::with_update(
+                    trie,
+                    &self.schema,
+                    tx_ein,
+                    tx::nonce(),
+                    Val::Bytes(nonce.to_vec()),
+                    Dir::In,
+                    &tx,
+                )
+                .await?;
+                let now = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .expect("time before epoch")
+                    .as_secs();
+                db_trie::with_update(
+                    trie,
+                    &self.schema,
+                    tx_ein,
+                    tx::instant(),
+                    Val::U64(now),
+                    Dir::In,
+                    &tx,
+                )
+                .await?;
                 db_trie::set_max_tx(trie, tx + 1).await?;
                 Ok(())
             })

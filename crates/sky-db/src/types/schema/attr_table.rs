@@ -1,7 +1,7 @@
 use crate::attr_spec::AttrSpec;
 use crate::attribute::AttributeDetails;
 use crate::cardinality::Cardinality;
-use crate::{Attr, Ein, db};
+use crate::{Attr, Ein, db, tx};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::ops::{Deref, Index};
@@ -53,7 +53,7 @@ impl AttrTable {
         attr_table
     }
 
-    fn starter_attributes() -> [AttributeDetails; 2] {
+    fn starter_attributes() -> [AttributeDetails; 6] {
         [
             AttributeDetails::new(
                 Ein::DB_IDENT,
@@ -66,6 +66,34 @@ impl AttrTable {
                 Ein::DB_CARDINALITY,
                 AttrSpec {
                     attr: db::cardinality(),
+                    cardinality: Cardinality::One,
+                },
+            ),
+            AttributeDetails::new(
+                Ein::attr(&tx::author()),
+                AttrSpec {
+                    attr: tx::author(),
+                    cardinality: Cardinality::One,
+                },
+            ),
+            AttributeDetails::new(
+                Ein::attr(&tx::prev()),
+                AttrSpec {
+                    attr: tx::prev(),
+                    cardinality: Cardinality::One,
+                },
+            ),
+            AttributeDetails::new(
+                Ein::attr(&tx::nonce()),
+                AttrSpec {
+                    attr: tx::nonce(),
+                    cardinality: Cardinality::One,
+                },
+            ),
+            AttributeDetails::new(
+                Ein::attr(&tx::instant()),
+                AttrSpec {
+                    attr: tx::instant(),
                     cardinality: Cardinality::One,
                 },
             ),

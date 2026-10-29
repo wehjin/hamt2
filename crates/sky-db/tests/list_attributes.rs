@@ -8,15 +8,24 @@ async fn list_attributes_works() {
     let mut attributes = pod.list_attributes().await;
     attributes.sort();
 
-    let idents = attributes.iter().map(Attribute::ident).collect::<Vec<_>>();
-    assert_eq!(idents, vec!["db/ident", "db/cardinality", "counter/count"]);
+    let mut idents = attributes.iter().map(Attribute::ident).collect::<Vec<_>>();
+    idents.sort();
+    assert_eq!(
+        idents,
+        vec![
+            "counter/count",
+            "db/cardinality",
+            "db/ident",
+            "tx/author",
+            "tx/instant",
+            "tx/nonce",
+            "tx/prev"
+        ]
+    );
 
     let cards = attributes
         .iter()
         .map(Attribute::cardinality)
         .collect::<Vec<_>>();
-    assert_eq!(
-        cards,
-        vec![Cardinality::One, Cardinality::One, Cardinality::One]
-    );
+    assert!(cards.iter().all(|c| *c == Cardinality::One));
 }

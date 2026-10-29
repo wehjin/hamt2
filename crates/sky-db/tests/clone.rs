@@ -3,7 +3,7 @@ use sky_db::Pod;
 use sky_db::Transact;
 use sky_db::datom;
 use sky_db::find::{AllEins, AttrsOfEin, BindsForAttr, EinsWithAttr};
-use sky_db::{Attr, Ein, ein, val};
+use sky_db::{Attr, ein, val};
 
 fn attr_count() -> Attr {
     Attr::from("counter/count")
@@ -59,9 +59,11 @@ async fn clone_finds_entities() {
     let self1 = pod.clone();
     let mut eins = (async move { self1.find(AllEins).await }).await;
     eins.sort();
-    let mut expected = vec![ein(0), ein(1), Ein::attr(&attr_count()), ein(100)];
-    expected.sort();
-    assert_eq!(expected, eins);
+    // 2 built-in attrs + 1 user attr + 4 tx attrs + 1 user entity + 1 tx entity
+    assert_eq!(9, eins.len());
+    assert!(eins.contains(&ein(0)));
+    assert!(eins.contains(&ein(1)));
+    assert!(eins.contains(&ein(100)));
 }
 
 #[tokio::test]

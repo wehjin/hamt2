@@ -18,12 +18,17 @@ impl Ein {
 
     /// Derive a user entity id from a random nonce.
     pub fn user(nonce: &[u8]) -> Self {
-        Self((universal_hash::hash(nonce, 0) & TrieKey::MASK) as i32)
+        Self((universal_hash::hash(nonce, 1) & TrieKey::MASK) as i32)
+    }
+
+    /// Derive a transaction entity id from a random nonce.
+    pub fn tx(nonce: &[u8]) -> Self {
+        Self((universal_hash::hash(nonce, 1) & TrieKey::MASK) as i32)
     }
 
     /// Derive an attribute id from its ident (content-addressed).
     pub fn attr(ident: &Attr) -> Self {
-        Self((universal_hash::hash(ident.as_ident().as_bytes(), 0) & TrieKey::MASK) as i32)
+        Self((universal_hash::hash(ident.as_ident().as_bytes(), 1) & TrieKey::MASK) as i32)
     }
 }
 

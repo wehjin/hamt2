@@ -4,7 +4,7 @@ use sky_db::Transact;
 use sky_db::Txid;
 use sky_db::datom;
 use sky_db::find::EinsWithAttr;
-use sky_db::{Attr, ein, val};
+use sky_db::{Attr, Val, ein, tx, val};
 
 pub fn attr_count() -> Attr {
     Attr::from("counter/count")
@@ -75,5 +75,21 @@ async fn test_multiple_entities() -> anyhow::Result<()> {
     let mut eins = pod.find(EinsWithAttr::new(attr_count())).await;
     eins.sort();
     assert_eq!(vec![ein(5), ein(15)], eins);
+    Ok(())
+}
+
+#[tokio::test]
+async fn transact_creates_tx_entity() -> anyhow::Result<()> {
+    let mut pod = Pod::new([attr_count()]).await?;
+    pod.transact([datom::add(15, attr_count(), 15)]).await?;
+
+    // The transaction entity carries :tx/nonce and :tx/instant metadata.
+    let tx_eins = pod.find(EinsWithAttr::new(tx::nonce())).await;
+    assert_eq!(1, tx_eins.len());
+    let tx_ein = tx_eins[0];
+    let nonce = pod.find_val(tx_ein, tx::nonce()).await?;
+    assert!(matches!(nonce, Some(Val::Bytes(_))));
+    let instant = pod.find_val(tx_ein, tx::instant()).await?;
+    assert!(matches!(instant, Some(Val::U64(_))));
     Ok(())
 }
