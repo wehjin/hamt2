@@ -66,7 +66,9 @@ fn print_val(attribute: &Attribute, val: &Val) -> String {
     } else {
         match val {
             Val::U32(val) => format!("#{}", val),
+            Val::U64(val) => format!("#{}", val),
             Val::String(val) => format!("\"{}\"", val),
+            Val::Bytes(val) => format!("{:?}", val),
         }
     }
 }

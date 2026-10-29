@@ -4,26 +4,40 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum Val {
     U32(u32),
+    U64(u64),
     String(String),
+    Bytes(Vec<u8>),
 }
 
 impl Val {
     pub fn i32(&self) -> i32 {
         match self {
             Val::U32(v) => *v as i32,
-            Val::String(_) => panic!("Not a i32"),
+            _ => panic!("Not a i32"),
         }
     }
     pub fn u32(&self) -> u32 {
         match self {
             Val::U32(v) => *v,
-            Val::String(_) => panic!("Not a u32"),
+            _ => panic!("Not a u32"),
         }
     }
     pub fn try_into_u32(self) -> Option<u32> {
         match self {
             Val::U32(v) => Some(v),
-            Val::String(_) => None,
+            _ => None,
+        }
+    }
+    pub fn u64(&self) -> u64 {
+        match self {
+            Val::U64(v) => *v,
+            _ => panic!("Not a u64"),
+        }
+    }
+    pub fn try_into_u64(self) -> Option<u64> {
+        match self {
+            Val::U64(v) => Some(v),
+            _ => None,
         }
     }
 }
@@ -34,14 +48,26 @@ impl Val {
     }
     pub fn as_str(&self) -> &str {
         match self {
-            Val::U32(_) => panic!("Not a string"),
             Val::String(s) => s,
+            _ => panic!("Not a string"),
         }
     }
     pub fn try_into_string(self) -> Option<String> {
         match self {
-            Val::U32(_) => None,
-            Val::String(s) => Some(s.clone()),
+            Val::String(s) => Some(s),
+            _ => None,
+        }
+    }
+    pub fn bytes(&self) -> &[u8] {
+        match self {
+            Val::Bytes(b) => b,
+            _ => panic!("Not bytes"),
+        }
+    }
+    pub fn try_into_bytes(self) -> Option<Vec<u8>> {
+        match self {
+            Val::Bytes(b) => Some(b),
+            _ => None,
         }
     }
 }
@@ -64,6 +90,12 @@ impl From<u32> for Val {
     }
 }
 
+impl From<u64> for Val {
+    fn from(u: u64) -> Self {
+        Self::U64(u)
+    }
+}
+
 impl From<&str> for Val {
     fn from(s: &str) -> Self {
         Self::String(s.to_string())
@@ -73,5 +105,17 @@ impl From<&str> for Val {
 impl From<String> for Val {
     fn from(s: String) -> Self {
         Self::String(s)
+    }
+}
+
+impl From<Vec<u8>> for Val {
+    fn from(b: Vec<u8>) -> Self {
+        Self::Bytes(b)
+    }
+}
+
+impl From<&[u8]> for Val {
+    fn from(b: &[u8]) -> Self {
+        Self::Bytes(b.to_vec())
     }
 }

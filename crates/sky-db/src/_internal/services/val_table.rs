@@ -7,29 +7,46 @@ use crate::{QueryError, TransactError};
 
 const VAL_TYPE_U32: u8 = 16;
 const VAL_TYPE_STRING: u8 = 17;
+const VAL_TYPE_U64: u8 = 18;
+const VAL_TYPE_BYTES: u8 = 19;
 
 fn bytes_from_val(val: &Val) -> Vec<u8> {
-    let data_bytes = match &val {
-        Val::U32(u) => &u.to_be_bytes(),
-        Val::String(s) => s.as_bytes(),
-    };
-    let type_byte = match &val {
-        Val::U32(_) => VAL_TYPE_U32,
-        Val::String(_) => VAL_TYPE_STRING,
-    };
-    let mut bytes = vec![type_byte];
-    bytes.extend_from_slice(data_bytes);
-    bytes
+    match val {
+        Val::U32(u) => {
+            let mut b = vec![VAL_TYPE_U32];
+            b.extend_from_slice(&u.to_be_bytes());
+            b
+        }
+        Val::U64(u) => {
+            let mut b = vec![VAL_TYPE_U64];
+            b.extend_from_slice(&u.to_be_bytes());
+            b
+        }
+        Val::String(s) => {
+            let mut b = vec![VAL_TYPE_STRING];
+            b.extend_from_slice(s.as_bytes());
+            b
+        }
+        Val::Bytes(bs) => {
+            let mut b = vec![VAL_TYPE_BYTES];
+            b.extend_from_slice(bs);
+            b
+        }
+    }
 }
 
 fn val_from_bytes(bytes: &[u8]) -> Val {
     match bytes[0] {
         VAL_TYPE_U32 => Val::U32(u32::from_be_bytes(
-            bytes[1..].try_into().expect("parse u32 from bytes"),
+            bytes[1..5].try_into().expect("parse u32 from bytes"),
+        )),
+        VAL_TYPE_U64 => Val::U64(u64::from_be_bytes(
+            bytes[1..9].try_into().expect("parse u64 from bytes"),
         )),
         VAL_TYPE_STRING => {
             Val::String(String::from_utf8(bytes[1..].to_vec()).expect("parse string from bytes"))
         }
+        VAL_TYPE_BYTES => Val::Bytes(bytes[1..].to_vec()),
         _ => unreachable!(),
     }
 }
@@ -162,5 +179,53 @@ mod tests {
             .unwrap();
         let val = query(&trie, vid).expect("Failed to query");
         assert_eq!(Some(Val::String("hello".into())), val);
+    }
+
+    #[tokio::test]
+    async fn u64_insert_and_query() {
+        let mut trie = SkyTrie::new();
+        let vid = trie
+            .edit(async |trie| {
+                let vid = insert(trie, Val::U64(u64::MAX)).await?;
+                Ok(vid)
+            })
+            .await
+            .unwrap();
+        let val = query(&trie, vid).expect("Failed to query");
+        assert_eq!(Some(Val::U64(u64::MAX)), val);
+    }
+
+    #[tokio::test]
+    async fn bytes_insert_and_query() {
+        let mut trie = SkyTrie::new();
+        let (vid, vid_empty) = trie
+            .edit(async |trie| {
+                let vid = insert(trie, Val::Bytes(vec![1, 2, 3, 4])).await?;
+                let vid_empty = insert(trie, Val::Bytes(vec![])).await?;
+                Ok((vid, vid_empty))
+            })
+            .await
+            .unwrap();
+        let val = query(&trie, vid).expect("Failed to query");
+        assert_eq!(Some(Val::Bytes(vec![1, 2, 3, 4])), val);
+        let val_empty = query(&trie, vid_empty).expect("Failed to query");
+        assert_eq!(Some(Val::Bytes(vec![])), val_empty);
+    }
+
+    #[tokio::test]
+    async fn distinct_types_get_distinct_vids() {
+        let mut trie = SkyTrie::new();
+        let (u32_vid, u64_vid, bytes_vid) = trie
+            .edit(async |trie| {
+                let u32_vid = insert(trie, Val::U32(5)).await?;
+                let u64_vid = insert(trie, Val::U64(5)).await?;
+                let bytes_vid = insert(trie, Val::Bytes(vec![5])).await?;
+                Ok((u32_vid, u64_vid, bytes_vid))
+            })
+            .await
+            .unwrap();
+        assert_ne!(u32_vid, u64_vid);
+        assert_ne!(u32_vid, bytes_vid);
+        assert_ne!(u64_vid, bytes_vid);
     }
 }
