@@ -1,15 +1,15 @@
 use crate::_internal::Vid;
 use crate::_internal::val_table;
-use crate::_internal::{KEY_AEVT, KEY_EAVT, KEY_MAX_TXID};
+use crate::_internal::{KEY_AEVT, KEY_EAVT};
 use crate::Schema;
 use crate::attr_table::AttrTable;
 use crate::cardinality::Cardinality;
 use crate::trie::SkyTrieMut;
 use crate::trie::*;
-use crate::types::Txid;
 use crate::{Attr, Dir, Ein, TransactError, Val};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+use std::collections::HashMap;
 use std::collections::btree_map::Entry;
 
 fn dir_to_u32(dir: Dir) -> u32 {
@@ -31,24 +31,30 @@ fn dir_from_u32(u: u32) -> Dir {
 ///
 /// Cardinality-one keeps only the single value written by the latest tx (if it
 /// was an add); cardinality-many keeps every value whose latest tx was an add.
-fn current_vids(entries: Vec<(Vid, Txid, Dir)>, card: Cardinality) -> Vec<Vid> {
+/// "Latest" is determined by the linearized position in `order`.
+fn current_vids(
+    entries: Vec<(Vid, Ein, Dir)>,
+    card: Cardinality,
+    order: &HashMap<Ein, u32>,
+) -> Vec<Vid> {
     match card {
         Cardinality::One => entries
             .into_iter()
-            .max_by_key(|(_, tx, _)| *tx)
+            .max_by_key(|(_, tx_ein, _)| order[tx_ein])
             .filter(|(_, _, dir)| *dir == Dir::In)
             .map(|(vid, _, _)| vec![vid])
             .unwrap_or_default(),
         Cardinality::Many => {
-            let mut latest: BTreeMap<Vid, (Txid, Dir)> = BTreeMap::new();
-            for (vid, tx, dir) in entries {
+            let mut latest: BTreeMap<Vid, (u32, Dir)> = BTreeMap::new();
+            for (vid, tx_ein, dir) in entries {
+                let pos = order[&tx_ein];
                 match latest.entry(vid) {
                     Entry::Vacant(e) => {
-                        e.insert((tx, dir));
+                        e.insert((pos, dir));
                     }
                     Entry::Occupied(mut e) => {
-                        if tx > e.get().0 {
-                            *e.get_mut() = (tx, dir);
+                        if pos > e.get().0 {
+                            *e.get_mut() = (pos, dir);
                         }
                     }
                 }
@@ -69,24 +75,18 @@ pub(crate) async fn with_update(
     attr: Attr,
     val: Val,
     dir: Dir,
-    txid: &Txid,
+    tx_ein: Ein,
 ) -> Result<(), TransactError> {
     let attribute = &attr_map[attr];
     let eid = ein.to_i32();
     let aid = attribute.ein().to_i32();
     let vid = val_table::insert(trie, val).await?;
-    let tx = txid.u32() as i32;
+    let tx = tx_ein.to_i32();
     let eavt_key = [KEY_EAVT, eid, aid, vid.to_id(), tx];
     let aevt_key = [KEY_AEVT, aid, eid, vid.to_id(), tx];
     let dir_val = TrieValue::U32(dir_to_u32(dir));
     trie.insert_deep(eavt_key, dir_val.clone(), false).await;
     trie.insert_deep(aevt_key, dir_val, false).await;
-    Ok(())
-}
-
-pub(crate) async fn set_max_tx(trie: &mut SkyTrieMut, max_tx: Txid) -> Result<(), TransactError> {
-    trie.insert(KEY_MAX_TXID, TrieValue::from(max_tx.u32()))
-        .await;
     Ok(())
 }
 
@@ -135,18 +135,19 @@ pub fn list_entity_fills<T>(
     ein: Ein,
     attr_ein: AttrEin,
     cardinality: Cardinality,
+    order: &HashMap<Ein, u32>,
 ) -> Vec<(AttrEin, Vid)>
 where
     T: QueryCursor + Snap + Query,
 {
     let entries = collect_entries_eavt(trie, ein, attr_ein);
-    current_vids(entries, cardinality)
+    current_vids(entries, cardinality, order)
         .into_iter()
         .map(|vid| (attr_ein, vid))
         .collect()
 }
 
-fn collect_entries_eavt<T>(trie: &T, ein: Ein, attr_ein: AttrEin) -> Vec<(Vid, Txid, Dir)>
+fn collect_entries_eavt<T>(trie: &T, ein: Ein, attr_ein: AttrEin) -> Vec<(Vid, Ein, Dir)>
 where
     T: QueryCursor + Snap + Query,
 {
@@ -156,9 +157,9 @@ where
     for (vid, _) in vt.query_all() {
         let mut vt2 = trie.snapshot();
         vt2.descend_n([KEY_EAVT, ein.to_i32(), attr_ein.to_i32(), vid]);
-        for (txid, dir_val) in vt2.query_all() {
+        for (tx_ein, dir_val) in vt2.query_all() {
             if let TrieValue::U32(dir) = dir_val {
-                entries.push((Vid::from_id(vid), Txid::from(txid as u32), dir_from_u32(dir)));
+                entries.push((Vid::from_id(vid), Ein::from(tx_ein), dir_from_u32(dir)));
             }
         }
     }
@@ -183,7 +184,12 @@ where
     snapshot
 }
 
-pub fn ev_iter(trie: &SkyTrie, a: Attr, schema: &Schema) -> impl Iterator<Item = (i32, Val)> {
+pub fn ev_iter(
+    trie: &SkyTrie,
+    a: Attr,
+    schema: &Schema,
+    order: &HashMap<Ein, u32>,
+) -> impl Iterator<Item = (i32, Val)> {
     let aid = schema[a.clone()].ein().to_i32();
     let cardinality = schema[a].cardinality();
     let mut result = Vec::new();
@@ -202,13 +208,13 @@ pub fn ev_iter(trie: &SkyTrie, a: Attr, schema: &Schema) -> impl Iterator<Item =
             vt2.descend(aid);
             vt2.descend(eid);
             vt2.descend(vid);
-            for (txid, dir_val) in vt2.query_all() {
+            for (tx_ein, dir_val) in vt2.query_all() {
                 if let TrieValue::U32(dir) = dir_val {
-                    entries.push((Vid::from_id(vid), Txid::from(txid as u32), dir_from_u32(dir)));
+                    entries.push((Vid::from_id(vid), Ein::from(tx_ein), dir_from_u32(dir)));
                 }
             }
         }
-        for vid in current_vids(entries, cardinality) {
+        for vid in current_vids(entries, cardinality, order) {
             let val = val_table::query(trie, vid)
                 .ok()
                 .flatten()
@@ -244,17 +250,20 @@ mod tests {
         let attr = Attr::from("counter/count");
         let table = attr_table();
         let mut trie = SkyTrie::new();
+        let tx1 = Ein::tx(&[1u8; 16]);
+        let tx2 = Ein::tx(&[2u8; 16]);
+        let mut order = HashMap::new();
+        order.insert(tx1, 0);
+        order.insert(tx2, 1);
         trie.edit(async |trie| {
-            with_update(trie, &table, Ein(100), attr.clone(), val(100), Dir::In, &Txid::from(1u32))
-                .await?;
-            with_update(trie, &table, Ein(100), attr.clone(), val(101), Dir::In, &Txid::from(2u32))
-                .await?;
+            with_update(trie, &table, Ein(100), attr.clone(), val(100), Dir::In, tx1).await?;
+            with_update(trie, &table, Ein(100), attr.clone(), val(101), Dir::In, tx2).await?;
             Ok(())
         })
         .await
         .unwrap();
 
-        let fills = list_entity_fills(&trie, Ein(100), AttrEin::from(100), Cardinality::One);
+        let fills = list_entity_fills(&trie, Ein(100), AttrEin::from(100), Cardinality::One, &order);
         assert_eq!(fills.len(), 1);
 
         let mut vt = trie.clone();

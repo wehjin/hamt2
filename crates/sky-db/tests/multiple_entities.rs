@@ -1,7 +1,6 @@
 use sky_db::DbQuery;
 use sky_db::Pod;
 use sky_db::Transact;
-use sky_db::Txid;
 use sky_db::datom;
 use sky_db::find::EinsWithAttr;
 use sky_db::{Attr, Val, ein, tx, val};
@@ -59,7 +58,6 @@ async fn transact_assigns_id_to_temporary_ent() -> anyhow::Result<()> {
 async fn test_multiple_entities() -> anyhow::Result<()> {
     // Construct a new database.
     let mut pod = Pod::new([attr_count()]).await?;
-    assert_eq!(Txid::FLOOR, pod.max_tx().await?);
 
     // Add a few datoms to different entities.
     pod.transact([
@@ -67,7 +65,6 @@ async fn test_multiple_entities() -> anyhow::Result<()> {
         datom::add(5, attr_count(), val(5)),
     ])
     .await?;
-    assert_eq!(Txid::FLOOR + 1, pod.max_tx().await?);
     assert_eq!(Some(val(15)), pod.find_val(15, attr_count()).await?);
     assert_eq!(Some(val(5)), pod.find_val(5, attr_count()).await?);
 

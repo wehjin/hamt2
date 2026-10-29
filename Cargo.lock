@@ -4188,6 +4188,7 @@ name = "sky-db"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "blake3",
  "data-encoding",
  "futures",
  "getrandom 0.4.3",

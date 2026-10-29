@@ -5,12 +5,12 @@ mod ent;
 mod fill;
 mod find_result;
 mod schema;
+mod tx;
 mod val;
 
 pub use crate::_internal::schema::*;
 use serde::{Deserialize, Serialize};
 
-mod txid;
 pub use attr::*;
 pub use dat::*;
 pub use ein::*;
@@ -18,8 +18,7 @@ pub use ent::*;
 pub use fill::*;
 pub use find_result::*;
 pub use schema::*;
-
-pub use txid::*;
+pub use tx::*;
 pub use val::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
