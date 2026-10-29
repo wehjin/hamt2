@@ -1,6 +1,9 @@
 mod pod;
 pub use pod::*;
 
+mod peer;
+pub use peer::*;
+
 mod entity;
 pub use entity::*;
 

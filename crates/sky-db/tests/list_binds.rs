@@ -3,8 +3,9 @@ use sky_db::{Transact, create, datom, val};
 #[tokio::test]
 async fn list_binds_works() {
     let dir = tempfile::tempdir().unwrap();
-    let mut pod = create(dir.path(), ["counter/count"]).await.unwrap();
+    let mut peer = create(dir.path(), ["counter/count"]).await.unwrap();
     {
+        let pod = peer.snapshot().await;
         let attribute = pod.get_attribute("counter/count").unwrap();
         let binds = attribute.list_binds();
         assert_eq!(binds, vec![]);
@@ -14,8 +15,9 @@ async fn list_binds_works() {
         datom::add(33, "counter/count", 33),
         datom::add(37, "counter/count", 37),
     ];
-    pod.transact(datoms).await.unwrap();
+    peer.transact(datoms).await.unwrap();
     {
+        let pod = peer.snapshot().await;
         let attribute = pod.get_attribute("counter/count").unwrap();
         let binds = attribute.list_binds();
         let vals = binds

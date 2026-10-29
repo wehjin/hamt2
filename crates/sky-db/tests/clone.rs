@@ -12,25 +12,27 @@ fn attr_count() -> Attr {
 #[tokio::test]
 async fn clone_works() -> anyhow::Result<()> {
     let dir = tempfile::tempdir()?;
-    let mut pod = create(dir.path(), [attr_count()]).await?;
-    pod.transact([
+    let mut peer = create(dir.path(), [attr_count()]).await?;
+    peer.transact([
         datom::add(1, attr_count(), val(10)),
         datom::add(2, attr_count(), val(20)),
         datom::add(3, attr_count(), val(30)),
     ])
     .await?;
 
+    let pod = peer.snapshot().await;
     let mut eins = pod.find(EinsWithAttr::new(attr_count())).await;
     eins.sort();
     assert_eq!(vec![ein(1), ein(2), ein(3)], eins);
 
-    let reader = pod.clone();
+    let reader = peer.snapshot().await;
     assert_eq!(Some(val(10)), reader.find_val(1, attr_count()).await?);
     assert_eq!(Some(val(20)), reader.find_val(2, attr_count()).await?);
     assert_eq!(Some(val(30)), reader.find_val(3, attr_count()).await?);
 
-    // The pod stays usable after the reader is loaded.
-    let pod = pod.transact([datom::add(4, attr_count(), val(40))]).await?;
+    // The peer stays usable after the reader is loaded.
+    peer.transact([datom::add(4, attr_count(), val(40))]).await?;
+    let pod = peer.snapshot().await;
     assert_eq!(Some(val(40)), pod.find_val(4, attr_count()).await?);
     // The reader is a snapshot from before the new transact.
     assert_eq!(None, reader.find_val(4, attr_count()).await?);
@@ -42,11 +44,11 @@ async fn clone_works() -> anyhow::Result<()> {
 async fn clone_finds_binds() {
     let attr = Attr::from("Counter/count");
     let dir = tempfile::tempdir().unwrap();
-    let mut pod = create(dir.path(), [attr.clone()]).await.unwrap();
-    pod.transact([datom::add(10, attr.clone(), 42)])
+    let mut peer = create(dir.path(), [attr.clone()]).await.unwrap();
+    peer.transact([datom::add(10, attr.clone(), 42)])
         .await
         .unwrap();
-    let reader = pod.clone();
+    let reader = peer.snapshot().await;
     let found = reader.find(BindsForAttr::new(attr)).await;
     assert_eq!(&[(ein(10), val(42))], found.as_slice());
 }
@@ -54,13 +56,13 @@ async fn clone_finds_binds() {
 #[tokio::test]
 async fn clone_finds_entities() {
     let dir = tempfile::tempdir().unwrap();
-    let mut pod = create(dir.path(), [attr_count()]).await.unwrap();
-    pod.transact([datom::add(100, attr_count(), val(100))])
+    let mut peer = create(dir.path(), [attr_count()]).await.unwrap();
+    peer.transact([datom::add(100, attr_count(), val(100))])
         .await
         .unwrap();
 
-    let self1 = pod.clone();
-    let mut eins = (async move { self1.find(AllEins).await }).await;
+    let reader = peer.snapshot().await;
+    let mut eins = reader.find(AllEins).await;
     eins.sort();
     // 1 user attr + 1 user entity + 2 tx entities (genesis + transact)
     assert_eq!(4, eins.len());
@@ -71,12 +73,12 @@ async fn clone_finds_entities() {
 #[tokio::test]
 async fn clone_lists_entity_attributes() {
     let dir = tempfile::tempdir().unwrap();
-    let mut pod = create(dir.path(), [attr_count()]).await.unwrap();
-    pod.transact([datom::add(100, attr_count(), val(100))])
+    let mut peer = create(dir.path(), [attr_count()]).await.unwrap();
+    peer.transact([datom::add(100, attr_count(), val(100))])
         .await
         .unwrap();
-    let reader = pod.clone();
+    let reader = peer.snapshot().await;
     let find = AttrsOfEin::new(100);
-    let attrs = (async move { reader.find(find).await }).await;
+    let attrs = reader.find(find).await;
     assert_eq!(&[attr_count()], &attrs[..]);
 }

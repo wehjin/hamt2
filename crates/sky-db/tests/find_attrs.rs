@@ -10,7 +10,8 @@ fn attr_count() -> Attr {
 #[tokio::test]
 async fn find_attrs_works() {
     let dir = tempfile::tempdir().unwrap();
-    let pod = create(dir.path(), [attr_count()]).await.unwrap();
+    let peer = create(dir.path(), [attr_count()]).await.unwrap();
+    let pod = peer.snapshot().await;
     let mut attrs = pod.find(AllAttrs).await;
     attrs.sort();
     assert_eq!(

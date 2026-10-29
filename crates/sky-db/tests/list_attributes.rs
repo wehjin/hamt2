@@ -5,7 +5,8 @@ use sky_db::{Attribute};
 #[tokio::test]
 async fn list_attributes_works() {
     let dir = tempfile::tempdir().unwrap();
-    let pod = create(dir.path(), ["counter/count"]).await.unwrap();
+    let peer = create(dir.path(), ["counter/count"]).await.unwrap();
+    let pod = peer.snapshot().await;
     let mut attributes = pod.list_attributes().await;
     attributes.sort();
 

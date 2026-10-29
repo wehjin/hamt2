@@ -14,11 +14,11 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
     hooks.use_future(async move {
         let attr_count = attr("counter/count");
         let path = std::env::temp_dir().join("sky-tui-db");
-        let mut pod = create(path, [attr_count.clone()]).await.expect("pod");
-        pod.transact([datom::add(ent("a"), attr_count, 33)])
+        let mut peer = create(path, [attr_count.clone()]).await.expect("peer");
+        peer.transact([datom::add(ent("a"), attr_count, 33)])
             .await
             .expect("transact");
-        let snap = pod.clone();
+        let snap = peer.snapshot().await;
         db_view.set(Some(snap));
     });
 

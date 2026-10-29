@@ -10,7 +10,7 @@ use crate::_internal::rand_nonce;
 use crate::_internal::replay;
 use crate::attr_spec::DbSpec;
 use crate::errors::ConnectError;
-use crate::{datom, db, tx, Ein, Pod, Tx, Val};
+use crate::{datom, db, tx, Ein, Peer, Tx, Val};
 
 const KEYPAIR_FILE: &str = "keypair";
 const NAMESPACE_FILE: &str = "namespace";
@@ -56,7 +56,7 @@ fn now_secs() -> u64 {
 pub async fn create(
     path: impl AsRef<Path>,
     db_spec: impl Into<DbSpec>,
-) -> Result<Pod, ConnectError> {
+) -> Result<Peer, ConnectError> {
     let path = path.as_ref();
     std::fs::create_dir_all(path)?;
     let secret_key = load_or_create_keypair(path)?;
@@ -90,19 +90,13 @@ pub async fn create(
     log.append(&genesis_tx).await?;
     persist_namespace(path, log.namespace())?;
 
-    let (schema, trie, order, tip) = replay::replay(vec![genesis_tx]).await?;
-    Ok(Pod {
-        schema,
-        trie,
-        order,
-        tip,
-        log,
-    })
+    let index = replay::replay(vec![genesis_tx]).await?;
+    Ok(Peer::new(log, index))
 }
 
 /// Loads an existing repo: reads the keypair + namespace id from the path, opens the doc, syncs,
 /// and replays the log.
-pub async fn load(path: impl AsRef<Path>) -> Result<Pod, ConnectError> {
+pub async fn load(path: impl AsRef<Path>) -> Result<Peer, ConnectError> {
     let path = path.as_ref();
     std::fs::create_dir_all(path)?;
     let secret_key = load_or_create_keypair(path)?;
@@ -110,19 +104,13 @@ pub async fn load(path: impl AsRef<Path>) -> Result<Pod, ConnectError> {
     let log = Log::open(secret_key, path, namespace).await?;
 
     let txs = log.entries().await?;
-    let (schema, trie, order, tip) = replay::replay(txs).await?;
-    Ok(Pod {
-        schema,
-        trie,
-        order,
-        tip,
-        log,
-    })
+    let index = replay::replay(txs).await?;
+    Ok(Peer::new(log, index))
 }
 
 /// Joins a peer's repo: generates a keypair (if absent), imports the ticket, persists the
 /// namespace id, syncs, and replays the log.
-pub async fn join(path: impl AsRef<Path>, ticket: DocTicket) -> Result<Pod, ConnectError> {
+pub async fn join(path: impl AsRef<Path>, ticket: DocTicket) -> Result<Peer, ConnectError> {
     let path = path.as_ref();
     std::fs::create_dir_all(path)?;
     let secret_key = load_or_create_keypair(path)?;
@@ -130,12 +118,6 @@ pub async fn join(path: impl AsRef<Path>, ticket: DocTicket) -> Result<Pod, Conn
     persist_namespace(path, log.namespace())?;
 
     let txs = log.entries().await?;
-    let (schema, trie, order, tip) = replay::replay(txs).await?;
-    Ok(Pod {
-        schema,
-        trie,
-        order,
-        tip,
-        log,
-    })
+    let index = replay::replay(txs).await?;
+    Ok(Peer::new(log, index))
 }

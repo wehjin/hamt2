@@ -16,14 +16,14 @@ async fn pull_test() {
     };
     let ent = Ent::from(27);
     let dir = tempfile::tempdir().expect("tempdir");
-    let mut pod = create(dir.path(), Basis::attrs())
+    let mut peer = create(dir.path(), Basis::attrs())
         .await
         .expect("create");
-    pod.transact(basis.into_datoms(ent))
+    peer.transact(basis.into_datoms(ent))
         .await
         .expect("pod.transact");
 
-    let pod = pod.clone();
+    let pod = peer.snapshot().await;
     assert_eq!(
         Basis {
             symbol: "ABC".to_string(),

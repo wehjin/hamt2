@@ -12,14 +12,15 @@ fn attr_count() -> Attr {
 #[tokio::test]
 async fn pod_works() -> anyhow::Result<()> {
     let dir = tempfile::tempdir()?;
-    let mut pod = create(dir.path(), [attr_count()]).await?;
-    pod.transact([
+    let mut peer = create(dir.path(), [attr_count()]).await?;
+    peer.transact([
         datom::add(1, attr_count(), val(10)),
         datom::add(2, attr_count(), val(20)),
         datom::add(3, attr_count(), val(30)),
     ])
     .await?;
 
+    let pod = peer.snapshot().await;
     let mut eins = pod.find(EinsWithAttr::new(attr_count())).await;
     eins.sort();
 

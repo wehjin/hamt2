@@ -15,14 +15,16 @@ async fn one() -> anyhow::Result<()> {
         cardinality: Cardinality::One,
     }];
     let dir = tempfile::tempdir()?;
-    let mut pod = create(dir.path(), schema).await?;
-    pod.transact([datom::add(100, count(), 100)]).await?;
-    pod.transact([datom::add(100, count(), 101)]).await?;
-    pod.transact([datom::add(100, count(), 102)]).await?;
+    let mut peer = create(dir.path(), schema).await?;
+    peer.transact([datom::add(100, count(), 100)]).await?;
+    peer.transact([datom::add(100, count(), 101)]).await?;
+    peer.transact([datom::add(100, count(), 102)]).await?;
+    let pod = peer.snapshot().await;
     let vals = pod.find(ValsInSlot::new(100, count())).await;
     assert_eq!(vec![val(102)], vals);
 
-    pod.transact([datom::del(100, count(), 102)]).await?;
+    peer.transact([datom::del(100, count(), 102)]).await?;
+    let pod = peer.snapshot().await;
     let vals = pod.find(ValsInSlot::new(100, count())).await;
     assert!(vals.is_empty());
     Ok(())
@@ -36,15 +38,17 @@ async fn many() -> anyhow::Result<()> {
         cardinality: Cardinality::Many,
     }];
     let dir = tempfile::tempdir()?;
-    let mut pod = create(dir.path(), schema).await?;
-    pod.transact([datom::add(100, count(), 100)]).await?;
-    pod.transact([datom::add(100, count(), 101)]).await?;
-    pod.transact([datom::add(100, count(), 102)]).await?;
+    let mut peer = create(dir.path(), schema).await?;
+    peer.transact([datom::add(100, count(), 100)]).await?;
+    peer.transact([datom::add(100, count(), 101)]).await?;
+    peer.transact([datom::add(100, count(), 102)]).await?;
+    let pod = peer.snapshot().await;
     let mut vals = pod.find(ValsInSlot::new(100, count())).await;
     vals.sort();
     assert_eq!(vec![val(100), val(101), val(102)], vals);
 
-    pod.transact([datom::del(100, count(), 101)]).await?;
+    peer.transact([datom::del(100, count(), 101)]).await?;
+    let pod = peer.snapshot().await;
     let mut vals = pod.find(ValsInSlot::new(100, count())).await;
     vals.sort();
     assert_eq!(vec![val(100), val(102)], vals);

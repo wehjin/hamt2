@@ -12,8 +12,9 @@ pub fn attr_count() -> Attr {
 #[tokio::test]
 async fn transact_and_pull_simple() -> anyhow::Result<()> {
     let dir = tempfile::tempdir()?;
-    let mut pod = create(dir.path(), [attr_count()]).await?;
-    pod.transact([datom::add(15, attr_count(), 15)]).await?;
+    let mut peer = create(dir.path(), [attr_count()]).await?;
+    peer.transact([datom::add(15, attr_count(), 15)]).await?;
+    let pod = peer.snapshot().await;
     assert_eq!(Some(val(15)), pod.find_val(15, attr_count()).await?);
     Ok(())
 }
@@ -21,8 +22,9 @@ async fn transact_and_pull_simple() -> anyhow::Result<()> {
 #[tokio::test]
 async fn entities_with_attr_works_for_single_entity() -> anyhow::Result<()> {
     let dir = tempfile::tempdir()?;
-    let mut pod = create(dir.path(), [attr_count()]).await?;
-    pod.transact([datom::add(15, attr_count(), 15)]).await?;
+    let mut peer = create(dir.path(), [attr_count()]).await?;
+    peer.transact([datom::add(15, attr_count(), 15)]).await?;
+    let pod = peer.snapshot().await;
     let eins = pod.find(EinsWithAttr::new(attr_count())).await;
     assert_eq!(vec![ein(15)], eins);
     Ok(())
@@ -31,13 +33,14 @@ async fn entities_with_attr_works_for_single_entity() -> anyhow::Result<()> {
 #[tokio::test]
 async fn entities_with_attr_works_for_two_entities() -> anyhow::Result<()> {
     let dir = tempfile::tempdir()?;
-    let mut pod = create(dir.path(), [attr_count()]).await?;
-    pod.transact([
+    let mut peer = create(dir.path(), [attr_count()]).await?;
+    peer.transact([
         datom::add(3, attr_count(), 4),
         datom::add(5, attr_count(), 6),
     ])
     .await?;
 
+    let pod = peer.snapshot().await;
     let mut eins = pod.find(EinsWithAttr::new(attr_count())).await;
     eins.sort();
     assert_eq!(vec![ein(3), ein(5)], eins);
@@ -47,12 +50,12 @@ async fn entities_with_attr_works_for_two_entities() -> anyhow::Result<()> {
 #[tokio::test]
 async fn transact_assigns_id_to_temporary_ent() -> anyhow::Result<()> {
     let dir = tempfile::tempdir()?;
-    let mut pod = create(dir.path(), [attr_count()]).await?;
-    pod.transact([datom::add("new_count", attr_count(), 35)])
+    let mut peer = create(dir.path(), [attr_count()]).await?;
+    peer.transact([datom::add("new_count", attr_count(), 35)])
         .await?;
-    let pod = pod
-        .transact([datom::add("new_count", attr_count(), 35)])
+    peer.transact([datom::add("new_count", attr_count(), 35)])
         .await?;
+    let pod = peer.snapshot().await;
     let eins = pod.find(EinsWithAttr::new(attr_count())).await;
     assert_eq!(2, eins.len());
     Ok(())
@@ -62,14 +65,15 @@ async fn transact_assigns_id_to_temporary_ent() -> anyhow::Result<()> {
 async fn test_multiple_entities() -> anyhow::Result<()> {
     // Construct a new database.
     let dir = tempfile::tempdir()?;
-    let mut pod = create(dir.path(), [attr_count()]).await?;
+    let mut peer = create(dir.path(), [attr_count()]).await?;
 
     // Add a few datoms to different entities.
-    pod.transact([
+    peer.transact([
         datom::add(15, attr_count(), 15),
         datom::add(5, attr_count(), val(5)),
     ])
     .await?;
+    let pod = peer.snapshot().await;
     assert_eq!(Some(val(15)), pod.find_val(15, attr_count()).await?);
     assert_eq!(Some(val(5)), pod.find_val(5, attr_count()).await?);
 
@@ -83,9 +87,10 @@ async fn test_multiple_entities() -> anyhow::Result<()> {
 #[tokio::test]
 async fn transact_creates_tx_entity() -> anyhow::Result<()> {
     let dir = tempfile::tempdir()?;
-    let mut pod = create(dir.path(), [attr_count()]).await?;
-    pod.transact([datom::add(15, attr_count(), 15)]).await?;
+    let mut peer = create(dir.path(), [attr_count()]).await?;
+    peer.transact([datom::add(15, attr_count(), 15)]).await?;
 
+    let pod = peer.snapshot().await;
     // The genesis tx and the transact tx each carry :tx/nonce and :tx/instant.
     let tx_eins = pod.find(EinsWithAttr::new(tx::nonce())).await;
     assert_eq!(2, tx_eins.len());

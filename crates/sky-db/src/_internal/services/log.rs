@@ -141,6 +141,14 @@ impl Log {
             .await
     }
 
+    /// Subscribes to live events for this log.
+    pub async fn subscribe(
+        &self,
+    ) -> anyhow::Result<impl futures::Stream<Item = anyhow::Result<LiveEvent>> + Send + Unpin + 'static>
+    {
+        self.doc.subscribe().await
+    }
+
     /// The namespace id of this log.
     pub fn namespace(&self) -> NamespaceId {
         self.doc.id()
