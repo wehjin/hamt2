@@ -1,16 +1,10 @@
 # Peer Architecture for sky-db
 
-**Status:** Implemented (Stages 1–8 complete)
-**Scope:** Replace the single-writer `Pod` model with a peer-to-peer, append-only transaction log.
-
----
-
 ## 1. Overview
 
-Instead of a client/server architecture, sky-db moves to a **peer architecture** in which each peer
-appends transactions to an **append-only log**. On startup a peer builds an index from the
-transactions it knows of, and rebuilds (incrementally) when it becomes aware of transactions from
-other peers.
+sky-db is a Datomic-like database library. Each peer maintains an append-only transaction log and
+derives a queryable index from the transactions it has seen. Peers exchange transactions over
+iroh-docs, and each peer's index converges to the same state as it learns of new transactions.
 
 The design rests on four pillars:
 
@@ -24,29 +18,7 @@ The design rests on four pillars:
 The central invariant: **the trie is append-only and never reorders; only the linearized order
 changes.** This is what makes "rebuild the index when I learn of a peer's transaction" cheap.
 
----
-
-## 2. Motivation
-
-The current model is single-writer. `Pod::transact` (`crates/sky-db/src/objects/pod.rs`) relies on:
-
-- A single global monotonic `Txid` (`max_tx`, `set_max_tx(tx + 1)`).
-- A single global `MaxEid` counter for assigning entity ids to temp entities.
-- `replace_tail` (cardinality-one) that overwrites the previous value, destroying history.
-
-All three break across peers:
-
-- Two peers can both mint `tx = 5` with different content.
-- Two peers can both read `max_eid = 5` and assign `ein = 6` to *different* temp entities.
-- `replace_tail` is at odds with an append-only log, because it throws away the history the log is
-  supposed to preserve.
-
-The peer architecture removes the shared counters and moves conflict resolution from write time to
-query time.
-
----
-
-## 3. Protocol choice: iroh-docs
+## 2. The log: iroh-docs
 
 `iroh-docs` is the right layer. It is a "meta protocol" that composes the two things the log needs:
 
@@ -71,9 +43,7 @@ written once.
 | **`iroh-gossip` alone** | Ephemeral; no history, no delivery guarantee to offline peers. |
 | **`iroh-blobs` alone** | Content-addressed transfer but no "what's new" notification and no set reconciliation. |
 
----
-
-## 4. Core model
+## 3. Core model
 
 ### The log entry (transaction)
 
@@ -88,7 +58,7 @@ struct Tx {
 // iroh-docs entry value = serialized Tx bytes      (stored as a blob)
 ```
 
-No global `Txid`, no `MaxEid` counter. The `prev` pointer is the only ordering information a peer
+There is no global transaction counter. The `prev` pointer is the only ordering information a peer
 asserts.
 
 ### Linearization (total order)
@@ -106,8 +76,8 @@ position**.
 
 ### Merge (query-time, not write-time)
 
-Because every datom is kept (no `replace_tail`), "current value" is resolved when you read, by
-picking the max-position tx per `(e, a, v)`:
+Because every datom is kept, "current value" is resolved when you read, by picking the max-position
+tx per `(e, a, v)`:
 
 - **Cardinality `One`** — the single value whose latest tx has `dir == In` (last-writer-wins).
 - **Cardinality `Many`** — all values whose latest tx has `dir == In` (set union, with add/del
@@ -121,9 +91,7 @@ are **detectable and deterministically resolvable**, not rejected. The cost is t
 write can be semantically overridden by a concurrent one, deterministically. That is the CRDT
 tradeoff, and it is the right one for a peer architecture.
 
----
-
-## 5. Ordering & clocks
+## 4. Ordering & clocks
 
 The distinction that matters is **causality** (what happened-before what) vs. **total order** (the
 linear sequence you replay).
@@ -155,13 +123,11 @@ Key the index on the **content hash** (stable), not the position. If you keyed o
 fork would reorder everything and force an index rebuild, breaking the append-only property. The
 linearized order is a *separate, cheaply-updatable* structure.
 
----
+## 5. Entity identity
 
-## 6. Entity identity
+### Nonce-derived eins
 
-### Nonce-derived eins (fully safe)
-
-Temp entities are resolved to concrete eins at transaction-creation time. The fully-safe scheme is
+Temp entities are resolved to concrete eins at transaction-creation time. The scheme is
 nonce-derived:
 
 ```rust
@@ -186,14 +152,12 @@ bound: ~50% chance of a collision around 2^15.5 ≈ **46,000 entities**. Fine fo
 a real ceiling. Options: accept the bound (detect-and-re-derive on collision), or widen `Ein` to
 `u64` (ripples through the trie key encoding).
 
-Note the asymmetry with `val_table`: values are already content-addressed (`Vid` derived from
+Note the asymmetry with `val_table`: values are content-addressed (`Vid` derived from
 `universal_hash::hash(&bytes, 0)` with linear probing), which works because `val_table` is
 single-writer at insert time. For eins in a peer model you *cannot* probe — two peers can't
 coordinate on "is this id taken" — so the derivation must be collision-free **by construction**.
 
----
-
-## 7. Transaction entities
+## 6. Transaction entities
 
 Every transaction is itself an entity (the Datomic model). Its metadata is ordinary datoms,
 queryable with the same `find`/`pull` machinery.
@@ -201,14 +165,13 @@ queryable with the same `find`/`pull` machinery.
 ### What it buys
 
 1. **Unifies tx identity with entity identity.** The "tx" key in the deeper index is just the
-   transaction entity's `Ein` — no separate hash-consing table. `Txid` and `Ein` collapse into one
-   space.
+   transaction entity's `Ein` — no separate hash-consing table.
 2. **Metadata becomes queryable.** `author`, `prev`, `nonce`, `instant` are attributes on the
    transaction entity.
 3. **The log entry and the entity line up.** The iroh-docs entry key (content hash) identifies the
    transaction; the transaction entity is its in-db representation.
 
-### The clean shape
+### The shape
 
 ```
 // per transaction, at creation time:
@@ -232,74 +195,52 @@ content_hash = BLAKE3(serialize(prev, author, nonce, datoms))   // log entry key
    reorders things), and datoms should be append-only and stable. Keep the order as a *derived*
    structure, not as datoms.
 
----
+## 7. Storage layout
 
-## 8. Storage layout
-
-### Current (packed value)
-
-```rust
-// db_trie.rs (current)
-struct Value { id: Txid, dir: Dir }   // packed: 28-bit txid + dir in bit 28
-// EAVT: [KEY_EAVT, eid, aid, vid] -> U32(packed tx + dir)   // replace_tail for card-one
-// AEVT: [KEY_AEVT, aid, eid, vid] -> U32(packed tx + dir)
-```
-
-`replace_tail` (`insert_deep(..., delete_others=true)` → `InsertOption::DeleteOthers`) clears the
-subtrie before inserting, destroying history for cardinality-one.
-
-### Proposed (deeper, Datomic-style)
-
-Unpack `Value` and push `tx` and `dir` down into the key path, so the datom is a full 5-tuple
-`[e, a, v, tx, op]`:
+A datom is a full 5-tuple `[e, a, v, tx, op]`, stored in two indexes:
 
 ```
-EAVT: [KEY_EAVT, eid, aid, vid, tx_ein] -> U32(dir)   // no replace_tail; keep every datom
+EAVT: [KEY_EAVT, eid, aid, vid, tx_ein] -> U32(dir)
 AEVT: [KEY_AEVT, aid, eid, vid, tx_ein] -> U32(dir)
 ```
 
-Three things this buys:
+Every datom is kept — there is no overwrite on cardinality-one. This buys three things:
 
-1. **The 28-bit txid cap disappears.** `tx` becomes a full-width key component.
-2. **History is preserved.** The log keeps every transaction; the index should too.
+1. **`tx` is a full-width key component** (no packed counter).
+2. **History is preserved.** The log keeps every transaction; the index does too.
 3. **Conflict resolution moves from write-time to query-time.** Store every datom; resolve "current
    value" at query time by tx order.
 
-### `with_update` (proposed)
+### `with_update`
 
 ```rust
 pub(crate) async fn with_update(
     trie: &mut SkyTrieMut,
-    aid: Ein,          // already-resolved attribute ein (no attr_map lookup)
+    aid: Ein,          // already-resolved attribute ein
     ein: Ein,
     val: Val,
     dir: Dir,
-    tx_ein: Ein,       // was txid: &Txid
+    tx_ein: Ein,
 ) -> Result<(), TransactError> {
     let eid = ein.to_i32();
     let vid = val_table::insert(trie, val).await?;
     let eavt_key = [KEY_EAVT, eid, aid.to_i32(), vid.to_id(), tx_ein.to_i32()];
     let aevt_key = [KEY_AEVT, aid.to_i32(), eid, vid.to_id(), tx_ein.to_i32()];
-    // no replace_tail — keep every datom; dir is the leaf
-    trie.insert_deep(eavt_key, TrieValue::U32(dir as u32), false).await;
-    trie.insert_deep(aevt_key, TrieValue::U32(dir as u32), false).await;
+    let dir_val = TrieValue::U32(dir as u32);
+    trie.insert_deep(eavt_key, dir_val.clone(), false).await;
+    trie.insert_deep(aevt_key, dir_val, false).await;
     Ok(())
 }
 ```
 
-The `Value { id, dir }` struct and its 28-bit packing are deleted. `set_max_tx` / `KEY_MAX_TXID` are
-deleted. `schema::save` and `MaxEid`/`EntEid` drop their counter logic.
-
----
-
-## 9. Schema
+## 8. Schema
 
 ### Schema-as-data
 
-The schema is initialized by the peer that creates the repo, but peers can append and update it.
-`Pod::new(db_spec)` goes away; the creating peer writes a **genesis transaction** (the root,
-`prev = None`) declaring the initial schema, and every peer derives the schema by replaying the log.
-`Schema`/`AttrTable` become a *materialized view* of the `:db/ident` + `:db/cardinality` datoms.
+The schema is initialized by the peer that creates the repo, but peers can append and update it. The
+creating peer writes a **genesis transaction** (the root, `prev = None`) declaring the initial
+attributes, and every peer derives the schema by replaying the log. `Schema`/`AttrTable` are a
+*materialized view* of the `:db/ident` + `:db/cardinality` datoms.
 
 ### Genesis transaction
 
@@ -398,14 +339,9 @@ The second case is the "schema race": peer A references `:foo` while peer B conc
 `:foo`. In the linearized order, one comes first. This is **deterministic** — every peer computes
 the same order and reaches the same verdict — so it is not a coordination failure.
 
----
+## 9. Values
 
-## 10. Value widening
-
-`Val` must grow to support the tx metadata (`:tx/author` = 32-byte key, `:tx/prev` = 32-byte hash,
-`:tx/nonce` = 16 bytes, `:tx/instant` = u64) and to make entity references first-class.
-
-### The widened `Val`
+`Val` is the value type stored in the index:
 
 ```rust
 pub enum Val {
@@ -413,20 +349,21 @@ pub enum Val {
     U64(u64),
     String(String),
     Bytes(Vec<u8>),
-    Ein(Ein),
 }
 ```
 
+Entity references are stored as `U32` (the ein's numeric value). Making `Ein` a first-class value
+variant is a deferred improvement (see §12).
+
 ### Byte encoding
 
-Extend the existing type-byte scheme (`val_table.rs`):
+Values are hash-consed through a type-byte scheme (`val_table.rs`):
 
 ```rust
 const VAL_TYPE_U32: u8 = 16;
 const VAL_TYPE_STRING: u8 = 17;
 const VAL_TYPE_U64: u8 = 18;
 const VAL_TYPE_BYTES: u8 = 19;
-const VAL_TYPE_EIN: u8 = 20;
 
 fn bytes_from_val(val: &Val) -> Vec<u8> {
     match val {
@@ -434,69 +371,16 @@ fn bytes_from_val(val: &Val) -> Vec<u8> {
         Val::U64(u)    => { let mut b = vec![VAL_TYPE_U64];    b.extend_from_slice(&u.to_be_bytes()); b }
         Val::String(s) => { let mut b = vec![VAL_TYPE_STRING]; b.extend_from_slice(s.as_bytes()); b }
         Val::Bytes(bs) => { let mut b = vec![VAL_TYPE_BYTES];  b.extend_from_slice(bs); b }
-        Val::Ein(e)    => { let mut b = vec![VAL_TYPE_EIN];    b.extend_from_slice(&e.to_i32().to_be_bytes()); b }
-    }
-}
-
-fn val_from_bytes(bytes: &[u8]) -> Val {
-    match bytes[0] {
-        VAL_TYPE_U32    => Val::U32(u32::from_be_bytes(bytes[1..5].try_into().unwrap())),
-        VAL_TYPE_U64    => Val::U64(u64::from_be_bytes(bytes[1..9].try_into().unwrap())),
-        VAL_TYPE_STRING => Val::String(String::from_utf8(bytes[1..].to_vec()).unwrap()),
-        VAL_TYPE_BYTES  => Val::Bytes(bytes[1..].to_vec()),
-        VAL_TYPE_EIN    => Val::Ein(Ein::from(i32::from_be_bytes(bytes[1..5].try_into().unwrap()))),
-        _ => unreachable!(),
     }
 }
 ```
 
 The key invariant: **the encoding must be injective** — distinct `Val`s must produce distinct byte
 sequences, or the hash-consing table would collapse two values into one `Vid`. The type byte
-guarantees this. `val_table::insert`/`query` are unchanged; the `Vid` derivation
-(`universal_hash::hash(&bytes, 0) & TrieKey::MASK`) is agnostic to the payload.
+guarantees this. The `Vid` derivation (`universal_hash::hash(&bytes, 0) & TrieKey::MASK`) is
+agnostic to the payload.
 
-### Ripples
-
-```rust
-// val.rs
-impl From<Ein> for Val {
-    fn from(e: Ein) -> Self { Val::Ein(e) }        // was Val::U32(e.to_i32() as u32)
-}
-impl From<u64> for Val { fn from(u: u64) -> Self { Val::U64(u) } }
-impl From<Vec<u8>> for Val { fn from(b: Vec<u8>) -> Self { Val::Bytes(b) } }
-impl From<&[u8]> for Val { fn from(b: &[u8]) -> Self { Val::Bytes(b.to_vec()) } }
-
-// pod.rs — Dat::Ent resolution
-Dat::Ent(ent) => {
-    let eid = /* resolve temp or id */;
-    Val::Ein(eid)                                   // was val(eid) -> Val::U32
-}
-
-// ein.rs
-impl From<Val> for Ein {
-    fn from(val: Val) -> Self {
-        match val {
-            Val::Ein(e) => e,
-            Val::U32(v) => Ein(v as i32),           // legacy path, can drop in a greenfield rewrite
-            _ => panic!("not an ein"),
-        }
-    }
-}
-```
-
-`Cardinality::from(Val)` is unchanged (`:db/cardinality` stays `U32(0)`/`U32(1)`). The `Val`
-accessor helpers (`i32()`/`u32()`/`as_str()`) need `u64()`/`bytes()`/`ein()` siblings.
-
-### The query-layer split
-
-`ValsInSlot` and friends match on `Val` equality, so a query for `Val::U32(42)` will *not* match a
-stored `Val::Ein(Ein(42))`. That is correct (they are different things now), but the `find` API
-needs a way to express "entity reference" vs. "integer" — likely a `Val::Ein` constructor in the
-query DSL. This is the one place the widening is *not* purely mechanical.
-
----
-
-## 11. Replay algorithm
+## 10. Replay & the index
 
 The central invariant: **the trie is append-only and never reorders; only the linearized order
 changes.** Replay is two separable halves — insert datoms (order-independent) and compute the order
@@ -504,31 +388,10 @@ changes.** Replay is two separable halves — insert datoms (order-independent) 
 
 ```rust
 struct Index {
-    trie: SkyTrie,                 // append-only datom storage
-    order: HashMap<Ein, u32>,      // tx_ein -> linearized position (the only mutable part)
-}
-
-impl Index {
-    async fn replay(&mut self, txs: &HashMap<Hash, Tx>) -> Result<(), TransactError> {
-        // 1. Linearize: topological sort + hash tiebreak.
-        let order = linearize(txs);
-        self.order = order.iter().enumerate()
-            .map(|(i, h)| (Ein::tx(&txs[h].nonce), i as u32))
-            .collect();
-
-        // 2. Insert every datom (append-only; order-independent).
-        self.trie.edit(async |trie| {
-            for tx in txs.values() {
-                let tx_ein = Ein::tx(&tx.nonce);
-                for datom in &tx.datoms {
-                    with_update(trie, aid, datom.ent.to_eid(), datom.dat.clone(),
-                                datom.dir, tx_ein).await?;
-                }
-            }
-            Ok(())
-        }).await?;
-        Ok(())
-    }
+    schema: Schema,                 // materialized view of :db/ident + :db/cardinality
+    trie: SkyTrie,                   // append-only datom storage
+    order: HashMap<Ein, u32>,        // tx_ein -> linearized position (the only mutable part)
+    tip: Option<Hash>,               // last element of the linearized order
 }
 ```
 
@@ -601,32 +464,32 @@ the loop is the crux — a transaction resolves against the schema *before* its 
 folded in, so "declare before use" holds across transactions, not within one:
 
 ```rust
-async fn replay(&mut self, txs: &HashMap<Hash, Tx>) -> Result<(), TransactError> {
-    let order = linearize(txs);
-    self.order = /* tx_ein -> position */;
-
+async fn replay(txs: Vec<Tx>) -> anyhow::Result<Index> {
+    let map: HashMap<Hash, Tx> = txs.into_iter().map(|tx| (tx.hash(), tx)).collect();
+    let order = linearize(&map);
     let mut schema = Schema::empty();
+    let mut trie = SkyTrie::new();
+    let mut order_map = HashMap::new();
 
-    self.trie.edit(async |trie| {
-        for hash in &order {
-            let tx = &txs[hash];
-            let tx_ein = Ein::tx(&tx.nonce);
+    for (i, hash) in order.iter().enumerate() {
+        let tx = &map[hash];
+        let tx_ein = Ein::tx(&tx.nonce);
+        order_map.insert(tx_ein, i as u32);
 
-            // 1. resolve + insert every datom against the *current* schema
-            for datom in &tx.datoms {
-                let Some(aid) = schema.resolve(&datom.attr) else {
-                    continue;                 // malformed: undeclared ident, skip
-                };
-                with_update(trie, aid, datom.ent.to_eid(), datom.dat.clone(),
-                            datom.dir, tx_ein).await?;
-            }
-
-            // 2. fold this tx's schema declarations into the running schema
-            schema.apply(&tx.datoms);
+        // 1. resolve + insert every datom against the *current* schema
+        for datom in &tx.datoms {
+            let Some(aid) = schema.resolve(&datom.attr) else {
+                continue;                 // malformed: undeclared ident, skip
+            };
+            with_update(&mut trie, aid, datom.ent.to_eid(), datom.dat.clone(),
+                        datom.dir, tx_ein).await?;
         }
-        Ok(())
-    }).await?;
-    Ok(())
+
+        // 2. fold this tx's schema declarations into the running schema
+        schema.apply(&tx.datoms);
+    }
+
+    Ok(Index { schema, trie, order: order_map, tip: order.last().copied() })
 }
 ```
 
@@ -656,7 +519,57 @@ schema states), or falling back to a full replay when a fork arrives. The "appen
 holds for the *common* case (a tx building on the tip); the fork case is where the incremental path
 gets subtle.
 
----
+## 11. Live updates & snapshots
+
+The live object and the query object are separate.
+
+### `Peer` — the live object
+
+```rust
+struct Peer {
+    log: Log,                       // iroh-docs wrapper (endpoint + blobs + gossip + docs + router)
+    index: Arc<RwLock<Index>>,      // the shared, mutable index
+    task: JoinHandle<()>,           // the background replay loop
+}
+```
+
+`Peer` owns the log and the index. It exposes:
+
+- **`transact(datoms)`** — mints a nonce, resolves temp entities, builds a `Tx` (with the peer's
+  `AuthorId` and the current tip as `prev`), appends it to the log, and applies it to the index.
+- **`ticket()`** — recreates a fresh `DocTicket` on demand (the ticket embeds the current endpoint
+  address, so it is never persisted).
+- **`snapshot()`** — hands out a stable, immutable `Pod`.
+
+A background task drains `log.subscribe()` and, on each `ContentReady`/`PendingContentReady`/
+`SyncFinished` event, re-reads the log and full-replays it into the shared index. This is the
+"rebuild the index when I learn of a peer's transaction" path.
+
+### `Pod` — the stable snapshot
+
+```rust
+struct Pod {
+    schema: Schema,
+    trie: SkyTrie,
+    order: HashMap<Ein, u32>,
+}
+```
+
+`Pod` is an immutable snapshot of the index (schema + trie + order), handed out on demand. All
+queries (`find`, `pull`, `ev_iter`, `list_attributes`, …) run against a `Pod`. Because the trie is
+`Arc`-backed, a snapshot is cheap, and a held `Pod` stays valid even as the `Peer` continues to
+advance.
+
+### Entry points
+
+```rust
+create(path, db_spec) -> Peer   // new repo: keypair + genesis tx + namespace
+load(path)            -> Peer   // existing repo: read keypair + namespace, open, replay
+join(path, ticket)    -> Peer   // join a peer's repo: import ticket, sync, replay
+```
+
+The path holds two files — `keypair` (the peer identity) and `namespace` (the repo id). The
+`DocTicket` is never persisted; it is recreated on demand via `Peer::ticket()`.
 
 ## 12. Deferred / open questions
 
@@ -664,8 +577,9 @@ gets subtle.
    marker attribute. Trivially addable later; it is a filter predicate in `list_entities`/`find`.
    Tradeoff: a bit flag drops user space to 29 bits (~23k birthday bound); a marker attribute costs
    a query per entity.
-2. **`Ein` as a first-class value.** Orthogonal to replay; a type-safety/disambiguation improvement.
-   Partially covered by `Val::Ein` in §10, but the `find`/query DSL changes are deferred.
+2. **`Ein` as a first-class value.** Entity references are currently stored as `U32`; a dedicated
+   `Val::Ein` variant would disambiguate them from integers. The `find`/query DSL changes are
+   deferred.
 3. **`find`/query-layer changes** for the `Ein`/`U32` split.
 4. **Schema deletion policy.** `apply` only folds `Dir::In`, so the schema is effectively
    append-only. Attribute deletion is genuinely hard in a replicated log (it orphans existing
@@ -675,119 +589,9 @@ gets subtle.
 6. **`tip()` semantics.** The tip is `order`'s last element, used as the next `prev`. A peer's tip
    is "the max of what I've seen so far" — it advances as new txs arrive, which is fine because
    `prev` only records what the peer knew at creation time.
-7. **Incremental replay.** The §11 incremental path (append-only trie, re-linearize on forks) is a
-   deferred optimization with no assigned stage — Stage 8 uses full replay on each sync event. The
-   fork case's schema re-resolution caveat (§11) is the main reason it is not the first cut.
-
----
-
-## 13. Code impact
-
-The implemented layout (Stages 1–8):
-
-| File | Role |
-|---|---|
-| `objects/pod.rs` | `Pod` — an immutable snapshot (schema + trie + order), query-only. |
-| `objects/peer.rs` | `Peer` — owns the log + `Arc<RwLock<Index>>`; `transact`/`ticket`/`snapshot`; background replay loop. |
-| `peer.rs` | `create`/`load`/`join` entry points, returning a `Peer`. |
-| `_internal/services/log.rs` | `Log` — iroh-docs wrapper (endpoint + blobs + gossip + docs + router); `append`/`entries`/`ticket`/`subscribe`. |
-| `_internal/services/replay.rs` | `Index`, `apply_tx`, and `replay` (linearize + insert + fold schema). |
-| `_internal/services/db_trie.rs` | `with_update` takes `aid` + `tx_ein`; history-preserving index. |
-| `_internal/services/val_table.rs` | `U64`/`Bytes`/`Ein` byte encoding. |
-| `types/val.rs` | `U64`/`Bytes`/`Ein` variants. |
-| `types/ein.rs` | nonce-derived `Ein::user`/`tx`/`attr`. |
-| `types/tx.rs` | `Tx` (`prev`/`author`/`nonce`/`datoms`) + `linearize`. |
-| `types/schema/*` | `Schema`/`AttrTable` as a materialized view; built-in `:tx/*` attrs. |
-| `traits.rs` | `Transact` on `Peer`; `DbQuery` on `Pod`. |
-
-### Dependencies
-
-- **`getrandom`** for nonces.
-- **`blake3`** for content hashes (iroh-blobs already uses it) — distinct from `universal_hash`, which
-  stays a 30-bit trie-key hasher.
-- **`iroh-docs`** (and transitively `iroh-blobs`, `iroh-gossip`) for the log.
-
----
-
-## 14. Implementation stages
-
-The work is broken into two phases. **Phase A** is a set of refactors that keep the system
-single-writer and behaviorally unchanged, each testable against the existing suite. **Phase B** adds
-the peer model itself. Each stage compiles and passes tests on its own.
-
-### Phase A — Refactors (single-writer, no behavior change)
-
-**Stage 1 — Widen the value type.**
-Add `U64` and `Bytes` to `Val` (and, optionally, `Ein`), and teach the value table to encode/decode
-them. This is a pure extension — existing `U32`/`String` values are untouched. *Done when:* the value
-table round-trips every variant and all existing tests still pass.
-
-**Stage 2 — Switch to a history-preserving index.**
-Replace the packed `txid + dir` leaf with a deeper `[entity, attr, value, tx] → dir` layout, and stop
-overwriting on cardinality-one. "Current value" becomes a query-time computation (latest tx wins)
-instead of a write-time overwrite. *Done when:* existing tests return identical results, and new
-tests show history is retained.
-
-**Stage 3 — Derive entity ids from nonces.**
-Stop allocating entity ids from a shared counter; mint a random nonce per temp entity and derive its
-id from it. *Done when:* temp entities get unique, stable ids with no counter, and existing tests
-pass.
-
-### Phase B — Peer model (new capabilities)
-
-**Stage 4 — Make every transaction an entity.**
-Give each transaction a nonce-derived id and metadata attributes (`:tx/nonce`, `:tx/instant`; the
-`:tx/author` and `:tx/prev` values, plus the content hash, wait for the log in Stages 6–7). The
-monotonic `Txid` remains the index key for now. *Done when:* each transaction produces a queryable
-entity carrying its own metadata.
-
-**Stage 5 — Treat the schema as data.**
-Replace the fixed, up-front schema with a genesis transaction that declares the initial attributes,
-and derive the schema by replaying the log. *Done when:* the schema is declared via a transaction
-and reconstructed from the log, with "declare before use" enforced.
-
-**Stage 6 — Linearize and replay.**
-Add the hash chain (`prev` pointer), the deterministic linearization (topological sort + hash
-tiebreak), and the replay loop that inserts datoms and computes the order. This is also where the
-index key swaps from the monotonic `Txid` to the transaction entity's nonce-derived `Ein` — the
-linearized order supplies the ordering that "current value" resolution needs. *Done when:* concurrent
-transactions merge deterministically and every peer computes the same order.
-
-**Stage 7 — Wire up iroh-docs.**
-Add the actual log: append transactions to an iroh-docs replica, and sync on startup (one-shot).
-Add the `create`/`load`/`join` entry points. *Done when:* two peers sync and converge on the same
-index.
-
-**Stage 8 — Live updates and stable snapshots.**
-Add a `Peer` object that owns the log, subscribes to incoming transactions, and replays them
-automatically in the background; the `Pod` becomes an immutable snapshot handed out on demand.
-`create`/`load`/`join` return a `Peer`; `transact` and `ticket()` move to `Peer`. *Done when:* a
-peer's index updates automatically as peers transact, and the user can hold a stable `Pod` snapshot
-while querying.
-
-### Why this order
-
-- **Stage 2 is the hard prerequisite, done first in isolation.** The existing `replace_tail` is
-  fundamentally incompatible with the peer model (it destroys history, and LWW-by-insertion-order
-  can't handle concurrent writes). Doing it while still single-writer (monotonic `Txid` as the tx
-  key, "max `Txid`" as the merge) isolates the riskiest storage change from the riskiest algorithm
-  change.
-- **Stages 1 and 3 are independent of Stage 2** and of each other, so they can be done in any order —
-  or in parallel if the work is split across contributors.
-- **Stage 4 introduces the transaction entity** (nonce-derived id + `:tx/*` metadata) but keeps the
-  monotonic `Txid` as the index key. The key swap to the transaction entity's `Ein` is coupled to
-  Stage 6, because "current value" resolution needs an ordering — the monotonic `Txid` provides it
-  today, and the linearized order replaces it in Stage 6.
-- **Stages 5 and 6 are orthogonal** (schema evolution vs. ordering) and both sit on Stage 4, so they
-  can be done in either order once 4 lands.
-- **Stage 7 adds the log** (iroh-docs) with one-shot sync — the only stage with an external
-  dependency (iroh) and networking. It lands the `create`/`load`/`join` entry points and the
-  append-and-replay path.
-- **Stage 8 adds live updates** — a `Peer` object that subscribes and replays automatically, with the
-  `Pod` as a stable snapshot. Deferred because it is a separate concern (live sync vs. one-shot sync)
-  and builds on Stage 7's log.
-
----
+7. **Incremental replay.** The §10 incremental path (append-only trie, re-linearize on forks) is a
+   deferred optimization — the current implementation uses full replay on each sync event. The fork
+   case's schema re-resolution caveat (§10) is the main reason it is not the first cut.
 
 ## Appendix: key invariants
 
