@@ -6,6 +6,7 @@ use iroh::SecretKey;
 use iroh_docs::{DocTicket, NamespaceId};
 
 use crate::_internal::log::Log;
+use crate::_internal::now_secs;
 use crate::_internal::rand_nonce;
 use crate::_internal::replay;
 use crate::attr_spec::DbSpec;
@@ -42,13 +43,6 @@ fn persist_namespace(path: &Path, namespace: NamespaceId) -> Result<(), ConnectE
 fn load_namespace(path: &Path) -> Result<NamespaceId, ConnectError> {
     let s = std::fs::read_to_string(path.join(NAMESPACE_FILE))?;
     Ok(NamespaceId::from_str(s.trim())?)
-}
-
-fn now_secs() -> u64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .expect("time before epoch")
-        .as_secs()
 }
 
 /// Creates a new repo: generates a keypair (if absent), creates the doc, writes the genesis

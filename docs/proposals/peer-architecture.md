@@ -1,6 +1,6 @@
 # Peer Architecture for sky-db
 
-**Status:** Proposal (design discussion, not yet implemented)
+**Status:** Implemented (Stages 1–8 complete)
 **Scope:** Replace the single-writer `Pod` model with a peer-to-peer, append-only transaction log.
 
 ---
@@ -683,27 +683,29 @@ gets subtle.
 
 ## 13. Code impact
 
-Files touched and the key changes:
+The implemented layout (Stages 1–8):
 
-| File | Change |
+| File | Role |
 |---|---|
-| `crates/sky-db/src/objects/pod.rs` | `Pod::new(db_spec)` → `Pod::open(repo)`; `transact` mints nonce, resolves temps, appends to log, replays; `Pod` gains `author`, `log`, `tip`. |
-| `crates/sky-db/src/_internal/services/db_trie.rs` | Delete `Value` packing; `with_update` takes `aid` + `tx_ein`, no `replace_tail`; delete `set_max_tx`; `evid_iter`/`ev_iter` resolve current by linearized order. |
-| `crates/sky-db/src/_internal/services/val_table.rs` | Extend `bytes_from_val`/`val_from_bytes` for `U64`/`Bytes`/`Ein`. |
-| `crates/sky-db/src/types/val.rs` | Add `U64`/`Bytes`/`Ein` variants and `From` impls. |
-| `crates/sky-db/src/types/ein.rs` | `Ein::user`/`Ein::tx`/`Ein::attr` derivation; `From<Val>` handles `Val::Ein`. |
-| `crates/sky-db/src/types/txid.rs` | Delete (or alias to `Ein`). |
-| `crates/sky-db/src/_internal/types/max_eid.rs`, `ent_eid.rs` | Delete (replaced by nonce-derived eins). |
-| `crates/sky-db/src/_internal/services/schema/mod.rs` | `save` → genesis transaction; add `Schema::resolve`/`apply`. |
-| `crates/sky-db/src/types/schema/*` | `AttrTable`/`AttributeDetails` become a materialized view; built-in `:tx/*` attrs. |
-| `crates/sky-db/src/traits.rs` | `Transact` signature (author/log/tip context). |
+| `objects/pod.rs` | `Pod` — an immutable snapshot (schema + trie + order), query-only. |
+| `objects/peer.rs` | `Peer` — owns the log + `Arc<RwLock<Index>>`; `transact`/`ticket`/`snapshot`; background replay loop. |
+| `peer.rs` | `create`/`load`/`join` entry points, returning a `Peer`. |
+| `_internal/services/log.rs` | `Log` — iroh-docs wrapper (endpoint + blobs + gossip + docs + router); `append`/`entries`/`ticket`/`subscribe`. |
+| `_internal/services/replay.rs` | `Index`, `apply_tx`, and `replay` (linearize + insert + fold schema). |
+| `_internal/services/db_trie.rs` | `with_update` takes `aid` + `tx_ein`; history-preserving index. |
+| `_internal/services/val_table.rs` | `U64`/`Bytes`/`Ein` byte encoding. |
+| `types/val.rs` | `U64`/`Bytes`/`Ein` variants. |
+| `types/ein.rs` | nonce-derived `Ein::user`/`tx`/`attr`. |
+| `types/tx.rs` | `Tx` (`prev`/`author`/`nonce`/`datoms`) + `linearize`. |
+| `types/schema/*` | `Schema`/`AttrTable` as a materialized view; built-in `:tx/*` attrs. |
+| `traits.rs` | `Transact` on `Peer`; `DbQuery` on `Pod`. |
 
-### New dependencies
+### Dependencies
 
-- **Randomness** (`rand`/`getrandom`) for nonces — the codebase is currently fully deterministic.
-- **BLAKE3** for content hashes (iroh-blobs already uses it) — distinct from `universal_hash`, which
+- **`getrandom`** for nonces.
+- **`blake3`** for content hashes (iroh-blobs already uses it) — distinct from `universal_hash`, which
   stays a 30-bit trie-key hasher.
-- **iroh-docs** (and transitively `iroh-blobs`, `iroh-gossip`) for the log.
+- **`iroh-docs`** (and transitively `iroh-blobs`, `iroh-gossip`) for the log.
 
 ---
 

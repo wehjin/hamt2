@@ -4,5 +4,4 @@
 pub mod db_trie;
 pub mod log;
 pub mod replay;
-pub mod schema;
 pub mod val_table;

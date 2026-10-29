@@ -8,7 +8,6 @@ mod schema;
 mod tx;
 mod val;
 
-pub use crate::_internal::schema::*;
 use serde::{Deserialize, Serialize};
 
 pub use attr::*;

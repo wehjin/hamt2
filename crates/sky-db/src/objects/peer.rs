@@ -8,7 +8,7 @@ use tokio::task::JoinHandle;
 
 use crate::_internal::log::Log;
 use crate::_internal::replay::{self, Index, apply_tx};
-use crate::_internal::{EntEid, rand_nonce};
+use crate::_internal::{EntEid, now_secs, rand_nonce};
 use crate::errors::ConnectError;
 use crate::{Dat, Datom, Ein, Ent, Pod, Transact, TransactError, Tx, Val, datom, tx, val};
 
@@ -87,11 +87,7 @@ impl Transact for Peer {
             tx::author(),
             Val::Bytes(author.to_bytes().to_vec()),
         ));
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .expect("time before epoch")
-            .as_secs();
-        all.push(datom::add(tx_ein, tx::instant(), Val::U64(now)));
+        all.push(datom::add(tx_ein, tx::instant(), Val::U64(now_secs())));
         let tip = self.index.read().await.tip;
         let tx = Tx {
             prev: tip,
