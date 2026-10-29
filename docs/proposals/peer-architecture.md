@@ -646,6 +646,16 @@ The full `replay` above is the startup path. For a live arrival:
 So "rebuild the index" is really "append datoms + recompute the order map." The expensive part (the
 trie) is never rewritten.
 
+**Caveat: a fork must re-resolve against the historical schema.** A fork's linearized position is in
+the *middle* of the order, so its datoms must be resolved against the schema *as of that position*,
+not the current (tip) schema. If a late fork references an ident declared after its position, a
+naive incremental apply (resolving against the tip schema) would insert a datom that a fresh full
+replay would have skipped as malformed — a divergence. Correct incremental handling therefore
+requires either re-resolving the fork's datoms against the schema at its position (a history of
+schema states), or falling back to a full replay when a fork arrives. The "append-only trie" claim
+holds for the *common* case (a tx building on the tip); the fork case is where the incremental path
+gets subtle.
+
 ---
 
 ## 12. Deferred / open questions
@@ -665,6 +675,9 @@ trie) is never rewritten.
 6. **`tip()` semantics.** The tip is `order`'s last element, used as the next `prev`. A peer's tip
    is "the max of what I've seen so far" — it advances as new txs arrive, which is fine because
    `prev` only records what the peer knew at creation time.
+7. **Incremental replay.** The §11 incremental path (append-only trie, re-linearize on forks) is a
+   deferred optimization with no assigned stage — Stage 8 uses full replay on each sync event. The
+   fork case's schema re-resolution caveat (§11) is the main reason it is not the first cut.
 
 ---
 
@@ -744,10 +757,11 @@ Add the `create`/`load`/`join` entry points. *Done when:* two peers sync and con
 index.
 
 **Stage 8 — Live updates and stable snapshots.**
-Add a `Peer` (or `Replica`) object that owns the log, subscribes to incoming transactions, and
-replays them automatically in the background; the `Pod` becomes an immutable snapshot handed out on
-demand. *Done when:* a peer's index updates automatically as peers transact, and the user can hold a
-stable `Pod` snapshot while querying.
+Add a `Peer` object that owns the log, subscribes to incoming transactions, and replays them
+automatically in the background; the `Pod` becomes an immutable snapshot handed out on demand.
+`create`/`load`/`join` return a `Peer`; `transact` and `ticket()` move to `Peer`. *Done when:* a
+peer's index updates automatically as peers transact, and the user can hold a stable `Pod` snapshot
+while querying.
 
 ### Why this order
 
@@ -767,9 +781,9 @@ stable `Pod` snapshot while querying.
 - **Stage 7 adds the log** (iroh-docs) with one-shot sync — the only stage with an external
   dependency (iroh) and networking. It lands the `create`/`load`/`join` entry points and the
   append-and-replay path.
-- **Stage 8 adds live updates** — a `Peer`/`Replica` object that subscribes and replays automatically,
-  with the `Pod` as a stable snapshot. Deferred because it is a separate concern (live sync vs.
-  one-shot sync) and builds on Stage 7's log.
+- **Stage 8 adds live updates** — a `Peer` object that subscribes and replays automatically, with the
+  `Pod` as a stable snapshot. Deferred because it is a separate concern (live sync vs. one-shot sync)
+  and builds on Stage 7's log.
 
 ---
 
