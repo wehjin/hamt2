@@ -2,7 +2,7 @@ use crate::routes::home::Home;
 use ratatui_kit::crossterm::event::{Event, KeyCode, KeyEventKind, KeyModifiers};
 use ratatui_kit::prelude::*;
 use sky_db::Pod;
-use sky_db::{Transact, attr, datom, ent};
+use sky_db::{Transact, attr, create, datom, ent};
 
 pub static DB_VIEW: Atom<Option<Pod>> = Atom::new(|| None);
 
@@ -13,7 +13,8 @@ pub fn App(mut hooks: Hooks) -> impl Into<AnyElement<'static>> {
 
     hooks.use_future(async move {
         let attr_count = attr("counter/count");
-        let mut pod = Pod::new([attr_count.clone()]).await.expect("pod");
+        let path = std::env::temp_dir().join("sky-tui-db");
+        let mut pod = create(path, [attr_count.clone()]).await.expect("pod");
         pod.transact([datom::add(ent("a"), attr_count, 33)])
             .await
             .expect("transact");

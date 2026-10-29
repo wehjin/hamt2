@@ -1,6 +1,6 @@
 use sky_db::DbQuery;
-use sky_db::Pod;
 use sky_db::Transact;
+use sky_db::create;
 use sky_db::datom;
 use sky_db::find::{AllEins, AttrsOfEin, BindsForAttr, EinsWithAttr};
 use sky_db::{Attr, Ein, ein, val};
@@ -11,7 +11,8 @@ fn attr_count() -> Attr {
 
 #[tokio::test]
 async fn clone_works() -> anyhow::Result<()> {
-    let mut pod = Pod::new([attr_count()]).await?;
+    let dir = tempfile::tempdir()?;
+    let mut pod = create(dir.path(), [attr_count()]).await?;
     pod.transact([
         datom::add(1, attr_count(), val(10)),
         datom::add(2, attr_count(), val(20)),
@@ -40,7 +41,8 @@ async fn clone_works() -> anyhow::Result<()> {
 #[tokio::test]
 async fn clone_finds_binds() {
     let attr = Attr::from("Counter/count");
-    let mut pod = Pod::new([attr.clone()]).await.unwrap();
+    let dir = tempfile::tempdir().unwrap();
+    let mut pod = create(dir.path(), [attr.clone()]).await.unwrap();
     pod.transact([datom::add(10, attr.clone(), 42)])
         .await
         .unwrap();
@@ -51,7 +53,8 @@ async fn clone_finds_binds() {
 
 #[tokio::test]
 async fn clone_finds_entities() {
-    let mut pod = Pod::new([attr_count()]).await.unwrap();
+    let dir = tempfile::tempdir().unwrap();
+    let mut pod = create(dir.path(), [attr_count()]).await.unwrap();
     pod.transact([datom::add(100, attr_count(), val(100))])
         .await
         .unwrap();
@@ -67,7 +70,8 @@ async fn clone_finds_entities() {
 
 #[tokio::test]
 async fn clone_lists_entity_attributes() {
-    let mut pod = Pod::new([attr_count()]).await.unwrap();
+    let dir = tempfile::tempdir().unwrap();
+    let mut pod = create(dir.path(), [attr_count()]).await.unwrap();
     pod.transact([datom::add(100, attr_count(), val(100))])
         .await
         .unwrap();

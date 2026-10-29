@@ -1,6 +1,6 @@
 use sky_db::DbQuery;
-use sky_db::Pod;
 use sky_db::Transact;
+use sky_db::create;
 use sky_db::datom;
 use sky_db::find::EinsWithAttr;
 use sky_db::{Attr, val};
@@ -11,7 +11,8 @@ fn attr_count() -> Attr {
 
 #[tokio::test]
 async fn pod_works() -> anyhow::Result<()> {
-    let mut pod = Pod::new([attr_count()]).await?;
+    let dir = tempfile::tempdir()?;
+    let mut pod = create(dir.path(), [attr_count()]).await?;
     pod.transact([
         datom::add(1, attr_count(), val(10)),
         datom::add(2, attr_count(), val(20)),

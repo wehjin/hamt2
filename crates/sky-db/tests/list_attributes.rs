@@ -1,10 +1,11 @@
-use sky_db;
 use sky_db::cardinality::Cardinality;
-use sky_db::{Attribute, Pod};
+use sky_db::create;
+use sky_db::{Attribute};
 
 #[tokio::test]
 async fn list_attributes_works() {
-    let pod = Pod::new(["counter/count"]).await.unwrap();
+    let dir = tempfile::tempdir().unwrap();
+    let pod = create(dir.path(), ["counter/count"]).await.unwrap();
     let mut attributes = pod.list_attributes().await;
     attributes.sort();
 

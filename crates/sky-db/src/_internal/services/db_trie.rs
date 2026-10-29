@@ -2,7 +2,6 @@ use crate::_internal::Vid;
 use crate::_internal::val_table;
 use crate::_internal::{KEY_AEVT, KEY_EAVT};
 use crate::Schema;
-use crate::attr_table::AttrTable;
 use crate::cardinality::Cardinality;
 use crate::trie::SkyTrieMut;
 use crate::trie::*;
@@ -70,16 +69,14 @@ fn current_vids(
 
 pub(crate) async fn with_update(
     trie: &mut SkyTrieMut,
-    attr_map: &AttrTable,
+    aid: Ein,
     ein: Ein,
-    attr: Attr,
     val: Val,
     dir: Dir,
     tx_ein: Ein,
 ) -> Result<(), TransactError> {
-    let attribute = &attr_map[attr];
     let eid = ein.to_i32();
-    let aid = attribute.ein().to_i32();
+    let aid = aid.to_i32();
     let vid = val_table::insert(trie, val).await?;
     let tx = tx_ein.to_i32();
     let eavt_key = [KEY_EAVT, eid, aid, vid.to_id(), tx];
@@ -228,27 +225,11 @@ pub fn ev_iter(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::attr_spec::AttrSpec;
-    use crate::attribute::AttributeDetails;
     use crate::trie::SkyTrie;
     use crate::val;
 
-    fn attr_table() -> AttrTable {
-        let mut t = AttrTable::starter();
-        t.insert(AttributeDetails::new(
-            Ein(100),
-            AttrSpec {
-                attr: Attr::from("counter/count"),
-                cardinality: Cardinality::One,
-            },
-        ));
-        t
-    }
-
     #[tokio::test]
     async fn history_is_retained() {
-        let attr = Attr::from("counter/count");
-        let table = attr_table();
         let mut trie = SkyTrie::new();
         let tx1 = Ein::tx(&[1u8; 16]);
         let tx2 = Ein::tx(&[2u8; 16]);
@@ -256,19 +237,19 @@ mod tests {
         order.insert(tx1, 0);
         order.insert(tx2, 1);
         trie.edit(async |trie| {
-            with_update(trie, &table, Ein(100), attr.clone(), val(100), Dir::In, tx1).await?;
-            with_update(trie, &table, Ein(100), attr.clone(), val(101), Dir::In, tx2).await?;
+            with_update(trie, Ein(100), Ein(200), val(100), Dir::In, tx1).await?;
+            with_update(trie, Ein(100), Ein(200), val(101), Dir::In, tx2).await?;
             Ok(())
         })
         .await
         .unwrap();
 
-        let fills = list_entity_fills(&trie, Ein(100), AttrEin::from(100), Cardinality::One, &order);
+        let fills = list_entity_fills(&trie, Ein(200), AttrEin::from(100), Cardinality::One, &order);
         assert_eq!(fills.len(), 1);
 
         let mut vt = trie.clone();
         vt.descend(KEY_EAVT);
-        vt.descend(100);
+        vt.descend(200);
         vt.descend(100);
         assert_eq!(vt.query_all().len(), 2);
     }

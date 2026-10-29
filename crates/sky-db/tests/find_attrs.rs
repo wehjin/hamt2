@@ -1,5 +1,5 @@
 use sky_db::DbQuery;
-use sky_db::Pod;
+use sky_db::create;
 use sky_db::find::AllAttrs;
 use sky_db::{Attr, attr};
 
@@ -9,7 +9,8 @@ fn attr_count() -> Attr {
 
 #[tokio::test]
 async fn find_attrs_works() {
-    let pod = Pod::new([attr_count()]).await.unwrap();
+    let dir = tempfile::tempdir().unwrap();
+    let pod = create(dir.path(), [attr_count()]).await.unwrap();
     let mut attrs = pod.find(AllAttrs).await;
     attrs.sort();
     assert_eq!(

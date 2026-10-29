@@ -1,9 +1,9 @@
-use sky_db;
-use sky_db::{Pod, Transact, datom, val};
+use sky_db::{Transact, create, datom, val};
 
 #[tokio::test]
 async fn list_binds_works() {
-    let mut pod = Pod::new(["counter/count"]).await.unwrap();
+    let dir = tempfile::tempdir().unwrap();
+    let mut pod = create(dir.path(), ["counter/count"]).await.unwrap();
     {
         let attribute = pod.get_attribute("counter/count").unwrap();
         let binds = attribute.list_binds();

@@ -48,8 +48,8 @@ mod tests {
     use crate::find::datalog::rule::rule;
     use crate::find::datalog::term::term;
     use crate::find::datalog::var::var;
-    use crate::Pod;
     use crate::Transact;
+    use crate::create;
     use crate::datom;
     use crate::{Attr, ent, val};
 
@@ -72,7 +72,8 @@ mod tests {
     #[tokio::test]
     async fn program_test() -> anyhow::Result<()> {
         let schema = vec![advisor(), name()];
-        let mut pod = Pod::new(schema.clone()).await?;
+        let dir = tempfile::tempdir()?;
+        let mut pod = create(dir.path(), schema.clone()).await?;
         pod.transact([
             datom::add("a", name(), val("Alice")),
             datom::add("b", name(), val("Bob")),

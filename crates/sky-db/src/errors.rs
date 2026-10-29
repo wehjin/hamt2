@@ -6,8 +6,11 @@ pub enum ConnectError {
     #[error("Transact: {0}")]
     Transact(#[from] TransactError),
 
-    #[error("trie edit: {0}")]
-    TrieEdit(#[source] anyhow::Error),
+    #[error("io: {0}")]
+    Io(#[from] std::io::Error),
+
+    #[error("log: {0}")]
+    Log(#[from] anyhow::Error),
 }
 
 #[derive(thiserror::Error, Debug)]

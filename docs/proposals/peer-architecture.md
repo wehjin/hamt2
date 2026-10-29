@@ -739,8 +739,15 @@ linearized order supplies the ordering that "current value" resolution needs. *D
 transactions merge deterministically and every peer computes the same order.
 
 **Stage 7 — Wire up iroh-docs.**
-Add the actual log: append transactions to an iroh-docs replica, sync on startup, and replay
-incrementally on live updates. *Done when:* two peers sync and converge on the same index.
+Add the actual log: append transactions to an iroh-docs replica, and sync on startup (one-shot).
+Add the `create`/`load`/`join` entry points. *Done when:* two peers sync and converge on the same
+index.
+
+**Stage 8 — Live updates and stable snapshots.**
+Add a `Peer` (or `Replica`) object that owns the log, subscribes to incoming transactions, and
+replays them automatically in the background; the `Pod` becomes an immutable snapshot handed out on
+demand. *Done when:* a peer's index updates automatically as peers transact, and the user can hold a
+stable `Pod` snapshot while querying.
 
 ### Why this order
 
@@ -757,9 +764,12 @@ incrementally on live updates. *Done when:* two peers sync and converge on the s
   today, and the linearized order replaces it in Stage 6.
 - **Stages 5 and 6 are orthogonal** (schema evolution vs. ordering) and both sit on Stage 4, so they
   can be done in either order once 4 lands.
-- **Stage 7 is last** because it is the only stage with an external dependency (iroh) and networking,
-  and it is the thinnest once 6 is in place — the log is just "append a serialized `Tx`, replay on
-  `subscribe`."
+- **Stage 7 adds the log** (iroh-docs) with one-shot sync — the only stage with an external
+  dependency (iroh) and networking. It lands the `create`/`load`/`join` entry points and the
+  append-and-replay path.
+- **Stage 8 adds live updates** — a `Peer`/`Replica` object that subscribes and replays automatically,
+  with the `Pod` as a stable snapshot. Deferred because it is a separate concern (live sync vs.
+  one-shot sync) and builds on Stage 7's log.
 
 ---
 

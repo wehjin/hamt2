@@ -1,81 +1,33 @@
+use crate::_internal::log::Log;
 use crate::_internal::{EntEid, db_trie, rand_nonce, val_table};
-use crate::attr_spec::DbSpec;
 use crate::errors::ConnectError;
 use crate::trie::SkyTrie;
 use crate::{
     Attr, Attribute, Dat, Datom, Ein, Ent, Fill, Hash, Schema, Transact, TransactError, Tx, Val,
-    datom, db, tx, val,
+    datom, tx, val,
 };
+use iroh_docs::DocTicket;
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct Pod {
     pub(crate) schema: Schema,
     pub(crate) trie: SkyTrie,
     pub(crate) order: HashMap<Ein, u32>,
     pub(crate) tip: Option<Hash>,
+    pub(crate) log: Log,
 }
 
-/// Constructors
-impl Pod {
-    pub async fn new(db_spec: impl Into<DbSpec>) -> Result<Self, ConnectError> {
-        let db_spec = db_spec.into();
-        let attr_specs = db_spec.as_ref();
-        let (schema, trie, order, tip) = {
-            let mut trie = SkyTrie::new();
-            let mut schema = Schema::starter();
-            let nonce = rand_nonce();
-            let tx_ein = Ein::tx(&nonce);
-            // Build the genesis datoms: schema declarations + tx metadata.
-            let mut genesis = Vec::new();
-            for spec in attr_specs {
-                let ein = Ein::attr(&spec.attr);
-                genesis.push(datom::add(ein, db::ident(), spec.attr.as_ident()));
-                let card: Val = spec.cardinality.into();
-                genesis.push(datom::add(ein, db::cardinality(), card));
-            }
-            genesis.push(datom::add(tx_ein, tx::nonce(), Val::Bytes(nonce.to_vec())));
-            let now = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .expect("time before epoch")
-                .as_secs();
-            genesis.push(datom::add(tx_ein, tx::instant(), Val::U64(now)));
-            let genesis_tx = Tx {
-                prev: None,
-                author: [0u8; 32],
-                nonce,
-                datoms: genesis,
-            };
-            let hash = genesis_tx.hash();
-            trie.edit(async |trie| {
-                for datom in &genesis_tx.datoms {
-                    let eid = datom.ent.to_eid();
-                    let attr = datom.attr.clone();
-                    let val = match &datom.dat {
-                        Dat::Val(val) => val.clone(),
-                        Dat::Ent(_) => unreachable!("genesis datoms have no entity refs"),
-                    };
-                    db_trie::with_update(trie, &schema, eid, attr, val, datom.dir, tx_ein).await?;
-                }
-                Ok(())
-            })
-            .await
-            .map_err(|e| ConnectError::TrieEdit(e))?;
-            // Derive the schema from the genesis datoms.
-            schema.apply(&genesis_tx.datoms);
-            let mut order = HashMap::new();
-            order.insert(tx_ein, 0);
-            (schema, trie, order, Some(hash))
-        };
-        let pod = Pod {
-            schema,
-            trie,
-            order,
-            tip,
-        };
-        Ok(pod)
+impl PartialEq for Pod {
+    fn eq(&self, other: &Self) -> bool {
+        self.schema == other.schema
+            && self.trie == other.trie
+            && self.order == other.order
+            && self.tip == other.tip
     }
 }
+
+impl Eq for Pod {}
 
 /// Queries
 impl Pod {
@@ -142,6 +94,14 @@ impl Pod {
     }
 }
 
+/// Peer
+impl Pod {
+    /// Recreates a fresh ticket for this pod's log (with the current endpoint address).
+    pub async fn ticket(&self) -> Result<DocTicket, ConnectError> {
+        Ok(self.log.ticket().await?)
+    }
+}
+
 /// Transact
 impl Transact for Pod {
     async fn transact(
@@ -181,6 +141,12 @@ impl Transact for Pod {
             });
         }
         all.push(datom::add(tx_ein, tx::nonce(), Val::Bytes(nonce.to_vec())));
+        let author = self.log.author();
+        all.push(datom::add(
+            tx_ein,
+            tx::author(),
+            Val::Bytes(author.to_bytes().to_vec()),
+        ));
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .expect("time before epoch")
@@ -188,27 +154,31 @@ impl Transact for Pod {
         all.push(datom::add(tx_ein, tx::instant(), Val::U64(now)));
         let tx = Tx {
             prev: self.tip,
-            author: [0u8; 32],
+            author,
             nonce,
             datoms: all,
         };
         let hash = tx.hash();
+        // Append to the log, then apply to the local index.
+        self.log.append(&tx).await.map_err(TransactError::Rewind)?;
         self.trie
             .edit(async |trie| {
                 for datom in &tx.datoms {
-                    let eid = datom.ent.to_eid();
-                    let attr = datom.attr.clone();
+                    let Some(aid) = self.schema.resolve(&datom.attr) else {
+                        continue;
+                    };
                     let val = match &datom.dat {
                         Dat::Val(val) => val.clone(),
                         Dat::Ent(_) => unreachable!("resolved datoms have no entity refs"),
                     };
-                    db_trie::with_update(trie, &self.schema, eid, attr, val, datom.dir, tx_ein)
+                    db_trie::with_update(trie, aid, datom.ent.to_eid(), val, datom.dir, tx_ein)
                         .await?;
                 }
                 Ok(())
             })
             .await
-            .map_err(|e| TransactError::Rewind(e))?;
+            .map_err(TransactError::Rewind)?;
+        self.schema.apply(&tx.datoms);
         let pos = self.order.len() as u32;
         self.order.insert(tx_ein, pos);
         self.tip = Some(hash);

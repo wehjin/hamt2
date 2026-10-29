@@ -1,10 +1,11 @@
-use sky_db::{Attr, Pod, Transact, Val, dat, datom, ent};
+use sky_db::{Attr, Transact, Val, create, dat, datom, ent};
 
 #[tokio::test]
 async fn ev_iter_test() -> anyhow::Result<()> {
     let count = || Attr::from("counter/count");
     let schema = vec![count()];
-    let mut pod = Pod::new(schema.clone()).await?;
+    let dir = tempfile::tempdir()?;
+    let mut pod = create(dir.path(), schema.clone()).await?;
     pod.transact(vec![
         datom::add(ent(10), count(), dat(10)),
         datom::add(ent(11), count(), dat(Val::from(11))),

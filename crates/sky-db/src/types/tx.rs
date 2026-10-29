@@ -1,4 +1,5 @@
 use crate::Datom;
+use iroh_docs::AuthorId;
 use serde::{Deserialize, Serialize};
 use std::cmp::Reverse;
 use std::collections::BinaryHeap;
@@ -11,7 +12,7 @@ pub type Hash = [u8; 32];
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Tx {
     pub prev: Option<Hash>,
-    pub author: [u8; 32],
+    pub author: AuthorId,
     pub nonce: [u8; 16],
     pub datoms: Vec<Datom>,
 }
@@ -55,7 +56,7 @@ mod tests {
     fn tx(prev: Option<Hash>, nonce: u8, datoms: Vec<Datom>) -> Tx {
         Tx {
             prev,
-            author: [0u8; 32],
+            author: AuthorId::from([0u8; 32]),
             nonce: [nonce; 16],
             datoms,
         }

@@ -1,7 +1,7 @@
 use crate::datom;
 use crate::pull::Pull;
 use crate::{Attr, Ein, Ent, Val, dat};
-use crate::{Pod, Transact};
+use crate::{Transact, create};
 use common::Basis;
 
 pub mod common;
@@ -15,7 +15,10 @@ async fn pull_test() {
         direction: -1,
     };
     let ent = Ent::from(27);
-    let mut pod = Pod::new(Basis::attrs()).await.expect("Pod::new");
+    let dir = tempfile::tempdir().expect("tempdir");
+    let mut pod = create(dir.path(), Basis::attrs())
+        .await
+        .expect("create");
     pod.transact(basis.into_datoms(ent))
         .await
         .expect("pod.transact");
