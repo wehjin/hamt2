@@ -1,14 +1,12 @@
-use crate::_internal::schema;
 use crate::_internal::{EntEid, db_trie, rand_nonce, val_table};
 use crate::_internal::KEY_MAX_TXID;
 use crate::attr_spec::DbSpec;
-use crate::attribute::AttributeDetails;
 use crate::errors::ConnectError;
 use crate::trie::SkyTrie;
 use crate::types::Txid;
 use crate::{
     Attr, Attribute, Dat, Datom, Dir, Ein, Ent, Fill, QueryError, Schema, Transact, TransactError,
-    Val, tx, val,
+    Val, datom, db, tx, val,
 };
 use sky_trie::{Query, TrieValue};
 
@@ -26,20 +24,40 @@ impl Pod {
         let (schema, trie) = {
             let mut trie = SkyTrie::new();
             let mut schema = Schema::starter();
-            {
-                let attributes = attr_specs
-                    .iter()
-                    .map(|spec| AttributeDetails::new(Ein::attr(&spec.attr), spec.clone()))
-                    .collect::<Vec<_>>();
-                schema.extend(attributes);
+            let nonce = rand_nonce();
+            let tx_ein = Ein::tx(&nonce);
+            // Build the genesis datoms: schema declarations + tx metadata.
+            let mut genesis = Vec::new();
+            for spec in attr_specs {
+                let ein = Ein::attr(&spec.attr);
+                genesis.push(datom::add(ein, db::ident(), spec.attr.as_ident()));
+                let card: Val = spec.cardinality.into();
+                genesis.push(datom::add(ein, db::cardinality(), card));
             }
+            genesis.push(datom::add(tx_ein, tx::nonce(), Val::Bytes(nonce.to_vec())));
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .expect("time before epoch")
+                .as_secs();
+            genesis.push(datom::add(tx_ein, tx::instant(), Val::U64(now)));
             trie.edit(async |trie| {
-                schema::save(&schema, trie, Txid::SETUP).await?;
+                for datom in &genesis {
+                    let eid = datom.ent.to_eid();
+                    let attr = datom.attr.clone();
+                    let val = match &datom.dat {
+                        Dat::Val(val) => val.clone(),
+                        Dat::Ent(_) => unreachable!("genesis datoms have no entity refs"),
+                    };
+                    db_trie::with_update(trie, &schema, eid, attr, val, datom.dir, &Txid::SETUP)
+                        .await?;
+                }
                 db_trie::set_max_tx(trie, Txid::FLOOR).await?;
                 Ok(())
             })
             .await
             .map_err(|e| ConnectError::TrieEdit(e))?;
+            // Derive the schema from the genesis datoms.
+            schema.apply(&genesis);
             (schema, trie)
         };
         let pod = Pod { schema, trie };

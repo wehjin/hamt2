@@ -83,13 +83,14 @@ async fn transact_creates_tx_entity() -> anyhow::Result<()> {
     let mut pod = Pod::new([attr_count()]).await?;
     pod.transact([datom::add(15, attr_count(), 15)]).await?;
 
-    // The transaction entity carries :tx/nonce and :tx/instant metadata.
+    // The genesis tx and the transact tx each carry :tx/nonce and :tx/instant.
     let tx_eins = pod.find(EinsWithAttr::new(tx::nonce())).await;
-    assert_eq!(1, tx_eins.len());
-    let tx_ein = tx_eins[0];
-    let nonce = pod.find_val(tx_ein, tx::nonce()).await?;
-    assert!(matches!(nonce, Some(Val::Bytes(_))));
-    let instant = pod.find_val(tx_ein, tx::instant()).await?;
-    assert!(matches!(instant, Some(Val::U64(_))));
+    assert_eq!(2, tx_eins.len());
+    for tx_ein in tx_eins {
+        let nonce = pod.find_val(tx_ein, tx::nonce()).await?;
+        assert!(matches!(nonce, Some(Val::Bytes(_))));
+        let instant = pod.find_val(tx_ein, tx::instant()).await?;
+        assert!(matches!(instant, Some(Val::U64(_))));
+    }
     Ok(())
 }

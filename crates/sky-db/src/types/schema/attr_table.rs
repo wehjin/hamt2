@@ -1,7 +1,7 @@
 use crate::attr_spec::AttrSpec;
 use crate::attribute::AttributeDetails;
 use crate::cardinality::Cardinality;
-use crate::{Attr, Ein, db, tx};
+use crate::{Attr, Dat, Datom, Dir, Ein, Val, db, tx};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::ops::{Deref, Index};
@@ -44,6 +44,42 @@ impl AttrTable {
     pub fn extend(&mut self, attributes: impl IntoIterator<Item = AttributeDetails>) {
         for attribute in attributes {
             self.insert(attribute);
+        }
+    }
+
+    /// Resolve an attribute ident to its ein.
+    pub fn resolve(&self, ident: &Attr) -> Option<Ein> {
+        self.map.get(ident).map(|d| d.ein)
+    }
+
+    /// Fold schema declarations (`:db/ident` / `:db/cardinality` datoms) into
+    /// the table. Only `Dir::In` datoms are applied; retractions are ignored.
+    pub fn apply(&mut self, datoms: &[Datom]) {
+        for d in datoms {
+            if d.dir != Dir::In {
+                continue;
+            }
+            let ein = d.ent.to_eid();
+            if d.attr == db::ident() && let Dat::Val(Val::String(ident)) = &d.dat {
+                let attr = Attr::from(ident.clone());
+                self.map.entry(attr.clone()).or_insert_with(|| {
+                    AttributeDetails::new(
+                        ein,
+                        AttrSpec {
+                            attr: attr.clone(),
+                            cardinality: Cardinality::One,
+                        },
+                    )
+                });
+                self.by_ein.insert(ein, attr);
+            } else if d.attr == db::cardinality() && let Dat::Val(v) = &d.dat {
+                let card = Cardinality::from(v.clone());
+                if let Some(attr) = self.by_ein.get(&ein).cloned()
+                    && let Some(details) = self.map.get_mut(&attr)
+                {
+                    details.spec.cardinality = card;
+                }
+            }
         }
     }
 
@@ -113,5 +149,26 @@ impl Deref for AttrTable {
 
     fn deref(&self) -> &Self::Target {
         &self.map
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{datom, val};
+
+    #[test]
+    fn apply_declares_ident_and_cardinality() {
+        let mut table = AttrTable::starter();
+        let ident = Attr::from("counter/count");
+        let ein = Ein::attr(&ident);
+        let datoms = vec![
+            datom::add(ein, db::ident(), ident.as_ident()),
+            datom::add(ein, db::cardinality(), val(1)), // Many
+        ];
+        table.apply(&datoms);
+        assert_eq!(Some(ein), table.resolve(&ident));
+        let details = table.get(ident.clone()).unwrap();
+        assert_eq!(Cardinality::Many, details.cardinality());
     }
 }

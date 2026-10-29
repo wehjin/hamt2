@@ -1,4 +1,5 @@
 use crate::Attr;
+use crate::Datom;
 use crate::Ein;
 use crate::attr_table::AttrTable;
 use attribute::AttributeDetails;
@@ -45,6 +46,14 @@ impl Schema {
     }
     pub fn find_attr(&self, ein: Ein) -> Option<&Attr> {
         self.attr_table.find_attr(ein)
+    }
+
+    pub fn resolve(&self, ident: &Attr) -> Option<Ein> {
+        self.attr_table.resolve(ident)
+    }
+
+    pub fn apply(&mut self, datoms: &[Datom]) {
+        self.attr_table.apply(datoms);
     }
 
     pub fn to_attrs(&self) -> Vec<Attr> {
