@@ -4190,6 +4190,7 @@ dependencies = [
  "anyhow",
  "data-encoding",
  "futures",
+ "getrandom 0.4.3",
  "iroh",
  "iroh-blobs",
  "iroh-docs",

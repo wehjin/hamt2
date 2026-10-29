@@ -17,6 +17,7 @@ iroh-docs = "0.101.0"
 iroh-gossip = "0.101.0"
 data-encoding = "2"
 postcard = { workspace = true, features = ["alloc"] }
+getrandom = "0.4.3"
 
 
 [dev-dependencies]

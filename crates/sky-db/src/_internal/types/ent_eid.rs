@@ -1,6 +1,5 @@
 use crate::Datom;
-use crate::_internal::MaxEid;
-use crate::{Ein, Ent};
+use crate::{Dat, Ein, Ent};
 use std::collections::HashMap;
 use std::ops::Index;
 
@@ -8,17 +7,21 @@ use std::ops::Index;
 /// to the same entity everywhere in a transaction.
 pub struct EntEid(HashMap<String, Ein>);
 
+fn rand_nonce() -> [u8; 16] {
+    let mut buf = [0u8; 16];
+    getrandom::fill(&mut buf).expect("os rng");
+    buf
+}
+
 impl EntEid {
-    pub fn new(datoms: impl AsRef<[Datom]>, max_eid: &mut MaxEid) -> Self {
+    pub fn new(datoms: impl AsRef<[Datom]>) -> Self {
         let mut map = HashMap::new();
-        let datoms = datoms.as_ref();
-        for datom in datoms {
-            match &datom.ent {
-                Ent::Id(_) => (),
-                Ent::Temp(name) => {
-                    let eid = max_eid.take(1).pop().expect("max_eid should exist");
-                    map.insert(name.clone(), eid);
-                }
+        for datom in datoms.as_ref() {
+            if let Ent::Temp(name) = &datom.ent {
+                map.entry(name.clone()).or_insert_with(|| Ein::user(&rand_nonce()));
+            }
+            if let Dat::Ent(Ent::Temp(name)) = &datom.dat {
+                map.entry(name.clone()).or_insert_with(|| Ein::user(&rand_nonce()));
             }
         }
         Self(map)
@@ -29,5 +32,37 @@ impl Index<&str> for EntEid {
     type Output = Ein;
     fn index(&self, name: &str) -> &Self::Output {
         &self.0[name]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{Attr, Dir, Val};
+
+    fn datom(ent: Ent, dat: Dat) -> Datom {
+        Datom {
+            ent,
+            attr: Attr::from("counter/count"),
+            dat,
+            dir: Dir::In,
+        }
+    }
+
+    #[test]
+    fn temp_names_in_ent_and_dat_get_distinct_eins() {
+        let datoms = vec![datom(Ent::Temp("a".into()), Dat::Ent(Ent::Temp("b".into())))];
+        let ent_eid = EntEid::new(&datoms);
+        assert_ne!(ent_eid["a"], ent_eid["b"]);
+    }
+
+    #[test]
+    fn distinct_temp_names_get_distinct_eins() {
+        let datoms = vec![
+            datom(Ent::Temp("a".into()), Dat::Val(Val::U32(1))),
+            datom(Ent::Temp("b".into()), Dat::Val(Val::U32(2))),
+        ];
+        let ent_eid = EntEid::new(&datoms);
+        assert_ne!(ent_eid["a"], ent_eid["b"]);
     }
 }

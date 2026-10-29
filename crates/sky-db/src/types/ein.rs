@@ -1,4 +1,5 @@
-use crate::Val;
+use crate::trie::TrieKey;
+use crate::{Attr, Val};
 use serde::{Deserialize, Serialize};
 use std::ops::AddAssign;
 
@@ -13,6 +14,16 @@ impl Ein {
     pub fn to_i32(&self) -> i32 {
         debug_assert!(self.0 >= 0);
         self.0
+    }
+
+    /// Derive a user entity id from a random nonce.
+    pub fn user(nonce: &[u8]) -> Self {
+        Self((universal_hash::hash(nonce, 0) & TrieKey::MASK) as i32)
+    }
+
+    /// Derive an attribute id from its ident (content-addressed).
+    pub fn attr(ident: &Attr) -> Self {
+        Self((universal_hash::hash(ident.as_ident().as_bytes(), 0) & TrieKey::MASK) as i32)
     }
 }
 

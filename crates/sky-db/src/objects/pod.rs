@@ -1,6 +1,6 @@
 use crate::_internal::schema;
 use crate::_internal::{EntEid, db_trie, val_table};
-use crate::_internal::{KEY_MAX_TXID, MaxEid};
+use crate::_internal::KEY_MAX_TXID;
 use crate::attr_spec::DbSpec;
 use crate::attribute::AttributeDetails;
 use crate::errors::ConnectError;
@@ -24,22 +24,17 @@ impl Pod {
         let attr_specs = db_spec.as_ref();
         let (schema, trie) = {
             let mut trie = SkyTrie::new();
-            let mut max_eid = MaxEid::read(&trie).await?;
             let mut schema = Schema::starter();
             {
-                let attr_eins = max_eid.take(attr_specs.len());
-                let attributes = attr_eins
-                    .clone()
-                    .into_iter()
-                    .zip(attr_specs)
-                    .map(|(ein, spec)| AttributeDetails::new(ein, spec.clone()))
+                let attributes = attr_specs
+                    .iter()
+                    .map(|spec| AttributeDetails::new(Ein::attr(&spec.attr), spec.clone()))
                     .collect::<Vec<_>>();
                 schema.extend(attributes);
             }
             trie.edit(async |trie| {
                 schema::save(&schema, trie, Txid::SETUP).await?;
                 db_trie::set_max_tx(trie, Txid::FLOOR).await?;
-                max_eid.write(trie).await?;
                 Ok(())
             })
             .await
@@ -128,11 +123,10 @@ impl Transact for Pod {
         if datoms.is_empty() {
             return Ok(self);
         }
-        let mut max_eid = MaxEid::read(&self.trie).await?;
         let tx = self.max_tx().await?;
         self.trie
             .edit(async |trie| {
-                let ent_eid = EntEid::new(&datoms, &mut max_eid);
+                let ent_eid = EntEid::new(&datoms);
                 for datom in datoms {
                     let eid = match &datom.ent {
                         Ent::Id(eid) => *eid,
@@ -153,7 +147,6 @@ impl Transact for Pod {
                     db_trie::with_update(trie, &self.schema, eid, attr, val, dir, &tx).await?;
                 }
                 db_trie::set_max_tx(trie, tx + 1).await?;
-                max_eid.write(trie).await?;
                 Ok(())
             })
             .await
