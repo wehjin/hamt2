@@ -89,7 +89,10 @@ impl Pod {
                 .find_attr(attr_ein.ein())
                 .cloned()
                 .expect("attr should exist for attr-ein");
-            for (_attr_ein, vid) in db_trie::list_entity_fills(&self.trie, ein, attr_ein) {
+            let cardinality = self.schema[attr.clone()].cardinality();
+            for (_attr_ein, vid) in
+                db_trie::list_entity_fills(&self.trie, ein, attr_ein, cardinality)
+            {
                 let val = val_table::query(&self.trie, vid)
                     .expect("table should find val")
                     .expect("val should exist");
