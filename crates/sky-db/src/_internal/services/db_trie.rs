@@ -5,7 +5,7 @@ use crate::Schema;
 use crate::cardinality::Cardinality;
 use crate::trie::SkyTrieMut;
 use crate::trie::*;
-use crate::{Attr, AttrEin, Dir, Ein, Fact, TransactError, Val};
+use crate::{Attr, Dir, Ein, Fact, TransactError, Val};
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::collections::btree_map::Entry;
@@ -68,7 +68,7 @@ fn current_vids(
 
 pub(crate) async fn with_update(
     trie: &mut SkyTrieMut,
-    aid: AttrEin,
+    aid: Ein,
     ein: Ein,
     val: Val,
     dir: Dir,
@@ -97,24 +97,24 @@ where
         .collect::<Vec<_>>()
 }
 
-pub fn list_entity_attributes<T>(trie: &T, ein: Ein) -> Vec<AttrEin>
+pub fn list_entity_attributes<T>(trie: &T, ein: Ein) -> Vec<Ein>
 where
     T: QueryCursor + Snap + Query,
 {
     e_avt_subtrie(trie, ein)
         .query_all()
         .into_iter()
-        .map(|(key, _)| AttrEin::from(key))
+        .map(|(key, _)| Ein::from(key))
         .collect::<Vec<_>>()
 }
 
 pub fn list_entity_fills<T>(
     trie: &T,
     ein: Ein,
-    attr_ein: AttrEin,
+    attr_ein: Ein,
     cardinality: Cardinality,
     order: &HashMap<Ein, u32>,
-) -> Vec<(AttrEin, Vid)>
+) -> Vec<(Ein, Vid)>
 where
     T: QueryCursor + Snap + Query,
 {
@@ -125,7 +125,7 @@ where
         .collect()
 }
 
-fn collect_entries_eavt<T>(trie: &T, ein: Ein, attr_ein: AttrEin) -> Vec<(Vid, Ein, Dir)>
+fn collect_entries_eavt<T>(trie: &T, ein: Ein, attr_ein: Ein) -> Vec<(Vid, Ein, Dir)>
 where
     T: QueryCursor + Snap + Query,
 {
@@ -207,7 +207,7 @@ pub fn ev_iter(
 /// tx on `aid` was an add.
 pub fn facts_for_attr<S>(
     trie: &S,
-    aid: AttrEin,
+    aid: Ein,
     cardinality: Cardinality,
     order: &HashMap<Ein, u32>,
 ) -> Vec<Fact>
@@ -289,7 +289,7 @@ where
 mod tests {
     use super::*;
     use crate::trie::SkyTrie;
-    use crate::{AttrEin, val};
+    use crate::val;
 
     #[tokio::test]
     async fn history_is_retained() {
@@ -300,14 +300,14 @@ mod tests {
         order.insert(tx1, 0);
         order.insert(tx2, 1);
         trie.edit(async |trie| {
-            with_update(trie, AttrEin::from(100), Ein(200), val(100), Dir::In, tx1).await?;
-            with_update(trie, AttrEin::from(100), Ein(200), val(101), Dir::In, tx2).await?;
+            with_update(trie, Ein(100), Ein(200), val(100), Dir::In, tx1).await?;
+            with_update(trie, Ein(100), Ein(200), val(101), Dir::In, tx2).await?;
             Ok(())
         })
         .await
         .unwrap();
 
-        let fills = list_entity_fills(&trie, Ein(200), AttrEin::from(100), Cardinality::One, &order);
+        let fills = list_entity_fills(&trie, Ein(200), Ein(100), Cardinality::One, &order);
         assert_eq!(fills.len(), 1);
 
         let mut vt = trie.clone();

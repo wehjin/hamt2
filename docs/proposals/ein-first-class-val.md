@@ -2,7 +2,7 @@
 
 **A design proposal for `sky-db`**
 
-Status: implemented through Stage 5 (schema-as-data); Stage 6 (engine type collapse) pending.
+Status: implemented through Stage 6 (engine type collapse).
 
 ---
 
@@ -35,10 +35,9 @@ number, and `Ein` round-trips losslessly (including through snapshots and serial
 
 ## 3. Resolved decisions
 
-- **D1 — demote `Attr`, promote `AttrEin`.** `AttrEin` (the attribute *entity id*) becomes the
-  engine's and storage's attribute identity; `Attr` (the ident string) is demoted to an input
-  alias and an output rendering. Attributes are, after all, ordinary entities — their `db/ident`
-  and `db/cardinality` are just facts.
+- **D1 — `Attr` is the ident, attribute-ness is a schema fact.** `Attr` (the ident string) is the
+  input alias and output rendering; "is this ein an attribute" is `find_attr(ein)` over the
+  materialized `db/ident` facts. The interim `AttrEin` type was dissolved in Stage 6.
 - **D2 — lenient now, strict later (a single flip).** All leniency that tolerates `Val::U32`
   is a migration stopgap. When `Val::Ein` lands, every lenient arm is removed in **one** commit.
   Nothing stays permanently lenient.
@@ -89,36 +88,29 @@ engine onto the minimal Datalog evaluator it is modeled on.)
 
 ```rust
 pub enum Term<T>               { Var(Var), Lit(T) }
-pub enum Binding               { Ein(Ein), Attr(AttrEin), Val(Val) }
-pub struct Fact                { e: Ein, a: AttrEin, v: Val }
-pub struct Pattern             { e: Term<Ein>, a: Term<AttrEin>, v: Term<Val> }
+pub enum Binding               { Ein(Ein), Val(Val) }
+pub struct Fact                { e: Ein, a: Ein, v: Val }
+pub struct Pattern             { e: Term<Ein>, a: Term<Ein>, v: Term<Val> }
 pub struct Head                { name: Attr, terms: Vec<Term<Val>> }   // derived relation (arity-N, erased)
 pub struct Substitution(/* HashMap<Var, Binding> */);
 ```
 
-The `Var` is a plain `&'static str` name; **the slot supplies the type statically**, so no
-caller-supplied "is this var an ein?" predicate is needed. The only "predicates" are two
-engine-resident coercers on `Binding`:
+The `Var` is a plain `&'static str` name; **the slot supplies the position**, and an ein is an ein
+(subject, reference, or attribute). The two projections are `as_ein` (unwrap the entity id) and
+`to_val` (render it back as a reference value):
 
 ```rust
 impl Binding {
     pub fn as_ein(&self) -> Option<Ein> {
         match self {
-            Binding::Ein(e)  => Some(*e),
-            Binding::Attr(a) => Some(a.ein()),     // an attribute IS an entity
-            Binding::Val(Val::Ein(e)) => Some(*e),  // STRICT: only refs deref
-            // Val::U32(n) => Some(Ein(n as i32)),  // LENIENT interim — delete at flip
+            Binding::Ein(e) => Some(*e),
             _ => None,
         }
     }
-    pub fn as_attr(&self) -> Option<AttrEin> {
-        match self { Binding::Attr(a) => Some(*a), _ => None }   // no schema at runtime, for now
-    }
     pub fn to_val(&self) -> Val {
         match self {
-            Binding::Ein(e)  => Val::Ein(e),        // Val::U32 interim
-            Binding::Attr(a) => Val::Ein(a.ein()),   // Val::U32 interim
-            Binding::Val(v)  => v.clone(),
+            Binding::Ein(e) => Val::Ein(*e),   // re-box at read
+            Binding::Val(v) => v.clone(),
         }
     }
 }
@@ -131,43 +123,30 @@ impl Pattern {
     pub fn unify(&self, fact: &Fact) -> Option<Substitution> {
         let mut s = Substitution::new();
         s.bind_subject(&self.e, fact.e)?;   // Lit==Lit, or bind Binding::Ein
-        s.bind_attr(&self.a, fact.a)?;      // ... Binding::Attr
-        s.bind_value(&self.v, &fact.v)?;    // ... Binding::Val
+        s.bind_attr(&self.a, fact.a)?;      // ... Binding::Ein
+        s.bind_value(&self.v, &fact.v)?;    // ... Binding::Val (refs bind Ein)
         Some(s)
     }
 }
 
 fn unify_bindings(a: &Binding, b: &Binding) -> Option<Binding> {
-    if a == b { return Some(a.clone()); }
-    match (a.as_ein(), b.as_ein()) {                           // same entity
-        (Some(x), Some(y)) if x == y => return Some(Binding::Ein(x)),
-        _ => {}
-    }
-    match (a.as_attr(), b.as_attr()) {                         // same attribute
-        (Some(x), Some(y)) if x == y => return Some(Binding::Attr(x)),
-        _ => {}
-    }
-    None
+    (a == b).then(|| a.clone())
 }
 ```
 
-`unify_bindings` is invoked only on cross-slot variable reuse. It gives, for free:
-
-- `Ein(x)` (subject) vs `Val::Ein(x)` (ref value) → coerces to `Ein(x)`.
-- `Attr(a)` (attr slot) vs `Ein(a.ein())` (the attribute as an entity) → coerces to `Ein`.
-  This is what makes schema-as-data joins fall out of the same rule.
+`bind_value` canonicalizes a `Val::Ein` reference into `Binding::Ein` at bind time, so a reference
+and a subject are the same binding — unification is plain equality.
 
 ### 5.3 Grounding (`ground`)
 
 `ground` runs before indexing/unification; it instantiates known bindings into `Lit`s and enforces
-them as equality constraints. It is where the reverse-deref lives (a value-slot binding reused in
-the subject slot becomes `Lit(Ein(...))`):
+them as equality constraints. It is where the re-boxing lives: `to_val` renders an `Ein` binding as
+`Val::Ein` when it reappears in a value slot.
 
 ```rust
 trait Coerce: Clone { fn from_binding(b: &Binding) -> Option<Self>; }
-impl Coerce for Ein     { fn from_binding(b: &Binding) -> Option<Ein>     { b.as_ein() } }
-impl Coerce for AttrEin { fn from_binding(b: &Binding) -> Option<AttrEin> { b.as_attr() } }
-impl Coerce for Val     { fn from_binding(b: &Binding) -> Option<Val>     { Some(b.to_val()) } }
+impl Coerce for Ein { fn from_binding(b: &Binding) -> Option<Ein> { b.as_ein() } }
+impl Coerce for Val { fn from_binding(b: &Binding) -> Option<Val> { Some(b.to_val()) } }
 
 fn ground_term<T: Coerce>(term: &Term<T>, sub: &Substitution) -> Option<Term<T>> {
     match term {
@@ -187,11 +166,11 @@ to a `Val` via `to_val`.
 
 ### 5.4 Fact materialization + `facts_stream`
 
-`db_trie` gains typed materializers, keyed on `AttrEin` (with `Schema::cardinality_of` added so
+`db_trie` gains typed materializers, keyed on `Ein` (with `Schema::cardinality_of` added so
 cardinality is O(1) by ein):
 
 ```rust
-pub fn facts_for_attr<S>(trie, aid: AttrEin, cardinality, order) -> Vec<Fact>;   // AEVT under aid
+pub fn facts_for_attr<S>(trie, aid: Ein, cardinality, order) -> Vec<Fact>;   // AEVT under aid
 pub fn facts_for_entity<S>(trie, eid: Ein, schema, order) -> Vec<Fact>;          // EAVT under eid
 pub fn all_facts<S>(trie, schema, order) -> Vec<Fact>;                           // full scan
 ```
@@ -217,9 +196,9 @@ does **not** resolve to an `AttrEin` (`Schema::resolve` returns `None`).
 
 ```rust
 pub struct RawPattern { e: Term<Ein>, a: Term<Attr>, v: Term<Val> }   // what where_ returns
-pub struct Pattern    { e: Term<Ein>, a: Term<AttrEin>, v: Term<Val> } // resolved in run_find
+pub struct Pattern    { e: Term<Ein>, a: Term<Ein>, v: Term<Val> }      // resolved in run_find
 
-fn resolve(p: RawPattern, schema: &Schema) -> Option<Pattern> { /* Attr -> AttrEin via resolve() */ }
+fn resolve(p: RawPattern, schema: &Schema) -> Option<Pattern> { /* Attr -> Ein via resolve() */ }
 ```
 
 Builders: `ein(..)`, `attr(..)`, `val(..)`, `var("..")`, `pattern(e, a, v)`; `Var` is shared
@@ -260,8 +239,8 @@ fn run_find(pod, select, where_) -> Vec<Row> {
 | `BindsForAttr(a)` | `pattern(var("ein"), attr(a), var("val"))` | `["ein","val"]` | `as_ein()`, `to_val()` |
 | `AllEins` | `pattern(var("ein"), var("a"), var("v"))` | `["ein"]` | `as_ein()` |
 | `AllAttrs` | `pattern(var("a"), attr(db::ident()), var("n"))` | `["a"]` | `as_ein()`→`find_attr` |
-| `AttrsOfEin(e)` | `pattern(ein(e), var("a"), var("v"))` | `["a"]` | `as_attr()`→`find_attr` |
-| `EntityFills(e)` | `pattern(ein(e), var("a"), var("v"))` | `["a","v"]` | `as_attr()`→`find_attr`, `to_val()` |
+| `AttrsOfEin(e)` | `pattern(ein(e), var("a"), var("v"))` | `["a"]` | `as_ein()`→`find_attr` |
+| `EntityFills(e)` | `pattern(ein(e), var("a"), var("v"))` | `["a","v"]` | `as_ein()`→`find_attr`, `to_val()` |
 
 `AllAttrs` is now expressed as data: genesis materializes the starter attributes too, so "every entity
 whose `db/ident` exists" is exactly the set of attributes.
@@ -290,7 +269,7 @@ conversion are lenient.
    `sky-tui` (the `print_val` display match).
 2. **Promote `AttrEin`, demote `Attr`.** Move `AttrEin` to `types`, add `Schema::resolve →
    Option<AttrEin>` and `cardinality_of` (a two-hop lookup through `by_ein`, which stays keyed on
-   `Attr`).
+   `Attr`). *(Interim — reversed in step 6, where `AttrEin` dissolves.)*
 3. **Typed query engine.** `Fact`/`Pattern`/`Term<T>`/`Binding`/`Substitution` (+ `Head` for the
    conformed `Program`); `unify`, `ground`, `facts_stream` (index dispatch). Fold three of the four
    `unreachable!()` `Find` impls (`AllEins`, `AttrsOfEin`, `EntityFills`) into
@@ -301,7 +280,7 @@ conversion are lenient.
    `db/cardinality`, `tx/*`) as datoms, so the schema is a closed set of `db/ident` facts;
    `AllAttrs` folds to `pattern(var(a), attr(db::ident()), var(n))`. `Val::Ein` stays boxed —
    ref-ness stays in the *value*, which nested/anti-nested `pull` traversal needs.
-6. **Engine type collapse (pending).** `Binding { Ein, Val }` with plain `==`; `bind_value`
+6. **Engine type collapse (implemented).** `Binding { Ein, Val }` with plain `==`; `bind_value`
    canonicalizes `Val::Ein` → `Ein` at bind; `Pattern.a` becomes `Term<Ein>` and `AttrEin`
    dissolves (attribute-ness = `find_attr`).
 
@@ -311,9 +290,8 @@ strictly typed.
 
 ## 9. Deferred / open questions
 
-- **`as_attr` and schema.** Recognising an attribute reference (`Val::Ein(attr_ein)`) as an
-  attribute reduces to `find_attr(ein).is_some()` — resolved once `AttrEin` dissolves in Stage 6.
-  Pending.
+- **`as_attr` and schema.** Resolved: with `AttrEin` dissolved, recognising an attribute reference
+  (`Val::Ein(attr_ein)`) is just `find_attr(ein).is_some()`.
 - **No value index.** The engine has EAVT/AEVT but no value-oriented index; a ground-*value*
   query falls to a full scan + filter. A future `AVET`/`VAET` would close this.
 - **`Row` typed vs erased `FindResult`.** Typed `Row` (recommended) removes the last implicit
@@ -332,7 +310,7 @@ over an EAV trie. The correspondence:
 |---|---|
 | `Rule { head, body }` | `Rule` (unchanged; a head is a derived relation) |
 | `Atom { predSym, terms }` | `Pattern` / `Fact` — `predSym` is the attribute, lifted into a typed slot |
-| `Term = Var \| Sym` | `Term<T> = Var \| Lit(T)`, `T ∈ {Ein, AttrEin, Val}` |
+| `Term = Var \| Sym` | `Term<T> = Var \| Lit(T)`, `T ∈ {Ein, Val}` |
 | `Substitution = [(Term, Term)]` | `Substitution` (var → `Binding`) |
 | `substitute` | `ground` |
 | `unify` (the fact is ground) | `Pattern::unify` + `unify_bindings` |
@@ -348,7 +326,7 @@ already-bound terminals, index the fact base by the ground slots (`facts_stream`
 candidate. That is `evalAtom`'s "substitute, then unify," lifted to a typed, indexed base.
 
 **Typed constants.** The article uses one untyped constant domain (`Sym String`); here constants
-are typed (`Ein`/`AttrEin`/`Val`) because storage is an EAV trie of typed values. This is a
+are typed (`Ein`/`Val`) because storage is an EAV trie of typed values. This is a
 refinement, not a departure — the article itself gestures at tightening the types (footnote 3).
 The invariant is retained: a term is either a variable or a constant, and constants compare by
 identity.
@@ -359,17 +337,13 @@ identity.
 rather than the predicate name — which is what collapses `AttrsOfEin` and `EntityFills` into
 ordinary rules (and, now that `db/ident` is materialized, lets `AllAttrs` fold too). This
 is the schema-as-data move (an attribute is itself an entity). A per-attribute binary view is then just `adviser(X, Y) :- holds(X, adviser_aid, Y)` —
-i.e. a `Pattern` with a concrete `AttrEin` in the attribute slot.
+i.e. a `Pattern` with a concrete `Ein` in the attribute slot.
 
-**The one warranted extension: canonicalization.** A subject `Ein(e)` and a reference value
-`Val::Ein(e)` name the *same entity*, so the article's `Sym == Sym` equality is widened to
-"compare canonical ids": `Binding::as_ein` projects both onto the shared entity-id domain, and
-`unify_bindings` compares the projections. This is the cost of making `Ein` a first-class type
-distinct from `Val` — two spellings of one constant, reconciled at the join — and it is the single
-place the proposal exceeds minimal Datalog. It is warranted: it lets a `Val::Ein` value join an
-`Ein` subject without a silent integer↔entity cast. (The alternative — collapse subject and ref
-into a single `Val::Ein` constant so join is plain `==` — would be more minimally faithful but
-loses the compile-time subject/attr/value slot types.)
+**The one warranted extension: canonicalization at bind.** A reference value `Val::Ein(e)` and a
+subject `Ein(e)` name the same entity id, so `bind_value` canonicalizes the reference to
+`Binding::Ein` at bind time, and `==` does the rest. The distinct public spelling survives as
+`Val::Ein` — where nested/anti-nested `pull` traversal reads it — while the engine's joins are the
+article's plain equality.
 
 **Termination and range restriction** carry over unchanged: the constant domain is finite (eins
 are 30-bit; values are hash-consed in the val table), `immediateConsequence` is monotone over a

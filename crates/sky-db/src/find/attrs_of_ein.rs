@@ -27,8 +27,8 @@ impl Find for AttrsOfEin {
             .into_iter()
             .filter_map(|r| {
                 r["a"]
-                    .as_attr()
-                    .and_then(|aid| pod.schema().find_attr(aid.ein()).cloned())
+                    .as_ein()
+                    .and_then(|e| pod.schema().find_attr(e).cloned())
             })
             .collect::<Vec<_>>();
         attrs.sort();

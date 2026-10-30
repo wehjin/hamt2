@@ -1,4 +1,4 @@
-use crate::{Attr, AttrEin, Ein, Val};
+use crate::{Attr, Ein, Val};
 use super::var::Var;
 
 /// A term in a pattern or fact: a variable, or a typed literal.
@@ -22,12 +22,6 @@ impl From<Ein> for Term<Ein> {
 
 impl From<Attr> for Term<Attr> {
     fn from(a: Attr) -> Self {
-        Term::Lit(a)
-    }
-}
-
-impl From<AttrEin> for Term<AttrEin> {
-    fn from(a: AttrEin) -> Self {
         Term::Lit(a)
     }
 }

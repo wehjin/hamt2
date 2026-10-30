@@ -1,5 +1,4 @@
 use crate::Attr;
-use crate::AttrEin;
 use crate::Datom;
 use crate::Ein;
 use crate::attr_table::AttrTable;
@@ -50,11 +49,11 @@ impl Schema {
         self.attr_table.find_attr(ein)
     }
 
-    pub fn resolve(&self, ident: &Attr) -> Option<AttrEin> {
+    pub fn resolve(&self, ident: &Attr) -> Option<Ein> {
         self.attr_table.resolve(ident)
     }
 
-    pub fn cardinality_of(&self, ein: AttrEin) -> Cardinality {
+    pub fn cardinality_of(&self, ein: Ein) -> Cardinality {
         self.attr_table.cardinality_of(ein)
     }
 

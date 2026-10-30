@@ -1,6 +1,6 @@
 use crate::_internal::db_trie;
 use crate::trie::SkyTrie;
-use crate::{Attr, AttrEin, Attribute, Ein, Fact, Schema, Val};
+use crate::{Attr, Attribute, Ein, Fact, Schema, Val};
 use std::collections::HashMap;
 
 /// A stable, immutable snapshot of a peer's index. Query-only.
@@ -21,7 +21,7 @@ impl Pod {
         db_trie::ev_iter(&self.trie, a, &self.schema, &self.order)
     }
 
-    pub fn facts_for_attr(&self, aid: AttrEin) -> Vec<Fact> {
+    pub fn facts_for_attr(&self, aid: Ein) -> Vec<Fact> {
         let card = self.schema.cardinality_of(aid);
         db_trie::facts_for_attr(&self.trie, aid, card, &self.order)
     }

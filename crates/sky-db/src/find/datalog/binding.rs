@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{Attr, AttrEin, Ein, Schema, Val};
+use crate::{Attr, Ein, Schema, Val};
 
 use super::term::Term;
 use super::var::Var;
@@ -9,7 +9,6 @@ use super::var::Var;
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Binding {
     Ein(Ein),
-    Attr(AttrEin),
     Val(Val),
 }
 
@@ -21,11 +20,11 @@ pub struct RawPattern {
     pub v: Term<Val>,
 }
 
-/// A query pattern whose attribute is resolved to its `AttrEin`.
+/// A query pattern whose attribute is resolved to its `Ein`.
 #[derive(Debug, Clone)]
 pub struct Pattern {
     pub e: Term<Ein>,
-    pub a: Term<AttrEin>,
+    pub a: Term<Ein>,
     pub v: Term<Val>,
 }
 
@@ -56,7 +55,7 @@ pub fn head(name: impl Into<Attr>, terms: impl Into<Vec<Term<Val>>>) -> Head {
     }
 }
 
-/// Resolve a raw pattern's attribute ident to its `AttrEin`.
+/// Resolve a raw pattern's attribute ident to its `Ein`.
 pub fn resolve(p: RawPattern, schema: &Schema) -> Option<Pattern> {
     Some(Pattern {
         e: p.e,
@@ -132,15 +131,6 @@ impl Binding {
     pub fn as_ein(&self) -> Option<Ein> {
         match self {
             Binding::Ein(e) => Some(*e),
-            Binding::Attr(a) => Some(a.ein()),
-            Binding::Val(Val::Ein(e)) => Some(*e),
-            _ => None,
-        }
-    }
-
-    pub fn as_attr(&self) -> Option<AttrEin> {
-        match self {
-            Binding::Attr(a) => Some(*a),
             _ => None,
         }
     }
@@ -148,7 +138,6 @@ impl Binding {
     pub fn to_val(&self) -> Val {
         match self {
             Binding::Ein(e) => Val::Ein(*e),
-            Binding::Attr(a) => Val::Ein(a.ein()),
             Binding::Val(v) => v.clone(),
         }
     }
@@ -201,22 +190,9 @@ pub fn project(sub: &Substitution, select: &[&'static str]) -> Row {
     row
 }
 
-/// True when two bindings name the same logical constant (the coercion matrix).
+/// Two bindings unify exactly when they are equal.
 pub fn unify_bindings(a: &Binding, b: &Binding) -> Option<Binding> {
-    if a == b {
-        return Some(a.clone());
-    }
-    if let (Some(x), Some(y)) = (a.as_ein(), b.as_ein())
-        && x == y
-    {
-        return Some(Binding::Ein(x));
-    }
-    if let (Some(x), Some(y)) = (a.as_attr(), b.as_attr())
-        && x == y
-    {
-        return Some(Binding::Attr(x));
-    }
-    None
+    (a == b).then(|| a.clone())
 }
 
 pub trait Coerce: Clone {
@@ -226,12 +202,6 @@ pub trait Coerce: Clone {
 impl Coerce for Ein {
     fn from_binding(b: &Binding) -> Option<Ein> {
         b.as_ein()
-    }
-}
-
-impl Coerce for AttrEin {
-    fn from_binding(b: &Binding) -> Option<AttrEin> {
-        b.as_attr()
     }
 }
 
@@ -258,17 +228,23 @@ fn bind_subject(s: &mut Substitution, t: &Term<Ein>, e: Ein) -> Option<()> {
     }
 }
 
-fn bind_attr(s: &mut Substitution, t: &Term<AttrEin>, a: AttrEin) -> Option<()> {
+fn bind_attr(s: &mut Substitution, t: &Term<Ein>, a: Ein) -> Option<()> {
     match t {
         Term::Lit(l) => (l == &a).then_some(()),
-        Term::Var(v) => s.bind(*v, Binding::Attr(a)),
+        Term::Var(v) => s.bind(*v, Binding::Ein(a)),
     }
 }
 
 fn bind_value(s: &mut Substitution, t: &Term<Val>, v: &Val) -> Option<()> {
-    match t {
-        Term::Lit(l) => (l == v).then_some(()),
-        Term::Var(x) => s.bind(*x, Binding::Val(v.clone())),
+    match v {
+        Val::Ein(e) => match t {
+            Term::Lit(l) => (l == v).then_some(()),
+            Term::Var(x) => s.bind(*x, Binding::Ein(*e)),
+        },
+        scalar => match t {
+            Term::Lit(l) => (l == scalar).then_some(()),
+            Term::Var(x) => s.bind(*x, Binding::Val(scalar.clone())),
+        },
     }
 }
 

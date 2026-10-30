@@ -25,10 +25,10 @@ impl Find for EntityFills {
     fn process(self, pod: &Pod, rows: Vec<Row>) -> Vec<Fill> {
         rows.into_iter()
             .map(|r| {
-                let aid = r["a"].as_attr().expect("attr column");
+                let aid = r["a"].as_ein().expect("attr column");
                 let attr = pod
                     .schema()
-                    .find_attr(aid.ein())
+                    .find_attr(aid)
                     .cloned()
                     .expect("attr ident");
                 Fill(attr, r["v"].to_val())
