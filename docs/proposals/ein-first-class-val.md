@@ -41,8 +41,9 @@ number, and `Ein` round-trips losslessly (including through snapshots and serial
 - **D2 — lenient now, strict later (a single flip).** All leniency that tolerates `Val::U32`
   is a migration stopgap. When `Val::Ein` lands, every lenient arm is removed in **one** commit.
   Nothing stays permanently lenient.
-- **D3 — schema-as-data / ref value-types.** Deferred. It is contiguous with D1 (and with the
-  `AttrEin` promotion) but is addressed after the engine migration.
+- **D3 — schema-as-data lands; ref-ness stays boxed.** The schema becomes data (`db/ident` facts,
+  Stage 5); ref-ness stays in the value (`Val::Ein`) rather than moving to schema value-types,
+  because nested/anti-nested `pull` traversal reads ref-ness off the value itself.
 
 ## 4. Core change: `Val::Ein`
 
@@ -116,7 +117,7 @@ impl Binding {
 }
 ```
 
-### 5.2 Unification (per slot + coercion matrix)
+### 5.2 Unification (per slot)
 
 ```rust
 impl Pattern {
@@ -186,7 +187,7 @@ The KB dispatches by which slots are ground:
 This is precisely what folds `AllEins`, `AttrsOfEin`, and `EntityFills` into plain
 datalog — no more `unreachable!()` `apply` overrides. Derived relations (arity-N synthetic names
 like `db::query`, `query_1`, `path`) live in a separate erased space chained in when the attribute
-does **not** resolve to an `AttrEin` (`Schema::resolve` returns `None`).
+does **not** resolve to an `Ein` (`Schema::resolve` returns `None`).
 
 ## 6. `Find` migration
 
@@ -263,42 +264,40 @@ conversion are lenient.
 
 ## 8. Sequencing
 
-1. **Storage / `Val::Ein` outpatient.** Add the variant, the val-table tag, write/read conversions
-   (interim-lenient), and `ein`/`try_into_ein` accessors. Behavior unchanged; refs still stored as
-   `U32` until step 4. Touches two crates: `sky-db` (variant, val-table tag, conversions) and
-   `sky-tui` (the `print_val` display match).
-2. **Promote `AttrEin`, demote `Attr`.** Move `AttrEin` to `types`, add `Schema::resolve →
-   Option<AttrEin>` and `cardinality_of` (a two-hop lookup through `by_ein`, which stays keyed on
-   `Attr`). *(Interim — reversed in step 6, where `AttrEin` dissolves.)*
-3. **Typed query engine.** `Fact`/`Pattern`/`Term<T>`/`Binding`/`Substitution` (+ `Head` for the
-   conformed `Program`); `unify`, `ground`, `facts_stream` (index dispatch). Fold three of the four
-   `unreachable!()` `Find` impls (`AllEins`, `AttrsOfEin`, `EntityFills`) into
-   `select`/`where_`/`process`; `AllAttrs` stays a direct schema query until D3.
-4. **The flip.** Land `Val::Ein` for real: remove all `Val::U32` lenient arms (checklist §7) in
-   one commit; refs now persist and return as `Val::Ein`.
-5. **Schema-as-data (implemented).** Genesis materializes the starter attributes (`db/ident`,
-   `db/cardinality`, `tx/*`) as datoms, so the schema is a closed set of `db/ident` facts;
-   `AllAttrs` folds to `pattern(var(a), attr(db::ident()), var(n))`. `Val::Ein` stays boxed —
-   ref-ness stays in the *value*, which nested/anti-nested `pull` traversal needs.
-6. **Engine type collapse (implemented).** `Binding { Ein, Val }` with plain `==`; `bind_value`
-   canonicalizes `Val::Ein` → `Ein` at bind; `Pattern.a` becomes `Term<Ein>` and `AttrEin`
-   dissolves (attribute-ness = `find_attr`).
+### 8.1 Completed stages
 
-Steps 1–3 preserve all existing tests; the `program_test` join keeps passing during the interim
-because refs are still stored as `U32` and `as_ein` is lenient. Step 4 is where refs become
-strictly typed.
+All six stages are implemented, in this order:
 
-## 9. Deferred / open questions
+1. **Storage / `Val::Ein` outpatient** — added the `Val::Ein` variant, the `VAL_TYPE_EIN` storage
+   tag, and `ein`/`try_into_ein` accessors. Touched `sky-db` and `sky-tui` (`print_val`).
+2. **Promote `AttrEin`, demote `Attr`** *(interim, later dissolved by stage 6)* — `Attr` stayed as
+   the ident; this split was temporary.
+3. **Typed query engine** — `Fact`/`Pattern`/`Term<T>`/`Binding`/`Substitution` (+ `Head` for the
+   conformed `Program`); `unify`, `ground`, `facts_stream`. Folded `AllEins`, `AttrsOfEin`,
+   `EntityFills` into `select`/`where_`/`process`.
+4. **The flip** — refs persist and return as `Val::Ein`; the `Val::U32` lenient arms are gone.
+5. **Schema-as-data** — genesis materializes the starter attributes as `db/ident` facts, so
+   `AllAttrs` folds; `Val::Ein` stays boxed.
+6. **Engine type collapse** — `Binding { Ein, Val }` with plain `==`; `bind_value` canonicalizes
+   `Val::Ein` → `Ein` at bind; `AttrEin` dissolves (attribute-ness = `find_attr`).
 
-- **`as_attr` and schema.** Resolved: with `AttrEin` dissolved, recognising an attribute reference
-  (`Val::Ein(attr_ein)`) is just `find_attr(ein).is_some()`.
+All tests remain green at every stage; `program_test`'s cross-slot join is the standing proof of the
+stage 6 canonicalize-at-bind.
+
+### 8.2 Not part of this proposal
+
+- schema-driven ref value types (`:db.type/ref` in `AttrSpec`) — decided against (D3: ref-ness stays
+  boxed).
+- the open items in §9.
+
+## 9. Open questions
+
 - **No value index.** The engine has EAVT/AEVT but no value-oriented index; a ground-*value*
   query falls to a full scan + filter. A future `AVET`/`VAET` would close this.
-- **`Row` typed vs erased `FindResult`.** Typed `Row` (recommended) removes the last implicit
-  cast; keeping an erased `Val` result is the minimal alternative, with `process` recovering via
-  strict `Ein::from(Val::Ein)`.
 - **`facts_for_entity` index shape.** Current EAVT recomposition (`list_entity_*`) vs a dedicated
   entity-gated AEVT pass. Kept as-is; revisit for scan efficiency.
+- **Reverse index for `pull`.** Anti-nested (ancestor) traversal wants a value→subject index over
+  `Val::Ein`; that's future `pull` work, not part of this engine proposal.
 
 ## 10. Relation to *The Essence of Datalog*
 
