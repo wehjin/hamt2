@@ -1,6 +1,6 @@
 use crate::_internal::KEY_VAL_TABLE;
 use crate::_internal::Vid;
-use crate::Val;
+use crate::{Ein, Val};
 use crate::trie::*;
 use crate::trie::SkyTrieMut;
 use crate::{QueryError, TransactError};
@@ -9,6 +9,7 @@ const VAL_TYPE_U32: u8 = 16;
 const VAL_TYPE_STRING: u8 = 17;
 const VAL_TYPE_U64: u8 = 18;
 const VAL_TYPE_BYTES: u8 = 19;
+const VAL_TYPE_EIN: u8 = 20;
 
 fn bytes_from_val(val: &Val) -> Vec<u8> {
     match val {
@@ -32,6 +33,11 @@ fn bytes_from_val(val: &Val) -> Vec<u8> {
             b.extend_from_slice(bs);
             b
         }
+        Val::Ein(e) => {
+            let mut b = vec![VAL_TYPE_EIN];
+            b.extend_from_slice(&(e.to_i32() as u32).to_be_bytes());
+            b
+        }
     }
 }
 
@@ -47,6 +53,9 @@ fn val_from_bytes(bytes: &[u8]) -> Val {
             Val::String(String::from_utf8(bytes[1..].to_vec()).expect("parse string from bytes"))
         }
         VAL_TYPE_BYTES => Val::Bytes(bytes[1..].to_vec()),
+        VAL_TYPE_EIN => Val::Ein(Ein(
+            u32::from_be_bytes(bytes[1..5].try_into().expect("parse ein from bytes")) as i32,
+        )),
         _ => unreachable!(),
     }
 }
@@ -118,7 +127,7 @@ where
 mod tests {
     use super::*;
     use crate::trie::SkyTrie;
-    use crate::{Val, val};
+    use crate::{Ein, Val, val};
 
     #[tokio::test]
     async fn insert_and_query() {
@@ -227,5 +236,33 @@ mod tests {
         assert_ne!(u32_vid, u64_vid);
         assert_ne!(u32_vid, bytes_vid);
         assert_ne!(u64_vid, bytes_vid);
+    }
+
+    #[tokio::test]
+    async fn ein_insert_and_query() {
+        let mut trie = SkyTrie::new();
+        let vid = trie
+            .edit(async |trie| {
+                let vid = insert(trie, Val::Ein(Ein(42))).await?;
+                Ok(vid)
+            })
+            .await
+            .unwrap();
+        let val = query(&trie, vid).expect("Failed to query");
+        assert_eq!(Some(Val::Ein(Ein(42))), val);
+    }
+
+    #[tokio::test]
+    async fn ein_distinct_from_u32() {
+        let mut trie = SkyTrie::new();
+        let (u32_vid, ein_vid) = trie
+            .edit(async |trie| {
+                let u32_vid = insert(trie, Val::U32(42)).await?;
+                let ein_vid = insert(trie, Val::Ein(Ein(42))).await?;
+                Ok((u32_vid, ein_vid))
+            })
+            .await
+            .unwrap();
+        assert_ne!(u32_vid, ein_vid);
     }
 }

@@ -69,6 +69,7 @@ fn print_val(attribute: &Attribute, val: &Val) -> String {
             Val::U64(val) => format!("#{}", val),
             Val::String(val) => format!("\"{}\"", val),
             Val::Bytes(val) => format!("{:?}", val),
+            Val::Ein(val) => format!("#{}", val.to_i32()),
         }
     }
 }

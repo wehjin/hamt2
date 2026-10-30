@@ -77,6 +77,9 @@ const VAL_TYPE_EIN: u8 = 20;
 
 This tag is the crux of "first-class": `val(123u32)` and `ein(123)` are distinct values.
 
+Adding the variant also touches one exhaustiveness-sensitive `match` in `sky-tui`'s `print_val`
+(see §8) — Stage 1 is a two-crate change.
+
 ## 5. Query engine: facts as typed triples
 
 The engine moves from attribute-keyed binary atoms to typed three-slot facts. (§10 maps this
@@ -282,7 +285,8 @@ conversion are lenient.
 
 1. **Storage / `Val::Ein` outpatient.** Add the variant, the val-table tag, write/read conversions
    (interim-lenient), and `ein`/`try_into_ein` accessors. Behavior unchanged; refs still stored as
-   `U32` until step 4.
+   `U32` until step 4. Touches two crates: `sky-db` (variant, val-table tag, conversions) and
+   `sky-tui` (the `print_val` display match).
 2. **Promote `AttrEin`, demote `Attr`.** Move `AttrEin` to `types`, add `Schema::resolve →
    Option<AttrEin>` and `cardinality_of` (with `by_ein` storing `AttributeDetails`).
 3. **Typed query engine.** `Fact`/`Pattern`/`Term<T>`/`Binding`/`Substitution`; `unify`,
@@ -348,12 +352,12 @@ rather than the predicate name — which is what collapses `AllAttrs`, `AttrsOfE
 entity). A per-attribute binary view is then just `adviser(X, Y) :- holds(X, adviser_aid, Y)` —
 i.e. a `Pattern` with a concrete `AttrEin` in the attribute slot.
 
-**The one deliberate extension: canonicalization.** A subject `Ein(e)` and a reference value
+**The one warranted extension: canonicalization.** A subject `Ein(e)` and a reference value
 `Val::Ein(e)` name the *same entity*, so the article's `Sym == Sym` equality is widened to
 "compare canonical ids": `Binding::as_ein` projects both onto the shared entity-id domain, and
 `unify_bindings` compares the projections. This is the cost of making `Ein` a first-class type
 distinct from `Val` — two spellings of one constant, reconciled at the join — and it is the single
-place the proposal exceeds minimal Datalog. It is deliberate: it lets a `Val::Ein` value join an
+place the proposal exceeds minimal Datalog. It is warranted: it lets a `Val::Ein` value join an
 `Ein` subject without a silent integer↔entity cast. (The alternative — collapse subject and ref
 into a single `Val::Ein` constant so join is plain `==` — would be more minimally faithful but
 loses the compile-time subject/attr/value slot types.)

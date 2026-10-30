@@ -7,6 +7,7 @@ pub enum Val {
     U64(u64),
     String(String),
     Bytes(Vec<u8>),
+    Ein(Ein),
 }
 
 impl Val {
@@ -37,6 +38,18 @@ impl Val {
     pub fn try_into_u64(self) -> Option<u64> {
         match self {
             Val::U64(v) => Some(v),
+            _ => None,
+        }
+    }
+    pub fn ein(&self) -> Ein {
+        match self {
+            Val::Ein(e) => *e,
+            _ => panic!("Not an ein"),
+        }
+    }
+    pub fn try_into_ein(self) -> Option<Ein> {
+        match self {
+            Val::Ein(e) => Some(e),
             _ => None,
         }
     }

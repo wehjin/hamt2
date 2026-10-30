@@ -40,9 +40,14 @@ impl AddAssign<i32> for Ein {
 
 impl From<Val> for Ein {
     fn from(val: Val) -> Self {
-        let ein = val.u32() as i32;
-        debug_assert!(ein >= 0);
-        Ein(ein)
+        match val {
+            Val::Ein(e) => e,
+            other => {
+                let ein = other.u32() as i32;
+                debug_assert!(ein >= 0);
+                Ein(ein)
+            }
+        }
     }
 }
 
