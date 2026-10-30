@@ -64,8 +64,8 @@ async fn clone_finds_entities() {
     let reader = peer.snapshot().await;
     let mut eins = reader.find(AllEins).await;
     eins.sort();
-    // 1 user attr + 1 user entity + 2 tx entities (genesis + transact)
-    assert_eq!(4, eins.len());
+    // 1 user attr + 1 user entity + 2 tx entities + 6 starter attrs
+    assert_eq!(10, eins.len());
     assert!(eins.contains(&ein(100)));
     assert!(eins.contains(&Ein::attr(&attr_count())));
 }

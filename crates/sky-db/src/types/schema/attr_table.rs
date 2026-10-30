@@ -94,7 +94,7 @@ impl AttrTable {
         attr_table
     }
 
-    fn starter_attributes() -> [AttributeDetails; 6] {
+    pub(crate) fn starter_attributes() -> [AttributeDetails; 6] {
         [
             AttributeDetails::new(
                 Ein::DB_IDENT,

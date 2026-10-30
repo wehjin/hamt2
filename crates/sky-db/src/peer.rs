@@ -10,6 +10,7 @@ use crate::_internal::now_secs;
 use crate::_internal::rand_nonce;
 use crate::_internal::replay;
 use crate::attr_spec::DbSpec;
+use crate::attr_table::AttrTable;
 use crate::errors::ConnectError;
 use crate::{datom, db, tx, Ein, Peer, Tx, Val};
 
@@ -66,6 +67,13 @@ pub async fn create(
         genesis.push(datom::add(ein, db::ident(), spec.attr.as_ident()));
         let card: Val = spec.cardinality.into();
         genesis.push(datom::add(ein, db::cardinality(), card));
+    }
+    // Materialize the starter attributes as data, so the schema is a closed set of
+    // `db/ident` facts (schema-as-data).
+    for details in AttrTable::starter_attributes() {
+        genesis.push(datom::add(details.ein(), db::ident(), details.ident()));
+        let card: Val = details.cardinality().into();
+        genesis.push(datom::add(details.ein(), db::cardinality(), card));
     }
     genesis.push(datom::add(tx_ein, tx::nonce(), Val::Bytes(nonce.to_vec())));
     genesis.push(datom::add(

@@ -1,8 +1,7 @@
-use std::future::Future;
-
-use crate::find::datalog::binding::{RawPattern, Row};
+use crate::find::datalog::binding::{RawPattern, Row, pattern};
+use crate::find::datalog::var::var;
 use crate::traits::Find;
-use crate::{Attr, Pod};
+use crate::{Attr, Pod, db};
 
 pub struct AllAttrs;
 
@@ -16,23 +15,16 @@ impl Find for AllAttrs {
     type Output = Attr;
 
     fn select(&self) -> Vec<&'static str> {
-        unreachable!()
+        vec!["a"]
     }
 
     fn where_(&self) -> Vec<RawPattern> {
-        unreachable!()
+        vec![pattern(var("a"), db::ident(), var("n"))]
     }
 
-    fn process(self, _pod: &Pod, _rows: Vec<Row>) -> Vec<Attr> {
-        unreachable!()
-    }
-
-    // Attributes live in the schema (not yet materialized as `db/ident` facts),
-    // so this is a direct schema query rather than a datalog body.
-    fn apply(self, pod: &Pod) -> impl Future<Output = Vec<Attr>>
-    where
-        Self: Sized,
-    {
-        async move { pod.schema().to_attrs() }
+    fn process(self, pod: &Pod, rows: Vec<Row>) -> Vec<Attr> {
+        rows.into_iter()
+            .filter_map(|r| r["a"].as_ein().and_then(|e| pod.schema().find_attr(e).cloned()))
+            .collect()
     }
 }

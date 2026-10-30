@@ -2,7 +2,7 @@
 
 **A design proposal for `sky-db`**
 
-Status: implemented through Stage 4 (the flip); Stage 5 (schema-as-data) deferred.
+Status: implemented through Stage 5 (schema-as-data); Stage 6 (engine type collapse) pending.
 
 ---
 
@@ -259,13 +259,12 @@ fn run_find(pod, select, where_) -> Vec<Row> {
 | `EinsWithAttr(a)` | `pattern(var("ein"), attr(a), var("ignore"))` | `["ein"]` | `as_ein()` |
 | `BindsForAttr(a)` | `pattern(var("ein"), attr(a), var("val"))` | `["ein","val"]` | `as_ein()`, `to_val()` |
 | `AllEins` | `pattern(var("ein"), var("a"), var("v"))` | `["ein"]` | `as_ein()` |
-| `AllAttrs` | *(direct schema query — stays `apply`)* | — | `schema().to_attrs()` |
+| `AllAttrs` | `pattern(var("a"), attr(db::ident()), var("n"))` | `["a"]` | `as_ein()`→`find_attr` |
 | `AttrsOfEin(e)` | `pattern(ein(e), var("a"), var("v"))` | `["a"]` | `as_attr()`→`find_attr` |
 | `EntityFills(e)` | `pattern(ein(e), var("a"), var("v"))` | `["a","v"]` | `as_attr()`→`find_attr`, `to_val()` |
 
-`AllAttrs` stays a direct schema query (`schema().to_attrs()`) rather than folding into a datalog
-body: the starter attributes (`db/ident`, `db/cardinality`, `tx/*`) live only in the eager
-`AttrTable`, not as `db/ident` facts in the trie, so "attributes as data" must wait for D3.
+`AllAttrs` is now expressed as data: genesis materializes the starter attributes too, so "every entity
+whose `db/ident` exists" is exactly the set of attributes.
 
 ## 7. The single-flip checklist
 
@@ -298,7 +297,13 @@ conversion are lenient.
    `select`/`where_`/`process`; `AllAttrs` stays a direct schema query until D3.
 4. **The flip.** Land `Val::Ein` for real: remove all `Val::U32` lenient arms (checklist §7) in
    one commit; refs now persist and return as `Val::Ein`.
-5. **Later (deferred).** Schema-as-data and ref value-types (D3).
+5. **Schema-as-data (implemented).** Genesis materializes the starter attributes (`db/ident`,
+   `db/cardinality`, `tx/*`) as datoms, so the schema is a closed set of `db/ident` facts;
+   `AllAttrs` folds to `pattern(var(a), attr(db::ident()), var(n))`. `Val::Ein` stays boxed —
+   ref-ness stays in the *value*, which nested/anti-nested `pull` traversal needs.
+6. **Engine type collapse (pending).** `Binding { Ein, Val }` with plain `==`; `bind_value`
+   canonicalizes `Val::Ein` → `Ein` at bind; `Pattern.a` becomes `Term<Ein>` and `AttrEin`
+   dissolves (attribute-ness = `find_attr`).
 
 Steps 1–3 preserve all existing tests; the `program_test` join keeps passing during the interim
 because refs are still stored as `U32` and `as_ein` is lenient. Step 4 is where refs become
@@ -306,9 +311,9 @@ strictly typed.
 
 ## 9. Deferred / open questions
 
-- **`as_attr` and schema.** Whether an attribute *reference* (`Val::Ein(attr_ein)`) should be
-  recognized as an attribute — the one place a schema-backed predicate would be needed. Deferred
-  to D3.
+- **`as_attr` and schema.** Recognising an attribute reference (`Val::Ein(attr_ein)`) as an
+  attribute reduces to `find_attr(ein).is_some()` — resolved once `AttrEin` dissolves in Stage 6.
+  Pending.
 - **No value index.** The engine has EAVT/AEVT but no value-oriented index; a ground-*value*
   query falls to a full scan + filter. A future `AVET`/`VAET` would close this.
 - **`Row` typed vs erased `FindResult`.** Typed `Row` (recommended) removes the last implicit
@@ -352,7 +357,7 @@ identity.
 (`adviser/2`, `name/2`, …). An EAV store holds every fact in one ternary relation `holds(e, a, v)`
 (a datom). `Fact { e, a, v }` *is* a row of `holds/3`, and the attribute occupies a term slot
 rather than the predicate name — which is what collapses `AttrsOfEin` and `EntityFills` into
-ordinary rules (and would let `AllAttrs` fold too, once `db/ident` is materialized as data). This
+ordinary rules (and, now that `db/ident` is materialized, lets `AllAttrs` fold too). This
 is the schema-as-data move (an attribute is itself an entity). A per-attribute binary view is then just `adviser(X, Y) :- holds(X, adviser_aid, Y)` —
 i.e. a `Pattern` with a concrete `AttrEin` in the attribute slot.
 
