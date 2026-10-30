@@ -134,8 +134,6 @@ impl Binding {
             Binding::Ein(e) => Some(*e),
             Binding::Attr(a) => Some(a.ein()),
             Binding::Val(Val::Ein(e)) => Some(*e),
-            // Interim lenient: a U32 value derefs to an ein (delete at the flip).
-            Binding::Val(Val::U32(n)) => Some(Ein(*n as i32)),
             _ => None,
         }
     }
@@ -149,9 +147,8 @@ impl Binding {
 
     pub fn to_val(&self) -> Val {
         match self {
-            // Interim: render eins/attrs as U32 (delete at the flip).
-            Binding::Ein(e) => Val::U32(e.to_i32() as u32),
-            Binding::Attr(a) => Val::U32(a.to_i32() as u32),
+            Binding::Ein(e) => Val::Ein(*e),
+            Binding::Attr(a) => Val::Ein(a.ein()),
             Binding::Val(v) => v.clone(),
         }
     }

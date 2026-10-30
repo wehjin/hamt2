@@ -2,7 +2,7 @@
 
 **A design proposal for `sky-db`**
 
-Status: proposal (plan mode — not yet implemented).
+Status: implemented through Stage 4 (the flip); Stage 5 (schema-as-data) deferred.
 
 ---
 
@@ -204,7 +204,7 @@ The KB dispatches by which slots are ground:
 | `Var` | `Lit(eid)` | EAVT under `eid` |
 | `Var` | `Var` | full EAVT scan |
 
-This is precisely what folds `AllEins`, `AttrsOfEin`, `EntityFills` (and `AllAttrs`) into plain
+This is precisely what folds `AllEins`, `AttrsOfEin`, and `EntityFills` into plain
 datalog — no more `unreachable!()` `apply` overrides. Derived relations (arity-N synthetic names
 like `db::query`, `query_1`, `path`) live in a separate erased space chained in when the attribute
 does **not** resolve to an `AttrEin` (`Schema::resolve` returns `None`).

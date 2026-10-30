@@ -42,11 +42,7 @@ impl From<Val> for Ein {
     fn from(val: Val) -> Self {
         match val {
             Val::Ein(e) => e,
-            other => {
-                let ein = other.u32() as i32;
-                debug_assert!(ein >= 0);
-                Ein(ein)
-            }
+            _ => panic!("Not an ein"),
         }
     }
 }

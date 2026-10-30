@@ -1,4 +1,4 @@
-use crate::{Ein, services};
+use crate::Ein;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
@@ -87,7 +87,7 @@ impl Val {
 
 impl From<Ein> for Val {
     fn from(value: Ein) -> Self {
-        services::val(value.to_i32())
+        Val::Ein(value)
     }
 }
 
