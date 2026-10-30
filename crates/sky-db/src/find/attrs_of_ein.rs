@@ -1,7 +1,7 @@
-use crate::find::datalog::atom::Atom;
+use crate::find::datalog::binding::{RawPattern, Row, pattern};
+use crate::find::datalog::var::var;
 use crate::traits::Find;
-use crate::{Attr, Ein, FindResult, Pod};
-use std::future::Future;
+use crate::{Attr, Ein, Pod};
 
 pub struct AttrsOfEin(pub Ein);
 
@@ -15,28 +15,24 @@ impl Find for AttrsOfEin {
     type Output = Attr;
 
     fn select(&self) -> Vec<&'static str> {
-        unreachable!()
+        vec!["a"]
     }
 
-    fn where_(&self) -> Vec<Atom> {
-        unreachable!()
+    fn where_(&self) -> Vec<RawPattern> {
+        vec![pattern(self.0, var("a"), var("v"))]
     }
 
-    fn process(self, _result: FindResult) -> Vec<Self::Output> {
-        unreachable!()
-    }
-
-    fn apply(self, pod: &Pod) -> impl Future<Output = Vec<Self::Output>>
-    where
-        Self: Sized,
-    {
-        async move {
-            // For now, use custom function `list_attr_eins`. Later maybe make a program
-            // where the ein is the relator instead of attr.
-            pod.list_attr_eins(self.0)
-                .into_iter()
-                .filter_map(|ein| pod.schema().find_attr(ein).cloned())
-                .collect::<Vec<_>>()
-        }
+    fn process(self, pod: &Pod, rows: Vec<Row>) -> Vec<Attr> {
+        let mut attrs = rows
+            .into_iter()
+            .filter_map(|r| {
+                r["a"]
+                    .as_attr()
+                    .and_then(|aid| pod.schema().find_attr(aid.ein()).cloned())
+            })
+            .collect::<Vec<_>>();
+        attrs.sort();
+        attrs.dedup();
+        attrs
     }
 }

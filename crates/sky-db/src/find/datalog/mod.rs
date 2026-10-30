@@ -1,24 +1,23 @@
 use crate::Pod;
-use atom::Atom;
 use kb::KnowledgeBase;
 use rule::Rule;
 
-pub mod atom;
+pub mod binding;
 pub mod kb;
 pub mod rule;
-pub mod sub;
 pub mod term;
 pub mod var;
 
+/// A Datalog program: a collection of rules over the EAV trie.
+#[allow(dead_code)] // exercised only by program_test (recursion)
 pub struct Program {
-    facts: Vec<Atom>,
     rules: Vec<Rule>,
 }
 
+#[allow(dead_code)]
 impl Program {
-    pub fn new(facts: impl Into<Vec<Atom>>, rules: impl Into<Vec<Rule>>) -> Self {
+    pub fn new(rules: impl Into<Vec<Rule>>) -> Self {
         Self {
-            facts: facts.into(),
             rules: rules.into(),
         }
     }
@@ -29,7 +28,7 @@ impl Program {
                 panic!("The program is not range restricted: {:?}", rule);
             }
         }
-        let mut kb = KnowledgeBase::from_facts(pod, self.facts);
+        let mut kb = KnowledgeBase::new(pod);
         loop {
             let new_kb = kb.step(&self.rules);
             if new_kb == kb {
@@ -44,13 +43,13 @@ impl Program {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::find::datalog::atom::atom;
-    use crate::find::datalog::rule::rule;
-    use crate::find::datalog::term::term;
-    use crate::find::datalog::var::var;
     use crate::Transact;
     use crate::create;
     use crate::datom;
+    use crate::find::datalog::binding::{head, pattern};
+    use crate::find::datalog::rule::rule;
+    use crate::find::datalog::term::term;
+    use crate::find::datalog::var::var;
     use crate::{Attr, ent, val};
 
     fn advisor() -> Attr {
@@ -84,29 +83,29 @@ mod tests {
         .await?;
         let pod = peer.snapshot().await;
         let query1 = rule(
-            atom(query_1(), [term(var("name"))]),
+            head(query_1(), [term(var("name"))]),
             [
-                atom(advisor(), [term(var("advisor")), term(var("advisee"))]),
-                atom(name(), [term(var("advisor")), term(var("name"))]),
+                pattern(var("advisor"), advisor(), var("advisee")),
+                pattern(var("advisor"), name(), var("name")),
             ],
         );
         let query2 = rule(
-            atom(query_2(), []),
+            head(query_2(), []),
             [
-                atom(name(), [term(var("a")), term(val("Alice"))]),
-                atom(name(), [term(var("c")), term(val("Clark"))]),
-                atom(advisor(), [term(var("a")), term(var("c"))]),
+                pattern(var("a"), name(), val("Alice")),
+                pattern(var("c"), name(), val("Clark")),
+                pattern(var("a"), advisor(), var("c")),
             ],
         );
         let query3 = rule(
-            atom(query_3(), []),
+            head(query_3(), []),
             [
-                atom(name(), [term(var("a")), term(val("Alice"))]),
-                atom(name(), [term(var("b")), term(val("Bob"))]),
-                atom(advisor(), [term(var("a")), term(var("b"))]),
+                pattern(var("a"), name(), val("Alice")),
+                pattern(var("b"), name(), val("Bob")),
+                pattern(var("a"), advisor(), var("b")),
             ],
         );
-        let program = Program::new([], [query1, query2, query3]);
+        let program = Program::new([query1, query2, query3]);
         let kb = program.solve(pod.clone());
         let q1_result = kb.query(query_1());
         let mut answers = q1_result.into_iter().flatten().collect::<Vec<_>>();

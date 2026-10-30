@@ -1,8 +1,7 @@
-use crate::find::datalog::atom::{Atom, atom};
-use crate::find::datalog::term::term;
+use crate::find::datalog::binding::{RawPattern, Row, pattern};
 use crate::find::datalog::var::var;
 use crate::traits::Find;
-use crate::{Attr, Ein, FindResult};
+use crate::{Attr, Ein, Pod};
 
 pub struct EinsWithAttr {
     attr: Attr,
@@ -21,14 +20,13 @@ impl Find for EinsWithAttr {
         vec!["ein"]
     }
 
-    fn where_(&self) -> Vec<Atom> {
-        vec![atom(self.attr.clone(), [term(var("ein")), term(var("ignore"))])]
+    fn where_(&self) -> Vec<RawPattern> {
+        vec![pattern(var("ein"), self.attr.clone(), var("ignore"))]
     }
 
-    fn process(self, result: FindResult) -> Vec<Self::Output> {
-        result
-            .into_iter()
-            .map(|map| Ein::from(map["ein"].clone()))
-            .collect::<Vec<_>>()
+    fn process(self, _pod: &Pod, rows: Vec<Row>) -> Vec<Ein> {
+        rows.into_iter()
+            .map(|r| r["ein"].as_ein().expect("ein column"))
+            .collect()
     }
 }

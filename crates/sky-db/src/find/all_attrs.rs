@@ -1,9 +1,8 @@
-use crate::Attr;
-use crate::FindResult;
-use crate::find::datalog::atom::Atom;
-use crate::traits::Find;
-use crate::Pod;
 use std::future::Future;
+
+use crate::find::datalog::binding::{RawPattern, Row};
+use crate::traits::Find;
+use crate::{Attr, Pod};
 
 pub struct AllAttrs;
 
@@ -20,15 +19,17 @@ impl Find for AllAttrs {
         unreachable!()
     }
 
-    fn where_(&self) -> Vec<Atom> {
+    fn where_(&self) -> Vec<RawPattern> {
         unreachable!()
     }
 
-    fn process(self, _result: FindResult) -> Vec<Self::Output> {
+    fn process(self, _pod: &Pod, _rows: Vec<Row>) -> Vec<Attr> {
         unreachable!()
     }
 
-    fn apply(self, pod: &Pod) -> impl Future<Output = Vec<Self::Output>>
+    // Attributes live in the schema (not yet materialized as `db/ident` facts),
+    // so this is a direct schema query rather than a datalog body.
+    fn apply(self, pod: &Pod) -> impl Future<Output = Vec<Attr>>
     where
         Self: Sized,
     {

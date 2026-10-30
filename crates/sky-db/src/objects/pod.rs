@@ -1,6 +1,6 @@
-use crate::_internal::{db_trie, val_table};
+use crate::_internal::db_trie;
 use crate::trie::SkyTrie;
-use crate::{Attr, Attribute, Ein, Fill, Schema, Val};
+use crate::{Attr, AttrEin, Attribute, Ein, Fact, Schema, Val};
 use std::collections::HashMap;
 
 /// A stable, immutable snapshot of a peer's index. Query-only.
@@ -20,44 +20,18 @@ impl Pod {
     pub fn ev_iter(&self, a: Attr) -> impl Iterator<Item = (i32, Val)> {
         db_trie::ev_iter(&self.trie, a, &self.schema, &self.order)
     }
-}
 
-/// Find helpers
-impl Pod {
-    pub(crate) fn list_entities(&self) -> Vec<Ein> {
-        db_trie::list_entities(&self.trie)
+    pub fn facts_for_attr(&self, aid: AttrEin) -> Vec<Fact> {
+        let card = self.schema.cardinality_of(aid);
+        db_trie::facts_for_attr(&self.trie, aid, card, &self.order)
     }
 
-    pub(crate) fn list_attr_eins(&self, ein: Ein) -> Vec<Ein> {
-        db_trie::list_entity_attributes(&self.trie, ein)
-            .into_iter()
-            .map(|attr_ein| attr_ein.ein())
-            .collect::<Vec<_>>()
+    pub fn facts_for_entity(&self, eid: Ein) -> Vec<Fact> {
+        db_trie::facts_for_entity(&self.trie, eid, &self.schema, &self.order)
     }
 
-    pub(crate) fn list_fills(&self, ein: Ein) -> Vec<Fill> {
-        let mut fills = Vec::new();
-        for attr_ein in db_trie::list_entity_attributes(&self.trie, ein) {
-            let attr = self
-                .schema
-                .find_attr(attr_ein.ein())
-                .cloned()
-                .expect("attr should exist for attr-ein");
-            let cardinality = self.schema.cardinality_of(attr_ein);
-            for (_attr_ein, vid) in db_trie::list_entity_fills(
-                &self.trie,
-                ein,
-                attr_ein,
-                cardinality,
-                &self.order,
-            ) {
-                let val = val_table::query(&self.trie, vid)
-                    .expect("table should find val")
-                    .expect("val should exist");
-                fills.push(Fill(attr.clone(), val));
-            }
-        }
-        fills
+    pub fn all_facts(&self) -> Vec<Fact> {
+        db_trie::all_facts(&self.trie, &self.schema, &self.order)
     }
 }
 

@@ -1,9 +1,9 @@
-use crate::Ein;
-use crate::FindResult;
-use crate::find::datalog::atom::Atom;
+use std::collections::HashSet;
+
+use crate::find::datalog::binding::{RawPattern, Row, pattern};
+use crate::find::datalog::var::var;
 use crate::traits::Find;
-use crate::Pod;
-use std::future::Future;
+use crate::{Ein, Pod};
 
 pub struct AllEins;
 
@@ -17,21 +17,18 @@ impl Find for AllEins {
     type Output = Ein;
 
     fn select(&self) -> Vec<&'static str> {
-        unreachable!()
+        vec!["ein"]
     }
 
-    fn where_(&self) -> Vec<Atom> {
-        unreachable!()
+    fn where_(&self) -> Vec<RawPattern> {
+        vec![pattern(var("ein"), var("a"), var("v"))]
     }
 
-    fn process(self, _result: FindResult) -> Vec<Self::Output> {
-        unreachable!()
-    }
-
-    fn apply(self, pod: &Pod) -> impl Future<Output = Vec<Self::Output>>
-    where
-        Self: Sized,
-    {
-        async move { pod.list_entities() }
+    fn process(self, _pod: &Pod, rows: Vec<Row>) -> Vec<Ein> {
+        rows.into_iter()
+            .filter_map(|r| r["ein"].as_ein())
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect()
     }
 }

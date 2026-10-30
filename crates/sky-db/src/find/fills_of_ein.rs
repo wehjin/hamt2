@@ -1,7 +1,7 @@
-use crate::find::datalog::atom::Atom;
+use crate::find::datalog::binding::{RawPattern, Row, pattern};
+use crate::find::datalog::var::var;
 use crate::traits::Find;
-use crate::{Ein, Fill, FindResult, Pod};
-use std::future::Future;
+use crate::{Ein, Fill, Pod};
 
 pub struct EntityFills(pub Ein);
 
@@ -15,21 +15,24 @@ impl Find for EntityFills {
     type Output = Fill;
 
     fn select(&self) -> Vec<&'static str> {
-        unreachable!()
+        vec!["a", "v"]
     }
 
-    fn where_(&self) -> Vec<Atom> {
-        unreachable!()
+    fn where_(&self) -> Vec<RawPattern> {
+        vec![pattern(self.0, var("a"), var("v"))]
     }
 
-    fn process(self, _result: FindResult) -> Vec<Self::Output> {
-        unreachable!()
-    }
-
-    fn apply(self, pod: &Pod) -> impl Future<Output = Vec<Self::Output>>
-    where
-        Self: Sized,
-    {
-        async move { pod.list_fills(self.0) }
+    fn process(self, pod: &Pod, rows: Vec<Row>) -> Vec<Fill> {
+        rows.into_iter()
+            .map(|r| {
+                let aid = r["a"].as_attr().expect("attr column");
+                let attr = pod
+                    .schema()
+                    .find_attr(aid.ein())
+                    .cloned()
+                    .expect("attr ident");
+                Fill(attr, r["v"].to_val())
+            })
+            .collect()
     }
 }

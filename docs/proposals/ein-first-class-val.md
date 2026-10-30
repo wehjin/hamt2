@@ -92,6 +92,7 @@ pub enum Term<T>               { Var(Var), Lit(T) }
 pub enum Binding               { Ein(Ein), Attr(AttrEin), Val(Val) }
 pub struct Fact                { e: Ein, a: AttrEin, v: Val }
 pub struct Pattern             { e: Term<Ein>, a: Term<AttrEin>, v: Term<Val> }
+pub struct Head                { name: Attr, terms: Vec<Term<Val>> }   // derived relation (arity-N, erased)
 pub struct Substitution(/* HashMap<Var, Binding> */);
 ```
 
@@ -258,12 +259,13 @@ fn run_find(pod, select, where_) -> Vec<Row> {
 | `EinsWithAttr(a)` | `pattern(var("ein"), attr(a), var("ignore"))` | `["ein"]` | `as_ein()` |
 | `BindsForAttr(a)` | `pattern(var("ein"), attr(a), var("val"))` | `["ein","val"]` | `as_ein()`, `to_val()` |
 | `AllEins` | `pattern(var("ein"), var("a"), var("v"))` | `["ein"]` | `as_ein()` |
-| `AllAttrs` | `pattern(var("a"), attr(db::ident()), var("n"))` | `["a"]` | `as_attr()`→`find_attr` |
+| `AllAttrs` | *(direct schema query — stays `apply`)* | — | `schema().to_attrs()` |
 | `AttrsOfEin(e)` | `pattern(ein(e), var("a"), var("v"))` | `["a"]` | `as_attr()`→`find_attr` |
 | `EntityFills(e)` | `pattern(ein(e), var("a"), var("v"))` | `["a","v"]` | `as_attr()`→`find_attr`, `to_val()` |
 
-`AllAttrs` is expressed as data ("every entity whose `db/ident` exists"), which works only because
-genesis writes `db/ident` into the same trie as everything else.
+`AllAttrs` stays a direct schema query (`schema().to_attrs()`) rather than folding into a datalog
+body: the starter attributes (`db/ident`, `db/cardinality`, `tx/*`) live only in the eager
+`AttrTable`, not as `db/ident` facts in the trie, so "attributes as data" must wait for D3.
 
 ## 7. The single-flip checklist
 
@@ -290,9 +292,10 @@ conversion are lenient.
 2. **Promote `AttrEin`, demote `Attr`.** Move `AttrEin` to `types`, add `Schema::resolve →
    Option<AttrEin>` and `cardinality_of` (a two-hop lookup through `by_ein`, which stays keyed on
    `Attr`).
-3. **Typed query engine.** `Fact`/`Pattern`/`Term<T>`/`Binding`/`Substitution`; `unify`,
-   `ground`, `facts_stream` (index dispatch). Fold the four `unreachable!()` `Find` impls into
-   `select`/`where_`/`process`.
+3. **Typed query engine.** `Fact`/`Pattern`/`Term<T>`/`Binding`/`Substitution` (+ `Head` for the
+   conformed `Program`); `unify`, `ground`, `facts_stream` (index dispatch). Fold three of the four
+   `unreachable!()` `Find` impls (`AllEins`, `AttrsOfEin`, `EntityFills`) into
+   `select`/`where_`/`process`; `AllAttrs` stays a direct schema query until D3.
 4. **The flip.** Land `Val::Ein` for real: remove all `Val::U32` lenient arms (checklist §7) in
    one commit; refs now persist and return as `Val::Ein`.
 5. **Later (deferred).** Schema-as-data and ref value-types (D3).
@@ -348,9 +351,9 @@ identity.
 **The universal `holds/3` relation.** The article runs over one named relation per predicate
 (`adviser/2`, `name/2`, …). An EAV store holds every fact in one ternary relation `holds(e, a, v)`
 (a datom). `Fact { e, a, v }` *is* a row of `holds/3`, and the attribute occupies a term slot
-rather than the predicate name — which is what collapses `AllAttrs`, `AttrsOfEin`, and
-`EntityFills` into ordinary rules, and is the schema-as-data move (an attribute is itself an
-entity). A per-attribute binary view is then just `adviser(X, Y) :- holds(X, adviser_aid, Y)` —
+rather than the predicate name — which is what collapses `AttrsOfEin` and `EntityFills` into
+ordinary rules (and would let `AllAttrs` fold too, once `db/ident` is materialized as data). This
+is the schema-as-data move (an attribute is itself an entity). A per-attribute binary view is then just `adviser(X, Y) :- holds(X, adviser_aid, Y)` —
 i.e. a `Pattern` with a concrete `AttrEin` in the attribute slot.
 
 **The one warranted extension: canonicalization.** A subject `Ein(e)` and a reference value

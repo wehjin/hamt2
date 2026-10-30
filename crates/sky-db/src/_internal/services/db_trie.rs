@@ -5,7 +5,7 @@ use crate::Schema;
 use crate::cardinality::Cardinality;
 use crate::trie::SkyTrieMut;
 use crate::trie::*;
-use crate::{Attr, AttrEin, Dir, Ein, TransactError, Val};
+use crate::{Attr, AttrEin, Dir, Ein, Fact, TransactError, Val};
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::collections::btree_map::Entry;
@@ -201,6 +201,88 @@ pub fn ev_iter(
         }
     }
     result.into_iter()
+}
+
+/// Current facts for a single attribute (AEVT index): every entity whose latest
+/// tx on `aid` was an add.
+pub fn facts_for_attr<S>(
+    trie: &S,
+    aid: AttrEin,
+    cardinality: Cardinality,
+    order: &HashMap<Ein, u32>,
+) -> Vec<Fact>
+where
+    S: QueryCursor + Snap + Query,
+{
+    let mut result = Vec::new();
+    let mut evt = trie.snapshot();
+    evt.descend_n([KEY_AEVT, aid.to_i32()]);
+    for (eid, _) in evt.query_all() {
+        let mut entries = Vec::new();
+        let mut vt = trie.snapshot();
+        vt.descend_n([KEY_AEVT, aid.to_i32(), eid]);
+        for (vid, _) in vt.query_all() {
+            let mut vt2 = trie.snapshot();
+            vt2.descend_n([KEY_AEVT, aid.to_i32(), eid, vid]);
+            for (tx_ein, dir_val) in vt2.query_all() {
+                if let TrieValue::U32(dir) = dir_val {
+                    entries.push((Vid::from_id(vid), Ein::from(tx_ein), dir_from_u32(dir)));
+                }
+            }
+        }
+        for vid in current_vids(entries, cardinality, order) {
+            let val = val_table::query(trie, vid)
+                .ok()
+                .flatten()
+                .expect("val not found");
+            result.push(Fact {
+                e: Ein::from(eid),
+                a: aid,
+                v: val,
+            });
+        }
+    }
+    result
+}
+
+/// Current facts for a single entity (EAVT index): every attribute it has.
+pub fn facts_for_entity<S>(
+    trie: &S,
+    eid: Ein,
+    schema: &Schema,
+    order: &HashMap<Ein, u32>,
+) -> Vec<Fact>
+where
+    S: QueryCursor + Snap + Query,
+{
+    let mut result = Vec::new();
+    for aid in list_entity_attributes(trie, eid) {
+        let card = schema.cardinality_of(aid);
+        for (attr_ein, vid) in list_entity_fills(trie, eid, aid, card, order) {
+            let val = val_table::query(trie, vid)
+                .ok()
+                .flatten()
+                .expect("val not found");
+            result.push(Fact {
+                e: eid,
+                a: attr_ein,
+                v: val,
+            });
+        }
+    }
+    result
+}
+
+/// All current facts (full EAVT scan).
+pub fn all_facts<S>(trie: &S, schema: &Schema, order: &HashMap<Ein, u32>) -> Vec<Fact>
+where
+    S: QueryCursor + Snap + Query,
+{
+    let mut result = Vec::new();
+    for eid in list_entities(trie) {
+        result.extend(facts_for_entity(trie, eid, schema, order));
+    }
+    result
 }
 
 #[cfg(test)]
