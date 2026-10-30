@@ -79,7 +79,8 @@ This tag is the crux of "first-class": `val(123u32)` and `ein(123)` are distinct
 
 ## 5. Query engine: facts as typed triples
 
-The engine moves from attribute-keyed binary atoms to typed three-slot facts.
+The engine moves from attribute-keyed binary atoms to typed three-slot facts. (§10 maps this
+engine onto the minimal Datalog evaluator it is modeled on.)
 
 ### 5.1 Types
 
@@ -236,7 +237,8 @@ pub struct Row(HashMap<&'static str, Binding>);   // typed bindings, checked acc
 
 `process` gains `&Pod` so attribute ids can be resolved back to idents. `run_find` no longer
 fabricates a dummy `db::query` head — it solves the body to a set of `Substitution`s and projects
-the selected columns:
+the selected columns (this is the article's "queries are fresh-head rules," returning the body's
+bindings directly without materializing the synthetic head):
 
 ```rust
 fn run_find(pod, select, where_) -> Vec<Row> {
@@ -306,3 +308,56 @@ strictly typed.
   strict `Ein::from(Val::Ein)`.
 - **`facts_for_entity` index shape.** Current EAVT recomposition (`list_entity_*`) vs a dedicated
   entity-gated AEVT pass. Kept as-is; revisit for scan efficiency.
+
+## 10. Relation to *The Essence of Datalog*
+
+This proposal re-expresses the minimal Datalog evaluator from
+[“The Essence of Datalog”](https://dodisturb.me/posts/2018-12-25-The-Essence-of-Datalog.html)
+over an EAV trie. The correspondence:
+
+| article | this proposal |
+|---|---|
+| `Rule { head, body }` | `Rule` (unchanged; a head is a derived relation) |
+| `Atom { predSym, terms }` | `Pattern` / `Fact` — `predSym` is the attribute, lifted into a typed slot |
+| `Term = Var \| Sym` | `Term<T> = Var \| Lit(T)`, `T ∈ {Ein, AttrEin, Val}` |
+| `Substitution = [(Term, Term)]` | `Substitution` (var → `Binding`) |
+| `substitute` | `ground` |
+| `unify` (the fact is ground) | `Pattern::unify` + `unify_bindings` |
+| `evalAtom` (substitute, then unify) | `derive_body_atom_subs` (ground → `facts_stream` → unify) |
+| `walk` (fold the body) | `derive_body_subs` |
+| `evalRule` (substitute the head) | `derive_facts` |
+| `immediateConsequence` / `solve` (naive fixpoint) | `Program::solve` (unchanged fixpoint) |
+| `isRangeRestricted` | `Rule::is_range_restricted` (already present) |
+| query = fresh-head rule | `run_find` returns the body's bindings directly (equivalent) |
+
+**Evaluation strategy.** The select-before-join order is preserved exactly: ground the
+already-bound terminals, index the fact base by the ground slots (`facts_stream`), then unify each
+candidate. That is `evalAtom`'s "substitute, then unify," lifted to a typed, indexed base.
+
+**Typed constants.** The article uses one untyped constant domain (`Sym String`); here constants
+are typed (`Ein`/`AttrEin`/`Val`) because storage is an EAV trie of typed values. This is a
+refinement, not a departure — the article itself gestures at tightening the types (footnote 3).
+The invariant is retained: a term is either a variable or a constant, and constants compare by
+identity.
+
+**The universal `holds/3` relation.** The article runs over one named relation per predicate
+(`adviser/2`, `name/2`, …). An EAV store holds every fact in one ternary relation `holds(e, a, v)`
+(a datom). `Fact { e, a, v }` *is* a row of `holds/3`, and the attribute occupies a term slot
+rather than the predicate name — which is what collapses `AllAttrs`, `AttrsOfEin`, and
+`EntityFills` into ordinary rules, and is the schema-as-data move (an attribute is itself an
+entity). A per-attribute binary view is then just `adviser(X, Y) :- holds(X, adviser_aid, Y)` —
+i.e. a `Pattern` with a concrete `AttrEin` in the attribute slot.
+
+**The one deliberate extension: canonicalization.** A subject `Ein(e)` and a reference value
+`Val::Ein(e)` name the *same entity*, so the article's `Sym == Sym` equality is widened to
+"compare canonical ids": `Binding::as_ein` projects both onto the shared entity-id domain, and
+`unify_bindings` compares the projections. This is the cost of making `Ein` a first-class type
+distinct from `Val` — two spellings of one constant, reconciled at the join — and it is the single
+place the proposal exceeds minimal Datalog. It is deliberate: it lets a `Val::Ein` value join an
+`Ein` subject without a silent integer↔entity cast. (The alternative — collapse subject and ref
+into a single `Val::Ein` constant so join is plain `==` — would be more minimally faithful but
+loses the compile-time subject/attr/value slot types.)
+
+**Termination and range restriction** carry over unchanged: the constant domain is finite (eins
+are 30-bit; values are hash-consed in the val table), `immediateConsequence` is monotone over a
+finite fact lattice, and `is_range_restricted` guards the fixpoint exactly as in the article.
