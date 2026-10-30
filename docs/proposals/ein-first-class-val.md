@@ -288,7 +288,8 @@ conversion are lenient.
    `U32` until step 4. Touches two crates: `sky-db` (variant, val-table tag, conversions) and
    `sky-tui` (the `print_val` display match).
 2. **Promote `AttrEin`, demote `Attr`.** Move `AttrEin` to `types`, add `Schema::resolve →
-   Option<AttrEin>` and `cardinality_of` (with `by_ein` storing `AttributeDetails`).
+   Option<AttrEin>` and `cardinality_of` (a two-hop lookup through `by_ein`, which stays keyed on
+   `Attr`).
 3. **Typed query engine.** `Fact`/`Pattern`/`Term<T>`/`Binding`/`Substitution`; `unify`,
    `ground`, `facts_stream` (index dispatch). Fold the four `unreachable!()` `Find` impls into
    `select`/`where_`/`process`.

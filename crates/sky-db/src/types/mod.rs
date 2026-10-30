@@ -1,4 +1,5 @@
 mod attr;
+mod attr_ein;
 mod dat;
 mod ein;
 mod ent;
@@ -11,6 +12,7 @@ mod val;
 use serde::{Deserialize, Serialize};
 
 pub use attr::*;
+pub use attr_ein::*;
 pub use dat::*;
 pub use ein::*;
 pub use ent::*;

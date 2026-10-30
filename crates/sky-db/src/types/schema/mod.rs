@@ -1,7 +1,9 @@
 use crate::Attr;
+use crate::AttrEin;
 use crate::Datom;
 use crate::Ein;
 use crate::attr_table::AttrTable;
+use crate::cardinality::Cardinality;
 use attribute::AttributeDetails;
 use serde::{Deserialize, Serialize};
 use std::ops::{Deref, Index};
@@ -48,8 +50,12 @@ impl Schema {
         self.attr_table.find_attr(ein)
     }
 
-    pub fn resolve(&self, ident: &Attr) -> Option<Ein> {
+    pub fn resolve(&self, ident: &Attr) -> Option<AttrEin> {
         self.attr_table.resolve(ident)
+    }
+
+    pub fn cardinality_of(&self, ein: AttrEin) -> Cardinality {
+        self.attr_table.cardinality_of(ein)
     }
 
     pub fn apply(&mut self, datoms: &[Datom]) {

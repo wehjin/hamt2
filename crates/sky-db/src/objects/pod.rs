@@ -43,7 +43,7 @@ impl Pod {
                 .find_attr(attr_ein.ein())
                 .cloned()
                 .expect("attr should exist for attr-ein");
-            let cardinality = self.schema[attr.clone()].cardinality();
+            let cardinality = self.schema.cardinality_of(attr_ein);
             for (_attr_ein, vid) in db_trie::list_entity_fills(
                 &self.trie,
                 ein,

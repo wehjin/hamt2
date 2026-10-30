@@ -5,8 +5,7 @@ use crate::Schema;
 use crate::cardinality::Cardinality;
 use crate::trie::SkyTrieMut;
 use crate::trie::*;
-use crate::{Attr, Dir, Ein, TransactError, Val};
-use serde::{Deserialize, Serialize};
+use crate::{Attr, AttrEin, Dir, Ein, TransactError, Val};
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::collections::btree_map::Entry;
@@ -69,7 +68,7 @@ fn current_vids(
 
 pub(crate) async fn with_update(
     trie: &mut SkyTrieMut,
-    aid: Ein,
+    aid: AttrEin,
     ein: Ein,
     val: Val,
     dir: Dir,
@@ -96,24 +95,6 @@ where
         .into_iter()
         .map(|(key, _)| Ein::from(key))
         .collect::<Vec<_>>()
-}
-
-/// An attr-ein is an Ein that refers to an attribute.
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
-pub struct AttrEin(Ein);
-impl AttrEin {
-    pub fn ein(&self) -> Ein {
-        self.0
-    }
-
-    pub fn to_i32(&self) -> i32 {
-        self.0.to_i32()
-    }
-}
-impl From<i32> for AttrEin {
-    fn from(ein: i32) -> Self {
-        AttrEin(Ein(ein))
-    }
 }
 
 pub fn list_entity_attributes<T>(trie: &T, ein: Ein) -> Vec<AttrEin>
@@ -226,7 +207,7 @@ pub fn ev_iter(
 mod tests {
     use super::*;
     use crate::trie::SkyTrie;
-    use crate::val;
+    use crate::{AttrEin, val};
 
     #[tokio::test]
     async fn history_is_retained() {
@@ -237,8 +218,8 @@ mod tests {
         order.insert(tx1, 0);
         order.insert(tx2, 1);
         trie.edit(async |trie| {
-            with_update(trie, Ein(100), Ein(200), val(100), Dir::In, tx1).await?;
-            with_update(trie, Ein(100), Ein(200), val(101), Dir::In, tx2).await?;
+            with_update(trie, AttrEin::from(100), Ein(200), val(100), Dir::In, tx1).await?;
+            with_update(trie, AttrEin::from(100), Ein(200), val(101), Dir::In, tx2).await?;
             Ok(())
         })
         .await

@@ -1,7 +1,7 @@
 use crate::attr_spec::AttrSpec;
 use crate::attribute::AttributeDetails;
 use crate::cardinality::Cardinality;
-use crate::{Attr, Dat, Datom, Dir, Ein, Val, db, tx};
+use crate::{Attr, AttrEin, Dat, Datom, Dir, Ein, Val, db, tx};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::ops::{Deref, Index};
@@ -47,9 +47,14 @@ impl AttrTable {
         }
     }
 
-    /// Resolve an attribute ident to its ein.
-    pub fn resolve(&self, ident: &Attr) -> Option<Ein> {
-        self.map.get(ident).map(|d| d.ein)
+    /// Resolve an attribute ident to its attr-ein.
+    pub fn resolve(&self, ident: &Attr) -> Option<AttrEin> {
+        self.map.get(ident).map(|d| AttrEin::from(d.ein))
+    }
+
+    /// Look up an attribute's cardinality by its attr-ein.
+    pub fn cardinality_of(&self, ein: AttrEin) -> Cardinality {
+        self.map[&self.by_ein[&ein.ein()]].cardinality()
     }
 
     /// Fold schema declarations (`:db/ident` / `:db/cardinality` datoms) into
@@ -155,7 +160,7 @@ impl Deref for AttrTable {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{datom, val};
+    use crate::{AttrEin, datom, val};
 
     #[test]
     fn apply_declares_ident_and_cardinality() {
@@ -167,7 +172,7 @@ mod tests {
             datom::add(ein, db::cardinality(), val(1)), // Many
         ];
         table.apply(&datoms);
-        assert_eq!(Some(ein), table.resolve(&ident));
+        assert_eq!(Some(AttrEin::from(ein)), table.resolve(&ident));
         let details = table.get(ident.clone()).unwrap();
         assert_eq!(Cardinality::Many, details.cardinality());
     }
