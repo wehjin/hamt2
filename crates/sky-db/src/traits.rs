@@ -1,6 +1,6 @@
 use crate::TransactError;
 use crate::find::ValsInSlot;
-use crate::find::datalog::binding::{RawPattern, Row};
+use crate::find::datalog::binding::{Pattern, Row};
 use crate::{Attr, Ein, QueryError, Val};
 use crate::{Datom, Pod};
 use futures::FutureExt;
@@ -41,7 +41,7 @@ pub trait Find {
     type Output;
 
     fn select(&self) -> Vec<&'static str>;
-    fn where_(&self) -> Vec<RawPattern>;
+    fn where_(&self) -> Vec<Pattern>;
     fn process(self, pod: &Pod, rows: Vec<Row>) -> Vec<Self::Output>;
 
     fn apply(self, pod: &Pod) -> impl Future<Output = Vec<Self::Output>>

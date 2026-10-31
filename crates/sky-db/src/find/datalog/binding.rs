@@ -12,17 +12,19 @@ pub enum Binding {
     Val(Val),
 }
 
-/// A query pattern whose attribute is still an unresolved ident.
+/// A query pattern: a fact-shaped template with variables. The attribute slot is
+/// an ident, resolved to an id later.
 #[derive(Debug, Clone)]
-pub struct RawPattern {
+pub struct Pattern {
     pub e: Term<Ein>,
     pub a: Term<Attr>,
     pub v: Term<Val>,
 }
 
-/// A query pattern whose attribute is resolved to its `Ein`.
+/// A `Pattern` whose attribute ident has been resolved to an `Ein`
+/// (engine-internal).
 #[derive(Debug, Clone)]
-pub struct Pattern {
+pub struct ResolvedPattern {
     pub e: Term<Ein>,
     pub a: Term<Ein>,
     pub v: Term<Val>,
@@ -39,8 +41,8 @@ pub fn pattern(
     e: impl Into<Term<Ein>>,
     a: impl Into<Term<Attr>>,
     v: impl Into<Term<Val>>,
-) -> RawPattern {
-    RawPattern {
+) -> Pattern {
+    Pattern {
         e: e.into(),
         a: a.into(),
         v: v.into(),
@@ -55,9 +57,9 @@ pub fn head(name: impl Into<Attr>, terms: impl Into<Vec<Term<Val>>>) -> Head {
     }
 }
 
-/// Resolve a raw pattern's attribute ident to its `Ein`.
-pub fn resolve(p: RawPattern, schema: &Schema) -> Option<Pattern> {
-    Some(Pattern {
+/// Resolve a pattern's attribute ident to its `Ein`.
+pub fn resolve(p: Pattern, schema: &Schema) -> Option<ResolvedPattern> {
+    Some(ResolvedPattern {
         e: p.e,
         v: p.v,
         a: match p.a {
@@ -67,7 +69,7 @@ pub fn resolve(p: RawPattern, schema: &Schema) -> Option<Pattern> {
     })
 }
 
-impl RawPattern {
+impl Pattern {
     pub fn vars(&self) -> Vec<Var> {
         let mut vs = Vec::new();
         if let Term::Var(v) = &self.e {
@@ -248,10 +250,10 @@ fn bind_value(s: &mut Substitution, t: &Term<Val>, v: &Val) -> Option<()> {
     }
 }
 
-impl Pattern {
+impl ResolvedPattern {
     /// Instantiate known bindings into literals (substitute), failing on a type clash.
-    pub fn ground(&self, sub: &Substitution) -> Option<Pattern> {
-        Some(Pattern {
+    pub fn ground(&self, sub: &Substitution) -> Option<ResolvedPattern> {
+        Some(ResolvedPattern {
             e: ground_term(&self.e, sub)?,
             a: ground_term(&self.a, sub)?,
             v: ground_term(&self.v, sub)?,

@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use crate::{Attr, Fact, Pod, Val};
 
-use super::binding::{Head, Pattern, Substitution};
+use super::binding::{Head, ResolvedPattern, Substitution};
 use super::rule::Rule;
 use super::term::Term;
 
@@ -34,7 +34,7 @@ impl KnowledgeBase {
     }
 
     /// Select-before-join: solve a body of patterns to a set of substitutions.
-    pub fn derive_body_subs(&self, body: &[Pattern]) -> Vec<Substitution> {
+    pub fn derive_body_subs(&self, body: &[ResolvedPattern]) -> Vec<Substitution> {
         let mut subs = vec![Substitution::new()];
         for atom in body {
             let mut next = Vec::new();
@@ -49,7 +49,7 @@ impl KnowledgeBase {
         subs
     }
 
-    fn unify_earth_atom(&self, earth: &Pattern, sub: &Substitution) -> Vec<Substitution> {
+    fn unify_earth_atom(&self, earth: &ResolvedPattern, sub: &Substitution) -> Vec<Substitution> {
         let mut out = Vec::new();
         for fact in self.facts_for_pattern(earth) {
             if let Some(ext) = earth.unify(&fact) {
@@ -59,7 +59,7 @@ impl KnowledgeBase {
         out
     }
 
-    fn facts_for_pattern(&self, p: &Pattern) -> Vec<Fact> {
+    fn facts_for_pattern(&self, p: &ResolvedPattern) -> Vec<Fact> {
         if let Term::Lit(aid) = &p.a {
             return self.pod.facts_for_attr(*aid);
         }

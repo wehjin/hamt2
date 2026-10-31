@@ -1,4 +1,4 @@
-use crate::find::datalog::binding::{RawPattern, Row, pattern};
+use crate::find::datalog::binding::{Pattern, Row, pattern};
 use crate::find::datalog::var::var;
 use crate::traits::Find;
 use crate::{Attr, Ein, Pod, Val};
@@ -18,7 +18,7 @@ impl Find for ValsInSlot {
         vec!["val"]
     }
 
-    fn where_(&self) -> Vec<RawPattern> {
+    fn where_(&self) -> Vec<Pattern> {
         vec![pattern(self.0, self.1.clone(), var("val"))]
     }
 

@@ -1,4 +1,4 @@
-use crate::find::datalog::binding::{RawPattern, Row, pattern};
+use crate::find::datalog::binding::{Pattern, Row, pattern};
 use crate::find::datalog::var::var;
 use crate::traits::Find;
 use crate::{Attr, Ein, Pod, Val};
@@ -20,7 +20,7 @@ impl Find for BindsForAttr {
         vec!["ein", "val"]
     }
 
-    fn where_(&self) -> Vec<RawPattern> {
+    fn where_(&self) -> Vec<Pattern> {
         vec![pattern(var("ein"), self.attr.clone(), var("val"))]
     }
 

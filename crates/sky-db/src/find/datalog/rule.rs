@@ -2,10 +2,10 @@
 
 use std::collections::HashSet;
 
-use super::binding::{Head, Pattern, RawPattern, resolve};
+use super::binding::{Head, Pattern, ResolvedPattern, resolve};
 use super::kb::KnowledgeBase;
 
-pub fn rule(head: impl Into<Head>, body: impl Into<Vec<RawPattern>>) -> Rule {
+pub fn rule(head: impl Into<Head>, body: impl Into<Vec<Pattern>>) -> Rule {
     Rule {
         head: head.into(),
         body: body.into(),
@@ -15,7 +15,7 @@ pub fn rule(head: impl Into<Head>, body: impl Into<Vec<RawPattern>>) -> Rule {
 #[derive(Debug, Clone)]
 pub struct Rule {
     pub head: Head,
-    pub body: Vec<RawPattern>,
+    pub body: Vec<Pattern>,
 }
 
 impl Rule {
@@ -26,7 +26,7 @@ impl Rule {
         self.head.vars().iter().all(|v| body_vars.contains(v))
     }
 
-    fn resolved_body(&self, kb: &KnowledgeBase) -> Vec<Pattern> {
+    fn resolved_body(&self, kb: &KnowledgeBase) -> Vec<ResolvedPattern> {
         self.body
             .iter()
             .filter_map(|p| resolve(p.clone(), kb.pod.schema()))

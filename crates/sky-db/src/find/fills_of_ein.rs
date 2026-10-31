@@ -1,4 +1,4 @@
-use crate::find::datalog::binding::{RawPattern, Row, pattern};
+use crate::find::datalog::binding::{Pattern, Row, pattern};
 use crate::find::datalog::var::var;
 use crate::traits::Find;
 use crate::{Ein, Fill, Pod};
@@ -18,7 +18,7 @@ impl Find for EntityFills {
         vec!["a", "v"]
     }
 
-    fn where_(&self) -> Vec<RawPattern> {
+    fn where_(&self) -> Vec<Pattern> {
         vec![pattern(self.0, var("a"), var("v"))]
     }
 
