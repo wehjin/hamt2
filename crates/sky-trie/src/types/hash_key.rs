@@ -1,4 +1,3 @@
-use crate::SlotMap;
 use universal_hash;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd)]
@@ -72,10 +71,6 @@ impl HashKey {
     }
     pub fn to_map_bit(&self) -> u32 {
         Self::map_bit_from_map_index(self.map_index)
-    }
-
-    pub fn to_base_index(&self, map: SlotMap) -> usize {
-        u32::count_ones(!(0xFFFFFFFFu32 >> self.map_index) & map.0) as usize
     }
 }
 

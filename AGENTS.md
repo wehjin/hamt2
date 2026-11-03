@@ -39,8 +39,8 @@ Layered, each layer building on the one below.
       `Base { slots: Vec<Slot> }`, `Slot::{KeyValue, MapBase}`, `KeyValue::{Int, Subtrie, Bytes}`
       (`Subtrie` holds a `MapBase`, `Bytes` holds an `Arc<[u8]>`; top-2-bit tag + 30-bit key),
       `TrieValue::{U32, Trie, Bytes}` (public), `SlotMap(u32)` bitmap, and `HashKey`/`DeepKey`.
-    - `services/` — internal (`pub(crate)`): `base` (`form_kv`/`insert_kv`/`swap_v`, `kick_kv`/`merge_kv`)
-      and `map_base` (`one_kv`/`two_kv`, `insert_kv`/`insert_kv_deep`, `query_value`/`query_keys_values`,
+    - `services/` — internal (`pub(crate)`): `base` (`insert_kv`/`swap_v`, `kick_kv`/`merge_kv`) and
+      `map_base` (`two_kv`, `insert_kv`/`insert_kv_deep`, `query_value`/`query_keys_values`,
       `query_value_deep`).
 3. `crates/sky-db` — the Datomic layer. `lib.rs` exposes `find` and `pull`, keeps `_internal`, `errors`,
    `objects`, `services`, `traits`, `types` private, re-exports them at the root, and `pub use sky_trie as trie`.

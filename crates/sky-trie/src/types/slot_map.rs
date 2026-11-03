@@ -6,18 +6,11 @@ use std::fmt::Formatter;
 pub struct SlotMap(pub u32);
 
 impl SlotMap {
-    pub fn u32(&self) -> u32 {
-        self.0
-    }
     pub fn slot_count(&self) -> usize {
         self.0.count_ones() as usize
     }
     pub fn empty() -> Self {
         Self(0)
-    }
-    pub fn set_key_bit(key: HashKey) -> Self {
-        let map = key.to_map_bit();
-        Self(map)
     }
     pub fn set_map_index_bit(map_index: u8) -> Self {
         let bit = HashKey::map_bit_from_map_index(map_index);

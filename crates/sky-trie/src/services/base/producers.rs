@@ -1,10 +1,5 @@
 use crate::{Base, HashKey, Slot, TrieValue};
 
-/// Makes a new base containing `key` and `value` in a single slot.
-pub fn form_kv(key: HashKey, value: TrieValue) -> Base {
-    Base::new_kv(key, value)
-}
-
 /// Makes a copy of `base` in a new slot containing `key` and `value` are inserted
 /// at `index`.
 pub fn insert_kv(base: Base, index: usize, key: HashKey, value: TrieValue) -> Base {

@@ -1,16 +1,6 @@
 use crate::{Base, HashKey, MapBase, Slot, SlotMap, TrieValue};
 use std::sync::Arc;
 
-#[cfg(test)]
-pub fn one_kv(key: HashKey, value: TrieValue) -> MapBase {
-    use crate::services::base;
-    let base = base::form_kv(key, value);
-    MapBase {
-        map: SlotMap::set_key_bit(key),
-        base: Arc::new(base),
-    }
-}
-
 pub fn two_kv(
     key: HashKey,
     value: TrieValue,

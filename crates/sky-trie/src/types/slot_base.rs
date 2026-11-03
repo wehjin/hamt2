@@ -1,16 +1,9 @@
-use crate::{HashKey, MapBase, Slot, TrieValue};
+use crate::Slot;
 use std::ops::{Deref, DerefMut, Index};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Default)]
 pub struct Base {
     pub slots: Vec<Slot>,
-}
-
-impl Base {
-    pub fn new(slots: &[Slot]) -> Self {
-        let slots = slots.to_vec();
-        Self { slots }
-    }
 }
 
 impl AsRef<Base> for Base {
@@ -35,16 +28,6 @@ impl DerefMut for Base {
 impl Base {
     pub fn empty() -> Self {
         Self { slots: vec![] }
-    }
-    pub fn seed() -> Self {
-        Self {
-            slots: vec![Slot::MapBase(MapBase::empty())],
-        }
-    }
-    pub fn new_kv(key: HashKey, value: TrieValue) -> Self {
-        let slot = Slot::one_kv(key, value);
-        let slots = vec![slot];
-        Self { slots }
     }
 
     pub fn len(&self) -> usize {
