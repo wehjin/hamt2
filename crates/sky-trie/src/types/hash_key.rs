@@ -1,8 +1,7 @@
 use crate::SlotMap;
-use serde::{Deserialize, Serialize};
 use universal_hash;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd)]
 pub struct HashKey {
     value: i32,
     level: u32,

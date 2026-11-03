@@ -1,17 +1,19 @@
-use crate::{BufferIndex, SlotMap};
-use serde::{Deserialize, Serialize};
+use crate::{Base, SlotMap};
+use std::sync::{Arc, LazyLock};
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Serialize, Deserialize, Default)]
+static EMPTY_BASE: LazyLock<Arc<Base>> = LazyLock::new(|| Arc::new(Base::empty()));
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Default)]
 pub struct MapBase {
     pub map: SlotMap,
-    pub base: BufferIndex,
+    pub base: Arc<Base>,
 }
 
 impl MapBase {
     pub fn empty() -> Self {
         Self {
             map: SlotMap::empty(),
-            base: BufferIndex::NIL,
+            base: EMPTY_BASE.clone(),
         }
     }
 }

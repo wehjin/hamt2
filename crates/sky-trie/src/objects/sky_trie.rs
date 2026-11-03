@@ -1,13 +1,9 @@
-use super::ContentBuffer;
 use crate::Trie;
-use crate::{Buffer, BufferIndex, MapBase, QueryCursor, Snap};
-use crate::{CursorPos, Slot};
-use crate::{HashKey, Query, SkyTrieMut, TrieValue, map_base};
-use std::sync::Arc;
+use crate::{CursorPos, QueryCursor, Snap};
+use crate::{HashKey, MapBase, Query, SkyTrieMut, TrieValue, map_base};
 
 #[derive(Debug, Clone)]
 pub struct SkyTrie {
-    pub(crate) buffer: Arc<ContentBuffer>,
     pub(crate) cursor_pos: CursorPos,
 }
 
@@ -15,24 +11,15 @@ impl Eq for SkyTrie {}
 
 impl PartialEq for SkyTrie {
     fn eq(&self, other: &Self) -> bool {
-        self.cursor_pos == other.cursor_pos && self.buffer == other.buffer
+        self.cursor_pos == other.cursor_pos
     }
 }
 
 /// Constructors
 impl SkyTrie {
     pub fn new() -> Self {
-        let buffer = ContentBuffer::new();
-        Self::with_buffer(buffer)
-    }
-
-    pub fn with_buffer(buffer: ContentBuffer) -> Self {
-        let root = buffer.get_root();
-        let cursor_pos = CursorPos::new(root);
-        Self {
-            buffer: Arc::new(buffer),
-            cursor_pos,
-        }
+        let cursor_pos = CursorPos::new(MapBase::empty());
+        Self { cursor_pos }
     }
 
     pub async fn into_edit(self) -> SkyTrieMut {
@@ -71,29 +58,15 @@ impl QueryCursor for SkyTrie {
 
 impl Query for SkyTrie {
     fn query(&self, key: i32) -> Option<TrieValue> {
-        map_base::query_value(self.get_root(), HashKey::new(key), self)
+        map_base::query_value(self.active_root(), HashKey::new(key))
     }
 
     fn query_all(&self) -> Vec<(i32, TrieValue)> {
-        map_base::query_keys_values(self.get_root(), self)
+        map_base::query_keys_values(self.active_root())
     }
 
     fn query_deep<const N: usize>(&self, key: [i32; N]) -> Option<TrieValue> {
-        map_base::query_value_deep(self.get_root(), key, self)
-    }
-}
-
-impl Buffer for SkyTrie {
-    fn get_root(&self) -> MapBase {
-        self.active_root()
-    }
-
-    fn get_base(&self, id: BufferIndex, size: usize) -> &[Slot] {
-        self.buffer.get_base(id, size)
-    }
-
-    fn get_bytes(&self, index: BufferIndex) -> Vec<u8> {
-        self.buffer.get_bytes(index)
+        map_base::query_value_deep(self.active_root(), key)
     }
 }
 

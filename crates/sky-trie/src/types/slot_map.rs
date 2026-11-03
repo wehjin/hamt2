@@ -1,9 +1,8 @@
 use crate::HashKey;
-use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::fmt::Formatter;
 
-#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize, Default)]
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Default)]
 pub struct SlotMap(pub u32);
 
 impl SlotMap {

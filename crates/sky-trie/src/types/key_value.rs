@@ -1,16 +1,16 @@
-use crate::{Buffer, BufferIndex, BufferMut, HashKey, TrieKey, TrieValue};
-use serde::{Deserialize, Serialize};
+use crate::{HashKey, MapBase, TrieKey, TrieValue};
+use std::sync::Arc;
 
 const INT_KEY: u32 = 0x0000_0000;
 const TRIE_KEY: u32 = 0x4000_0000;
 const BYTES_KEY: u32 = 0x8000_0000;
 const KEY_MASK: u32 = TrieKey::MASK;
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum KeyValue {
     Int { key: u32, value: u32 },
-    Subtrie { key: u32, value: BufferIndex },
-    Bytes { key: u32, value: BufferIndex },
+    Subtrie { key: u32, value: MapBase },
+    Bytes { key: u32, value: Arc<[u8]> },
 }
 
 impl KeyValue {
@@ -22,18 +22,10 @@ impl KeyValue {
         };
         (key & KEY_MASK) as i32
     }
-    pub async fn from_hash_key_trie_value(
-        key: HashKey,
-        value: TrieValue,
-        buffer: &mut impl BufferMut,
-    ) -> KeyValue {
-        Self::from_trie_key_trie_value(key.i32(), value, buffer).await
+    pub async fn from_hash_key_trie_value(key: HashKey, value: TrieValue) -> KeyValue {
+        Self::from_trie_key_trie_value(key.i32(), value).await
     }
-    pub async fn from_trie_key_trie_value(
-        key: i32,
-        value: TrieValue,
-        buffer: &mut impl BufferMut,
-    ) -> KeyValue {
+    pub async fn from_trie_key_trie_value(key: i32, value: TrieValue) -> KeyValue {
         let key = key as u32;
         debug_assert_eq!(key & KEY_MASK, key, "keys are 30 bits");
         let value = match value {
@@ -43,16 +35,16 @@ impl KeyValue {
             },
             TrieValue::SubTrie(map_base) => Self::Subtrie {
                 key: key | TRIE_KEY,
-                value: buffer.push_subtrie(map_base).await,
+                value: map_base,
             },
             TrieValue::Bytes(bytes) => Self::Bytes {
                 key: key | BYTES_KEY,
-                value: buffer.push_bytes(bytes.as_slice()).await,
+                value: bytes.into(),
             },
         };
         value
     }
-    pub fn to_trie_key_trie_value(&self, buffer: &impl Buffer) -> (i32, TrieValue) {
+    pub fn to_trie_key_trie_value(&self) -> (i32, TrieValue) {
         let key = self.to_i32_key();
         match self {
             KeyValue::Int { value, .. } => {
@@ -60,19 +52,19 @@ impl KeyValue {
                 (key, value)
             }
             KeyValue::Subtrie { value, .. } => {
-                let map_base = buffer.get_subtrie(*value);
+                let map_base = value.clone();
                 let value = TrieValue::SubTrie(map_base);
                 (key, value)
             }
             KeyValue::Bytes { value, .. } => {
-                let bytes = buffer.get_bytes(*value);
+                let bytes = value.to_vec();
                 let value = TrieValue::Bytes(bytes);
                 (key, value)
             }
         }
     }
-    pub async fn replace_value(self, value: TrieValue, buffer: &mut impl BufferMut) -> Self {
+    pub async fn replace_value(self, value: TrieValue) -> Self {
         let key = self.to_i32_key();
-        Self::from_trie_key_trie_value(key, value, buffer).await
+        Self::from_trie_key_trie_value(key, value).await
     }
 }

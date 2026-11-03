@@ -1,17 +1,13 @@
-use super::ContentBuffer;
 use crate::SkyTrie;
-use crate::Slot;
 use crate::TrieMut;
-use crate::{Base, Buffer, BufferIndex, BufferMut, CursorPos, Insert, MapBase, Snap, TrieValue};
+use crate::{CursorPos, Insert, MapBase, Snap, TrieValue};
 use crate::{HashKey, InsertOption, Query, map_base};
 use crate::{InsertCursor, QueryCursor};
 use std::collections::HashSet;
-use std::sync::Arc;
 
 /// Deliberately non-Clone.
 #[derive(Debug)]
 pub struct SkyTrieMut {
-    pub(crate) buffer: ContentBuffer,
     pub(crate) cursor_pos: CursorPos,
 }
 
@@ -22,12 +18,23 @@ impl SkyTrieMut {
 
     pub fn extend(past: SkyTrie) -> Self {
         let cursor_pos = past.cursor_pos().clone().ascend_top();
-        let buffer = ContentBuffer::extend(past.buffer.clone());
-        Self { buffer, cursor_pos }
+        Self { cursor_pos }
     }
     pub async fn commit(self) -> SkyTrie {
-        let buffer = self.buffer.retract();
-        SkyTrie::with_buffer(buffer)
+        let cursor_pos = self.cursor_pos.ascend_top();
+        SkyTrie { cursor_pos }
+    }
+
+    pub(crate) async fn push_root(&mut self, root: MapBase) {
+        if let Some((key, _previous_active)) = self.cursor_pos.ascend() {
+            // Make sure the ascended level has the updated value at key.
+            let subtrie = TrieValue::SubTrie(root.clone());
+            Box::pin(self.insert(key.into(), subtrie)).await;
+            // Return to the original level.
+            self.cursor_pos.descend(key, root);
+        } else {
+            self.cursor_pos.active_root = root;
+        }
     }
 }
 
@@ -44,29 +51,15 @@ impl QueryCursor for SkyTrieMut {
 
 impl Query for SkyTrieMut {
     fn query(&self, key: i32) -> Option<TrieValue> {
-        map_base::query_value(self.get_root(), HashKey::new(key), self)
+        map_base::query_value(self.active_root(), HashKey::new(key))
     }
 
     fn query_all(&self) -> Vec<(i32, TrieValue)> {
-        map_base::query_keys_values(self.get_root(), self)
+        map_base::query_keys_values(self.active_root())
     }
 
     fn query_deep<const N: usize>(&self, key: [i32; N]) -> Option<TrieValue> {
-        map_base::query_value_deep(self.get_root(), key, self)
-    }
-}
-
-impl Buffer for SkyTrieMut {
-    fn get_root(&self) -> MapBase {
-        self.active_root()
-    }
-
-    fn get_base(&self, id: BufferIndex, size: usize) -> &[Slot] {
-        self.buffer.get_base(id, size)
-    }
-
-    fn get_bytes(&self, index: BufferIndex) -> Vec<u8> {
-        self.buffer.get_bytes(index)
+        map_base::query_value_deep(self.active_root(), key)
     }
 }
 impl InsertCursor for SkyTrieMut {}
@@ -82,11 +75,11 @@ impl Insert for SkyTrieMut {
         let pre_root = if options.contains(&InsertOption::DeleteOthers) {
             MapBase::empty()
         } else {
-            self.get_root()
+            self.active_root()
         };
         let value = value.into();
         let key = HashKey::new(key);
-        let root = map_base::insert_kv(pre_root, key, value, self).await;
+        let root = map_base::insert_kv(pre_root, key, value).await;
         self.push_root(root).await;
         self
     }
@@ -97,31 +90,7 @@ impl Snap for SkyTrieMut {
 
     fn snapshot(&self) -> Self::Snapshot {
         SkyTrie {
-            buffer: Arc::new(self.buffer.clone()),
             cursor_pos: self.cursor_pos.clone(),
         }
-    }
-}
-
-impl BufferMut for SkyTrieMut {
-    async fn push_root(&mut self, root: MapBase) {
-        if let Some((key, _previous_active)) = self.cursor_pos.ascend() {
-            // Make sure the ascended level has the updated value at key.
-            let subtrie = TrieValue::SubTrie(root);
-            Box::pin(self.insert(key.into(), subtrie)).await;
-            // Return to the original level.
-            self.cursor_pos.descend(key, root);
-        } else {
-            self.buffer.push_root(root).await;
-            self.cursor_pos.active_root = root;
-        }
-    }
-
-    async fn push_base(&mut self, base: Base) -> BufferIndex {
-        self.buffer.push_base(base).await
-    }
-
-    async fn push_bytes(&mut self, bytes: impl AsRef<[u8]>) -> BufferIndex {
-        self.buffer.push_bytes(bytes).await
     }
 }

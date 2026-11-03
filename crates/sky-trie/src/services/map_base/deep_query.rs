@@ -1,16 +1,12 @@
 use crate::services::map_base;
-use crate::{Buffer, DeepKey, MapBase, TrieValue};
+use crate::{DeepKey, MapBase, TrieValue};
 
-pub fn query_value_deep<const N: usize, S: Buffer>(
-    root: MapBase,
-    key: [i32; N],
-    buffer: &S,
-) -> Option<TrieValue> {
+pub fn query_value_deep<const N: usize>(root: MapBase, key: [i32; N]) -> Option<TrieValue> {
     let deep_key = DeepKey::from(key);
     let mut current_map_base = root.clone();
     let last_index = N - 1;
     for i in 0..=last_index {
-        match map_base::query_value(current_map_base, deep_key[i].clone(), buffer) {
+        match map_base::query_value(current_map_base, deep_key[i].clone()) {
             None => {
                 return None;
             }

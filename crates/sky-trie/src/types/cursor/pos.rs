@@ -1,6 +1,6 @@
 use crate::{MapBase, TrieKey};
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Leg {
     pub higher_root: MapBase,
     pub key: TrieKey,
@@ -21,20 +21,20 @@ impl CursorPos {
     }
     pub fn top_root(&self) -> MapBase {
         if let Some(leg) = self.route.first() {
-            leg.higher_root
+            leg.higher_root.clone()
         } else {
-            self.active_root
+            self.active_root.clone()
         }
     }
     pub fn active_root(&self) -> MapBase {
-        self.active_root
+        self.active_root.clone()
     }
     pub fn depth(&self) -> usize {
         self.route.len()
     }
     pub fn descend(&mut self, key: impl Into<TrieKey>, map_base: impl Into<MapBase>) {
         let leg = Leg {
-            higher_root: self.active_root,
+            higher_root: self.active_root.clone(),
             key: key.into(),
         };
         self.route.push(leg);
@@ -46,7 +46,7 @@ impl CursorPos {
             key,
         }) = self.route.pop()
         {
-            let lower_map_base = self.active_root;
+            let lower_map_base = self.active_root.clone();
             self.active_root = map_base;
             Some((key, lower_map_base))
         } else {

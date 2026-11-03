@@ -1,8 +1,7 @@
-use crate::{BufferMut, HashKey, MapBase, Slot, TrieValue};
-use serde::{Deserialize, Serialize};
+use crate::{HashKey, MapBase, Slot, TrieValue};
 use std::ops::{Deref, DerefMut, Index};
 
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Default)]
 pub struct Base {
     pub slots: Vec<Slot>,
 }
@@ -42,8 +41,8 @@ impl Base {
             slots: vec![Slot::MapBase(MapBase::empty())],
         }
     }
-    pub async fn new_kv(key: HashKey, value: TrieValue, buffer: &mut impl BufferMut) -> Self {
-        let slot = Slot::one_kv(key, value, buffer).await;
+    pub async fn new_kv(key: HashKey, value: TrieValue) -> Self {
+        let slot = Slot::one_kv(key, value).await;
         let slots = vec![slot];
         Self { slots }
     }

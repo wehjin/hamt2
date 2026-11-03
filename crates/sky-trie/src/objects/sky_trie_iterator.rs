@@ -1,14 +1,14 @@
-use crate::{Buffer, BufferIndex, MapBase, SkyTrie, Slot, TrieValue};
+use crate::{Base, MapBase, QueryCursor, SkyTrie, Slot, TrieValue};
+use std::sync::Arc;
 
 pub struct SkyTrieIterator {
-    trie: SkyTrie,
     jobs: Vec<Job>,
 }
 
 impl SkyTrieIterator {
     fn from_trie(trie: SkyTrie) -> Self {
-        let jobs = Job::start(&trie.get_root()).into_iter().collect();
-        Self { trie, jobs }
+        let jobs = Job::start(&trie.active_root()).into_iter().collect();
+        Self { jobs }
     }
 
     pub fn u32s(self) -> impl Iterator<Item = (i32, u32)> {
@@ -32,17 +32,17 @@ impl Iterator for SkyTrieIterator {
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(mut job) = self.jobs.pop() {
-            let base = self.trie.get_base(job.base, job.slot_count);
-            match &base.as_ref()[job.slot_offset] {
+            let slot = job.base.as_ref()[job.slot_offset].clone();
+            match slot {
                 Slot::KeyValue(key_value) => {
-                    let kv = key_value.to_trie_key_trie_value(&self.trie);
+                    let kv = key_value.to_trie_key_trie_value();
                     if job.next() {
                         self.jobs.push(job);
                     }
                     return Some(kv);
                 }
                 Slot::MapBase(lower_map_base) => {
-                    let lower_job = Job::start(lower_map_base);
+                    let lower_job = Job::start(&lower_map_base);
                     if job.next() {
                         self.jobs.push(job);
                     }
@@ -68,7 +68,7 @@ impl IntoIterator for SkyTrie {
 struct Job {
     slot_offset: usize,
     slot_count: usize,
-    base: BufferIndex,
+    base: Arc<Base>,
 }
 
 impl Job {
@@ -80,7 +80,7 @@ impl Job {
             Some(Self {
                 slot_offset: 0,
                 slot_count,
-                base: map_base.base,
+                base: map_base.base.clone(),
             })
         }
     }

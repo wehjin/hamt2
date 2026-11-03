@@ -29,23 +29,19 @@ Layered, each layer building on the one below.
 
 1. `crates/universal-hash` — the single hashing primitive `hash(bytes, level) -> u32`, used via the extern
    prelude (`universal_hash::hash`); not re-exported.
-2. `crates/sky-trie` — the HAMT. An in-memory, cursor-based persistent trie. There is no storage trait and no
-   file persistence: a `VecBuffer` (a `Vec<Slot>` plus a root index) is the only backing.
+2. `crates/sky-trie` — the HAMT. An in-memory, cursor-based persistent trie. Data is stored directly in the
+   trie (`MapBase` holds an `Arc<Base>`); there is no storage trait, no content buffer, and no persistence.
     - `objects/` — `SkyTrie` (immutable; `Clone` is a snapshot; edit via `trie.edit(async |t: &mut SkyTrieMut| ...)`)
       and `SkyTrieMut` (a deliberately non-`Clone` edit buffer; `extend(trie)` and `commit()` -> `SkyTrie`).
-      `VecBuffer` implements the buffer traits.
-    - `traits/` — `Buffer` (`get_root`/`get_base`/`get_subtrie`/`get_bytes`), `BufferMut`
-      (`push_root`/`push_base`/`push_subtrie`/`push_bytes`), `Query` (`query`/`query_u32`/`query_all`/`query_deep`),
-      `Snap` (`type Snapshot` + `snapshot`),
-      `QueryCursor` (cursor nav: `ascend`/`descend`/`backup`/`restore`/`top_root`), `InsertCursor`
+      Both hold a `CursorPos`; snapshot sharing comes from `Arc<Base>` copy-on-write.
+    - `traits/` — `Query` (`query`/`query_u32`/`query_all`/`query_deep`), `Snap` (`type Snapshot` + `snapshot`),
+      `QueryCursor` (cursor nav: `ascend`/`descend`/`backup`/`restore`/`active_root`/`top_root`), `InsertCursor`
       (`insert_deep`), `Insert` (`insert`/`insert_with_options`, `InsertOption::DeleteOthers`), and the marker
-      traits `Trie`/`TrieMut`. `Query`/`Insert` have blanket impls over `Buffer`/`BufferMut`.
-    - `types/` — `MapBase { map: SlotMap, base: BufferIndex }`, `Base { slots: Vec<Slot> }`,
-      `Slot::{KeyValue, MapBase, ByteData}`, `KeyValue::{Int, Subtrie, Bytes}` (top-2-bit tag + 30-bit key),
-      `TrieValue::{U32, SubTrie, Bytes}`, `SlotMap(u32)` bitmap, `BufferIndex(i32)` (`ZERO`/`NIL`),
-      `HashKey`/`DeepKey`, `TrieKey`/`CursorPos`/`Leg`, and `ByteData([u8; 8])` with LEB128-length-prefixed
-      byte storage (the `Buffer`/`BufferMut` `get_bytes`/`push_bytes` methods; `VecBuffer` owns the
-      `ByteData`-slot encoding).
+      traits `Trie`/`TrieMut`. There is no storage/buffer trait; reads and writes reach into the trie directly.
+    - `types/` — `MapBase { map: SlotMap, base: Arc<Base> }`, `Base { slots: Vec<Slot> }`,
+      `Slot::{KeyValue, MapBase}`, `KeyValue::{Int, Subtrie, Bytes}` (`Subtrie` holds a `MapBase`, `Bytes`
+      holds an `Arc<[u8]>`; top-2-bit tag + 30-bit key), `TrieValue::{U32, SubTrie, Bytes}`, `SlotMap(u32)`
+      bitmap, `HashKey`/`DeepKey`, and `TrieKey`/`CursorPos`/`Leg`.
     - `services/` — `base` (`form_kv`/`insert_kv`/`swap_v`, `kick_kv`/`merge_kv`) and `map_base`
       (`one_kv`/`two_kv`, `insert_kv`, `query_value`/`query_keys_values`, `query_value_deep`).
 3. `crates/sky-db` — the Datomic layer. `lib.rs` exposes `find` and `pull`, keeps `_internal`, `errors`,
@@ -83,11 +79,9 @@ Layered, each layer building on the one below.
 ## Key gotchas
 
 - **Bit-width constraints are strict.** Trie keys are 30-bit (`TrieKey::MASK = 0x3FFF_FFFF`); the top two bits
-  of a `KeyValue` key tag Int/Subtrie/Bytes. `BufferIndex` (non-negative `i32`) is the base handle. `Ein` is a
-  non-negative `i32`. The EAVT/AEVT index values still pack `Dir` into bit 28 (`0x1000_0000`) plus a 28-bit
-  `Txid`, capping tx ids below 2^28.
-- **`BufferIndex::ZERO` is the empty base**; `NIL` is the empty-buffer sentinel. Reads of unwritten
-  indexes return `Base::empty()`.
+  of a `KeyValue` key tag Int/Subtrie/Bytes. `Ein` is a non-negative `i32`. The EAVT/AEVT index values still
+  pack `Dir` into bit 28 (`0x1000_0000`) plus a 28-bit `Txid`, capping tx ids below 2^28.
+- **`MapBase::empty()` is the empty base**; it shares a `static` empty `Arc<Base>`.
 - **`Attr` owns a `String`** (attribute idents). Schema attrs must be declared up front: `Pod::new(db_spec)`
   takes `impl Into<DbSpec>` (`[&str; N]`/`Vec<&str>`, `[Attr; N]`, `Vec<Attr>`, `[AttrSpec; N]`). Build an
   `Attr` with `Attr::from("...")`. Entity ids 0–2 are reserved (`Ein::DB_IDENT`, `DB_CARDINALITY`, `DB_MAX`);
@@ -105,7 +99,7 @@ Layered, each layer building on the one below.
   tables.
 - Heavily async (`tokio`); most APIs return `impl Future` via `async fn`, often `Result`.
 - Symbol-heavy types: `Val` (`U32`/`String`), `TrieValue` (`U32`/`SubTrie`/`Bytes`), `Base`, `Slot`,
-  `KeyValue`, `MapBase` (`SlotMap` + `BufferIndex`), `HashKey`/`DeepKey`, plus the db layer's
+  `KeyValue`, `MapBase` (`SlotMap` + `Arc<Base>`), `HashKey`/`DeepKey`, plus the db layer's
   `Dat`/`Datom`/`Ent`/`Dir`, `Attr`/`AttrSpec`/`DbSpec`/`Schema`, and `Ein`/`Txid`/`Vid`/`MaxEid`/`EntEid`/
   `AttrEin` — don't confuse the similar names.
 - `Dat::Val` vs `Dat::Ent` and `dir` (`Dir::In`/`Dir::Out`, i.e. add/delete) drive query semantics; see
