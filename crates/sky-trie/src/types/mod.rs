@@ -9,7 +9,6 @@ mod trie_value;
 
 pub use deep_key::*;
 pub use hash_key::*;
-pub use key_value::*;
 pub use map_base::*;
 pub use slot::*;
 pub use slot_base::*;

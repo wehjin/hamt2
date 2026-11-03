@@ -35,12 +35,13 @@ Layered, each layer building on the one below.
     - `objects/` — `SkyTrie` (immutable and persistent; `Clone` is a cheap snapshot; `insert`/`insert_deep`
       return a new `SkyTrie`; `query`/`query_u32`/`query_all`/`query_deep` read). Snapshot sharing
       comes from `Arc<Base>` copy-on-write. The whole crate is synchronous — no `tokio`.
-    - `types/` — `MapBase { map: SlotMap, base: Arc<Base> }`, `Base { slots: Vec<Slot> }`,
-      `Slot::{KeyValue, MapBase}`, `KeyValue::{Int, Subtrie, Bytes}` (`Subtrie` holds a `MapBase`, `Bytes`
-      holds an `Arc<[u8]>`; top-2-bit tag + 30-bit key), `TrieValue::{U32, Trie, Bytes}`, `SlotMap(u32)`
-      bitmap, and `HashKey`/`DeepKey`.
-    - `services/` — `base` (`form_kv`/`insert_kv`/`swap_v`, `kick_kv`/`merge_kv`) and `map_base`
-      (`one_kv`/`two_kv`, `insert_kv`/`insert_kv_deep`, `query_value`/`query_keys_values`, `query_value_deep`).
+    - `types/` — internal (`pub(crate)`) except `TrieValue`: `MapBase { map: SlotMap, base: Arc<Base> }`,
+      `Base { slots: Vec<Slot> }`, `Slot::{KeyValue, MapBase}`, `KeyValue::{Int, Subtrie, Bytes}`
+      (`Subtrie` holds a `MapBase`, `Bytes` holds an `Arc<[u8]>`; top-2-bit tag + 30-bit key),
+      `TrieValue::{U32, Trie, Bytes}` (public), `SlotMap(u32)` bitmap, and `HashKey`/`DeepKey`.
+    - `services/` — internal (`pub(crate)`): `base` (`form_kv`/`insert_kv`/`swap_v`, `kick_kv`/`merge_kv`)
+      and `map_base` (`one_kv`/`two_kv`, `insert_kv`/`insert_kv_deep`, `query_value`/`query_keys_values`,
+      `query_value_deep`).
 3. `crates/sky-db` — the Datomic layer. `lib.rs` exposes `find` and `pull`, keeps `_internal`, `errors`,
    `objects`, `services`, `traits`, `types` private, re-exports them at the root, and `pub use sky_trie as trie`.
     - `objects/` — `Pod { schema: Schema, trie: SkyTrie }` (`Clone` is a snapshot; async
