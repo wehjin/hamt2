@@ -19,20 +19,18 @@ pub(crate) fn apply_tx(
     tx: &Tx,
     tx_ein: Ein,
 ) -> Result<(), TransactError> {
-    trie.edit(|trie| {
-        for datom in &tx.datoms {
-            let Some(aid) = schema.resolve(&datom.attr) else {
-                continue;
-            };
-            let val = match &datom.dat {
-                Dat::Val(val) => val.clone(),
-                Dat::Ent(_) => unreachable!("resolved datoms have no entity refs"),
-            };
-            db_trie::with_update(trie, aid, datom.ent.to_eid(), val, datom.dir, tx_ein)?;
-        }
-        Ok(())
-    })
-    .map_err(TransactError::Rewind)?;
+    let mut next = trie.clone();
+    for datom in &tx.datoms {
+        let Some(aid) = schema.resolve(&datom.attr) else {
+            continue;
+        };
+        let val = match &datom.dat {
+            Dat::Val(val) => val.clone(),
+            Dat::Ent(_) => unreachable!("resolved datoms have no entity refs"),
+        };
+        next = db_trie::with_update(&next, aid, datom.ent.to_eid(), val, datom.dir, tx_ein)?;
+    }
+    *trie = next;
     schema.apply(&tx.datoms);
     Ok(())
 }

@@ -3,7 +3,6 @@ use crate::_internal::val_table;
 use crate::_internal::{KEY_AEVT, KEY_EAVT};
 use crate::Schema;
 use crate::cardinality::Cardinality;
-use crate::trie::SkyTrieMut;
 use crate::trie::*;
 use crate::{Attr, Dir, Ein, Fact, TransactError, Val};
 use std::collections::BTreeMap;
@@ -67,23 +66,23 @@ fn current_vids(
 }
 
 pub(crate) fn with_update(
-    trie: &mut SkyTrieMut,
+    trie: &SkyTrie,
     aid: Ein,
     ein: Ein,
     val: Val,
     dir: Dir,
     tx_ein: Ein,
-) -> Result<(), TransactError> {
+) -> Result<SkyTrie, TransactError> {
     let eid = ein.to_i32();
     let aid = aid.to_i32();
-    let vid = val_table::insert(trie, val)?;
+    let (trie, vid) = val_table::insert(trie, val)?;
     let tx = tx_ein.to_i32();
     let eavt_key = [KEY_EAVT, eid, aid, vid.to_id(), tx];
     let aevt_key = [KEY_AEVT, aid, eid, vid.to_id(), tx];
     let dir_val = TrieValue::U32(dir_to_u32(dir));
-    trie.insert_deep(eavt_key, dir_val.clone());
-    trie.insert_deep(aevt_key, dir_val);
-    Ok(())
+    let trie = trie.insert_deep(eavt_key, dir_val.clone());
+    let trie = trie.insert_deep(aevt_key, dir_val);
+    Ok(trie)
 }
 
 pub fn list_entities(trie: &SkyTrie) -> Vec<Ein> {
@@ -262,20 +261,13 @@ mod tests {
         let mut order = HashMap::new();
         order.insert(tx1, 0);
         order.insert(tx2, 1);
-        trie.edit(|trie| {
-            with_update(trie, Ein(100), Ein(200), val(100), Dir::In, tx1)?;
-            with_update(trie, Ein(100), Ein(200), val(101), Dir::In, tx2)?;
-            Ok(())
-        })
-        .unwrap();
+        trie = with_update(&trie, Ein(100), Ein(200), val(100), Dir::In, tx1).unwrap();
+        trie = with_update(&trie, Ein(100), Ein(200), val(101), Dir::In, tx2).unwrap();
 
         let fills = list_entity_fills(&trie, Ein(200), Ein(100), Cardinality::One, &order);
         assert_eq!(fills.len(), 1);
 
-        let mut vt = trie.clone();
-        vt.descend(KEY_EAVT);
-        vt.descend(200);
-        vt.descend(100);
-        assert_eq!(vt.query_all().len(), 2);
+        let vt = trie.subtrie([KEY_EAVT, 200, 100]).unwrap_or_else(MapBase::empty);
+        assert_eq!(map_base::query_keys_values(vt).len(), 2);
     }
 }

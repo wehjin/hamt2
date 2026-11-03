@@ -2,7 +2,6 @@ use crate::_internal::KEY_VAL_TABLE;
 use crate::_internal::Vid;
 use crate::{Ein, Val};
 use crate::trie::*;
-use crate::trie::SkyTrieMut;
 use crate::{QueryError, TransactError};
 
 const VAL_TYPE_U32: u8 = 16;
@@ -60,59 +59,41 @@ fn val_from_bytes(bytes: &[u8]) -> Val {
     }
 }
 
-fn restore_on_err(
-    trie: &mut SkyTrieMut,
-    f: impl FnOnce(&mut SkyTrieMut) -> Result<Vid, TransactError>,
-) -> Result<Vid, TransactError> {
-    let start = trie.backup();
-    match f(trie) {
-        Ok(vid) => {
-            // Do not attempt using `restore` here to avoid doing
-            // ascends in `f`. Doing so would also erase any work that
-            // was accomplished in `f`.
-            Ok(vid)
-        }
-        Err(e) => {
-            trie.restore(start);
-            Err(e)
+const SEARCH_SIZE: usize = 4000;
+
+/// Inserts `val` into the value table, returning the updated trie and the
+/// hash-consed `Vid` for the value. The input trie is left unchanged.
+pub fn insert(trie: &SkyTrie, val: Val) -> Result<(SkyTrie, Vid), TransactError> {
+    let val_table_root = trie
+        .subtrie([KEY_VAL_TABLE])
+        .unwrap_or_else(MapBase::empty);
+    let bytes = bytes_from_val(&val);
+    let mut vid = Vid::for_search(universal_hash::hash(&bytes, 0) & TrieKey::MASK);
+    for _ in 0..SEARCH_SIZE {
+        match map_base::query_value(val_table_root.clone(), HashKey::new(vid.to_id())) {
+            None => {
+                let new_val_table = map_base::insert_kv(
+                    val_table_root,
+                    HashKey::new(vid.to_id()),
+                    TrieValue::Bytes(bytes),
+                );
+                let new_trie = trie.insert_deep([KEY_VAL_TABLE], TrieValue::SubTrie(new_val_table));
+                debug_assert_eq!(query(&new_trie, vid).expect("should find val"), Some(val));
+                return Ok((new_trie, vid));
+            }
+            Some(TrieValue::Bytes(existing)) if &existing == &bytes => {
+                return Ok((trie.clone(), vid));
+            }
+            Some(_) => vid = vid.next_search(),
         }
     }
+    Err(TransactError::NoSpaceInValueTable)
 }
 
-const SEARCH_SIZE: usize = 4000;
-pub fn insert(trie: &mut SkyTrieMut, val: Val) -> Result<Vid, TransactError> {
-    let result = restore_on_err(trie, |trie| {
-        trie.descend(KEY_VAL_TABLE);
-        let bytes = bytes_from_val(&val);
-        let mut vid = Vid::for_search(universal_hash::hash(&bytes, 0) & TrieKey::MASK);
-        for _ in 0..SEARCH_SIZE {
-            match trie.query(vid.to_id()) {
-                None => {
-                    trie.insert(vid.to_id(), TrieValue::Bytes(bytes));
-                    trie.ascend();
-                    return Ok(vid);
-                }
-                Some(TrieValue::Bytes(existing)) if &existing == &bytes => {
-                    trie.ascend();
-                    return Ok(vid);
-                }
-                Some(_) => vid = vid.next_search(),
-            }
-        }
-        Err(TransactError::NoSpaceInValueTable)
-    })?;
-    let query_val = query(trie, result).expect("should find val");
-    debug_assert_eq!(query_val, Some(val));
-    Ok(result)
-}
-
-pub fn query<T>(trie: &T, vid: Vid) -> Result<Option<Val>, QueryError>
-where
-    T: QueryCursor + Snap + Query,
-{
-    let mut trie = trie.snapshot();
-    trie.descend(KEY_VAL_TABLE);
-    let value = trie.query(vid.to_id());
+pub fn query(trie: &SkyTrie, vid: Vid) -> Result<Option<Val>, QueryError> {
+    let value = trie
+        .subtrie([KEY_VAL_TABLE])
+        .and_then(|mb| map_base::query_value(mb, HashKey::new(vid.to_id())));
     let val = if let Some(TrieValue::Bytes(bytes)) = value {
         let val = val_from_bytes(&bytes);
         Some(val)
@@ -131,19 +112,15 @@ mod tests {
     #[test]
     fn insert_and_query() {
         let mut trie = SkyTrie::new();
-        let (vids, vals) = trie
-            .edit(|trie| {
-                let mut vids = Vec::new();
-                let mut vals = Vec::new();
-                for i in 0..100 {
-                    let i_val = val(i);
-                    vals.push(i_val.clone());
-                    let vid = insert(trie, i_val)?;
-                    vids.push(vid);
-                }
-                Ok((vids, vals))
-            })
-            .unwrap();
+        let mut vids = Vec::new();
+        let mut vals = Vec::new();
+        for i in 0..100 {
+            let i_val = val(i);
+            vals.push(i_val.clone());
+            let (next, vid) = insert(&trie, i_val).expect("Failed to insert");
+            vids.push(vid);
+            trie = next;
+        }
         for (vid, val) in vids.into_iter().zip(vals) {
             let table_val = query(&trie, vid).expect("Failed to query");
             assert_eq!(Some(val), table_val);
@@ -152,63 +129,43 @@ mod tests {
 
     #[test]
     fn negative_numbers() {
-        let mut trie = SkyTrieMut::new();
-        let vid = insert(&mut trie, val(-1)).expect("Failed to insert");
+        let trie = SkyTrie::new();
+        let (trie, vid) = insert(&trie, val(-1)).expect("Failed to insert");
         let table_val = query(&trie, vid).expect("Failed to query");
         assert_eq!(Some(val(-1)), table_val);
     }
 
     #[test]
     fn same_value_inserted_twice() {
-        let mut trie = SkyTrie::new();
-        let vid = trie
-            .edit(|trie| {
-                let vid = insert(trie, val(101))?;
-                let vid2 = insert(trie, val(101))?;
-                assert_eq!(vid, vid2);
-                Ok(vid)
-            })
-            .unwrap();
+        let trie = SkyTrie::new();
+        let (trie, vid) = insert(&trie, val(101)).expect("Failed to insert");
+        let (trie, vid2) = insert(&trie, val(101)).expect("Failed to insert");
+        assert_eq!(vid, vid2);
         let table_val = query(&trie, vid).expect("Failed to query");
         assert_eq!(Some(val(101)), table_val);
     }
 
     #[test]
     fn string_insert_and_query() {
-        let mut trie = SkyTrie::new();
-        let vid = trie
-            .edit(|trie| {
-                let vid = insert(trie, Val::String("hello".into()))?;
-                Ok(vid)
-            })
-            .unwrap();
+        let trie = SkyTrie::new();
+        let (trie, vid) = insert(&trie, Val::String("hello".into())).expect("Failed to insert");
         let val = query(&trie, vid).expect("Failed to query");
         assert_eq!(Some(Val::String("hello".into())), val);
     }
 
     #[test]
     fn u64_insert_and_query() {
-        let mut trie = SkyTrie::new();
-        let vid = trie
-            .edit(|trie| {
-                let vid = insert(trie, Val::U64(u64::MAX))?;
-                Ok(vid)
-            })
-            .unwrap();
+        let trie = SkyTrie::new();
+        let (trie, vid) = insert(&trie, Val::U64(u64::MAX)).expect("Failed to insert");
         let val = query(&trie, vid).expect("Failed to query");
         assert_eq!(Some(Val::U64(u64::MAX)), val);
     }
 
     #[test]
     fn bytes_insert_and_query() {
-        let mut trie = SkyTrie::new();
-        let (vid, vid_empty) = trie
-            .edit(|trie| {
-                let vid = insert(trie, Val::Bytes(vec![1, 2, 3, 4]))?;
-                let vid_empty = insert(trie, Val::Bytes(vec![]))?;
-                Ok((vid, vid_empty))
-            })
-            .unwrap();
+        let trie = SkyTrie::new();
+        let (trie, vid) = insert(&trie, Val::Bytes(vec![1, 2, 3, 4])).expect("Failed to insert");
+        let (trie, vid_empty) = insert(&trie, Val::Bytes(vec![])).expect("Failed to insert");
         let val = query(&trie, vid).expect("Failed to query");
         assert_eq!(Some(Val::Bytes(vec![1, 2, 3, 4])), val);
         let val_empty = query(&trie, vid_empty).expect("Failed to query");
@@ -217,15 +174,10 @@ mod tests {
 
     #[test]
     fn distinct_types_get_distinct_vids() {
-        let mut trie = SkyTrie::new();
-        let (u32_vid, u64_vid, bytes_vid) = trie
-            .edit(|trie| {
-                let u32_vid = insert(trie, Val::U32(5))?;
-                let u64_vid = insert(trie, Val::U64(5))?;
-                let bytes_vid = insert(trie, Val::Bytes(vec![5]))?;
-                Ok((u32_vid, u64_vid, bytes_vid))
-            })
-            .unwrap();
+        let trie = SkyTrie::new();
+        let (trie, u32_vid) = insert(&trie, Val::U32(5)).expect("Failed to insert");
+        let (trie, u64_vid) = insert(&trie, Val::U64(5)).expect("Failed to insert");
+        let (_trie, bytes_vid) = insert(&trie, Val::Bytes(vec![5])).expect("Failed to insert");
         assert_ne!(u32_vid, u64_vid);
         assert_ne!(u32_vid, bytes_vid);
         assert_ne!(u64_vid, bytes_vid);
@@ -233,27 +185,17 @@ mod tests {
 
     #[test]
     fn ein_insert_and_query() {
-        let mut trie = SkyTrie::new();
-        let vid = trie
-            .edit(|trie| {
-                let vid = insert(trie, Val::Ein(Ein(42)))?;
-                Ok(vid)
-            })
-            .unwrap();
+        let trie = SkyTrie::new();
+        let (trie, vid) = insert(&trie, Val::Ein(Ein(42))).expect("Failed to insert");
         let val = query(&trie, vid).expect("Failed to query");
         assert_eq!(Some(Val::Ein(Ein(42))), val);
     }
 
     #[test]
     fn ein_distinct_from_u32() {
-        let mut trie = SkyTrie::new();
-        let (u32_vid, ein_vid) = trie
-            .edit(|trie| {
-                let u32_vid = insert(trie, Val::U32(42))?;
-                let ein_vid = insert(trie, Val::Ein(Ein(42)))?;
-                Ok((u32_vid, ein_vid))
-            })
-            .unwrap();
+        let trie = SkyTrie::new();
+        let (trie, u32_vid) = insert(&trie, Val::U32(42)).expect("Failed to insert");
+        let (_trie, ein_vid) = insert(&trie, Val::Ein(Ein(42))).expect("Failed to insert");
         assert_ne!(u32_vid, ein_vid);
     }
 }
