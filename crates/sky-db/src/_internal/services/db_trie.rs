@@ -11,8 +11,8 @@ use std::collections::btree_map::Entry;
 
 /// Returns the trie at the deep path `path`, or an empty trie if absent.
 pub(crate) fn subtrie_at<const N: usize>(trie: &SkyTrie, path: [i32; N]) -> SkyTrie {
-    match trie.query_deep(path) {
-        Some(TrieValue::Trie(t)) => t,
+    match TrieValue::Trie(trie.clone()).query_deep(path) {
+        TrieValue::Trie(t) => t,
         _ => SkyTrie::new(),
     }
 }
@@ -88,8 +88,12 @@ pub(crate) fn with_update(
     let eavt_key = [KEY_EAVT, eid, aid, vid.to_id(), tx];
     let aevt_key = [KEY_AEVT, aid, eid, vid.to_id(), tx];
     let dir_val = TrieValue::U32(dir_to_u32(dir));
-    let trie = trie.insert_deep(eavt_key, dir_val.clone());
-    let trie = trie.insert_deep(aevt_key, dir_val);
+    let TrieValue::Trie(trie) = TrieValue::Trie(trie)
+        .insert_deep(eavt_key, dir_val.clone())
+        .insert_deep(aevt_key, dir_val)
+    else {
+        unreachable!("inserting into a trie yields a trie");
+    };
     Ok(trie)
 }
 
