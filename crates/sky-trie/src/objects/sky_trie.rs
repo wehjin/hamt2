@@ -46,6 +46,35 @@ impl SkyTrie {
     }
 }
 
+/// Persistent inserts
+impl SkyTrie {
+    /// Inserts `value` at `key`, returning a new trie. The original is unchanged.
+    pub fn insert(&self, key: i32, value: impl Into<TrieValue>) -> SkyTrie {
+        let root = self.top_root();
+        let new_root = map_base::insert_kv(root, HashKey::new(key), value.into());
+        SkyTrie {
+            cursor_pos: CursorPos::new(new_root),
+        }
+    }
+
+    /// Inserts `value` at the deep path `key`, returning a new trie. The original is unchanged.
+    pub fn insert_deep<const N: usize>(&self, key: [i32; N], value: impl Into<TrieValue>) -> SkyTrie {
+        let root = self.top_root();
+        let new_root = map_base::insert_kv_deep(root, key, value.into());
+        SkyTrie {
+            cursor_pos: CursorPos::new(new_root),
+        }
+    }
+
+    /// Returns the subtrie at the deep path `key`, if it exists.
+    pub fn subtrie<const N: usize>(&self, key: [i32; N]) -> Option<MapBase> {
+        match map_base::query_value_deep(self.top_root(), key) {
+            Some(TrieValue::SubTrie(mb)) => Some(mb),
+            _ => None,
+        }
+    }
+}
+
 impl QueryCursor for SkyTrie {
     fn cursor_pos(&self) -> &CursorPos {
         &self.cursor_pos
@@ -79,3 +108,35 @@ impl Snap for SkyTrie {
 }
 
 impl Trie for SkyTrie {}
+
+#[cfg(test)]
+mod tests {
+    use crate::{HashKey, Query, SkyTrie, TrieValue, map_base};
+
+    #[test]
+    fn insert_returns_new_trie() {
+        let trie = SkyTrie::new();
+        let next = trie.insert(7, TrieValue::U32(7));
+        assert_eq!(trie.query(7), None);
+        assert_eq!(next.query(7), Some(TrieValue::U32(7)));
+    }
+
+    #[test]
+    fn insert_deep_returns_new_trie() {
+        let trie = SkyTrie::new();
+        let next = trie.insert_deep([1, 2, 3], TrieValue::U32(42));
+        assert_eq!(trie.query_deep([1, 2, 3]), None);
+        assert_eq!(next.query_deep([1, 2, 3]), Some(TrieValue::U32(42)));
+    }
+
+    #[test]
+    fn subtrie_returns_subtrie() {
+        let trie = SkyTrie::new().insert_deep([1, 2, 3], TrieValue::U32(42));
+        let sub = trie.subtrie([1, 2]).expect("subtrie should exist");
+        assert_eq!(
+            map_base::query_value(sub, HashKey::new(3)),
+            Some(TrieValue::U32(42))
+        );
+        assert_eq!(trie.subtrie([1, 9]), None);
+    }
+}
