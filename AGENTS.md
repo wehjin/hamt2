@@ -29,22 +29,18 @@ Layered, each layer building on the one below.
 
 1. `crates/universal-hash` — the single hashing primitive `hash(bytes, level) -> u32`, used via the extern
    prelude (`universal_hash::hash`); not re-exported.
-2. `crates/sky-trie` — the HAMT. An in-memory, cursor-based persistent trie. Data is stored directly in the
-   trie (`MapBase` holds an `Arc<Base>`); there is no storage trait, no content buffer, and no persistence.
-    - `objects/` — `SkyTrie` (immutable; `Clone` is a snapshot; edit via `trie.edit(|t: &mut SkyTrieMut| ...)`)
-      and `SkyTrieMut` (a deliberately non-`Clone` edit buffer; `extend(trie)` and `commit()` -> `SkyTrie`).
-      Both hold a `CursorPos`; snapshot sharing comes from `Arc<Base>` copy-on-write. The whole crate is
-      synchronous — no `tokio`.
-    - `traits/` — `Query` (`query`/`query_u32`/`query_all`/`query_deep`), `Snap` (`type Snapshot` + `snapshot`),
-      `QueryCursor` (cursor nav: `ascend`/`descend`/`backup`/`restore`/`active_root`/`top_root`), `InsertCursor`
-      (`insert_deep`), `Insert` (`insert`), and the marker
-      traits `Trie`/`TrieMut`. There is no storage/buffer trait; reads and writes reach into the trie directly.
+2. `crates/sky-trie` — the HAMT. An in-memory, persistent trie. Data is stored directly in the
+   trie (`MapBase` holds an `Arc<Base>`); there is no storage trait, no content buffer, and no file
+   persistence.
+    - `objects/` — `SkyTrie` (immutable and persistent; `Clone` is a cheap snapshot; `insert`/`insert_deep`
+      return a new `SkyTrie`; `query`/`query_u32`/`query_all`/`query_deep`/`subtrie` read). Snapshot sharing
+      comes from `Arc<Base>` copy-on-write. The whole crate is synchronous — no `tokio`.
     - `types/` — `MapBase { map: SlotMap, base: Arc<Base> }`, `Base { slots: Vec<Slot> }`,
       `Slot::{KeyValue, MapBase}`, `KeyValue::{Int, Subtrie, Bytes}` (`Subtrie` holds a `MapBase`, `Bytes`
       holds an `Arc<[u8]>`; top-2-bit tag + 30-bit key), `TrieValue::{U32, SubTrie, Bytes}`, `SlotMap(u32)`
-      bitmap, `HashKey`/`DeepKey`, and `TrieKey`/`CursorPos`/`Leg`.
+      bitmap, and `HashKey`/`DeepKey`.
     - `services/` — `base` (`form_kv`/`insert_kv`/`swap_v`, `kick_kv`/`merge_kv`) and `map_base`
-      (`one_kv`/`two_kv`, `insert_kv`, `query_value`/`query_keys_values`, `query_value_deep`).
+      (`one_kv`/`two_kv`, `insert_kv`/`insert_kv_deep`, `query_value`/`query_keys_values`, `query_value_deep`).
 3. `crates/sky-db` — the Datomic layer. `lib.rs` exposes `find` and `pull`, keeps `_internal`, `errors`,
    `objects`, `services`, `traits`, `types` private, re-exports them at the root, and `pub use sky_trie as trie`.
     - `objects/` — `Pod { schema: Schema, trie: SkyTrie }` (`Clone` is a snapshot; async
@@ -70,8 +66,7 @@ Layered, each layer building on the one below.
       currently empty); `run::run_find(pod, select, where_)` orchestrates a datalog query; `datalog/` (`Program`,
       `KnowledgeBase`, `Rule`, `Atom`, `Term`, `Var`, `Substitution`) is a `pub(crate)` submodule owning a `Pod`.
     - `pull/` — `Pull<'a>` (`attrs`/`into_datoms`/`pull`) and `errors::RegisterError`.
-    - The query machinery (`find`, datalog, `val_table::query`) is generic over
-      `T: QueryCursor + Snap + Query`, so `SkyTrie` and snapshots both work.
+    - The query machinery (`find`, datalog, `val_table::query`) reads through `Pod`, which wraps `SkyTrie`.
 4. `crates/sky-tui` — the ratatui-kit terminal UI. `main.rs` runs `element!(App).fullscreen()`; `routes/` holds
    `app` (with the global `DB_VIEW: Atom<Option<Pod>>`), `home`, and `attribute_binds_table`; `components/`
    holds `loading`; `lines.rs`/`styles.rs` are support modules. When working here, load the `ratatui-kit` skill
@@ -79,7 +74,7 @@ Layered, each layer building on the one below.
 
 ## Key gotchas
 
-- **Bit-width constraints are strict.** Trie keys are 30-bit (`TrieKey::MASK = 0x3FFF_FFFF`); the top two bits
+- **Bit-width constraints are strict.** Trie keys are 30-bit (`TRIE_KEY_MASK = 0x3FFF_FFFF`); the top two bits
   of a `KeyValue` key tag Int/Subtrie/Bytes. `Ein` is a non-negative `i32`. The EAVT/AEVT index values still
   pack `Dir` into bit 28 (`0x1000_0000`) plus a 28-bit `Txid`, capping tx ids below 2^28.
 - **`MapBase::empty()` is the empty base**; it shares a `static` empty `Arc<Base>`.
@@ -88,7 +83,7 @@ Layered, each layer building on the one below.
   `Attr` with `Attr::from("...")`. Entity ids 0–2 are reserved (`Ein::DB_IDENT`, `DB_CARDINALITY`, `DB_MAX`);
   `MaxEid` starts at `Ein::DB_MAX`.
 - **`Pod` is snapshot-friendly.** `Pod::clone()` yields an independent snapshot; `Transact::transact(&mut self)`
-  edits in place via `SkyTrie::edit`. There is no `close`/re-`load` and no storage handle.
+  reassigns `self.trie` via the persistent `SkyTrie` API. There is no `close`/re-`load` and no storage handle.
 - **`Ent` is `Id(Ein)` or `Temp(String)`.** Temps are assigned `Ein`s per transaction (`ent_eid`); reusing a
   temp ident within one tx targets the same entity, across txs it does not.
 - **Errors are minimal.** `ConnectError`/`TransactError` wrap `anyhow`; `QueryError` is an empty enum.
