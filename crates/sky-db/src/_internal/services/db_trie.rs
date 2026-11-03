@@ -86,38 +86,27 @@ pub(crate) fn with_update(
     Ok(())
 }
 
-pub fn list_entities<T>(trie: &T) -> Vec<Ein>
-where
-    T: QueryCursor + Snap + Query,
-{
-    eavt_root(trie)
-        .query_all()
+pub fn list_entities(trie: &SkyTrie) -> Vec<Ein> {
+    map_base::query_keys_values(eavt_root(trie))
         .into_iter()
         .map(|(key, _)| Ein::from(key))
         .collect::<Vec<_>>()
 }
 
-pub fn list_entity_attributes<T>(trie: &T, ein: Ein) -> Vec<Ein>
-where
-    T: QueryCursor + Snap + Query,
-{
-    e_avt_subtrie(trie, ein)
-        .query_all()
+pub fn list_entity_attributes(trie: &SkyTrie, ein: Ein) -> Vec<Ein> {
+    map_base::query_keys_values(e_avt_subtrie(trie, ein))
         .into_iter()
         .map(|(key, _)| Ein::from(key))
         .collect::<Vec<_>>()
 }
 
-pub fn list_entity_fills<T>(
-    trie: &T,
+pub fn list_entity_fills(
+    trie: &SkyTrie,
     ein: Ein,
     attr_ein: Ein,
     cardinality: Cardinality,
     order: &HashMap<Ein, u32>,
-) -> Vec<(Ein, Vid)>
-where
-    T: QueryCursor + Snap + Query,
-{
+) -> Vec<(Ein, Vid)> {
     let entries = collect_entries_eavt(trie, ein, attr_ein);
     current_vids(entries, cardinality, order)
         .into_iter()
@@ -125,17 +114,16 @@ where
         .collect()
 }
 
-fn collect_entries_eavt<T>(trie: &T, ein: Ein, attr_ein: Ein) -> Vec<(Vid, Ein, Dir)>
-where
-    T: QueryCursor + Snap + Query,
-{
+fn collect_entries_eavt(trie: &SkyTrie, ein: Ein, attr_ein: Ein) -> Vec<(Vid, Ein, Dir)> {
     let mut entries = Vec::new();
-    let mut vt = trie.snapshot();
-    vt.descend_n([KEY_EAVT, ein.to_i32(), attr_ein.to_i32()]);
-    for (vid, _) in vt.query_all() {
-        let mut vt2 = trie.snapshot();
-        vt2.descend_n([KEY_EAVT, ein.to_i32(), attr_ein.to_i32(), vid]);
-        for (tx_ein, dir_val) in vt2.query_all() {
+    let vt = trie
+        .subtrie([KEY_EAVT, ein.to_i32(), attr_ein.to_i32()])
+        .unwrap_or_else(MapBase::empty);
+    for (vid, _) in map_base::query_keys_values(vt) {
+        let vt2 = trie
+            .subtrie([KEY_EAVT, ein.to_i32(), attr_ein.to_i32(), vid])
+            .unwrap_or_else(MapBase::empty);
+        for (tx_ein, dir_val) in map_base::query_keys_values(vt2) {
             if let TrieValue::U32(dir) = dir_val {
                 entries.push((Vid::from_id(vid), Ein::from(tx_ein), dir_from_u32(dir)));
             }
@@ -144,22 +132,12 @@ where
     entries
 }
 
-fn eavt_root<T>(trie: &T) -> T::Snapshot
-where
-    T: QueryCursor + Snap + Query,
-{
-    let mut snapshot = trie.snapshot();
-    snapshot.descend(KEY_EAVT);
-    snapshot
+fn eavt_root(trie: &SkyTrie) -> MapBase {
+    trie.subtrie([KEY_EAVT]).unwrap_or_else(MapBase::empty)
 }
 
-fn e_avt_subtrie<T>(trie: &T, ein: Ein) -> T::Snapshot
-where
-    T: QueryCursor + Snap + Query,
-{
-    let mut snapshot = trie.snapshot();
-    snapshot.descend_n([KEY_EAVT, ein.to_i32()]);
-    snapshot
+fn e_avt_subtrie(trie: &SkyTrie, ein: Ein) -> MapBase {
+    trie.subtrie([KEY_EAVT, ein.to_i32()]).unwrap_or_else(MapBase::empty)
 }
 
 pub fn ev_iter(
@@ -171,22 +149,15 @@ pub fn ev_iter(
     let aid = schema[a.clone()].ein().to_i32();
     let cardinality = schema[a].cardinality();
     let mut result = Vec::new();
-    let mut evt = trie.clone();
-    evt.descend(KEY_AEVT);
-    evt.descend(aid);
-    for (eid, _) in evt.query_all() {
+    let evt = trie.subtrie([KEY_AEVT, aid]).unwrap_or_else(MapBase::empty);
+    for (eid, _) in map_base::query_keys_values(evt) {
         let mut entries = Vec::new();
-        let mut vt = trie.clone();
-        vt.descend(KEY_AEVT);
-        vt.descend(aid);
-        vt.descend(eid);
-        for (vid, _) in vt.query_all() {
-            let mut vt2 = trie.clone();
-            vt2.descend(KEY_AEVT);
-            vt2.descend(aid);
-            vt2.descend(eid);
-            vt2.descend(vid);
-            for (tx_ein, dir_val) in vt2.query_all() {
+        let vt = trie.subtrie([KEY_AEVT, aid, eid]).unwrap_or_else(MapBase::empty);
+        for (vid, _) in map_base::query_keys_values(vt) {
+            let vt2 = trie
+                .subtrie([KEY_AEVT, aid, eid, vid])
+                .unwrap_or_else(MapBase::empty);
+            for (tx_ein, dir_val) in map_base::query_keys_values(vt2) {
                 if let TrieValue::U32(dir) = dir_val {
                     entries.push((Vid::from_id(vid), Ein::from(tx_ein), dir_from_u32(dir)));
                 }
@@ -205,26 +176,24 @@ pub fn ev_iter(
 
 /// Current facts for a single attribute (AEVT index): every entity whose latest
 /// tx on `aid` was an add.
-pub fn facts_for_attr<S>(
-    trie: &S,
+pub fn facts_for_attr(
+    trie: &SkyTrie,
     aid: Ein,
     cardinality: Cardinality,
     order: &HashMap<Ein, u32>,
-) -> Vec<Fact>
-where
-    S: QueryCursor + Snap + Query,
-{
+) -> Vec<Fact> {
     let mut result = Vec::new();
-    let mut evt = trie.snapshot();
-    evt.descend_n([KEY_AEVT, aid.to_i32()]);
-    for (eid, _) in evt.query_all() {
+    let evt = trie.subtrie([KEY_AEVT, aid.to_i32()]).unwrap_or_else(MapBase::empty);
+    for (eid, _) in map_base::query_keys_values(evt) {
         let mut entries = Vec::new();
-        let mut vt = trie.snapshot();
-        vt.descend_n([KEY_AEVT, aid.to_i32(), eid]);
-        for (vid, _) in vt.query_all() {
-            let mut vt2 = trie.snapshot();
-            vt2.descend_n([KEY_AEVT, aid.to_i32(), eid, vid]);
-            for (tx_ein, dir_val) in vt2.query_all() {
+        let vt = trie
+            .subtrie([KEY_AEVT, aid.to_i32(), eid])
+            .unwrap_or_else(MapBase::empty);
+        for (vid, _) in map_base::query_keys_values(vt) {
+            let vt2 = trie
+                .subtrie([KEY_AEVT, aid.to_i32(), eid, vid])
+                .unwrap_or_else(MapBase::empty);
+            for (tx_ein, dir_val) in map_base::query_keys_values(vt2) {
                 if let TrieValue::U32(dir) = dir_val {
                     entries.push((Vid::from_id(vid), Ein::from(tx_ein), dir_from_u32(dir)));
                 }
@@ -246,15 +215,12 @@ where
 }
 
 /// Current facts for a single entity (EAVT index): every attribute it has.
-pub fn facts_for_entity<S>(
-    trie: &S,
+pub fn facts_for_entity(
+    trie: &SkyTrie,
     eid: Ein,
     schema: &Schema,
     order: &HashMap<Ein, u32>,
-) -> Vec<Fact>
-where
-    S: QueryCursor + Snap + Query,
-{
+) -> Vec<Fact> {
     let mut result = Vec::new();
     for aid in list_entity_attributes(trie, eid) {
         let card = schema.cardinality_of(aid);
@@ -274,10 +240,7 @@ where
 }
 
 /// All current facts (full EAVT scan).
-pub fn all_facts<S>(trie: &S, schema: &Schema, order: &HashMap<Ein, u32>) -> Vec<Fact>
-where
-    S: QueryCursor + Snap + Query,
-{
+pub fn all_facts(trie: &SkyTrie, schema: &Schema, order: &HashMap<Ein, u32>) -> Vec<Fact> {
     let mut result = Vec::new();
     for eid in list_entities(trie) {
         result.extend(facts_for_entity(trie, eid, schema, order));
