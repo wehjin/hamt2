@@ -1,50 +1,31 @@
-use crate::SkyTrie;
-use crate::Snap;
-use crate::{Insert, InsertCursor, Query, TrieValue};
+use crate::{SkyTrie, TrieValue};
 use std::collections::HashMap;
 
 #[test]
-fn max_u32_value_insertions_works() -> anyhow::Result<()> {
-    let mut trie = SkyTrie::new();
-    trie.edit(|edit| {
-        edit.insert(100, u32::MAX);
-        Ok(())
-    })?;
+fn max_u32_value_insertions_works() {
+    let trie = SkyTrie::new().insert(100, u32::MAX);
     assert_eq!(trie.query_u32(100), Some(u32::MAX));
-    Ok(())
 }
 
 #[test]
 #[should_panic(expected = "assertion failed: value >= 0")]
 fn negative_key_insertions_panic() {
-    let mut trie = SkyTrie::new();
-    let _ = trie.edit(|edit| {
-        edit.insert(-1, 100);
-        Ok(())
-    });
+    let trie = SkyTrie::new();
+    let _ = trie.insert(-1, 100);
 }
 
 #[test]
 fn multiple_insertions_work() {
-    let mut trie = SkyTrie::new();
-    trie.edit(|edit| {
-        edit.insert(1, 1);
-        Ok(())
-    })
-    .unwrap();
+    let trie = SkyTrie::new().insert(1, 1);
     let values = trie
         .clone()
         .into_iter()
         .u32s()
         .collect::<HashMap<i32, u32>>();
     assert_eq!(values.get(&1), Some(&1));
-    trie.edit(|edit| {
-        edit.insert(2, 2);
-        assert_eq!(TrieValue::U32(1), edit.query(1).unwrap());
-        assert_eq!(TrieValue::U32(2), edit.query(2).unwrap());
-        Ok(())
-    })
-    .unwrap();
+    let trie = trie.insert(2, 2);
+    assert_eq!(TrieValue::U32(1), trie.query(1).unwrap());
+    assert_eq!(TrieValue::U32(2), trie.query(2).unwrap());
     let values = trie.into_iter().u32s().collect::<HashMap<i32, u32>>();
     assert_eq!(values.get(&1), Some(&1));
     assert_eq!(values.get(&2), Some(&2));
@@ -52,15 +33,11 @@ fn multiple_insertions_work() {
 
 #[test]
 fn snapshot_queries_work() {
-    let mut trie = SkyTrie::new();
-    trie.edit(|trie| {
-        trie.insert(1, TrieValue::U32(42));
-        trie.insert_deep([2, 42], TrieValue::U32(242));
-        Ok(())
-    })
-    .unwrap();
+    let trie = SkyTrie::new()
+        .insert(1, TrieValue::U32(42))
+        .insert_deep([2, 42], TrieValue::U32(242));
 
-    let snap = trie.snapshot();
+    let snap = trie.clone();
     assert_eq!(Some(42), snap.query_u32(1));
     assert_eq!(Some(TrieValue::U32(242)), snap.query_deep([2, 42]));
 }
@@ -68,62 +45,39 @@ fn snapshot_queries_work() {
 #[test]
 fn multi_depth_saturation_in_multiple_edits_work() {
     // Insert values past root saturation.
-    let mut trie = SkyTrie::new();
-    trie.edit(|trie| {
-        trie.insert(100, TrieValue::U32(42));
-        for a in 0..=32 {
-            trie.insert_deep([3, a], TrieValue::U32(a as u32));
-        }
-        Ok(())
-    })
-    .unwrap();
+    let mut trie = SkyTrie::new().insert(100, TrieValue::U32(42));
+    for a in 0..=32 {
+        trie = trie.insert_deep([3, a], TrieValue::U32(a as u32));
+    }
 
-    // Check insertions are present in the next edit.
-    trie.edit(|trie| {
-        assert_eq!(Some(42), trie.query_u32(100));
-        for a in 0..=32 {
-            assert_eq!(Some(TrieValue::U32(a as u32)), trie.query_deep([3, a]));
-        }
-        Ok(())
-    })
-    .unwrap();
+    // Check insertions are present.
+    assert_eq!(Some(42), trie.query_u32(100));
+    for a in 0..=32 {
+        assert_eq!(Some(TrieValue::U32(a as u32)), trie.query_deep([3, a]));
+    }
 
     // Deep insert values past root-block saturation at multiple sub-trie depths.
-    trie.edit(|trie| {
-        // Use at least 33 keys so that the root blook in the first trie is saturated.
-        for i in 0..35 {
-            let e = 5 + i;
-            trie.insert_deep([e, 0], TrieValue::U32(e as u32));
-        }
-        // Use at least 33 keys so that the root block in the second trie is saturated.
-        for i in 0..35 {
-            let a = 3 + i;
-            trie.insert_deep([4, a], TrieValue::U32(a as u32));
-        }
-        // 3.x should be saturated.  So adding more should trigger at least on hybrid merge.
-        for a in 32..=64 {
-            trie.insert_deep([3, a], TrieValue::U32(a as u32));
-        }
-        Ok(())
-    })
-    .unwrap();
+    for i in 0..35 {
+        let e = 5 + i;
+        trie = trie.insert_deep([e, 0], TrieValue::U32(e as u32));
+    }
+    for i in 0..35 {
+        let a = 3 + i;
+        trie = trie.insert_deep([4, a], TrieValue::U32(a as u32));
+    }
+    for a in 32..=64 {
+        trie = trie.insert_deep([3, a], TrieValue::U32(a as u32));
+    }
 
     // Test post-commit insertions.
-    let snap = trie.snapshot();
     for a in 0..=64 {
-        assert_eq!(Some(TrieValue::U32(a as u32)), snap.query_deep([3, a]));
+        assert_eq!(Some(TrieValue::U32(a as u32)), trie.query_deep([3, a]));
     }
 }
 
 #[test]
 fn later_insertion_overwrites_earlier_insertion() {
-    let mut trie = SkyTrie::new();
-    trie.edit(|trie| {
-        trie.insert(1, 42).insert(1, TrieValue::U32(43));
-        assert_eq!(Some(43), trie.query_u32(1));
-        Ok(())
-    })
-    .unwrap();
+    let trie = SkyTrie::new().insert(1, 42).insert(1, TrieValue::U32(43));
     assert_eq!(Some(43), trie.query_u32(1));
 }
 
@@ -132,13 +86,9 @@ fn different_keys_store_different_values() {
     // 33 keys will saturate the root block.
     let keys = (0..=32).collect::<Vec<_>>();
     let mut trie = SkyTrie::new();
-    trie.edit(|trie| {
-        for i in &keys {
-            trie.insert(*i, *i as u32);
-        }
-        Ok(())
-    })
-    .unwrap();
+    for i in &keys {
+        trie = trie.insert(*i, *i as u32);
+    }
     let values = trie.into_iter().u32s().collect::<HashMap<i32, u32>>();
     let expected = keys
         .iter()
@@ -149,25 +99,16 @@ fn different_keys_store_different_values() {
 
 #[test]
 fn deep_insertions_work_basic() {
-    let mut trie = SkyTrie::new();
-    trie.edit(|edit| {
-        edit.insert_deep([2, 42], 242);
-        Ok(())
-    })
-    .unwrap();
+    let trie = SkyTrie::new().insert_deep([2, 42], 242);
     assert_eq!(Some(TrieValue::U32(242)), trie.query_deep([2, 42]));
 }
 
 #[test]
 fn deep_insertions_work_with_saturated_root() {
     let mut trie = SkyTrie::new();
-    trie.edit(|trie| {
-        for e in 0..=33 {
-            trie.insert_deep([e, e], TrieValue::U32(e as u32));
-        }
-        Ok(())
-    })
-    .unwrap();
+    for e in 0..=33 {
+        trie = trie.insert_deep([e, e], TrieValue::U32(e as u32));
+    }
     {
         let value = trie.query_deep([4]);
         let Some(TrieValue::SubTrie(map_base)) = value else {

@@ -68,7 +68,7 @@ pub fn insert(trie: &SkyTrie, val: Val) -> Result<(SkyTrie, Vid), TransactError>
         .subtrie([KEY_VAL_TABLE])
         .unwrap_or_else(MapBase::empty);
     let bytes = bytes_from_val(&val);
-    let mut vid = Vid::for_search(universal_hash::hash(&bytes, 0) & TrieKey::MASK);
+    let mut vid = Vid::for_search(universal_hash::hash(&bytes, 0) & TRIE_KEY_MASK);
     for _ in 0..SEARCH_SIZE {
         match map_base::query_value(val_table_root.clone(), HashKey::new(vid.to_id())) {
             None => {

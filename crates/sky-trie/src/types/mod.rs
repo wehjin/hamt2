@@ -1,4 +1,3 @@
-mod cursor;
 mod deep_key;
 mod hash_key;
 mod key_value;
@@ -8,7 +7,6 @@ mod slot_base;
 mod slot_map;
 mod trie_value;
 
-pub use cursor::*;
 pub use deep_key::*;
 pub use hash_key::*;
 pub use key_value::*;

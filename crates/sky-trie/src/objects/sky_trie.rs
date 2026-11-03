@@ -1,117 +1,78 @@
-use crate::Trie;
-use crate::{CursorPos, QueryCursor, Snap};
-use crate::{HashKey, MapBase, Query, SkyTrieMut, TrieValue, map_base};
+use crate::{HashKey, MapBase, TrieValue, map_base};
 
-#[derive(Debug, Clone)]
+/// An immutable, persistent trie. `Clone` is a cheap snapshot (structural
+/// sharing via `Arc`), and every insert returns a new trie, leaving the
+/// original unchanged.
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct SkyTrie {
-    pub(crate) cursor_pos: CursorPos,
+    pub(crate) root: MapBase,
 }
 
-impl Eq for SkyTrie {}
-
-impl PartialEq for SkyTrie {
-    fn eq(&self, other: &Self) -> bool {
-        self.cursor_pos == other.cursor_pos
+impl Default for SkyTrie {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
-/// Constructors
 impl SkyTrie {
     pub fn new() -> Self {
-        let cursor_pos = CursorPos::new(MapBase::empty());
-        Self { cursor_pos }
+        Self {
+            root: MapBase::empty(),
+        }
     }
 
-    pub fn into_edit(self) -> SkyTrieMut {
-        SkyTrieMut::extend(self)
-    }
-
-    pub fn edit<F, Out>(&mut self, f: F) -> anyhow::Result<Out>
-    where
-        F: FnOnce(&mut SkyTrieMut) -> anyhow::Result<Out>,
-    {
-        let past = self.clone();
-        let mut edit = past.into_edit();
-        let out = f(&mut edit)?;
-        let next = edit.commit();
-        *self = next;
-        Ok(out)
-    }
-}
-
-/// Queries
-impl SkyTrie {
     pub fn list_keys(&self) -> Vec<i32> {
         self.clone().into_iter().map(|(key, _)| key).collect()
     }
-}
 
-/// Persistent inserts
-impl SkyTrie {
     /// Inserts `value` at `key`, returning a new trie. The original is unchanged.
     pub fn insert(&self, key: i32, value: impl Into<TrieValue>) -> SkyTrie {
-        let root = self.top_root();
-        let new_root = map_base::insert_kv(root, HashKey::new(key), value.into());
-        SkyTrie {
-            cursor_pos: CursorPos::new(new_root),
-        }
+        let root = map_base::insert_kv(self.root.clone(), HashKey::new(key), value.into());
+        SkyTrie { root }
     }
 
     /// Inserts `value` at the deep path `key`, returning a new trie. The original is unchanged.
     pub fn insert_deep<const N: usize>(&self, key: [i32; N], value: impl Into<TrieValue>) -> SkyTrie {
-        let root = self.top_root();
-        let new_root = map_base::insert_kv_deep(root, key, value.into());
-        SkyTrie {
-            cursor_pos: CursorPos::new(new_root),
-        }
+        let root = map_base::insert_kv_deep(self.root.clone(), key, value.into());
+        SkyTrie { root }
     }
 
     /// Returns the subtrie at the deep path `key`, if it exists.
     pub fn subtrie<const N: usize>(&self, key: [i32; N]) -> Option<MapBase> {
-        match map_base::query_value_deep(self.top_root(), key) {
+        match map_base::query_value_deep(self.root.clone(), key) {
             Some(TrieValue::SubTrie(mb)) => Some(mb),
             _ => None,
         }
     }
-}
 
-impl QueryCursor for SkyTrie {
-    fn cursor_pos(&self) -> &CursorPos {
-        &self.cursor_pos
+    /// Returns the value stored at `key`, or `None` if absent.
+    pub fn query(&self, key: i32) -> Option<TrieValue> {
+        map_base::query_value(self.root.clone(), HashKey::new(key))
     }
 
-    fn cursor_pos_mut(&mut self) -> &mut CursorPos {
-        &mut self.cursor_pos
-    }
-}
-
-impl Query for SkyTrie {
-    fn query(&self, key: i32) -> Option<TrieValue> {
-        map_base::query_value(self.active_root(), HashKey::new(key))
-    }
-
-    fn query_all(&self) -> Vec<(i32, TrieValue)> {
-        map_base::query_keys_values(self.active_root())
+    /// Returns the u32 value stored at `key`, or `None` if absent or not a u32.
+    pub fn query_u32(&self, key: i32) -> Option<u32> {
+        if let Some(TrieValue::U32(value)) = self.query(key) {
+            Some(value)
+        } else {
+            None
+        }
     }
 
-    fn query_deep<const N: usize>(&self, key: [i32; N]) -> Option<TrieValue> {
-        map_base::query_value_deep(self.active_root(), key)
+    /// Returns all keys and values in this trie.
+    pub fn query_all(&self) -> Vec<(i32, TrieValue)> {
+        map_base::query_keys_values(self.root.clone())
     }
-}
 
-impl Snap for SkyTrie {
-    type Snapshot = Self;
-
-    fn snapshot(&self) -> Self::Snapshot {
-        self.clone()
+    /// Returns the value stored at the deep path `key`, or `None` if absent.
+    pub fn query_deep<const N: usize>(&self, key: [i32; N]) -> Option<TrieValue> {
+        map_base::query_value_deep(self.root.clone(), key)
     }
 }
-
-impl Trie for SkyTrie {}
 
 #[cfg(test)]
 mod tests {
-    use crate::{HashKey, Query, SkyTrie, TrieValue, map_base};
+    use crate::{HashKey, SkyTrie, TrieValue, map_base};
 
     #[test]
     fn insert_returns_new_trie() {

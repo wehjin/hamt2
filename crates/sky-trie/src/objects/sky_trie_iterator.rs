@@ -1,4 +1,4 @@
-use crate::{Base, MapBase, QueryCursor, SkyTrie, Slot, TrieValue};
+use crate::{Base, MapBase, SkyTrie, Slot, TrieValue};
 use std::sync::Arc;
 
 pub struct SkyTrieIterator {
@@ -7,7 +7,7 @@ pub struct SkyTrieIterator {
 
 impl SkyTrieIterator {
     fn from_trie(trie: SkyTrie) -> Self {
-        let jobs = Job::start(&trie.active_root()).into_iter().collect();
+        let jobs = Job::start(&trie.root).into_iter().collect();
         Self { jobs }
     }
 

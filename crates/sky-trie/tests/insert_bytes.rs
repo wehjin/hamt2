@@ -1,5 +1,5 @@
 use sky_trie::SkyTrie;
-use sky_trie::{Insert, Query, TrieValue};
+use sky_trie::TrieValue;
 
 #[test]
 fn sequential_lengths() {
@@ -60,15 +60,11 @@ fn lengths_around_dword_boundaries() {
 
 fn assert_byte_tests<const N: usize>(tests: [(i32, &[u8]); N]) {
     let mut trie = SkyTrie::new();
-    trie.edit(|trie_mut| {
-        for i in 0..tests.len() {
-            let (id, value) = tests[i];
-            let key = 100 + id;
-            trie_mut.insert(key, value);
-        }
-        Ok(())
-    })
-    .unwrap();
+    for i in 0..tests.len() {
+        let (id, value) = tests[i];
+        let key = 100 + id;
+        trie = trie.insert(key, value);
+    }
     for i in 0..tests.len() {
         let (id, value) = tests[i];
         let key = 100 + id;

@@ -1,10 +1,10 @@
-use crate::{HashKey, MapBase, TrieKey, TrieValue};
+use crate::{HashKey, MapBase, TrieValue, TRIE_KEY_MASK};
 use std::sync::Arc;
 
 const INT_KEY: u32 = 0x0000_0000;
 const TRIE_KEY: u32 = 0x4000_0000;
 const BYTES_KEY: u32 = 0x8000_0000;
-const KEY_MASK: u32 = TrieKey::MASK;
+const KEY_MASK: u32 = TRIE_KEY_MASK;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum KeyValue {
