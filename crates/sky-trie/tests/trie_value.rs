@@ -79,6 +79,21 @@ fn query_all_on_bytes_panics() {
 }
 
 #[test]
+fn contains_passes_through_trie() {
+    let value = TrieValue::Trie(SkyTrie::new().insert(7, 42u32).insert(8, TrieValue::Nil));
+    assert!(value.contains(7));
+    assert!(value.contains(8));
+    assert!(!value.contains(9));
+}
+
+#[test]
+fn contains_on_leaf_is_false() {
+    assert!(!TrieValue::U32(42).contains(0));
+    assert!(!TrieValue::Bytes(vec![1, 2]).contains(0));
+    assert!(!TrieValue::Nil.contains(0));
+}
+
+#[test]
 fn insert_on_nil_promotes_to_trie() {
     let value = TrieValue::Nil.insert(7, 42u32);
     assert_eq!(as_trie(value).query(7), Some(TrieValue::U32(42)));

@@ -1,7 +1,7 @@
 use crate::_internal::ID_MASK;
 use crate::_internal::KEY_VAL_TABLE;
 use crate::_internal::Vid;
-use crate::_internal::db_trie::subtrie_at;
+use crate::_internal::db_trie::subtrie;
 use crate::{Ein, Val};
 use crate::trie::*;
 use crate::{QueryError, TransactError};
@@ -66,31 +66,30 @@ const SEARCH_SIZE: usize = 4000;
 /// Inserts `val` into the value table, returning the updated trie and the
 /// hash-consed `Vid` for the value. The input trie is left unchanged.
 pub fn insert(trie: &SkyTrie, val: Val) -> Result<(SkyTrie, Vid), TransactError> {
-    let val_table = subtrie_at(trie, [KEY_VAL_TABLE]);
+    let val_table = subtrie(trie, [KEY_VAL_TABLE]);
     let bytes = bytes_from_val(&val);
     let mut vid = Vid::for_search(universal_hash::hash(&bytes, 0) & ID_MASK);
     for _ in 0..SEARCH_SIZE {
-        match val_table.query(vid.to_id()) {
-            None => {
-                let new_val_table = val_table.insert(vid.to_id(), TrieValue::Bytes(bytes));
-                let new_trie = trie.insert_deep([KEY_VAL_TABLE], new_val_table);
-                debug_assert_eq!(query(&new_trie, vid).expect("should find val"), Some(val));
-                return Ok((new_trie, vid));
-            }
-            Some(TrieValue::Bytes(existing)) if &existing == &bytes => {
-                return Ok((trie.clone(), vid));
-            }
-            Some(_) => vid = vid.next_search(),
+        if !val_table.contains(vid.to_id()) {
+            let new_val_table = val_table.insert(vid.to_id(), TrieValue::Bytes(bytes));
+            let new_trie = trie.insert_deep([KEY_VAL_TABLE], new_val_table);
+            debug_assert_eq!(query(&new_trie, vid).expect("should find val"), Some(val));
+            return Ok((new_trie, vid));
         }
+        if let TrieValue::Bytes(existing) = val_table.query(vid.to_id())
+            && existing == bytes
+        {
+            return Ok((trie.clone(), vid));
+        }
+        vid = vid.next_search();
     }
     Err(TransactError::NoSpaceInValueTable)
 }
 
 pub fn query(trie: &SkyTrie, vid: Vid) -> Result<Option<Val>, QueryError> {
-    let value = subtrie_at(trie, [KEY_VAL_TABLE]).query(vid.to_id());
-    let val = if let Some(TrieValue::Bytes(bytes)) = value {
-        let val = val_from_bytes(&bytes);
-        Some(val)
+    let value = subtrie(trie, [KEY_VAL_TABLE]).query(vid.to_id());
+    let val = if let TrieValue::Bytes(bytes) = value {
+        Some(val_from_bytes(&bytes))
     } else {
         None
     };

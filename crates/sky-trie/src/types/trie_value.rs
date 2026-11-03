@@ -38,6 +38,15 @@ impl TrieValue {
         }
     }
 
+    /// Returns whether `key` is present. For a `Trie`, this is true even when
+    /// the stored value is `Nil`; leaves have no keys, so return `false`.
+    pub fn contains(&self, key: i32) -> bool {
+        match self {
+            TrieValue::Trie(trie) => trie.query(key).is_some(),
+            _ => false,
+        }
+    }
+
     /// Inserts `value` at `key` into a new `TrieValue`. `Nil` promotes to a
     /// fresh trie, `Trie` passes through, and leaf variants panic.
     pub fn insert(&self, key: i32, value: impl Into<TrieValue>) -> TrieValue {

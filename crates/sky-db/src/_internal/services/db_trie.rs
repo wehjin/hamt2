@@ -11,16 +11,8 @@ use std::collections::btree_map::Entry;
 
 /// Returns the value at the deep path `path` as a `TrieValue`: the subtrie, or
 /// `Nil` if the path is absent or blocked by a leaf.
-fn subtrie<const N: usize>(trie: &SkyTrie, path: [i32; N]) -> TrieValue {
+pub(crate) fn subtrie<const N: usize>(trie: &SkyTrie, path: [i32; N]) -> TrieValue {
     TrieValue::Trie(trie.clone()).query_deep(path)
-}
-
-/// Returns the trie at the deep path `path`, or an empty trie if absent.
-pub(crate) fn subtrie_at<const N: usize>(trie: &SkyTrie, path: [i32; N]) -> SkyTrie {
-    match subtrie(trie, path) {
-        TrieValue::Trie(t) => t,
-        _ => SkyTrie::new(),
-    }
 }
 
 fn dir_to_u32(dir: Dir) -> u32 {
