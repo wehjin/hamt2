@@ -16,6 +16,7 @@ impl SkyTrieIterator {
             TrieValue::U32(v) => Some((k, v)),
             TrieValue::Trie(_) => None,
             TrieValue::Bytes(_) => None,
+            TrieValue::Nil => None,
         })
     }
     pub fn tries(self) -> impl Iterator<Item = (i32, SkyTrie)> {
@@ -23,6 +24,7 @@ impl SkyTrieIterator {
             TrieValue::U32(_) => None,
             TrieValue::Trie(v) => Some((k, v)),
             TrieValue::Bytes(_) => None,
+            TrieValue::Nil => None,
         })
     }
 }

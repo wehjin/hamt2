@@ -36,9 +36,9 @@ Layered, each layer building on the one below.
       return a new `SkyTrie`; `query`/`query_u32`/`query_all`/`query_deep` read). Snapshot sharing
       comes from `Arc<Base>` copy-on-write. The whole crate is synchronous — no `tokio`.
     - `types/` — internal (`pub(crate)`) except `TrieValue`: `MapBase { map: SlotMap, base: Arc<Base> }`,
-      `Base { slots: Vec<Slot> }`, `Slot::{KeyValue, MapBase}`, `KeyValue::{Int, Subtrie, Bytes}`
-      (`Subtrie` holds a `MapBase`, `Bytes` holds an `Arc<[u8]>`; top-2-bit tag + 30-bit key),
-      `TrieValue::{U32, Trie, Bytes}` (public), `SlotMap(u32)` bitmap, and `HashKey`/`DeepKey`.
+      `Base { slots: Vec<Slot> }`, `Slot::{KeyValue, MapBase}`, `KeyValue::{Int, Subtrie, Bytes, Nil}`
+      (`Subtrie` holds a `MapBase`, `Bytes` holds an `Arc<[u8]>`; the variant is the value kind — no tag bits),
+      `TrieValue::{U32, Trie, Bytes, Nil}` (public), `SlotMap(u32)` bitmap, and `HashKey`/`DeepKey`.
     - `services/` — internal (`pub(crate)`): `base` (`insert_kv`/`swap_v`, `kick_kv`/`merge_kv`) and
       `map_base` (`two_kv`, `insert_kv`/`insert_kv_deep`, `query_value`/`query_keys_values`,
       `query_value_deep`).
@@ -56,12 +56,12 @@ Layered, each layer building on the one below.
       enum).
     - `services/` — `datom::add`/`del`, `db::query`/`ident`/`cardinality`, plus free constructors
       `val`/`dat`/`attr`/`ein`/`ent`.
-    - `types/` — `Attr`, `Dat`, `Ein`, `Ent`, `Fill`, `FindResult`, `Val`, `Txid`, `Datom`/`Dir`, and `schema/`
+    - `types/` — `Attr`, `Dat`, `Ein`, `Ent`, `Fill`, `FindResult`, `Val`, `Datom`/`Dir`, and `schema/`
       (`Schema`, `AttrTable`, `AttributeDetails`, `AttrSpec`, `DbSpec`, `Cardinality`).
     - `_internal/` — crate-internal services and types. `services/` holds `val_table` (hash-consed `Val`s,
       returns a `Vid`), `db_trie` (storage layout + `with_update`/`ev_iter`), and `schema` (`save` +
-      `schema_loader`; the latter is currently unused). `types/` holds `ent_eid`, `key` (the `KEY_*` prefixes),
-      `max_eid`, `vid`.
+      `schema_loader`; the latter is currently unused). `types/` holds `ent_eid`, `key` (the `KEY_*` prefixes and
+      `ID_MASK`), `vid`.
     - `find/` — `Find` impls `AllAttrs`, `AllEins`, `AttrsOfEin`, `BindsForAttr`, `EinsWithAttr`, `EntityFills`,
       `ValsInSlot` (several override `apply(self, pod: &Pod)` and call `Pod` find helpers; `find/types` is
       currently empty); `run::run_find(pod, select, where_)` orchestrates a datalog query; `datalog/` (`Program`,
@@ -75,14 +75,14 @@ Layered, each layer building on the one below.
 
 ## Key gotchas
 
-- **Bit-width constraints are strict.** Trie keys are 30-bit (`TRIE_KEY_MASK = 0x3FFF_FFFF`); the top two bits
-  of a `KeyValue` key tag Int/Subtrie/Bytes. `Ein` is a non-negative `i32`. The EAVT/AEVT index values still
-  pack `Dir` into bit 28 (`0x1000_0000`) plus a 28-bit `Txid`, capping tx ids below 2^28.
+- **Trie keys are non-negative `i32`s** (a 31-bit space). `KeyValue` variants (`Int`/`Subtrie`/`Bytes`/`Nil`)
+  are distinguished by the enum, not by tag bits, so `sky-trie` does no key masking. `Ein` is a non-negative
+  `i32`. `sky-db` derives entity/value ids by hashing and masking to 31 bits (`ID_MASK = i32::MAX as u32`,
+  defined in `_internal/types/key.rs`).
 - **`MapBase::empty()` is the empty base**; it shares a `static` empty `Arc<Base>`.
 - **`Attr` owns a `String`** (attribute idents). Schema attrs must be declared up front: `Pod::new(db_spec)`
   takes `impl Into<DbSpec>` (`[&str; N]`/`Vec<&str>`, `[Attr; N]`, `Vec<Attr>`, `[AttrSpec; N]`). Build an
-  `Attr` with `Attr::from("...")`. Entity ids 0–2 are reserved (`Ein::DB_IDENT`, `DB_CARDINALITY`, `DB_MAX`);
-  `MaxEid` starts at `Ein::DB_MAX`.
+  `Attr` with `Attr::from("...")`. Entity ids 0–2 are reserved (`Ein::DB_IDENT`, `DB_CARDINALITY`, `DB_MAX`).
 - **`Pod` is snapshot-friendly.** `Pod::clone()` yields an independent snapshot; `Transact::transact(&mut self)`
   reassigns `self.trie` via the persistent `SkyTrie` API. There is no `close`/re-`load` and no storage handle.
 - **`Ent` is `Id(Ein)` or `Temp(String)`.** Temps are assigned `Ein`s per transaction (`ent_eid`); reusing a
@@ -97,9 +97,9 @@ Layered, each layer building on the one below.
 - `sky-trie` and the `sky-db` index-mutation path (`val_table`/`db_trie::with_update`/`replay`) are synchronous;
   only the `sky-db` peer/log boundary (`Log`/`Peer`, iroh + tokio) and the read API (`DbQuery`/`Find`/`Pull`)
   are async.
-- Symbol-heavy types: `Val` (`U32`/`String`), `TrieValue` (`U32`/`Trie`/`Bytes`), `Base`, `Slot`,
+- Symbol-heavy types: `Val` (`U32`/`String`), `TrieValue` (`U32`/`Trie`/`Bytes`/`Nil`), `Base`, `Slot`,
   `KeyValue`, `MapBase` (`SlotMap` + `Arc<Base>`), `HashKey`/`DeepKey`, plus the db layer's
-  `Dat`/`Datom`/`Ent`/`Dir`, `Attr`/`AttrSpec`/`DbSpec`/`Schema`, and `Ein`/`Txid`/`Vid`/`MaxEid`/`EntEid`/
+  `Dat`/`Datom`/`Ent`/`Dir`, `Attr`/`AttrSpec`/`DbSpec`/`Schema`, and `Ein`/`Vid`/`EntEid`/
   `AttrEin` — don't confuse the similar names.
 - `Dat::Val` vs `Dat::Ent` and `dir` (`Dir::In`/`Dir::Out`, i.e. add/delete) drive query semantics; see
   `crates/sky-db/src/services/datom.rs` (`datom::add` / `datom::del`).

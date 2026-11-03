@@ -1,48 +1,39 @@
-use crate::{HashKey, MapBase, SkyTrie, TrieValue, TRIE_KEY_MASK};
+use crate::{HashKey, MapBase, SkyTrie, TrieValue};
 use std::sync::Arc;
-
-const INT_KEY: u32 = 0x0000_0000;
-const TRIE_KEY: u32 = 0x4000_0000;
-const BYTES_KEY: u32 = 0x8000_0000;
-const KEY_MASK: u32 = TRIE_KEY_MASK;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum KeyValue {
-    Int { key: u32, value: u32 },
-    Subtrie { key: u32, value: MapBase },
-    Bytes { key: u32, value: Arc<[u8]> },
+    Int { key: i32, value: u32 },
+    Subtrie { key: i32, value: MapBase },
+    Bytes { key: i32, value: Arc<[u8]> },
+    Nil { key: i32 },
 }
 
 impl KeyValue {
     pub fn to_i32_key(&self) -> i32 {
-        let key = match self {
+        match self {
             KeyValue::Int { key, .. } => *key,
             KeyValue::Subtrie { key, .. } => *key,
             KeyValue::Bytes { key, .. } => *key,
-        };
-        (key & KEY_MASK) as i32
+            KeyValue::Nil { key } => *key,
+        }
     }
     pub fn from_hash_key_trie_value(key: HashKey, value: TrieValue) -> KeyValue {
         Self::from_trie_key_trie_value(key.i32(), value)
     }
     pub fn from_trie_key_trie_value(key: i32, value: TrieValue) -> KeyValue {
-        let key = key as u32;
-        debug_assert_eq!(key & KEY_MASK, key, "keys are 30 bits");
-        let value = match value {
-            TrieValue::U32(n) => Self::Int {
-                key: key | INT_KEY,
-                value: n,
-            },
+        match value {
+            TrieValue::U32(n) => Self::Int { key, value: n },
             TrieValue::Trie(sky_trie) => Self::Subtrie {
-                key: key | TRIE_KEY,
+                key,
                 value: sky_trie.root,
             },
             TrieValue::Bytes(bytes) => Self::Bytes {
-                key: key | BYTES_KEY,
+                key,
                 value: bytes.into(),
             },
-        };
-        value
+            TrieValue::Nil => Self::Nil { key },
+        }
     }
     pub fn to_trie_key_trie_value(&self) -> (i32, TrieValue) {
         let key = self.to_i32_key();
@@ -60,6 +51,7 @@ impl KeyValue {
                 let value = TrieValue::Bytes(bytes);
                 (key, value)
             }
+            KeyValue::Nil { .. } => (key, TrieValue::Nil),
         }
     }
     pub fn replace_value(self, value: TrieValue) -> Self {

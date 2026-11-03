@@ -6,6 +6,7 @@ pub enum TrieValue {
     U32(u32),
     Trie(SkyTrie),
     Bytes(Vec<u8>),
+    Nil,
 }
 
 impl From<SkyTrie> for TrieValue {

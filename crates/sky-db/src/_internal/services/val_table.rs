@@ -1,3 +1,4 @@
+use crate::_internal::ID_MASK;
 use crate::_internal::KEY_VAL_TABLE;
 use crate::_internal::Vid;
 use crate::_internal::db_trie::subtrie_at;
@@ -67,7 +68,7 @@ const SEARCH_SIZE: usize = 4000;
 pub fn insert(trie: &SkyTrie, val: Val) -> Result<(SkyTrie, Vid), TransactError> {
     let val_table = subtrie_at(trie, [KEY_VAL_TABLE]);
     let bytes = bytes_from_val(&val);
-    let mut vid = Vid::for_search(universal_hash::hash(&bytes, 0) & TRIE_KEY_MASK);
+    let mut vid = Vid::for_search(universal_hash::hash(&bytes, 0) & ID_MASK);
     for _ in 0..SEARCH_SIZE {
         match val_table.query(vid.to_id()) {
             None => {
