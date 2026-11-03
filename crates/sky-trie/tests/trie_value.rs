@@ -10,33 +10,36 @@ fn as_trie(value: TrieValue) -> SkyTrie {
 #[test]
 fn query_passes_through_trie() {
     let value = TrieValue::Trie(SkyTrie::new().insert(7, 42u32));
-    assert_eq!(value.query(7), Some(TrieValue::U32(42)));
-    assert_eq!(value.query(8), None);
+    assert_eq!(value.query(7), TrieValue::U32(42));
+    assert_eq!(value.query(8), TrieValue::Nil);
 }
 
 #[test]
 fn query_deep_passes_through_trie() {
     let value = TrieValue::Trie(SkyTrie::new().insert_deep([1, 2, 3], 42u32));
-    assert_eq!(value.query_deep([1, 2, 3]), Some(TrieValue::U32(42)));
+    assert_eq!(value.query_deep([1, 2, 3]), TrieValue::U32(42));
     assert_eq!(
         value.query_deep([1, 2]),
-        Some(TrieValue::Trie(SkyTrie::new().insert(3, 42u32)))
+        TrieValue::Trie(SkyTrie::new().insert(3, 42u32))
     );
-    assert_eq!(value.query_deep([1, 9]), None);
+    assert_eq!(value.query_deep([1, 9]), TrieValue::Nil);
 }
 
 #[test]
-fn query_on_leaf_returns_none() {
-    assert_eq!(TrieValue::U32(42).query(0), None);
-    assert_eq!(TrieValue::Bytes(vec![1, 2]).query(0), None);
-    assert_eq!(TrieValue::Nil.query(0), None);
+fn query_on_leaf_returns_nil() {
+    assert_eq!(TrieValue::U32(42).query(0), TrieValue::Nil);
+    assert_eq!(TrieValue::Bytes(vec![1, 2]).query(0), TrieValue::Nil);
+    assert_eq!(TrieValue::Nil.query(0), TrieValue::Nil);
 }
 
 #[test]
-fn query_deep_on_leaf_returns_none() {
-    assert_eq!(TrieValue::U32(42).query_deep([1, 2]), None);
-    assert_eq!(TrieValue::Bytes(vec![1, 2]).query_deep([1, 2]), None);
-    assert_eq!(TrieValue::Nil.query_deep([1, 2, 3]), None);
+fn query_deep_on_leaf_returns_nil() {
+    assert_eq!(TrieValue::U32(42).query_deep([1, 2]), TrieValue::Nil);
+    assert_eq!(
+        TrieValue::Bytes(vec![1, 2]).query_deep([1, 2]),
+        TrieValue::Nil
+    );
+    assert_eq!(TrieValue::Nil.query_deep([1, 2, 3]), TrieValue::Nil);
 }
 
 #[test]
@@ -116,16 +119,16 @@ fn insert_deep_on_bytes_panics() {
 }
 
 #[test]
-fn stored_nil_is_some_nil_not_none() {
+fn nil_and_absent_keys_return_nil() {
     let trie = SkyTrie::new().insert(7, TrieValue::Nil);
     let value = TrieValue::Trie(trie);
-    assert_eq!(value.query(7), Some(TrieValue::Nil));
-    assert_eq!(value.query(8), None);
+    assert_eq!(value.query(7), TrieValue::Nil);
+    assert_eq!(value.query(8), TrieValue::Nil);
 }
 
 #[test]
 fn nil_behaves_as_empty_trie() {
-    assert_eq!(TrieValue::Nil.query(1), None);
+    assert_eq!(TrieValue::Nil.query(1), TrieValue::Nil);
     let trie = as_trie(TrieValue::Nil.insert(1, 1u32));
     assert_eq!(trie.query(1), Some(TrieValue::U32(1)));
 }

@@ -10,21 +10,21 @@ pub enum TrieValue {
 }
 
 impl TrieValue {
-    /// Returns the value stored at `key`, or `None` if absent. Non-`Trie`
+    /// Returns the value stored at `key`, or `Nil` if absent. Non-`Trie`
     /// variants are leaves with nothing below them.
-    pub fn query(&self, key: i32) -> Option<TrieValue> {
+    pub fn query(&self, key: i32) -> TrieValue {
         match self {
-            TrieValue::Trie(trie) => trie.query(key),
-            _ => None,
+            TrieValue::Trie(trie) => trie.query(key).unwrap_or(TrieValue::Nil),
+            _ => TrieValue::Nil,
         }
     }
 
-    /// Returns the value stored at the deep path `key`, or `None` if absent.
+    /// Returns the value stored at the deep path `key`, or `Nil` if absent.
     /// Non-`Trie` variants are leaves with nothing below them.
-    pub fn query_deep<const N: usize>(&self, key: [i32; N]) -> Option<TrieValue> {
+    pub fn query_deep<const N: usize>(&self, key: [i32; N]) -> TrieValue {
         match self {
-            TrieValue::Trie(trie) => trie.query_deep(key),
-            _ => None,
+            TrieValue::Trie(trie) => trie.query_deep(key).unwrap_or(TrieValue::Nil),
+            _ => TrieValue::Nil,
         }
     }
 
