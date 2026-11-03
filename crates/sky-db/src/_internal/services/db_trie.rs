@@ -9,9 +9,15 @@ use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::collections::btree_map::Entry;
 
+/// Returns the value at the deep path `path` as a `TrieValue`: the subtrie, or
+/// `Nil` if the path is absent or blocked by a leaf.
+fn subtrie<const N: usize>(trie: &SkyTrie, path: [i32; N]) -> TrieValue {
+    TrieValue::Trie(trie.clone()).query_deep(path)
+}
+
 /// Returns the trie at the deep path `path`, or an empty trie if absent.
 pub(crate) fn subtrie_at<const N: usize>(trie: &SkyTrie, path: [i32; N]) -> SkyTrie {
-    match TrieValue::Trie(trie.clone()).query_deep(path) {
+    match subtrie(trie, path) {
         TrieValue::Trie(t) => t,
         _ => SkyTrie::new(),
     }
@@ -98,19 +104,19 @@ pub(crate) fn with_update(
 }
 
 pub fn list_entities(trie: &SkyTrie) -> Vec<Ein> {
-    eavt_root(trie)
+    subtrie(trie, [KEY_EAVT])
         .query_all()
         .into_iter()
         .map(|(key, _)| Ein::from(key))
-        .collect::<Vec<_>>()
+        .collect()
 }
 
 pub fn list_entity_attributes(trie: &SkyTrie, ein: Ein) -> Vec<Ein> {
-    e_avt_subtrie(trie, ein)
+    subtrie(trie, [KEY_EAVT, ein.to_i32()])
         .query_all()
         .into_iter()
         .map(|(key, _)| Ein::from(key))
-        .collect::<Vec<_>>()
+        .collect()
 }
 
 pub fn list_entity_fills(
@@ -139,14 +145,6 @@ fn collect_entries_eavt(trie: &SkyTrie, ein: Ein, attr_ein: Ein) -> Vec<(Vid, Ei
         }
     }
     entries
-}
-
-fn eavt_root(trie: &SkyTrie) -> SkyTrie {
-    subtrie_at(trie, [KEY_EAVT])
-}
-
-fn e_avt_subtrie(trie: &SkyTrie, ein: Ein) -> SkyTrie {
-    subtrie_at(trie, [KEY_EAVT, ein.to_i32()])
 }
 
 pub fn ev_iter(
