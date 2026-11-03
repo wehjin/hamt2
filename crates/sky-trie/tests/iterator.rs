@@ -13,15 +13,15 @@ fn into_iter_yields_u32s() {
 }
 
 #[test]
-fn into_iter_yields_map_bases() {
+fn into_iter_yields_tries() {
     let trie = SkyTrie::new()
         .insert(1, TrieValue::U32(1))
         .insert(2, TrieValue::U32(2))
         .insert_deep([3, 4], TrieValue::U32(34));
 
-    let map_bases = trie.into_iter().map_bases().collect::<Vec<_>>();
-    assert_eq!(1, map_bases.len());
-    assert_eq!(3, map_bases[0].0);
+    let tries = trie.into_iter().tries().collect::<Vec<_>>();
+    assert_eq!(1, tries.len());
+    assert_eq!(3, tries[0].0);
 }
 
 #[test]

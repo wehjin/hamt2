@@ -33,11 +33,11 @@ Layered, each layer building on the one below.
    trie (`MapBase` holds an `Arc<Base>`); there is no storage trait, no content buffer, and no file
    persistence.
     - `objects/` — `SkyTrie` (immutable and persistent; `Clone` is a cheap snapshot; `insert`/`insert_deep`
-      return a new `SkyTrie`; `query`/`query_u32`/`query_all`/`query_deep`/`subtrie` read). Snapshot sharing
+      return a new `SkyTrie`; `query`/`query_u32`/`query_all`/`query_deep` read). Snapshot sharing
       comes from `Arc<Base>` copy-on-write. The whole crate is synchronous — no `tokio`.
     - `types/` — `MapBase { map: SlotMap, base: Arc<Base> }`, `Base { slots: Vec<Slot> }`,
       `Slot::{KeyValue, MapBase}`, `KeyValue::{Int, Subtrie, Bytes}` (`Subtrie` holds a `MapBase`, `Bytes`
-      holds an `Arc<[u8]>`; top-2-bit tag + 30-bit key), `TrieValue::{U32, SubTrie, Bytes}`, `SlotMap(u32)`
+      holds an `Arc<[u8]>`; top-2-bit tag + 30-bit key), `TrieValue::{U32, Trie, Bytes}`, `SlotMap(u32)`
       bitmap, and `HashKey`/`DeepKey`.
     - `services/` — `base` (`form_kv`/`insert_kv`/`swap_v`, `kick_kv`/`merge_kv`) and `map_base`
       (`one_kv`/`two_kv`, `insert_kv`/`insert_kv_deep`, `query_value`/`query_keys_values`, `query_value_deep`).
@@ -96,7 +96,7 @@ Layered, each layer building on the one below.
 - `sky-trie` and the `sky-db` index-mutation path (`val_table`/`db_trie::with_update`/`replay`) are synchronous;
   only the `sky-db` peer/log boundary (`Log`/`Peer`, iroh + tokio) and the read API (`DbQuery`/`Find`/`Pull`)
   are async.
-- Symbol-heavy types: `Val` (`U32`/`String`), `TrieValue` (`U32`/`SubTrie`/`Bytes`), `Base`, `Slot`,
+- Symbol-heavy types: `Val` (`U32`/`String`), `TrieValue` (`U32`/`Trie`/`Bytes`), `Base`, `Slot`,
   `KeyValue`, `MapBase` (`SlotMap` + `Arc<Base>`), `HashKey`/`DeepKey`, plus the db layer's
   `Dat`/`Datom`/`Ent`/`Dir`, `Attr`/`AttrSpec`/`DbSpec`/`Schema`, and `Ein`/`Txid`/`Vid`/`MaxEid`/`EntEid`/
   `AttrEin` — don't confuse the similar names.

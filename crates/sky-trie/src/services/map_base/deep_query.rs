@@ -12,11 +12,11 @@ pub fn query_value_deep<const N: usize>(root: MapBase, key: [i32; N]) -> Option<
             }
             Some(value) => {
                 if i < last_index {
-                    let TrieValue::SubTrie(map_base) = value else {
-                        // A non-map value has no sub-trie below it.
+                    let TrieValue::Trie(sky_trie) = value else {
+                        // A non-trie value has no sub-trie below it.
                         return None;
                     };
-                    current_map_base = map_base;
+                    current_map_base = sky_trie.root;
                 } else {
                     return Some(value);
                 }

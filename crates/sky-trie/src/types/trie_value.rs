@@ -1,11 +1,17 @@
-use crate::MapBase;
-use std::fmt::Debug;
+use crate::SkyTrie;
 
+/// The value stored at a trie key: a u32, a nested trie, or raw bytes.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum TrieValue {
     U32(u32),
-    SubTrie(MapBase),
+    Trie(SkyTrie),
     Bytes(Vec<u8>),
+}
+
+impl From<SkyTrie> for TrieValue {
+    fn from(t: SkyTrie) -> Self {
+        Self::Trie(t)
+    }
 }
 
 impl From<u32> for TrieValue {

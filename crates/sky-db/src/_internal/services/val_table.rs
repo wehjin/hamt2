@@ -1,5 +1,6 @@
 use crate::_internal::KEY_VAL_TABLE;
 use crate::_internal::Vid;
+use crate::_internal::db_trie::subtrie_at;
 use crate::{Ein, Val};
 use crate::trie::*;
 use crate::{QueryError, TransactError};
@@ -64,20 +65,14 @@ const SEARCH_SIZE: usize = 4000;
 /// Inserts `val` into the value table, returning the updated trie and the
 /// hash-consed `Vid` for the value. The input trie is left unchanged.
 pub fn insert(trie: &SkyTrie, val: Val) -> Result<(SkyTrie, Vid), TransactError> {
-    let val_table_root = trie
-        .subtrie([KEY_VAL_TABLE])
-        .unwrap_or_else(MapBase::empty);
+    let val_table = subtrie_at(trie, [KEY_VAL_TABLE]);
     let bytes = bytes_from_val(&val);
     let mut vid = Vid::for_search(universal_hash::hash(&bytes, 0) & TRIE_KEY_MASK);
     for _ in 0..SEARCH_SIZE {
-        match map_base::query_value(val_table_root.clone(), HashKey::new(vid.to_id())) {
+        match val_table.query(vid.to_id()) {
             None => {
-                let new_val_table = map_base::insert_kv(
-                    val_table_root,
-                    HashKey::new(vid.to_id()),
-                    TrieValue::Bytes(bytes),
-                );
-                let new_trie = trie.insert_deep([KEY_VAL_TABLE], TrieValue::SubTrie(new_val_table));
+                let new_val_table = val_table.insert(vid.to_id(), TrieValue::Bytes(bytes));
+                let new_trie = trie.insert_deep([KEY_VAL_TABLE], new_val_table);
                 debug_assert_eq!(query(&new_trie, vid).expect("should find val"), Some(val));
                 return Ok((new_trie, vid));
             }
@@ -91,9 +86,7 @@ pub fn insert(trie: &SkyTrie, val: Val) -> Result<(SkyTrie, Vid), TransactError>
 }
 
 pub fn query(trie: &SkyTrie, vid: Vid) -> Result<Option<Val>, QueryError> {
-    let value = trie
-        .subtrie([KEY_VAL_TABLE])
-        .and_then(|mb| map_base::query_value(mb, HashKey::new(vid.to_id())));
+    let value = subtrie_at(trie, [KEY_VAL_TABLE]).query(vid.to_id());
     let val = if let Some(TrieValue::Bytes(bytes)) = value {
         let val = val_from_bytes(&bytes);
         Some(val)

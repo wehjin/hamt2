@@ -1,5 +1,5 @@
 use crate::services::map_base;
-use crate::{HashKey, MapBase, TrieValue};
+use crate::{HashKey, MapBase, SkyTrie, TrieValue};
 
 /// Inserts `value` at the deep path `key`, rebuilding the path from the leaf
 /// back to the root. Unchanged subtries are shared, so this is a persistent
@@ -16,11 +16,11 @@ pub fn insert_kv_deep<const N: usize>(root: MapBase, key: [i32; N], value: TrieV
             map_base::insert_kv(mb, HashKey::new(head), value)
         } else {
             let child = match map_base::query_value(mb.clone(), HashKey::new(head)) {
-                Some(TrieValue::SubTrie(child)) => child,
+                Some(TrieValue::Trie(sky_trie)) => sky_trie.root,
                 _ => MapBase::empty(),
             };
             let new_child = go(child, rest, value);
-            map_base::insert_kv(mb, HashKey::new(head), TrieValue::SubTrie(new_child))
+            map_base::insert_kv(mb, HashKey::new(head), TrieValue::Trie(SkyTrie { root: new_child }))
         }
     }
     go(root, &key, value)

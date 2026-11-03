@@ -1,4 +1,4 @@
-use crate::{HashKey, MapBase, TrieValue, TRIE_KEY_MASK};
+use crate::{HashKey, MapBase, SkyTrie, TrieValue, TRIE_KEY_MASK};
 use std::sync::Arc;
 
 const INT_KEY: u32 = 0x0000_0000;
@@ -33,9 +33,9 @@ impl KeyValue {
                 key: key | INT_KEY,
                 value: n,
             },
-            TrieValue::SubTrie(map_base) => Self::Subtrie {
+            TrieValue::Trie(sky_trie) => Self::Subtrie {
                 key: key | TRIE_KEY,
-                value: map_base,
+                value: sky_trie.root,
             },
             TrieValue::Bytes(bytes) => Self::Bytes {
                 key: key | BYTES_KEY,
@@ -52,8 +52,7 @@ impl KeyValue {
                 (key, value)
             }
             KeyValue::Subtrie { value, .. } => {
-                let map_base = value.clone();
-                let value = TrieValue::SubTrie(map_base);
+                let value = TrieValue::Trie(SkyTrie { root: value.clone() });
                 (key, value)
             }
             KeyValue::Bytes { value, .. } => {

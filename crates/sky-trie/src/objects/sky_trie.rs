@@ -37,14 +37,6 @@ impl SkyTrie {
         SkyTrie { root }
     }
 
-    /// Returns the subtrie at the deep path `key`, if it exists.
-    pub fn subtrie<const N: usize>(&self, key: [i32; N]) -> Option<MapBase> {
-        match map_base::query_value_deep(self.root.clone(), key) {
-            Some(TrieValue::SubTrie(mb)) => Some(mb),
-            _ => None,
-        }
-    }
-
     /// Returns the value stored at `key`, or `None` if absent.
     pub fn query(&self, key: i32) -> Option<TrieValue> {
         map_base::query_value(self.root.clone(), HashKey::new(key))
@@ -72,7 +64,7 @@ impl SkyTrie {
 
 #[cfg(test)]
 mod tests {
-    use crate::{HashKey, SkyTrie, TrieValue, map_base};
+    use crate::{SkyTrie, TrieValue};
 
     #[test]
     fn insert_returns_new_trie() {
@@ -91,13 +83,13 @@ mod tests {
     }
 
     #[test]
-    fn subtrie_returns_subtrie() {
+    fn query_deep_returns_trie() {
         let trie = SkyTrie::new().insert_deep([1, 2, 3], TrieValue::U32(42));
-        let sub = trie.subtrie([1, 2]).expect("subtrie should exist");
-        assert_eq!(
-            map_base::query_value(sub, HashKey::new(3)),
-            Some(TrieValue::U32(42))
-        );
-        assert_eq!(trie.subtrie([1, 9]), None);
+        let sub = match trie.query_deep([1, 2]) {
+            Some(TrieValue::Trie(t)) => t,
+            _ => panic!("expected trie"),
+        };
+        assert_eq!(sub.query(3), Some(TrieValue::U32(42)));
+        assert_eq!(trie.query_deep([1, 9]), None);
     }
 }

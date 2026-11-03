@@ -111,10 +111,10 @@ fn deep_insertions_work_with_saturated_root() {
     }
     {
         let value = trie.query_deep([4]);
-        let Some(TrieValue::SubTrie(map_base)) = value else {
-            panic!("expected map_base");
+        let Some(TrieValue::Trie(sky_trie)) = value else {
+            panic!("expected trie");
         };
-        assert_eq!(1, map_base.map.slot_count());
+        assert_eq!(1, sky_trie.root.map.slot_count());
     }
     {
         let value = trie.query_deep([4, 4]);

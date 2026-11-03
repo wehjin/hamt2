@@ -9,6 +9,14 @@ use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::collections::btree_map::Entry;
 
+/// Returns the trie at the deep path `path`, or an empty trie if absent.
+pub(crate) fn subtrie_at<const N: usize>(trie: &SkyTrie, path: [i32; N]) -> SkyTrie {
+    match trie.query_deep(path) {
+        Some(TrieValue::Trie(t)) => t,
+        _ => SkyTrie::new(),
+    }
+}
+
 fn dir_to_u32(dir: Dir) -> u32 {
     match dir {
         Dir::In => 1,
@@ -86,14 +94,16 @@ pub(crate) fn with_update(
 }
 
 pub fn list_entities(trie: &SkyTrie) -> Vec<Ein> {
-    map_base::query_keys_values(eavt_root(trie))
+    eavt_root(trie)
+        .query_all()
         .into_iter()
         .map(|(key, _)| Ein::from(key))
         .collect::<Vec<_>>()
 }
 
 pub fn list_entity_attributes(trie: &SkyTrie, ein: Ein) -> Vec<Ein> {
-    map_base::query_keys_values(e_avt_subtrie(trie, ein))
+    e_avt_subtrie(trie, ein)
+        .query_all()
         .into_iter()
         .map(|(key, _)| Ein::from(key))
         .collect::<Vec<_>>()
@@ -115,14 +125,10 @@ pub fn list_entity_fills(
 
 fn collect_entries_eavt(trie: &SkyTrie, ein: Ein, attr_ein: Ein) -> Vec<(Vid, Ein, Dir)> {
     let mut entries = Vec::new();
-    let vt = trie
-        .subtrie([KEY_EAVT, ein.to_i32(), attr_ein.to_i32()])
-        .unwrap_or_else(MapBase::empty);
-    for (vid, _) in map_base::query_keys_values(vt) {
-        let vt2 = trie
-            .subtrie([KEY_EAVT, ein.to_i32(), attr_ein.to_i32(), vid])
-            .unwrap_or_else(MapBase::empty);
-        for (tx_ein, dir_val) in map_base::query_keys_values(vt2) {
+    let vt = subtrie_at(trie, [KEY_EAVT, ein.to_i32(), attr_ein.to_i32()]);
+    for (vid, _) in vt.query_all() {
+        let vt2 = subtrie_at(trie, [KEY_EAVT, ein.to_i32(), attr_ein.to_i32(), vid]);
+        for (tx_ein, dir_val) in vt2.query_all() {
             if let TrieValue::U32(dir) = dir_val {
                 entries.push((Vid::from_id(vid), Ein::from(tx_ein), dir_from_u32(dir)));
             }
@@ -131,12 +137,12 @@ fn collect_entries_eavt(trie: &SkyTrie, ein: Ein, attr_ein: Ein) -> Vec<(Vid, Ei
     entries
 }
 
-fn eavt_root(trie: &SkyTrie) -> MapBase {
-    trie.subtrie([KEY_EAVT]).unwrap_or_else(MapBase::empty)
+fn eavt_root(trie: &SkyTrie) -> SkyTrie {
+    subtrie_at(trie, [KEY_EAVT])
 }
 
-fn e_avt_subtrie(trie: &SkyTrie, ein: Ein) -> MapBase {
-    trie.subtrie([KEY_EAVT, ein.to_i32()]).unwrap_or_else(MapBase::empty)
+fn e_avt_subtrie(trie: &SkyTrie, ein: Ein) -> SkyTrie {
+    subtrie_at(trie, [KEY_EAVT, ein.to_i32()])
 }
 
 pub fn ev_iter(
@@ -148,15 +154,13 @@ pub fn ev_iter(
     let aid = schema[a.clone()].ein().to_i32();
     let cardinality = schema[a].cardinality();
     let mut result = Vec::new();
-    let evt = trie.subtrie([KEY_AEVT, aid]).unwrap_or_else(MapBase::empty);
-    for (eid, _) in map_base::query_keys_values(evt) {
+    let evt = subtrie_at(trie, [KEY_AEVT, aid]);
+    for (eid, _) in evt.query_all() {
         let mut entries = Vec::new();
-        let vt = trie.subtrie([KEY_AEVT, aid, eid]).unwrap_or_else(MapBase::empty);
-        for (vid, _) in map_base::query_keys_values(vt) {
-            let vt2 = trie
-                .subtrie([KEY_AEVT, aid, eid, vid])
-                .unwrap_or_else(MapBase::empty);
-            for (tx_ein, dir_val) in map_base::query_keys_values(vt2) {
+        let vt = subtrie_at(trie, [KEY_AEVT, aid, eid]);
+        for (vid, _) in vt.query_all() {
+            let vt2 = subtrie_at(trie, [KEY_AEVT, aid, eid, vid]);
+            for (tx_ein, dir_val) in vt2.query_all() {
                 if let TrieValue::U32(dir) = dir_val {
                     entries.push((Vid::from_id(vid), Ein::from(tx_ein), dir_from_u32(dir)));
                 }
@@ -182,17 +186,13 @@ pub fn facts_for_attr(
     order: &HashMap<Ein, u32>,
 ) -> Vec<Fact> {
     let mut result = Vec::new();
-    let evt = trie.subtrie([KEY_AEVT, aid.to_i32()]).unwrap_or_else(MapBase::empty);
-    for (eid, _) in map_base::query_keys_values(evt) {
+    let evt = subtrie_at(trie, [KEY_AEVT, aid.to_i32()]);
+    for (eid, _) in evt.query_all() {
         let mut entries = Vec::new();
-        let vt = trie
-            .subtrie([KEY_AEVT, aid.to_i32(), eid])
-            .unwrap_or_else(MapBase::empty);
-        for (vid, _) in map_base::query_keys_values(vt) {
-            let vt2 = trie
-                .subtrie([KEY_AEVT, aid.to_i32(), eid, vid])
-                .unwrap_or_else(MapBase::empty);
-            for (tx_ein, dir_val) in map_base::query_keys_values(vt2) {
+        let vt = subtrie_at(trie, [KEY_AEVT, aid.to_i32(), eid]);
+        for (vid, _) in vt.query_all() {
+            let vt2 = subtrie_at(trie, [KEY_AEVT, aid.to_i32(), eid, vid]);
+            for (tx_ein, dir_val) in vt2.query_all() {
                 if let TrieValue::U32(dir) = dir_val {
                     entries.push((Vid::from_id(vid), Ein::from(tx_ein), dir_from_u32(dir)));
                 }
@@ -267,7 +267,7 @@ mod tests {
         let fills = list_entity_fills(&trie, Ein(200), Ein(100), Cardinality::One, &order);
         assert_eq!(fills.len(), 1);
 
-        let vt = trie.subtrie([KEY_EAVT, 200, 100]).unwrap_or_else(MapBase::empty);
-        assert_eq!(map_base::query_keys_values(vt).len(), 2);
+        let vt = subtrie_at(&trie, [KEY_EAVT, 200, 100]);
+        assert_eq!(vt.query_all().len(), 2);
     }
 }
