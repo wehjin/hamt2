@@ -135,9 +135,9 @@ pub fn list_entity_fills(
 
 fn collect_entries_eavt(trie: &SkyTrie, ein: Ein, attr_ein: Ein) -> Vec<(Vid, Ein, Dir)> {
     let mut entries = Vec::new();
-    let vt = subtrie_at(trie, [KEY_EAVT, ein.to_i32(), attr_ein.to_i32()]);
+    let vt = subtrie(trie, [KEY_EAVT, ein.to_i32(), attr_ein.to_i32()]);
     for (vid, _) in vt.query_all() {
-        let vt2 = subtrie_at(trie, [KEY_EAVT, ein.to_i32(), attr_ein.to_i32(), vid]);
+        let vt2 = subtrie(trie, [KEY_EAVT, ein.to_i32(), attr_ein.to_i32(), vid]);
         for (tx_ein, dir_val) in vt2.query_all() {
             if let TrieValue::U32(dir) = dir_val {
                 entries.push((Vid::from_id(vid), Ein::from(tx_ein), dir_from_u32(dir)));
@@ -156,12 +156,12 @@ pub fn ev_iter(
     let aid = schema[a.clone()].ein().to_i32();
     let cardinality = schema[a].cardinality();
     let mut result = Vec::new();
-    let evt = subtrie_at(trie, [KEY_AEVT, aid]);
+    let evt = subtrie(trie, [KEY_AEVT, aid]);
     for (eid, _) in evt.query_all() {
         let mut entries = Vec::new();
-        let vt = subtrie_at(trie, [KEY_AEVT, aid, eid]);
+        let vt = subtrie(trie, [KEY_AEVT, aid, eid]);
         for (vid, _) in vt.query_all() {
-            let vt2 = subtrie_at(trie, [KEY_AEVT, aid, eid, vid]);
+            let vt2 = subtrie(trie, [KEY_AEVT, aid, eid, vid]);
             for (tx_ein, dir_val) in vt2.query_all() {
                 if let TrieValue::U32(dir) = dir_val {
                     entries.push((Vid::from_id(vid), Ein::from(tx_ein), dir_from_u32(dir)));
@@ -188,12 +188,12 @@ pub fn facts_for_attr(
     order: &HashMap<Ein, u32>,
 ) -> Vec<Fact> {
     let mut result = Vec::new();
-    let evt = subtrie_at(trie, [KEY_AEVT, aid.to_i32()]);
+    let evt = subtrie(trie, [KEY_AEVT, aid.to_i32()]);
     for (eid, _) in evt.query_all() {
         let mut entries = Vec::new();
-        let vt = subtrie_at(trie, [KEY_AEVT, aid.to_i32(), eid]);
+        let vt = subtrie(trie, [KEY_AEVT, aid.to_i32(), eid]);
         for (vid, _) in vt.query_all() {
-            let vt2 = subtrie_at(trie, [KEY_AEVT, aid.to_i32(), eid, vid]);
+            let vt2 = subtrie(trie, [KEY_AEVT, aid.to_i32(), eid, vid]);
             for (tx_ein, dir_val) in vt2.query_all() {
                 if let TrieValue::U32(dir) = dir_val {
                     entries.push((Vid::from_id(vid), Ein::from(tx_ein), dir_from_u32(dir)));
@@ -269,7 +269,7 @@ mod tests {
         let fills = list_entity_fills(&trie, Ein(200), Ein(100), Cardinality::One, &order);
         assert_eq!(fills.len(), 1);
 
-        let vt = subtrie_at(&trie, [KEY_EAVT, 200, 100]);
+        let vt = subtrie(&trie, [KEY_EAVT, 200, 100]);
         assert_eq!(vt.query_all().len(), 2);
     }
 }
