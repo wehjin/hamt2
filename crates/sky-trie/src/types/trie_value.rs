@@ -28,6 +28,16 @@ impl TrieValue {
         }
     }
 
+    /// Returns all `(key, value)` pairs in this value's trie. `Nil` and an
+    /// empty `Trie` yield an empty collection; leaf variants panic.
+    pub fn query_all(&self) -> Vec<(i32, TrieValue)> {
+        match self {
+            TrieValue::Trie(trie) => trie.query_all(),
+            TrieValue::Nil => Vec::new(),
+            _ => panic!("cannot enumerate a leaf value"),
+        }
+    }
+
     /// Inserts `value` at `key` into a new `TrieValue`. `Nil` promotes to a
     /// fresh trie, `Trie` passes through, and leaf variants panic.
     pub fn insert(&self, key: i32, value: impl Into<TrieValue>) -> TrieValue {

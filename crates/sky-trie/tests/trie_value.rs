@@ -43,6 +43,42 @@ fn query_deep_on_leaf_returns_nil() {
 }
 
 #[test]
+fn query_all_passes_through_trie() {
+    let value = TrieValue::Trie(SkyTrie::new().insert(7, 42u32));
+    assert_eq!(value.query_all(), vec![(7, TrieValue::U32(42))]);
+}
+
+#[test]
+fn query_all_returns_all_entries() {
+    let mut got = TrieValue::Trie(SkyTrie::new().insert(1, 10u32).insert(2, 20u32)).query_all();
+    got.sort_by_key(|(k, _)| *k);
+    assert_eq!(got, vec![(1, TrieValue::U32(10)), (2, TrieValue::U32(20))]);
+}
+
+#[test]
+fn query_all_on_empty_trie_is_empty() {
+    let value = TrieValue::Trie(SkyTrie::new());
+    assert_eq!(value.query_all(), Vec::new());
+}
+
+#[test]
+fn query_all_on_nil_is_empty() {
+    assert_eq!(TrieValue::Nil.query_all(), Vec::new());
+}
+
+#[test]
+#[should_panic(expected = "leaf")]
+fn query_all_on_u32_panics() {
+    let _ = TrieValue::U32(42).query_all();
+}
+
+#[test]
+#[should_panic(expected = "leaf")]
+fn query_all_on_bytes_panics() {
+    let _ = TrieValue::Bytes(vec![1, 2]).query_all();
+}
+
+#[test]
 fn insert_on_nil_promotes_to_trie() {
     let value = TrieValue::Nil.insert(7, 42u32);
     assert_eq!(as_trie(value).query(7), Some(TrieValue::U32(42)));
