@@ -37,7 +37,7 @@ Layered, each layer building on the one below.
       synchronous — no `tokio`.
     - `traits/` — `Query` (`query`/`query_u32`/`query_all`/`query_deep`), `Snap` (`type Snapshot` + `snapshot`),
       `QueryCursor` (cursor nav: `ascend`/`descend`/`backup`/`restore`/`active_root`/`top_root`), `InsertCursor`
-      (`insert_deep`), `Insert` (`insert`/`insert_with_options`, `InsertOption::DeleteOthers`), and the marker
+      (`insert_deep`), `Insert` (`insert`), and the marker
       traits `Trie`/`TrieMut`. There is no storage/buffer trait; reads and writes reach into the trie directly.
     - `types/` — `MapBase { map: SlotMap, base: Arc<Base> }`, `Base { slots: Vec<Slot> }`,
       `Slot::{KeyValue, MapBase}`, `KeyValue::{Int, Subtrie, Bytes}` (`Subtrie` holds a `MapBase`, `Bytes`

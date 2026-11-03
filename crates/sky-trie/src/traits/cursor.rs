@@ -1,4 +1,4 @@
-use crate::{CursorPos, Insert, InsertOption, MapBase, Query, TrieKey, TrieValue};
+use crate::{CursorPos, Insert, MapBase, Query, TrieKey, TrieValue};
 
 pub trait QueryCursor: Query {
     fn cursor_pos(&self) -> &CursorPos;
@@ -66,7 +66,6 @@ pub trait InsertCursor: QueryCursor + Insert {
         &mut self,
         keys: impl IntoIterator<Item = impl Into<TrieKey>>,
         value: impl Into<TrieValue>,
-        delete_others: bool,
     ) -> &mut Self {
         let (descend_keys, insert_key) = {
             let mut keys = keys.into_iter().map(|k| k.into()).collect::<Vec<_>>();
@@ -74,12 +73,7 @@ pub trait InsertCursor: QueryCursor + Insert {
             (keys, last_key)
         };
         let count = self.descend_n(descend_keys);
-        let insert_options = if delete_others {
-            vec![InsertOption::DeleteOthers]
-        } else {
-            vec![]
-        };
-        self.insert_with_options(insert_key.into(), value, insert_options);
+        self.insert(insert_key.into(), value);
         self.ascend_n(count);
         self
     }

@@ -227,8 +227,8 @@ pub(crate) async fn with_update(
     let eavt_key = [KEY_EAVT, eid, aid.to_i32(), vid.to_id(), tx_ein.to_i32()];
     let aevt_key = [KEY_AEVT, aid.to_i32(), eid, vid.to_id(), tx_ein.to_i32()];
     let dir_val = TrieValue::U32(dir as u32);
-    trie.insert_deep(eavt_key, dir_val.clone(), false).await;
-    trie.insert_deep(aevt_key, dir_val, false).await;
+    trie.insert_deep(eavt_key, dir_val.clone()).await;
+    trie.insert_deep(aevt_key, dir_val).await;
     Ok(())
 }
 ```

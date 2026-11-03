@@ -81,8 +81,8 @@ pub(crate) fn with_update(
     let eavt_key = [KEY_EAVT, eid, aid, vid.to_id(), tx];
     let aevt_key = [KEY_AEVT, aid, eid, vid.to_id(), tx];
     let dir_val = TrieValue::U32(dir_to_u32(dir));
-    trie.insert_deep(eavt_key, dir_val.clone(), false);
-    trie.insert_deep(aevt_key, dir_val, false);
+    trie.insert_deep(eavt_key, dir_val.clone());
+    trie.insert_deep(aevt_key, dir_val);
     Ok(())
 }
 

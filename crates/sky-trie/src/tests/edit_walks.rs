@@ -4,18 +4,18 @@ use crate::{Insert, InsertCursor, Query, QueryCursor, TrieValue};
 #[test]
 fn insert_deep() {
     let mut edit = SkyTrieMut::new();
-    edit.insert_deep([1, 2, 10], 10, false);
-    edit.insert_deep([1, 2, 11], 11, false);
+    edit.insert_deep([1, 2, 10], 10);
+    edit.insert_deep([1, 2, 11], 11);
     edit.descend_n([1, 2]);
     assert_eq!(edit.query_u32(10), Some(10));
     assert_eq!(edit.query_u32(11), Some(11));
     edit.ascend_n(2);
 
     let backup = edit.backup();
-    edit.insert_deep([1, 2, 12], 12, true);
+    edit.insert_deep([1, 2, 12], 12);
     edit.descend_n([1, 2]);
-    assert_eq!(edit.query_u32(10), None);
-    assert_eq!(edit.query_u32(11), None);
+    assert_eq!(edit.query_u32(10), Some(10));
+    assert_eq!(edit.query_u32(11), Some(11));
     assert_eq!(edit.query_u32(12), Some(12));
 
     edit.restore(backup);

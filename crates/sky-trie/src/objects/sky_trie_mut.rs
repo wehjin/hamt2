@@ -1,9 +1,8 @@
 use crate::SkyTrie;
 use crate::TrieMut;
 use crate::{CursorPos, Insert, MapBase, Snap, TrieValue};
-use crate::{HashKey, InsertOption, Query, map_base};
+use crate::{HashKey, Query, map_base};
 use crate::{InsertCursor, QueryCursor};
-use std::collections::HashSet;
 
 /// Deliberately non-Clone.
 #[derive(Debug)]
@@ -65,21 +64,10 @@ impl Query for SkyTrieMut {
 impl InsertCursor for SkyTrieMut {}
 
 impl Insert for SkyTrieMut {
-    fn insert_with_options(
-        &mut self,
-        key: i32,
-        value: impl Into<TrieValue>,
-        options: impl IntoIterator<Item = InsertOption>,
-    ) -> &mut Self {
-        let options = options.into_iter().collect::<HashSet<_>>();
-        let pre_root = if options.contains(&InsertOption::DeleteOthers) {
-            MapBase::empty()
-        } else {
-            self.active_root()
-        };
+    fn insert(&mut self, key: i32, value: impl Into<TrieValue>) -> &mut Self {
         let value = value.into();
         let key = HashKey::new(key);
-        let root = map_base::insert_kv(pre_root, key, value);
+        let root = map_base::insert_kv(self.active_root(), key, value);
         self.push_root(root);
         self
     }

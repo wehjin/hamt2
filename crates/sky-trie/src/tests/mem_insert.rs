@@ -55,7 +55,7 @@ fn snapshot_queries_work() {
     let mut trie = SkyTrie::new();
     trie.edit(|trie| {
         trie.insert(1, TrieValue::U32(42));
-        trie.insert_deep([2, 42], TrieValue::U32(242), false);
+        trie.insert_deep([2, 42], TrieValue::U32(242));
         Ok(())
     })
     .unwrap();
@@ -72,7 +72,7 @@ fn multi_depth_saturation_in_multiple_edits_work() {
     trie.edit(|trie| {
         trie.insert(100, TrieValue::U32(42));
         for a in 0..=32 {
-            trie.insert_deep([3, a], TrieValue::U32(a as u32), false);
+            trie.insert_deep([3, a], TrieValue::U32(a as u32));
         }
         Ok(())
     })
@@ -93,16 +93,16 @@ fn multi_depth_saturation_in_multiple_edits_work() {
         // Use at least 33 keys so that the root blook in the first trie is saturated.
         for i in 0..35 {
             let e = 5 + i;
-            trie.insert_deep([e, 0], TrieValue::U32(e as u32), false);
+            trie.insert_deep([e, 0], TrieValue::U32(e as u32));
         }
         // Use at least 33 keys so that the root block in the second trie is saturated.
         for i in 0..35 {
             let a = 3 + i;
-            trie.insert_deep([4, a], TrieValue::U32(a as u32), false);
+            trie.insert_deep([4, a], TrieValue::U32(a as u32));
         }
         // 3.x should be saturated.  So adding more should trigger at least on hybrid merge.
         for a in 32..=64 {
-            trie.insert_deep([3, a], TrieValue::U32(a as u32), false);
+            trie.insert_deep([3, a], TrieValue::U32(a as u32));
         }
         Ok(())
     })
@@ -151,7 +151,7 @@ fn different_keys_store_different_values() {
 fn deep_insertions_work_basic() {
     let mut trie = SkyTrie::new();
     trie.edit(|edit| {
-        edit.insert_deep([2, 42], 242, false);
+        edit.insert_deep([2, 42], 242);
         Ok(())
     })
     .unwrap();
@@ -163,7 +163,7 @@ fn deep_insertions_work_with_saturated_root() {
     let mut trie = SkyTrie::new();
     trie.edit(|trie| {
         for e in 0..=33 {
-            trie.insert_deep([e, e], TrieValue::U32(e as u32), false);
+            trie.insert_deep([e, e], TrieValue::U32(e as u32));
         }
         Ok(())
     })

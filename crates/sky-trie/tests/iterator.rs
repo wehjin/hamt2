@@ -6,7 +6,7 @@ fn into_iter_yields_u32s() {
     trie.edit(|trie| {
         trie.insert(1, TrieValue::U32(1));
         trie.insert(2, TrieValue::U32(2));
-        trie.insert_deep([3, 4], TrieValue::U32(34), false);
+        trie.insert_deep([3, 4], TrieValue::U32(34));
         Ok(())
     })
     .unwrap();
@@ -22,7 +22,7 @@ fn into_iter_yields_map_bases() {
     trie.edit(|trie| {
         trie.insert(1, TrieValue::U32(1));
         trie.insert(2, TrieValue::U32(2));
-        trie.insert_deep([3, 4], TrieValue::U32(34), false);
+        trie.insert_deep([3, 4], TrieValue::U32(34));
         Ok(())
     })
     .unwrap();
@@ -78,8 +78,8 @@ fn into_iter_descended() {
     trie.edit(|trie| {
         trie.insert(1, TrieValue::U32(1));
         trie.insert(2, TrieValue::U32(2));
-        trie.insert_deep([3, 4], TrieValue::U32(34), false);
-        trie.insert_deep([3, 5], TrieValue::U32(35), false);
+        trie.insert_deep([3, 4], TrieValue::U32(34));
+        trie.insert_deep([3, 5], TrieValue::U32(35));
         Ok(())
     })
     .unwrap();
