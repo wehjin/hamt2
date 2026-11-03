@@ -66,7 +66,7 @@ fn current_vids(
     }
 }
 
-pub(crate) async fn with_update(
+pub(crate) fn with_update(
     trie: &mut SkyTrieMut,
     aid: Ein,
     ein: Ein,
@@ -76,13 +76,13 @@ pub(crate) async fn with_update(
 ) -> Result<(), TransactError> {
     let eid = ein.to_i32();
     let aid = aid.to_i32();
-    let vid = val_table::insert(trie, val).await?;
+    let vid = val_table::insert(trie, val)?;
     let tx = tx_ein.to_i32();
     let eavt_key = [KEY_EAVT, eid, aid, vid.to_id(), tx];
     let aevt_key = [KEY_AEVT, aid, eid, vid.to_id(), tx];
     let dir_val = TrieValue::U32(dir_to_u32(dir));
-    trie.insert_deep(eavt_key, dir_val.clone(), false).await;
-    trie.insert_deep(aevt_key, dir_val, false).await;
+    trie.insert_deep(eavt_key, dir_val.clone(), false);
+    trie.insert_deep(aevt_key, dir_val, false);
     Ok(())
 }
 
@@ -291,20 +291,19 @@ mod tests {
     use crate::trie::SkyTrie;
     use crate::val;
 
-    #[tokio::test]
-    async fn history_is_retained() {
+    #[test]
+    fn history_is_retained() {
         let mut trie = SkyTrie::new();
         let tx1 = Ein::tx(&[1u8; 16]);
         let tx2 = Ein::tx(&[2u8; 16]);
         let mut order = HashMap::new();
         order.insert(tx1, 0);
         order.insert(tx2, 1);
-        trie.edit(async |trie| {
-            with_update(trie, Ein(100), Ein(200), val(100), Dir::In, tx1).await?;
-            with_update(trie, Ein(100), Ein(200), val(101), Dir::In, tx2).await?;
+        trie.edit(|trie| {
+            with_update(trie, Ein(100), Ein(200), val(100), Dir::In, tx1)?;
+            with_update(trie, Ein(100), Ein(200), val(101), Dir::In, tx2)?;
             Ok(())
         })
-        .await
         .unwrap();
 
         let fills = list_entity_fills(&trie, Ein(200), Ein(100), Cardinality::One, &order);

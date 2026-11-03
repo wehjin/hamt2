@@ -1,8 +1,8 @@
 use sky_trie::SkyTrie;
 use sky_trie::{Insert, Query, TrieValue};
 
-#[tokio::test]
-async fn sequential_lengths() {
+#[test]
+fn sequential_lengths() {
     let tests = [
         (1, &[7u8; 1] as &[u8]),
         (2, &[7u8; 2] as &[u8]),
@@ -18,11 +18,11 @@ async fn sequential_lengths() {
         (12, &[7u8; 12] as &[u8]),
         (13, &[7u8; 13] as &[u8]),
     ];
-    assert_byte_tests(tests).await;
+    assert_byte_tests(tests);
 }
 
-#[tokio::test]
-async fn long_short_lengths() {
+#[test]
+fn long_short_lengths() {
     let tests = [
         (0, &[7u8; 1] as &[u8]),
         (1, &[7u8; 3] as &[u8]),
@@ -34,11 +34,11 @@ async fn long_short_lengths() {
         (7, &[7u8; 6561] as &[u8]),
         (8, &[7u8; 19783] as &[u8]),
     ];
-    assert_byte_tests(tests).await;
+    assert_byte_tests(tests);
 }
 
-#[tokio::test]
-async fn lengths_around_dword_boundaries() {
+#[test]
+fn lengths_around_dword_boundaries() {
     let tests = [
         (0, &[7u8; 6] as &[u8]),
         (1, &[7u8; 7] as &[u8]),
@@ -55,20 +55,19 @@ async fn lengths_around_dword_boundaries() {
         (10, &[7u8; 32] as &[u8]),
         (11, &[7u8; 33] as &[u8]),
     ];
-    assert_byte_tests(tests).await;
+    assert_byte_tests(tests);
 }
 
-async fn assert_byte_tests<const N: usize>(tests: [(i32, &[u8]); N]) {
+fn assert_byte_tests<const N: usize>(tests: [(i32, &[u8]); N]) {
     let mut trie = SkyTrie::new();
-    trie.edit(async |trie_mut| {
+    trie.edit(|trie_mut| {
         for i in 0..tests.len() {
             let (id, value) = tests[i];
             let key = 100 + id;
-            trie_mut.insert(key, value).await;
+            trie_mut.insert(key, value);
         }
         Ok(())
     })
-    .await
     .unwrap();
     for i in 0..tests.len() {
         let (id, value) = tests[i];

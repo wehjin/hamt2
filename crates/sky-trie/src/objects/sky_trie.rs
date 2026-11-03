@@ -22,18 +22,18 @@ impl SkyTrie {
         Self { cursor_pos }
     }
 
-    pub async fn into_edit(self) -> SkyTrieMut {
+    pub fn into_edit(self) -> SkyTrieMut {
         SkyTrieMut::extend(self)
     }
 
-    pub async fn edit<F, Out>(&mut self, f: F) -> anyhow::Result<Out>
+    pub fn edit<F, Out>(&mut self, f: F) -> anyhow::Result<Out>
     where
-        F: AsyncFnOnce(&mut SkyTrieMut) -> anyhow::Result<Out>,
+        F: FnOnce(&mut SkyTrieMut) -> anyhow::Result<Out>,
     {
         let past = self.clone();
-        let mut edit = past.into_edit().await;
-        let out = f(&mut edit).await?;
-        let next = edit.commit().await;
+        let mut edit = past.into_edit();
+        let out = f(&mut edit)?;
+        let next = edit.commit();
         *self = next;
         Ok(out)
     }

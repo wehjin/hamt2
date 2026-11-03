@@ -6,7 +6,7 @@ use crate::{Base, HashKey, Slot, TrieValue};
 ///
 /// #Effects
 /// This functions commits sub-bases into the write-policy.
-pub async fn kick_kv(base: Base, index: usize, key: HashKey, value: TrieValue) -> Base {
+pub fn kick_kv(base: Base, index: usize, key: HashKey, value: TrieValue) -> Base {
     let post_slot = {
         let Slot::KeyValue(b_key_value) = base[index].clone() else {
             unreachable!("Should be a key-value slot, not a map-base slot:")
@@ -14,7 +14,7 @@ pub async fn kick_kv(base: Base, index: usize, key: HashKey, value: TrieValue) -
         let (b_key, b_value) = b_key_value.to_trie_key_trie_value();
         let b_key = key.sync(b_key);
         debug_assert!(b_key.i32() != key.i32());
-        Slot::two_kv(b_key.next(), b_value, key.next(), value).await
+        Slot::two_kv(b_key.next(), b_value, key.next(), value)
     };
     base.replace_slot(index, post_slot)
 }
@@ -24,13 +24,13 @@ pub async fn kick_kv(base: Base, index: usize, key: HashKey, value: TrieValue) -
 ///
 /// #Effects
 /// This functions commits sub-bases into the write-policy.
-pub async fn merge_kv(base: Base, index: usize, key: HashKey, value: TrieValue) -> Base {
+pub fn merge_kv(base: Base, index: usize, key: HashKey, value: TrieValue) -> Base {
     let pre_slot = base[index].clone();
     let post_slot = {
         let Slot::MapBase(pre_map_base) = pre_slot else {
             unreachable!("Should be a map-base slot, not a key-value slot:")
         };
-        let post_map_base = map_base::insert_kv(pre_map_base, key.next(), value).await;
+        let post_map_base = map_base::insert_kv(pre_map_base, key.next(), value);
         Slot::MapBase(post_map_base)
     };
     base.replace_slot(index, post_slot)

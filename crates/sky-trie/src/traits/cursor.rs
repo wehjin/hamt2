@@ -60,10 +60,9 @@ pub trait QueryCursor: Query {
     }
 }
 
-#[allow(async_fn_in_trait)]
 pub trait InsertCursor: QueryCursor + Insert {
     /// Inserts `value` into the trie after descending the path marked by `keys`.
-    async fn insert_deep(
+    fn insert_deep(
         &mut self,
         keys: impl IntoIterator<Item = impl Into<TrieKey>>,
         value: impl Into<TrieValue>,
@@ -80,8 +79,7 @@ pub trait InsertCursor: QueryCursor + Insert {
         } else {
             vec![]
         };
-        self.insert_with_options(insert_key.into(), value, insert_options)
-            .await;
+        self.insert_with_options(insert_key.into(), value, insert_options);
         self.ascend_n(count);
         self
     }

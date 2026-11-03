@@ -41,8 +41,8 @@ impl Base {
             slots: vec![Slot::MapBase(MapBase::empty())],
         }
     }
-    pub async fn new_kv(key: HashKey, value: TrieValue) -> Self {
-        let slot = Slot::one_kv(key, value).await;
+    pub fn new_kv(key: HashKey, value: TrieValue) -> Self {
+        let slot = Slot::one_kv(key, value);
         let slots = vec![slot];
         Self { slots }
     }

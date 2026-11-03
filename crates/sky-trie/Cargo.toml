@@ -6,11 +6,3 @@ edition.workspace = true
 [dependencies]
 universal-hash.workspace = true
 anyhow.workspace = true
-tokio = { workspace = true, features = ["sync"] }
-
-[dev-dependencies]
-tokio = { workspace = true, features = ["macros"] }
-
-[features]
-default = ["fs"]
-fs = ["tokio/fs"]

@@ -13,13 +13,13 @@ pub struct Index {
 }
 
 /// Applies a single transaction's datoms to the trie and folds its schema declarations.
-pub(crate) async fn apply_tx(
+pub(crate) fn apply_tx(
     trie: &mut SkyTrie,
     schema: &mut Schema,
     tx: &Tx,
     tx_ein: Ein,
 ) -> Result<(), TransactError> {
-    trie.edit(async |trie| {
+    trie.edit(|trie| {
         for datom in &tx.datoms {
             let Some(aid) = schema.resolve(&datom.attr) else {
                 continue;
@@ -28,11 +28,10 @@ pub(crate) async fn apply_tx(
                 Dat::Val(val) => val.clone(),
                 Dat::Ent(_) => unreachable!("resolved datoms have no entity refs"),
             };
-            db_trie::with_update(trie, aid, datom.ent.to_eid(), val, datom.dir, tx_ein).await?;
+            db_trie::with_update(trie, aid, datom.ent.to_eid(), val, datom.dir, tx_ein)?;
         }
         Ok(())
     })
-    .await
     .map_err(TransactError::Rewind)?;
     schema.apply(&tx.datoms);
     Ok(())
@@ -43,7 +42,7 @@ pub(crate) async fn apply_tx(
 /// Linearizes the transactions, then inserts each transaction's datoms in
 /// order, resolving attribute idents against the running schema and folding
 /// schema declarations as it goes.
-pub async fn replay(txs: Vec<Tx>) -> anyhow::Result<Index> {
+pub fn replay(txs: Vec<Tx>) -> anyhow::Result<Index> {
     let map: HashMap<Hash, Tx> = txs.into_iter().map(|tx| (tx.hash(), tx)).collect();
     let order = linearize(&map);
     let mut schema = Schema::starter();
@@ -53,7 +52,7 @@ pub async fn replay(txs: Vec<Tx>) -> anyhow::Result<Index> {
         let tx = &map[hash];
         let tx_ein = Ein::tx(&tx.nonce);
         order_map.insert(tx_ein, i as u32);
-        apply_tx(&mut trie, &mut schema, tx, tx_ein).await?;
+        apply_tx(&mut trie, &mut schema, tx, tx_ein)?;
     }
     let tip = order.last().copied();
     Ok(Index {

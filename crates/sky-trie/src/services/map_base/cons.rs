@@ -2,16 +2,16 @@ use crate::{Base, HashKey, MapBase, Slot, SlotMap, TrieValue};
 use std::sync::Arc;
 
 #[cfg(test)]
-pub async fn one_kv(key: HashKey, value: TrieValue) -> MapBase {
+pub fn one_kv(key: HashKey, value: TrieValue) -> MapBase {
     use crate::services::base;
-    let base = base::form_kv(key, value).await;
+    let base = base::form_kv(key, value);
     MapBase {
         map: SlotMap::set_key_bit(key),
         base: Arc::new(base),
     }
 }
 
-pub async fn two_kv(
+pub fn two_kv(
     key: HashKey,
     value: TrieValue,
     key2: HashKey,
@@ -23,11 +23,11 @@ pub async fn two_kv(
     let base = {
         let mut slots = Vec::new();
         if key.map_index() < key2.map_index() {
-            slots.push(Slot::one_kv(key, value).await);
-            slots.push(Slot::one_kv(key2, value2).await);
+            slots.push(Slot::one_kv(key, value));
+            slots.push(Slot::one_kv(key2, value2));
         } else {
-            slots.push(Slot::one_kv(key2, value2).await);
-            slots.push(Slot::one_kv(key, value).await);
+            slots.push(Slot::one_kv(key2, value2));
+            slots.push(Slot::one_kv(key, value));
         }
         Base { slots }
     };

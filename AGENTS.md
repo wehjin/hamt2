@@ -18,7 +18,7 @@ persistence. No CI, no README.
 ## Commands
 
 - `cargo test` — all tests across the workspace (unit `#[cfg(test)]` and `tests/` integration), all in-memory.
-  Tests are `#[tokio::test]` async.
+  `sky-trie` tests are synchronous `#[test]`; `sky-db` peer/replay tests are async `#[tokio::test]`.
 - `cargo nextest run` — optional; `.config/nextest.toml` is present.
 - `cargo clippy` — lint/check (opencode.json configures clippy as the LSP check command).
 - `cargo run -p sky-tui` — runs the terminal UI (binary `sky-tui`).
@@ -31,9 +31,10 @@ Layered, each layer building on the one below.
    prelude (`universal_hash::hash`); not re-exported.
 2. `crates/sky-trie` — the HAMT. An in-memory, cursor-based persistent trie. Data is stored directly in the
    trie (`MapBase` holds an `Arc<Base>`); there is no storage trait, no content buffer, and no persistence.
-    - `objects/` — `SkyTrie` (immutable; `Clone` is a snapshot; edit via `trie.edit(async |t: &mut SkyTrieMut| ...)`)
+    - `objects/` — `SkyTrie` (immutable; `Clone` is a snapshot; edit via `trie.edit(|t: &mut SkyTrieMut| ...)`)
       and `SkyTrieMut` (a deliberately non-`Clone` edit buffer; `extend(trie)` and `commit()` -> `SkyTrie`).
-      Both hold a `CursorPos`; snapshot sharing comes from `Arc<Base>` copy-on-write.
+      Both hold a `CursorPos`; snapshot sharing comes from `Arc<Base>` copy-on-write. The whole crate is
+      synchronous — no `tokio`.
     - `traits/` — `Query` (`query`/`query_u32`/`query_all`/`query_deep`), `Snap` (`type Snapshot` + `snapshot`),
       `QueryCursor` (cursor nav: `ascend`/`descend`/`backup`/`restore`/`active_root`/`top_root`), `InsertCursor`
       (`insert_deep`), `Insert` (`insert`/`insert_with_options`, `InsertOption::DeleteOthers`), and the marker
@@ -97,7 +98,9 @@ Layered, each layer building on the one below.
 
 - **Line length:** keep every line in this file under 120 characters, except inside special elements such as
   tables.
-- Heavily async (`tokio`); most APIs return `impl Future` via `async fn`, often `Result`.
+- `sky-trie` and the `sky-db` index-mutation path (`val_table`/`db_trie::with_update`/`replay`) are synchronous;
+  only the `sky-db` peer/log boundary (`Log`/`Peer`, iroh + tokio) and the read API (`DbQuery`/`Find`/`Pull`)
+  are async.
 - Symbol-heavy types: `Val` (`U32`/`String`), `TrieValue` (`U32`/`SubTrie`/`Bytes`), `Base`, `Slot`,
   `KeyValue`, `MapBase` (`SlotMap` + `Arc<Base>`), `HashKey`/`DeepKey`, plus the db layer's
   `Dat`/`Datom`/`Ent`/`Dir`, `Attr`/`AttrSpec`/`DbSpec`/`Schema`, and `Ein`/`Txid`/`Vid`/`MaxEid`/`EntEid`/

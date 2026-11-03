@@ -20,16 +20,16 @@ impl SkyTrieMut {
         let cursor_pos = past.cursor_pos().clone().ascend_top();
         Self { cursor_pos }
     }
-    pub async fn commit(self) -> SkyTrie {
+    pub fn commit(self) -> SkyTrie {
         let cursor_pos = self.cursor_pos.ascend_top();
         SkyTrie { cursor_pos }
     }
 
-    pub(crate) async fn push_root(&mut self, root: MapBase) {
+    pub(crate) fn push_root(&mut self, root: MapBase) {
         if let Some((key, _previous_active)) = self.cursor_pos.ascend() {
             // Make sure the ascended level has the updated value at key.
             let subtrie = TrieValue::SubTrie(root.clone());
-            Box::pin(self.insert(key.into(), subtrie)).await;
+            self.insert(key.into(), subtrie);
             // Return to the original level.
             self.cursor_pos.descend(key, root);
         } else {
@@ -65,7 +65,7 @@ impl Query for SkyTrieMut {
 impl InsertCursor for SkyTrieMut {}
 
 impl Insert for SkyTrieMut {
-    async fn insert_with_options(
+    fn insert_with_options(
         &mut self,
         key: i32,
         value: impl Into<TrieValue>,
@@ -79,8 +79,8 @@ impl Insert for SkyTrieMut {
         };
         let value = value.into();
         let key = HashKey::new(key);
-        let root = map_base::insert_kv(pre_root, key, value).await;
-        self.push_root(root).await;
+        let root = map_base::insert_kv(pre_root, key, value);
+        self.push_root(root);
         self
     }
 }

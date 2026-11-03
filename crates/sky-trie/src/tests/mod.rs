@@ -10,38 +10,36 @@ mod edit_tests;
 mod edit_walks;
 mod mem_insert;
 
-#[tokio::test]
-async fn empty_trie_root_is_empty() {
+#[test]
+fn empty_trie_root_is_empty() {
     let trie = SkyTrieMut::new();
     assert_eq!(MapBase::empty(), trie.active_root());
 }
 
-#[tokio::test]
-async fn root_round_trip_works() {
-    let mut edit = SkyTrie::new().into_edit().await;
-    let root = one_kv(HashKey::new(7), TrieValue::U32(7)).await;
-    edit.push_root(root.clone()).await;
+#[test]
+fn root_round_trip_works() {
+    let mut edit = SkyTrie::new().into_edit();
+    let root = one_kv(HashKey::new(7), TrieValue::U32(7));
+    edit.push_root(root.clone());
     assert_eq!(root, edit.active_root());
-    let view = edit.commit().await;
+    let view = edit.commit();
     assert_eq!(root, view.active_root());
 }
 
-#[tokio::test]
-async fn snapshot_does_not_see_subsequent_edits() {
+#[test]
+fn snapshot_does_not_see_subsequent_edits() {
     let mut trie = SkyTrie::new();
-    trie.edit(async |trie| {
-        trie.insert(7, 7).await;
+    trie.edit(|trie| {
+        trie.insert(7, 7);
         Ok(())
     })
-    .await
     .unwrap();
     let view = trie.snapshot();
     let root_before = view.active_root();
-    trie.edit(async |trie| {
-        trie.insert(8, 8).await;
+    trie.edit(|trie| {
+        trie.insert(8, 8);
         Ok(())
     })
-    .await
     .unwrap();
     assert_ne!(view.active_root(), trie.active_root());
     assert_eq!(view.active_root(), root_before);

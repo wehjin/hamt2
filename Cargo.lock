@@ -4209,7 +4209,6 @@ name = "sky-trie"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "tokio",
  "universal-hash 0.1.0",
 ]
 

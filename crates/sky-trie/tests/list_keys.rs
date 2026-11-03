@@ -1,14 +1,13 @@
 use sky_trie::{Insert, SkyTrie};
 
-#[tokio::test]
-async fn list_keys_works() {
+#[test]
+fn list_keys_works() {
     let mut trie = SkyTrie::new();
-    trie.edit(async |edit| {
-        edit.insert(33, 33).await;
-        edit.insert(34, 34).await;
+    trie.edit(|edit| {
+        edit.insert(33, 33);
+        edit.insert(34, 34);
         Ok(())
     })
-    .await
     .unwrap();
 
     let mut keys = trie.list_keys();

@@ -6,15 +6,14 @@ pub enum InsertOption {
     DeleteOthers,
 }
 
-#[allow(async_fn_in_trait)]
 pub trait Insert {
     /// Inserts `value` into the trie at position `key`.
-    async fn insert(&mut self, key: i32, value: impl Into<TrieValue>) -> &mut Self {
-        self.insert_with_options(key, value, []).await
+    fn insert(&mut self, key: i32, value: impl Into<TrieValue>) -> &mut Self {
+        self.insert_with_options(key, value, [])
     }
 
     /// Inserts `value` into the trie at position `key` with `options`.
-    async fn insert_with_options(
+    fn insert_with_options(
         &mut self,
         key: i32,
         value: impl Into<TrieValue>,

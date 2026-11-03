@@ -92,7 +92,7 @@ pub async fn create(
     log.append(&genesis_tx).await?;
     persist_namespace(path, log.namespace())?;
 
-    let index = replay::replay(vec![genesis_tx]).await?;
+    let index = replay::replay(vec![genesis_tx])?;
     Ok(Peer::new(log, index))
 }
 
@@ -106,7 +106,7 @@ pub async fn load(path: impl AsRef<Path>) -> Result<Peer, ConnectError> {
     let log = Log::open(secret_key, path, namespace).await?;
 
     let txs = log.entries().await?;
-    let index = replay::replay(txs).await?;
+    let index = replay::replay(txs)?;
     Ok(Peer::new(log, index))
 }
 
@@ -120,6 +120,6 @@ pub async fn join(path: impl AsRef<Path>, ticket: DocTicket) -> Result<Peer, Con
     persist_namespace(path, log.namespace())?;
 
     let txs = log.entries().await?;
-    let index = replay::replay(txs).await?;
+    let index = replay::replay(txs)?;
     Ok(Peer::new(log, index))
 }

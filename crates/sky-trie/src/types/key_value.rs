@@ -22,10 +22,10 @@ impl KeyValue {
         };
         (key & KEY_MASK) as i32
     }
-    pub async fn from_hash_key_trie_value(key: HashKey, value: TrieValue) -> KeyValue {
-        Self::from_trie_key_trie_value(key.i32(), value).await
+    pub fn from_hash_key_trie_value(key: HashKey, value: TrieValue) -> KeyValue {
+        Self::from_trie_key_trie_value(key.i32(), value)
     }
-    pub async fn from_trie_key_trie_value(key: i32, value: TrieValue) -> KeyValue {
+    pub fn from_trie_key_trie_value(key: i32, value: TrieValue) -> KeyValue {
         let key = key as u32;
         debug_assert_eq!(key & KEY_MASK, key, "keys are 30 bits");
         let value = match value {
@@ -63,8 +63,8 @@ impl KeyValue {
             }
         }
     }
-    pub async fn replace_value(self, value: TrieValue) -> Self {
+    pub fn replace_value(self, value: TrieValue) -> Self {
         let key = self.to_i32_key();
-        Self::from_trie_key_trie_value(key, value).await
+        Self::from_trie_key_trie_value(key, value)
     }
 }

@@ -106,7 +106,7 @@ impl Transact for Peer {
                 order,
                 tip,
             } = &mut *index;
-            apply_tx(trie, schema, &tx, tx_ein).await?;
+            apply_tx(trie, schema, &tx, tx_ein)?;
             let pos = order.len() as u32;
             order.insert(tx_ein, pos);
             *tip = Some(hash);
@@ -134,7 +134,7 @@ fn spawn_background(log: Log, index: Arc<RwLock<Index>>) -> JoinHandle<()> {
                 | LiveEvent::PendingContentReady
                 | LiveEvent::SyncFinished(_) => {
                     let Ok(txs) = log.entries().await else { continue };
-                    let Ok(new_index) = replay::replay(txs).await else { continue };
+                    let Ok(new_index) = replay::replay(txs) else { continue };
                     *index.write().await = new_index;
                 }
                 _ => {}
