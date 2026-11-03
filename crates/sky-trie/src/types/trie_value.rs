@@ -1,12 +1,52 @@
 use crate::SkyTrie;
 
-/// The value stored at a trie key: a u32, a nested trie, or raw bytes.
+/// The value stored at a trie key: a u32, a nested trie, raw bytes, or nil.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub enum TrieValue {
     U32(u32),
     Trie(SkyTrie),
     Bytes(Vec<u8>),
     Nil,
+}
+
+impl TrieValue {
+    /// Returns the value stored at `key`, or `None` if absent. Non-`Trie`
+    /// variants are leaves with nothing below them.
+    pub fn query(&self, key: i32) -> Option<TrieValue> {
+        match self {
+            TrieValue::Trie(trie) => trie.query(key),
+            _ => None,
+        }
+    }
+
+    /// Returns the value stored at the deep path `key`, or `None` if absent.
+    /// Non-`Trie` variants are leaves with nothing below them.
+    pub fn query_deep<const N: usize>(&self, key: [i32; N]) -> Option<TrieValue> {
+        match self {
+            TrieValue::Trie(trie) => trie.query_deep(key),
+            _ => None,
+        }
+    }
+
+    /// Inserts `value` at `key` into a new `TrieValue`. `Nil` promotes to a
+    /// fresh trie, `Trie` passes through, and leaf variants panic.
+    pub fn insert(&self, key: i32, value: impl Into<TrieValue>) -> TrieValue {
+        match self {
+            TrieValue::Trie(trie) => TrieValue::Trie(trie.insert(key, value)),
+            TrieValue::Nil => TrieValue::Trie(SkyTrie::new().insert(key, value)),
+            _ => panic!("cannot insert into a leaf value"),
+        }
+    }
+
+    /// Inserts `value` at the deep path `key` into a new `TrieValue`. `Nil`
+    /// promotes to a fresh trie, `Trie` passes through, and leaf variants panic.
+    pub fn insert_deep<const N: usize>(&self, key: [i32; N], value: impl Into<TrieValue>) -> TrieValue {
+        match self {
+            TrieValue::Trie(trie) => TrieValue::Trie(trie.insert_deep(key, value)),
+            TrieValue::Nil => TrieValue::Trie(SkyTrie::new().insert_deep(key, value)),
+            _ => panic!("cannot insert into a leaf value"),
+        }
+    }
 }
 
 impl From<SkyTrie> for TrieValue {
