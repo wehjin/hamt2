@@ -1,7 +1,7 @@
 use crate::Slot;
 use std::ops::{Deref, DerefMut, Index};
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Default)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Base {
     pub slots: Vec<Slot>,
 }

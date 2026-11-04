@@ -2,7 +2,7 @@ use crate::HashKey;
 use std::fmt;
 use std::fmt::Formatter;
 
-#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Default)]
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct SlotMap(pub u32);
 
 impl SlotMap {
