@@ -1,105 +1,64 @@
 # AGENTS.md
 
-Datomic-like database library in Rust (edition 2024), built on persistent Hash Array Mapped Tries (HAMT). A Cargo
-workspace: `sky-trie` (the HAMT, `crates/sky-trie`) under `sky-db` (the Datomic layer,
-`crates/sky-db`), plus `sky-tui` (a ratatui-kit terminal UI, `crates/sky-tui`) and `universal-hash`
-(the hashing primitive, `crates/universal-hash`). Everything is in-memory; there is no file
-persistence. No CI, no README.
-
-## Scope & Boundaries
-
-- **Working Directory:** Restrict all file searches, reads, and edits strictly to the current project root and its
-  subdirectories (e.g., `src/`, `tests/`, `benches/`).
-- **Forbidden Paths:** Do not search or modify external system files, parent directories, or global Cargo
-  registries/caches.
-- **Allowed Tools:** Limit file exploration to workspace members; ignore hidden directories (`.git`, target build
-  artifacts in `target/`).
-
-## Commands
-
-- `cargo test` — all tests across the workspace (unit `#[cfg(test)]` and `tests/` integration), all in-memory.
-  `sky-trie` tests are synchronous `#[test]`; `sky-db` peer/replay tests are async `#[tokio::test]`.
-- `cargo nextest run` — optional; `.config/nextest.toml` is present.
-- `cargo clippy` — lint/check (opencode.json configures clippy as the LSP check command).
-- `cargo run -p sky-tui` — runs the terminal UI (binary `sky-tui`).
-
-## Architecture (read top-down in this order)
-
-Layered, each layer building on the one below.
-
-1. `crates/universal-hash` — the single hashing primitive `hash(bytes, level) -> u32`, used via the extern
-   prelude (`universal_hash::hash`); not re-exported.
-2. `crates/sky-trie` — the HAMT. An in-memory, persistent trie. Data is stored directly in the
-   trie (`MapBase` holds an `Arc<Base>`); there is no storage trait, no content buffer, and no file
-   persistence.
-    - `objects/` — `SkyTrie` (immutable and persistent; `Clone` is a cheap snapshot; `insert`/`insert_deep`
-      return a new `SkyTrie`; `query`/`query_u32`/`query_all`/`query_deep` read). Snapshot sharing
-      comes from `Arc<Base>` copy-on-write. The whole crate is synchronous — no `tokio`.
-    - `types/` — internal (`pub(crate)`) except `TrieValue`: `MapBase { map: SlotMap, base: Arc<Base> }`,
-      `Base { slots: Vec<Slot> }`, `Slot::{KeyValue, MapBase}`, `KeyValue::{Int, Subtrie, Bytes, Nil}`
-      (`Subtrie` holds a `MapBase`, `Bytes` holds an `Arc<[u8]>`; the variant is the value kind — no tag bits),
-      `TrieValue::{U32, Trie, Bytes, Nil}` (public), `SlotMap(u32)` bitmap, and `HashKey`/`DeepKey`.
-    - `services/` — internal (`pub(crate)`): `base` (`insert_kv`/`swap_v`, `kick_kv`/`merge_kv`) and
-      `map_base` (`two_kv`, `insert_kv`/`insert_kv_deep`, `query_value`/`query_keys_values`,
-      `query_value_deep`).
-3. `crates/sky-db` — the Datomic layer. `lib.rs` exposes `find` and `pull`, keeps `_internal`, `errors`,
-   `objects`, `services`, `traits`, `types` private, re-exports them at the root, and `pub use sky_trie as trie`.
-    - `objects/` — `Pod { schema: Schema, trie: SkyTrie }` (`Clone` is a snapshot; async
-      `Pod::new(db_spec: impl Into<DbSpec>) -> Result<Self, ConnectError>` takes no storage; there is no
-      `load`/`close`; `schema()`, `max_tx()`, `ev_iter(attr)`, `get_attribute`, `list_attributes`; plus
-      `pub(crate)` find helpers `list_entities`/`list_attr_eins`/`list_fills`), `Entity`,
-      `Attribute` (`ident`/`cardinality`/`list_binds`), and `Bind(Entity, Val)`.
-    - `traits.rs` — `Transact` (`async fn transact(&mut self, ...) -> Result<&mut Self, TransactError>`,
-      implemented by `Pod`), `DbQuery` (`find`/`find_val`/`get_val`), and `Find` (associated `type Output`;
-      `select`/`where_`/`process`; default `apply(self, pod: &Pod)` runs `find::run::run_find`).
-    - `errors.rs` — `ConnectError`, `TransactError` (both wrap `anyhow`), and `QueryError` (currently an empty
-      enum).
-    - `services/` — `datom::add`/`del`, `db::query`/`ident`/`cardinality`, plus free constructors
-      `val`/`dat`/`attr`/`ein`/`ent`.
-    - `types/` — `Attr`, `Dat`, `Ein`, `Ent`, `Fill`, `FindResult`, `Val`, `Datom`/`Dir`, and `schema/`
-      (`Schema`, `AttrTable`, `AttributeDetails`, `AttrSpec`, `DbSpec`, `Cardinality`).
-    - `_internal/` — crate-internal services and types. `services/` holds `val_table` (hash-consed `Val`s,
-      returns a `Vid`), `db_trie` (storage layout + `with_update`/`ev_iter`), and `schema` (`save` +
-      `schema_loader`; the latter is currently unused). `types/` holds `ent_eid`, `key` (the `KEY_*` prefixes and
-      `ID_MASK`), `vid`.
-    - `find/` — `Find` impls `AllAttrs`, `AllEins`, `AttrsOfEin`, `BindsForAttr`, `EinsWithAttr`, `EntityFills`,
-      `ValsInSlot` (several override `apply(self, pod: &Pod)` and call `Pod` find helpers; `find/types` is
-      currently empty); `run::run_find(pod, select, where_)` orchestrates a datalog query; `datalog/` (`Program`,
-      `KnowledgeBase`, `Rule`, `Atom`, `Term`, `Var`, `Substitution`) is a `pub(crate)` submodule owning a `Pod`.
-    - `pull/` — `Pull<'a>` (`attrs`/`into_datoms`/`pull`) and `errors::RegisterError`.
-    - The query machinery (`find`, datalog, `val_table::query`) reads through `Pod`, which wraps `SkyTrie`.
-4. `crates/sky-tui` — the ratatui-kit terminal UI. `main.rs` runs `element!(App).fullscreen()`; `routes/` holds
-   `app` (with the global `DB_VIEW: Atom<Option<Pod>>`), `home`, and `attribute_binds_table`; `components/`
-   holds `loading`; `lines.rs`/`styles.rs` are support modules. When working here, load the `ratatui-kit` skill
-   at `.agents/skills/ratatui-kit/SKILL.md`.
-
-## Key gotchas
-
-- **Trie keys are non-negative `i32`s** (a 31-bit space). `KeyValue` variants (`Int`/`Subtrie`/`Bytes`/`Nil`)
-  are distinguished by the enum, not by tag bits, so `sky-trie` does no key masking. `Ein` is a non-negative
-  `i32`. `sky-db` derives entity/value ids by hashing and masking to 31 bits (`ID_MASK = i32::MAX as u32`,
-  defined in `_internal/types/key.rs`).
-- **`MapBase::empty()` is the empty base**; it shares a `static` empty `Arc<Base>`.
-- **`Attr` owns a `String`** (attribute idents). Schema attrs must be declared up front: `Pod::new(db_spec)`
-  takes `impl Into<DbSpec>` (`[&str; N]`/`Vec<&str>`, `[Attr; N]`, `Vec<Attr>`, `[AttrSpec; N]`). Build an
-  `Attr` with `Attr::from("...")`. Entity ids 0–2 are reserved (`Ein::DB_IDENT`, `DB_CARDINALITY`, `DB_MAX`).
-- **`Pod` is snapshot-friendly.** `Pod::clone()` yields an independent snapshot; `Transact::transact(&mut self)`
-  reassigns `self.trie` via the persistent `SkyTrie` API. There is no `close`/re-`load` and no storage handle.
-- **`Ent` is `Id(Ein)` or `Temp(String)`.** Temps are assigned `Ein`s per transaction (`ent_eid`); reusing a
-  temp ident within one tx targets the same entity, across txs it does not.
-- **Errors are minimal.** `ConnectError`/`TransactError` wrap `anyhow`; `QueryError` is an empty enum.
-- `universal_hash::hash` (extern prelude) is the hashing primitive; everything keys off it.
+Datomic-like database in Rust (edition 2024), built on persistent Hash Array Mapped Tries (HAMT). It is fully
+in-memory — there is no file persistence. The workspace has four crates: `sky-trie` (the HAMT), `sky-db` (the
+Datomic layer), `sky-tui` (a terminal UI), and `universal-hash` (the hashing primitive). No CI, no README.
 
 ## Conventions
 
-- **Line length:** keep every line in this file under 120 characters, except inside special elements such as
-  tables.
-- `sky-trie` and the `sky-db` index-mutation path (`val_table`/`db_trie::with_update`/`replay`) are synchronous;
-  only the `sky-db` peer/log boundary (`Log`/`Peer`, iroh + tokio) and the read API (`DbQuery`/`Find`/`Pull`)
-  are async.
-- Symbol-heavy types: `Val` (`U32`/`String`), `TrieValue` (`U32`/`Trie`/`Bytes`/`Nil`), `Base`, `Slot`,
-  `KeyValue`, `MapBase` (`SlotMap` + `Arc<Base>`), `HashKey`/`DeepKey`, plus the db layer's
-  `Dat`/`Datom`/`Ent`/`Dir`, `Attr`/`AttrSpec`/`DbSpec`/`Schema`, and `Ein`/`Vid`/`EntEid`/
-  `AttrEin` — don't confuse the similar names.
-- `Dat::Val` vs `Dat::Ent` and `dir` (`Dir::In`/`Dir::Out`, i.e. add/delete) drive query semantics; see
-  `crates/sky-db/src/services/datom.rs` (`datom::add` / `datom::del`).
+- **Write plainly.** Keep entries concise, readable English with as little inline code as possible. Avoid dense
+  type signatures and long lists of symbol names; name at most two or three examples and point to the source for
+  the rest.
+- **Line length:** keep every line under 120 characters (tables excepted).
+- The index write path (`val_table`, `db_trie`, `replay`) is synchronous; the public API (`transact`, `find`,
+  `pull`) and the peer/log layer are async (iroh + tokio).
+- Names that are easy to confuse: `Ein` (entity id) vs `Vid` (value id) vs `EntEid` (temp-name map); `Dat` (a
+  value or entity ref) vs `Datom` (the full entity/attr/value/flag tuple).
+
+## Scope & Boundaries
+
+- **Working directory:** search, read, and edit only inside the project root (e.g. `src/`, `tests/`, `benches/`).
+- **Forbidden paths:** do not touch external system files, parent directories, or global Cargo caches.
+- **Allowed tools:** explore workspace members only; ignore hidden dirs (`.git`, `target/`).
+
+## Commands
+
+- `cargo test` — all workspace tests (unit `#[cfg(test)]` and `tests/` integration). `sky-trie` tests are
+  synchronous; `sky-db` peer/replay tests are async.
+- `cargo nextest run` — optional (`.config/nextest.toml` is present).
+- `cargo clippy` — lint/check (the LSP check command).
+- `cargo run -p sky-tui` — run the terminal UI.
+
+## Architecture
+
+Read top-down; each layer builds on the one below.
+
+1. `crates/universal-hash` — the single hashing primitive, `universal_hash::hash(bytes, level)`.
+2. `crates/sky-trie` — the HAMT. Immutable and persistent. `SkyTrie` is the store; `TrieValue` (scalar, nested
+   trie, bytes, or nil) is the public value type.
+3. `crates/sky-db` — the Datomic layer; re-exports `sky_trie` as `trie`.
+    - `objects/` — `Pod`, an immutable index snapshot holding the schema, a `TrieValue`, and the tx order; plus
+      the value wrappers `Entity`, `Attribute`, and `Bind`.
+    - Transactions and queries come through the `Transact` (on `Peer`), `DbQuery`, and `Find` traits; `find/` is
+      a datalog-style engine running over a `Pod`.
+    - `errors.rs` — `ConnectError` and `TransactError` wrap `anyhow`; `QueryError` is a placeholder.
+    - `services/` — `datom`, `tx`, and `db` modules, plus free constructors (e.g. `val`).
+    - `types/` — the data model (entities, attributes, datoms, values) and the schema module.
+    - `_internal/` — value hash-consing, the index trie layout, the iroh log and replay, and id bookkeeping.
+    - `pull/` — materializes query results into nested maps.
+4. `crates/sky-tui` — the ratatui-kit terminal UI; `main.rs` runs `element!(App)`. Load the `ratatui-kit` skill
+   at `.agents/skills/ratatui-kit/SKILL.md` before working here.
+
+## Key gotchas
+
+- **Trie keys are non-negative `i32`s** (a 31-bit space). `sky-db` derives entity and value ids by hashing and
+  masking to 31 bits (`ID_MASK`, in `_internal/types/key.rs`).
+- **`MapBase::empty()` is the empty base** and shares a single static `Arc`.
+- **Schema attrs are declared up front** in a `DbSpec`. Build an `Attr` with `Attr::from("...")`. Entity ids
+  0–2 are reserved.
+- **`Peer` mutates; `Pod` snapshots.** Each transaction produces a new `TrieValue`; `Pod` is a stable read-only
+  view from a peer snapshot or replay. There is no `close`/`load` and no storage handle.
+- **`Ent` is `Id(Ein)` or `Temp(String)`.** Temps get an `Ein` per transaction; the same temp name targets the
+  same entity within one tx but a different one across txs.
+- **Errors are minimal:** `ConnectError`/`TransactError` wrap `anyhow`; `QueryError` is an empty enum.
+- Everything keys off `universal_hash::hash` in the extern prelude.
