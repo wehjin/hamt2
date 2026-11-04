@@ -1,4 +1,3 @@
-use sky_trie::SkyTrie;
 use sky_trie::TrieValue;
 
 #[test]
@@ -59,7 +58,7 @@ fn lengths_around_dword_boundaries() {
 }
 
 fn assert_byte_tests<const N: usize>(tests: [(i32, &[u8]); N]) {
-    let mut trie = SkyTrie::new();
+    let mut trie = TrieValue::trie();
     for i in 0..tests.len() {
         let (id, value) = tests[i];
         let key = 100 + id;
@@ -68,7 +67,7 @@ fn assert_byte_tests<const N: usize>(tests: [(i32, &[u8]); N]) {
     for i in 0..tests.len() {
         let (id, value) = tests[i];
         let key = 100 + id;
-        let TrieValue::Bytes(bytes) = trie.query(key).unwrap() else {
+        let TrieValue::Bytes(bytes) = trie.query(key) else {
             panic!("value should be bytes");
         };
         assert_eq!(&bytes, value)
