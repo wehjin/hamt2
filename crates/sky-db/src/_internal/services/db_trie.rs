@@ -9,12 +9,6 @@ use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::collections::btree_map::Entry;
 
-/// Returns the value at the deep path `path` as a `TrieValue`: the subtrie, or
-/// `Nil` if the path is absent or blocked by a leaf.
-pub(crate) fn subtrie<const N: usize>(trie: &SkyTrie, path: [i32; N]) -> TrieValue {
-    TrieValue::Trie(trie.clone()).query_deep(path)
-}
-
 fn dir_to_u32(dir: Dir) -> u32 {
     match dir {
         Dir::In => 1,
@@ -72,13 +66,13 @@ fn current_vids(
 }
 
 pub(crate) fn with_update(
-    trie: &SkyTrie,
+    trie: &TrieValue,
     aid: Ein,
     ein: Ein,
     val: Val,
     dir: Dir,
     tx_ein: Ein,
-) -> Result<SkyTrie, TransactError> {
+) -> Result<TrieValue, TransactError> {
     let eid = ein.to_i32();
     let aid = aid.to_i32();
     let (trie, vid) = val_table::insert(trie, val)?;
@@ -86,25 +80,22 @@ pub(crate) fn with_update(
     let eavt_key = [KEY_EAVT, eid, aid, vid.to_id(), tx];
     let aevt_key = [KEY_AEVT, aid, eid, vid.to_id(), tx];
     let dir_val = TrieValue::U32(dir_to_u32(dir));
-    let TrieValue::Trie(trie) = TrieValue::Trie(trie)
+    let trie = trie
         .insert_deep(eavt_key, dir_val.clone())
-        .insert_deep(aevt_key, dir_val)
-    else {
-        unreachable!("inserting into a trie yields a trie");
-    };
+        .insert_deep(aevt_key, dir_val);
     Ok(trie)
 }
 
-pub fn list_entities(trie: &SkyTrie) -> Vec<Ein> {
-    subtrie(trie, [KEY_EAVT])
+pub fn list_entities(trie: &TrieValue) -> Vec<Ein> {
+    trie.query_deep([KEY_EAVT])
         .query_all()
         .into_iter()
         .map(|(key, _)| Ein::from(key))
         .collect()
 }
 
-pub fn list_entity_attributes(trie: &SkyTrie, ein: Ein) -> Vec<Ein> {
-    subtrie(trie, [KEY_EAVT, ein.to_i32()])
+pub fn list_entity_attributes(trie: &TrieValue, ein: Ein) -> Vec<Ein> {
+    trie.query_deep([KEY_EAVT, ein.to_i32()])
         .query_all()
         .into_iter()
         .map(|(key, _)| Ein::from(key))
@@ -112,7 +103,7 @@ pub fn list_entity_attributes(trie: &SkyTrie, ein: Ein) -> Vec<Ein> {
 }
 
 pub fn list_entity_fills(
-    trie: &SkyTrie,
+    trie: &TrieValue,
     ein: Ein,
     attr_ein: Ein,
     cardinality: Cardinality,
@@ -125,11 +116,11 @@ pub fn list_entity_fills(
         .collect()
 }
 
-fn collect_entries_eavt(trie: &SkyTrie, ein: Ein, attr_ein: Ein) -> Vec<(Vid, Ein, Dir)> {
+fn collect_entries_eavt(trie: &TrieValue, ein: Ein, attr_ein: Ein) -> Vec<(Vid, Ein, Dir)> {
     let mut entries = Vec::new();
-    let vt = subtrie(trie, [KEY_EAVT, ein.to_i32(), attr_ein.to_i32()]);
+    let vt = trie.query_deep([KEY_EAVT, ein.to_i32(), attr_ein.to_i32()]);
     for (vid, _) in vt.query_all() {
-        let vt2 = subtrie(trie, [KEY_EAVT, ein.to_i32(), attr_ein.to_i32(), vid]);
+        let vt2 = trie.query_deep([KEY_EAVT, ein.to_i32(), attr_ein.to_i32(), vid]);
         for (tx_ein, dir_val) in vt2.query_all() {
             if let TrieValue::U32(dir) = dir_val {
                 entries.push((Vid::from_id(vid), Ein::from(tx_ein), dir_from_u32(dir)));
@@ -140,7 +131,7 @@ fn collect_entries_eavt(trie: &SkyTrie, ein: Ein, attr_ein: Ein) -> Vec<(Vid, Ei
 }
 
 pub fn ev_iter(
-    trie: &SkyTrie,
+    trie: &TrieValue,
     a: Attr,
     schema: &Schema,
     order: &HashMap<Ein, u32>,
@@ -148,12 +139,12 @@ pub fn ev_iter(
     let aid = schema[a.clone()].ein().to_i32();
     let cardinality = schema[a].cardinality();
     let mut result = Vec::new();
-    let evt = subtrie(trie, [KEY_AEVT, aid]);
+    let evt = trie.query_deep([KEY_AEVT, aid]);
     for (eid, _) in evt.query_all() {
         let mut entries = Vec::new();
-        let vt = subtrie(trie, [KEY_AEVT, aid, eid]);
+        let vt = trie.query_deep([KEY_AEVT, aid, eid]);
         for (vid, _) in vt.query_all() {
-            let vt2 = subtrie(trie, [KEY_AEVT, aid, eid, vid]);
+            let vt2 = trie.query_deep([KEY_AEVT, aid, eid, vid]);
             for (tx_ein, dir_val) in vt2.query_all() {
                 if let TrieValue::U32(dir) = dir_val {
                     entries.push((Vid::from_id(vid), Ein::from(tx_ein), dir_from_u32(dir)));
@@ -174,18 +165,18 @@ pub fn ev_iter(
 /// Current facts for a single attribute (AEVT index): every entity whose latest
 /// tx on `aid` was an add.
 pub fn facts_for_attr(
-    trie: &SkyTrie,
+    trie: &TrieValue,
     aid: Ein,
     cardinality: Cardinality,
     order: &HashMap<Ein, u32>,
 ) -> Vec<Fact> {
     let mut result = Vec::new();
-    let evt = subtrie(trie, [KEY_AEVT, aid.to_i32()]);
+    let evt = trie.query_deep([KEY_AEVT, aid.to_i32()]);
     for (eid, _) in evt.query_all() {
         let mut entries = Vec::new();
-        let vt = subtrie(trie, [KEY_AEVT, aid.to_i32(), eid]);
+        let vt = trie.query_deep([KEY_AEVT, aid.to_i32(), eid]);
         for (vid, _) in vt.query_all() {
-            let vt2 = subtrie(trie, [KEY_AEVT, aid.to_i32(), eid, vid]);
+            let vt2 = trie.query_deep([KEY_AEVT, aid.to_i32(), eid, vid]);
             for (tx_ein, dir_val) in vt2.query_all() {
                 if let TrieValue::U32(dir) = dir_val {
                     entries.push((Vid::from_id(vid), Ein::from(tx_ein), dir_from_u32(dir)));
@@ -209,7 +200,7 @@ pub fn facts_for_attr(
 
 /// Current facts for a single entity (EAVT index): every attribute it has.
 pub fn facts_for_entity(
-    trie: &SkyTrie,
+    trie: &TrieValue,
     eid: Ein,
     schema: &Schema,
     order: &HashMap<Ein, u32>,
@@ -233,7 +224,7 @@ pub fn facts_for_entity(
 }
 
 /// All current facts (full EAVT scan).
-pub fn all_facts(trie: &SkyTrie, schema: &Schema, order: &HashMap<Ein, u32>) -> Vec<Fact> {
+pub fn all_facts(trie: &TrieValue, schema: &Schema, order: &HashMap<Ein, u32>) -> Vec<Fact> {
     let mut result = Vec::new();
     for eid in list_entities(trie) {
         result.extend(facts_for_entity(trie, eid, schema, order));
@@ -244,12 +235,12 @@ pub fn all_facts(trie: &SkyTrie, schema: &Schema, order: &HashMap<Ein, u32>) -> 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::trie::SkyTrie;
+    use crate::trie::TrieValue;
     use crate::val;
 
     #[test]
     fn history_is_retained() {
-        let mut trie = SkyTrie::new();
+        let mut trie = TrieValue::trie();
         let tx1 = Ein::tx(&[1u8; 16]);
         let tx2 = Ein::tx(&[2u8; 16]);
         let mut order = HashMap::new();
@@ -261,7 +252,7 @@ mod tests {
         let fills = list_entity_fills(&trie, Ein(200), Ein(100), Cardinality::One, &order);
         assert_eq!(fills.len(), 1);
 
-        let vt = subtrie(&trie, [KEY_EAVT, 200, 100]);
+        let vt = trie.query_deep([KEY_EAVT, 200, 100]);
         assert_eq!(vt.query_all().len(), 2);
     }
 }

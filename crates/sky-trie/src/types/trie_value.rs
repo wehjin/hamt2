@@ -10,6 +10,11 @@ pub enum TrieValue {
 }
 
 impl TrieValue {
+    /// A fresh, empty `Trie` variant — an empty trie wrapped as a `TrieValue`.
+    pub fn trie() -> TrieValue {
+        TrieValue::Trie(SkyTrie::new())
+    }
+
     /// Returns the value stored at `key`, or `Nil` if absent. Non-`Trie`
     /// variants are leaves with nothing below them.
     pub fn query(&self, key: i32) -> TrieValue {

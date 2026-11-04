@@ -183,3 +183,10 @@ fn nil_behaves_as_empty_trie() {
     let trie = as_trie(TrieValue::Nil.insert(1, 1u32));
     assert_eq!(trie.query(1), Some(TrieValue::U32(1)));
 }
+
+#[test]
+fn trie_constructor_is_empty() {
+    let value = TrieValue::trie();
+    assert!(value.query_all().is_empty());
+    assert!(!value.contains(1));
+}

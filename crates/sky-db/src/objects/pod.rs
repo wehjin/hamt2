@@ -1,5 +1,5 @@
 use crate::_internal::db_trie;
-use crate::trie::SkyTrie;
+use crate::trie::TrieValue;
 use crate::{Attr, Attribute, Ein, Fact, Schema, Val};
 use std::collections::HashMap;
 
@@ -7,7 +7,7 @@ use std::collections::HashMap;
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Pod {
     pub(crate) schema: Schema,
-    pub(crate) trie: SkyTrie,
+    pub(crate) trie: TrieValue,
     pub(crate) order: HashMap<Ein, u32>,
 }
 

@@ -1,5 +1,5 @@
 use crate::_internal::db_trie;
-use crate::trie::SkyTrie;
+use crate::trie::TrieValue;
 use crate::{Dat, Ein, Hash, Schema, TransactError, Tx, linearize};
 use std::collections::HashMap;
 
@@ -7,14 +7,14 @@ use std::collections::HashMap;
 #[derive(Debug)]
 pub struct Index {
     pub schema: Schema,
-    pub trie: SkyTrie,
+    pub trie: TrieValue,
     pub order: HashMap<Ein, u32>,
     pub tip: Option<Hash>,
 }
 
 /// Applies a single transaction's datoms to the trie and folds its schema declarations.
 pub(crate) fn apply_tx(
-    trie: &mut SkyTrie,
+    trie: &mut TrieValue,
     schema: &mut Schema,
     tx: &Tx,
     tx_ein: Ein,
@@ -44,7 +44,7 @@ pub fn replay(txs: Vec<Tx>) -> anyhow::Result<Index> {
     let map: HashMap<Hash, Tx> = txs.into_iter().map(|tx| (tx.hash(), tx)).collect();
     let order = linearize(&map);
     let mut schema = Schema::starter();
-    let mut trie = SkyTrie::new();
+    let mut trie = TrieValue::trie();
     let mut order_map = HashMap::new();
     for (i, hash) in order.iter().enumerate() {
         let tx = &map[hash];
